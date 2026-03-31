@@ -28,7 +28,6 @@
 	</scm>
 	<properties>
 		<java.version>25</java.version>
-		<mybatis-plus.version>3.5.14</mybatis-plus.version>
 		<springdoc.version>3.0.0</springdoc.version>
 	</properties>
 	<dependencies>
@@ -54,13 +53,6 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc</artifactId>
-		</dependency>
-
-		<!-- 提供 MyBatis-Plus 与 Spring Boot 4 的集成能力，用于简化数据库 CRUD 与 Mapper 开发。 -->
-		<dependency>
-			<groupId>com.baomidou</groupId>
-			<artifactId>mybatis-plus-spring-boot4-starter</artifactId>
-			<version>${mybatis-plus.version}</version>
 		</dependency>
 
 		<!-- 提供 OpenAPI3 文档生成与 Swagger UI 页面，用于接口文档展示与调试。 -->
