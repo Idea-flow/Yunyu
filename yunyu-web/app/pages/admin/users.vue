@@ -14,12 +14,15 @@ definePageMeta({
 const toast = useToast()
 const adminUsers = useAdminUsers()
 
+type UserRoleFilter = 'ALL' | 'SUPER_ADMIN' | 'USER'
+type UserStatusFilter = 'ALL' | 'ACTIVE' | 'DISABLED'
+
 const isLoading = ref(false)
 const isSubmitting = ref(false)
 const isDeleteSubmitting = ref(false)
 const searchKeyword = ref('')
-const activeRole = ref<'' | 'SUPER_ADMIN' | 'USER'>('')
-const activeStatus = ref<'' | 'ACTIVE' | 'DISABLED'>('')
+const activeRole = ref<UserRoleFilter>('ALL')
+const activeStatus = ref<UserStatusFilter>('ALL')
 const editingUserId = ref<number | null>(null)
 const isFormModalOpen = ref(false)
 const isDeleteModalOpen = ref(false)
@@ -41,13 +44,13 @@ const formState = reactive<AdminUserForm>({
 })
 
 const roleOptions = [
-  { label: '全部角色', value: '' },
+  { label: '全部角色', value: 'ALL' },
   { label: '站长', value: 'SUPER_ADMIN' },
   { label: '普通用户', value: 'USER' }
 ] as const
 
 const statusOptions = [
-  { label: '全部状态', value: '' },
+  { label: '全部状态', value: 'ALL' },
   { label: '正常', value: 'ACTIVE' },
   { label: '禁用', value: 'DISABLED' }
 ] as const
@@ -59,22 +62,6 @@ const statusOptions = [
 const isEditing = computed(() => editingUserId.value !== null)
 
 /**
- * 计算当前筛选后的站长数量。
- * 用于在页面顶部概览区展示权限结构。
- */
-const adminCount = computed(() =>
-  users.value.filter(user => user.role === 'SUPER_ADMIN').length
-)
-
-/**
- * 计算当前筛选后的禁用用户数量。
- * 用于辅助站长快速定位账号状态问题。
- */
-const disabledCount = computed(() =>
-  users.value.filter(user => user.status === 'DISABLED').length
-)
-
-/**
  * 拉取用户列表。
  * 会根据当前搜索关键词、角色和状态筛选条件请求后台接口。
  */
@@ -84,8 +71,8 @@ async function loadUsers() {
   try {
     const response = await adminUsers.listUsers({
       keyword: searchKeyword.value || undefined,
-      role: activeRole.value || undefined,
-      status: activeStatus.value || undefined,
+      role: activeRole.value === 'ALL' ? undefined : activeRole.value,
+      status: activeStatus.value === 'ALL' ? undefined : activeStatus.value,
       pageNo: currentPage.value,
       pageSize: pageSize.value
     })
@@ -93,9 +80,12 @@ async function loadUsers() {
     total.value = response.total
     totalPages.value = response.totalPages
   } catch (error: any) {
+    const message = error?.message || '暂时无法获取用户列表。'
     toast.add({
       title: '加载用户失败',
-      description: error?.message || '暂时无法获取用户列表。',
+      description: message.includes('资源不存在')
+        ? '用户管理接口尚未加载，请重启后端服务后再访问。'
+        : message,
       color: 'error'
     })
   } finally {
@@ -323,111 +313,47 @@ await loadUsers()
 <template>
   <UDashboardPanel>
     <template #header>
-      <UDashboardNavbar title="用户管理">
-        <template #right>
-          <div class="flex items-center gap-3">
-            <UButton
-              icon="i-lucide-user-plus"
-              label="新建用户"
-              color="primary"
-              class="rounded-2xl"
-              @click="openCreateModal"
-            />
-          </div>
-        </template>
-      </UDashboardNavbar>
-
-      <UDashboardToolbar>
-        <template #left>
-          <div>
-            <p class="text-sm font-medium text-highlighted">账号中心</p>
-            <p class="text-xs text-muted">统一维护后台账号、用户状态与角色权限</p>
-          </div>
-        </template>
-      </UDashboardToolbar>
+      <UDashboardNavbar title="用户管理" />
     </template>
 
     <template #body>
       <div class="space-y-6 p-4 lg:p-6">
-        <div class="grid gap-4 md:grid-cols-3">
-          <UCard class="rounded-[28px] border border-default/70 bg-default/95 shadow-sm">
-            <div class="space-y-3">
-              <p class="text-sm font-medium text-muted">当前用户数</p>
-              <p class="text-4xl font-semibold tracking-tight text-highlighted">{{ users.length }}</p>
-            </div>
-          </UCard>
-
-          <UCard class="rounded-[28px] border border-default/70 bg-default/95 shadow-sm">
-            <div class="space-y-3">
-              <p class="text-sm font-medium text-muted">站长账号</p>
-              <p class="text-4xl font-semibold tracking-tight text-highlighted">{{ adminCount }}</p>
-            </div>
-          </UCard>
-
-          <UCard class="rounded-[28px] border border-default/70 bg-default/95 shadow-sm">
-            <div class="space-y-3">
-              <p class="text-sm font-medium text-muted">禁用账号</p>
-              <p class="text-4xl font-semibold tracking-tight text-highlighted">{{ disabledCount }}</p>
-            </div>
-          </UCard>
-        </div>
-
-        <div class="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_24rem]">
-          <div class="space-y-6">
-            <UCard class="rounded-[30px] border border-default/70 bg-default/95 shadow-sm">
+        <div class="space-y-6">
+            <UCard class="admin-surface-card rounded-[30px]">
               <div class="flex flex-col gap-4 xl:flex-row xl:items-center">
-                <UInput
+                <AdminInput
                   v-model="searchKeyword"
                   icon="i-lucide-search"
-                  size="xl"
-                  class="w-full"
                   placeholder="搜索邮箱或用户名"
-                  :ui="{
-                    base: 'min-h-13 rounded-2xl'
-                  }"
                 />
 
-                <USelect
+                <AdminSelect
                   v-model="activeRole"
-                  size="xl"
                   :items="roleOptions"
                   class="min-w-40"
                   placeholder="角色"
                 />
 
-                <USelect
+                <AdminSelect
                   v-model="activeStatus"
-                  size="xl"
                   :items="statusOptions"
                   class="min-w-40"
                   placeholder="状态"
                 />
 
-                <UButton
-                  icon="i-lucide-search"
-                  label="搜索"
-                  size="xl"
-                  color="primary"
-                  class="rounded-2xl"
-                  @click="handleSearch"
-                />
+                <AdminPrimaryButton label="搜索" icon="i-lucide-search" @click="handleSearch" />
               </div>
             </UCard>
 
-            <UCard class="rounded-[30px] border border-default/70 bg-default/95 shadow-sm">
+            <UCard class="admin-surface-card rounded-[30px]">
               <div class="flex items-center justify-between gap-3">
                 <div>
-                  <p class="text-base font-semibold text-highlighted">操作区域</p>
-                  <p class="text-sm text-muted">在这里可以新增账号并管理现有用户</p>
+                  <p class="admin-kicker">操作</p>
+                  <p class="mt-1 text-base font-semibold text-[color:var(--admin-text-strong)]">用户操作区</p>
+                  <p class="mt-1 text-sm text-[color:var(--admin-text-muted)]">新增后台账号并维护现有用户资料</p>
                 </div>
 
-                <UButton
-                  icon="i-lucide-user-plus"
-                  label="增加"
-                  color="primary"
-                  class="rounded-2xl"
-                  @click="openCreateModal"
-                />
+                <AdminPrimaryButton label="增加" icon="i-lucide-user-plus" @click="openCreateModal" />
               </div>
             </UCard>
 
@@ -437,13 +363,13 @@ await loadUsers()
               :total="total"
             >
               <div v-if="isLoading" class="space-y-3">
-                <USkeleton class="h-18 rounded-2xl" />
-                <USkeleton class="h-18 rounded-2xl" />
-                <USkeleton class="h-18 rounded-2xl" />
+                <USkeleton class="h-[4.5rem] rounded-2xl" />
+                <USkeleton class="h-[4.5rem] rounded-2xl" />
+                <USkeleton class="h-[4.5rem] rounded-2xl" />
               </div>
 
-              <div v-else class="overflow-hidden rounded-[24px] border border-default/70">
-                <div class="hidden grid-cols-[minmax(0,1.5fr)_0.75fr_0.7fr_0.9fr_0.9fr] gap-4 border-b border-default/70 bg-muted/40 px-5 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-muted lg:grid">
+              <div v-else class="admin-table-shell">
+                <div class="admin-table-head hidden grid-cols-[minmax(0,1.5fr)_0.75fr_0.7fr_0.9fr_0.9fr] gap-4 px-5 py-4 text-xs font-semibold uppercase tracking-[0.14em] lg:grid">
                   <p>用户</p>
                   <p>角色</p>
                   <p>状态</p>
@@ -455,7 +381,7 @@ await loadUsers()
                   <article
                     v-for="user in users"
                     :key="user.id"
-                    class="grid gap-4 px-5 py-5 transition hover:bg-muted/30 lg:grid-cols-[minmax(0,1.5fr)_0.75fr_0.7fr_0.9fr_0.9fr] lg:items-center"
+                    class="grid gap-4 px-5 py-5 transition duration-200 hover:bg-[color:var(--admin-accent-soft)] lg:grid-cols-[minmax(0,1.5fr)_0.75fr_0.7fr_0.9fr_0.9fr] lg:items-center"
                   >
                     <div class="min-w-0">
                       <p class="truncate text-base font-semibold text-highlighted">{{ user.userName }}</p>
@@ -483,31 +409,34 @@ await loadUsers()
                     </div>
 
                     <div class="flex items-center justify-start gap-2 lg:justify-end">
-                      <UButton
+                      <AdminActionIconButton
                         icon="i-lucide-pencil-line"
-                        color="neutral"
-                        variant="ghost"
-                        aria-label="编辑用户"
+                        label="编辑用户"
                         @click="startEdit(user)"
                       />
-                      <UButton
+                      <AdminActionIconButton
                         icon="i-lucide-trash-2"
-                        color="error"
-                        variant="ghost"
-                        aria-label="删除用户"
+                        label="删除用户"
+                        tone="danger"
                         @click="openDeleteModal(user)"
                       />
                     </div>
                   </article>
 
-                  <div v-if="!users.length" class="px-6 py-14 text-center">
-                    <p class="text-base font-medium text-highlighted">没有找到匹配的用户</p>
-                    <p class="mt-2 text-sm text-muted">可以尝试调整搜索关键词或筛选条件。</p>
+                  <div v-if="!users.length" class="admin-empty-state">
+                    <div class="admin-empty-state-icon">
+                      <UIcon name="i-lucide-search-x" class="size-5" />
+                    </div>
+                    <p class="text-base font-medium text-[color:var(--admin-text-strong)]">没有找到匹配的用户</p>
+                    <p class="max-w-md text-sm text-[color:var(--admin-text-muted)]">可以尝试调整搜索关键词或筛选条件。</p>
                   </div>
                 </div>
               </div>
               <template #footer>
-                <div class="flex items-center justify-end">
+                <div class="admin-pagination-bar">
+                  <p class="admin-pagination-meta">
+                    第 {{ currentPage }} 页，共 {{ totalPages }} 页
+                  </p>
                   <UPagination
                     :model-value="currentPage"
                     :total="total"
@@ -517,74 +446,60 @@ await loadUsers()
                 </div>
               </template>
             </AdminTableCard>
-          </div>
         </div>
       </div>
 
-      <UModal
+      <AdminFormModal
         v-model:open="isFormModalOpen"
+        eyebrow="账号维护"
         :title="isEditing ? '修改用户' : '增加用户'"
         :description="isEditing ? '修改用户基础资料、角色与状态。' : '创建新的后台或站内账号。'"
+        icon="i-lucide-user-round-cog"
+        width="wide"
       >
         <template #body>
           <form class="space-y-5" @submit.prevent="handleSubmit">
             <UFormField name="email" label="邮箱">
-              <UInput
+              <AdminInput
                 v-model="formState.email"
-                size="xl"
-                class="w-full"
                 placeholder="请输入邮箱"
-                :ui="{ base: 'w-full rounded-2xl' }"
               />
             </UFormField>
 
             <UFormField name="userName" label="用户名">
-              <UInput
+              <AdminInput
                 v-model="formState.userName"
-                size="xl"
-                class="w-full"
                 placeholder="请输入用户名"
-                :ui="{ base: 'w-full rounded-2xl' }"
               />
             </UFormField>
 
             <UFormField name="avatarUrl" label="头像地址">
-              <UInput
+              <AdminInput
                 v-model="formState.avatarUrl"
-                size="xl"
-                class="w-full"
                 placeholder="可选"
-                :ui="{ base: 'w-full rounded-2xl' }"
               />
             </UFormField>
 
             <UFormField name="password" :label="isEditing ? '重置密码' : '密码'">
-              <UInput
+              <AdminInput
                 v-model="formState.password"
                 type="password"
-                size="xl"
-                class="w-full"
                 :placeholder="isEditing ? '留空则不修改' : '请输入密码'"
-                :ui="{ base: 'w-full rounded-2xl' }"
               />
             </UFormField>
 
             <div class="grid gap-4 md:grid-cols-2">
               <UFormField name="role" label="角色">
-                <USelect
+                <AdminSelect
                   v-model="formState.role"
-                  size="xl"
                   :items="roleOptions.slice(1)"
-                  class="w-full"
                 />
               </UFormField>
 
               <UFormField name="status" label="状态">
-                <USelect
+                <AdminSelect
                   v-model="formState.status"
-                  size="xl"
                   :items="statusOptions.slice(1)"
-                  class="w-full"
                 />
               </UFormField>
             </div>
@@ -599,15 +514,16 @@ await loadUsers()
               variant="ghost"
               @click="isFormModalOpen = false"
             />
-            <UButton
-              :label="isSubmitting ? '保存中...' : isEditing ? '保存修改' : '创建用户'"
-              color="primary"
+            <AdminPrimaryButton
+              :label="isEditing ? '保存修改' : '增加用户'"
+              loading-label="保存中..."
               :loading="isSubmitting"
+              :icon="isEditing ? 'i-lucide-save' : 'i-lucide-user-plus'"
               @click="handleSubmit"
             />
           </div>
         </template>
-      </UModal>
+      </AdminFormModal>
 
       <AdminConfirmModal
         v-model:open="isDeleteModalOpen"

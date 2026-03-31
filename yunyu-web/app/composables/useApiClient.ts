@@ -40,8 +40,13 @@ export function useApiClient() {
 
       return response.data
     } catch (error: any) {
+      const responseMessage = error?.response?._data?.message
+      const responseStatusCode = error?.response?.status
+
       throw new Error(
         error?.data?.message ||
+        responseMessage ||
+        (responseStatusCode === 404 ? '请求的接口不存在，请确认后端服务已重启并加载最新接口。' : null) ||
         error?.statusMessage ||
         error?.message ||
         '接口请求失败'

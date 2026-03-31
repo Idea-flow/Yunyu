@@ -3,11 +3,14 @@ package com.ideaflow.yunyu.common.exception;
 import com.ideaflow.yunyu.common.constant.ResultCode;
 import com.ideaflow.yunyu.common.response.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
@@ -41,18 +44,30 @@ public class GlobalExceptionHandler {
             HttpMessageNotReadableException.class
     })
     public ApiResponse<Void> handleValidationException(Exception exception) {
-        return ApiResponse.fail(ResultCode.BAD_REQUEST, "请求参数错误");
+        return ApiResponse.fail(ResultCode.BAD_REQUEST, resolveValidationMessage(exception));
+    }
+
+    /**
+     * 处理请求方法不支持异常。
+     *
+     * @param exception 请求方法异常
+     * @return 统一失败响应
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ApiResponse<Void> handleMethodNotSupportedException(HttpRequestMethodNotSupportedException exception) {
+        return ApiResponse.fail(ResultCode.BAD_REQUEST, "请求方法不正确");
     }
 
     /**
      * 处理资源不存在异常。
      *
      * @param exception 资源不存在异常
+     * @param request 当前请求
      * @return 统一失败响应
      */
     @ExceptionHandler(NoResourceFoundException.class)
-    public ApiResponse<Void> handleNoResourceFoundException(NoResourceFoundException exception) {
-        return ApiResponse.fail(ResultCode.NOT_FOUND);
+    public ApiResponse<Void> handleNoResourceFoundException(NoResourceFoundException exception, HttpServletRequest request) {
+        return ApiResponse.fail(ResultCode.NOT_FOUND, "资源不存在：" + request.getRequestURI());
     }
 
     /**
@@ -64,5 +79,61 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ApiResponse<Void> handleException(Exception exception) {
         return ApiResponse.fail(ResultCode.INTERNAL_SERVER_ERROR, ResultCode.INTERNAL_SERVER_ERROR.getMessage());
+    }
+
+    /**
+     * 解析参数校验异常中的具体错误信息。
+     *
+     * @param exception 参数校验异常
+     * @return 具体错误信息
+     */
+    private String resolveValidationMessage(Exception exception) {
+        if (exception instanceof MethodArgumentNotValidException methodArgumentNotValidException) {
+            return resolveBindingResultMessage(methodArgumentNotValidException.getBindingResult());
+        }
+
+        if (exception instanceof BindException bindException) {
+            return resolveBindingResultMessage(bindException.getBindingResult());
+        }
+
+        if (exception instanceof ConstraintViolationException constraintViolationException) {
+            return constraintViolationException.getConstraintViolations()
+                    .stream()
+                    .findFirst()
+                    .map(violation -> violation.getMessage())
+                    .orElse(ResultCode.BAD_REQUEST.getMessage());
+        }
+
+        if (exception instanceof HttpMessageNotReadableException) {
+            return "请求体格式不正确";
+        }
+
+        return ResultCode.BAD_REQUEST.getMessage();
+    }
+
+    /**
+     * 从绑定结果中提取首个可读错误文案。
+     *
+     * @param bindingResult 绑定结果
+     * @return 错误文案
+     */
+    private String resolveBindingResultMessage(BindingResult bindingResult) {
+        String message = bindingResult.getFieldErrors()
+                .stream()
+                .map(fieldError -> fieldError.getDefaultMessage())
+                .filter(value -> value != null && !value.isBlank())
+                .findFirst()
+                .orElse(null);
+
+        if (message != null) {
+            return message;
+        }
+
+        return bindingResult.getAllErrors()
+                .stream()
+                .map(error -> error.getDefaultMessage())
+                .filter(value -> value != null && !value.isBlank())
+                .findFirst()
+                .orElse(ResultCode.BAD_REQUEST.getMessage());
     }
 }
