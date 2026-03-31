@@ -2,6 +2,7 @@ package com.ideaflow.yunyu.module.user.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ideaflow.yunyu.common.constant.ResultCode;
 import com.ideaflow.yunyu.common.exception.BizException;
 import com.ideaflow.yunyu.module.auth.entity.UserAuthEntity;
@@ -53,16 +54,14 @@ public class AdminUserService {
     public AdminUserListResponse listUsers(AdminUserQueryRequest request) {
         long pageNo = normalizePageNo(request.getPageNo());
         long pageSize = normalizePageSize(request.getPageSize());
-        long total = userMapper.selectCount(buildUserListQuery(request));
-        long offset = (pageNo - 1) * pageSize;
+        Page<UserEntity> page = userMapper.selectPage(new Page<>(pageNo, pageSize), buildUserListQuery(request));
 
-        List<AdminUserItemResponse> items = userMapper.selectList(buildUserListQuery(request)
-                        .last("LIMIT " + offset + "," + pageSize))
+        List<AdminUserItemResponse> items = page.getRecords()
                 .stream()
                 .map(this::toAdminUserItemResponse)
                 .toList();
-        long totalPages = total == 0 ? 1 : (long) Math.ceil((double) total / pageSize);
-        return new AdminUserListResponse(items, total, pageNo, pageSize, totalPages);
+        long totalPages = page.getPages() <= 0 ? 1 : page.getPages();
+        return new AdminUserListResponse(items, page.getTotal(), pageNo, pageSize, totalPages);
     }
 
     /**

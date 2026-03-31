@@ -2,6 +2,7 @@ package com.ideaflow.yunyu.module.topic.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ideaflow.yunyu.common.constant.ResultCode;
 import com.ideaflow.yunyu.common.exception.BizException;
 import com.ideaflow.yunyu.module.topic.dto.AdminTopicCreateRequest;
@@ -43,17 +44,15 @@ public class AdminTopicService {
     public AdminTopicListResponse listTopics(AdminTopicQueryRequest request) {
         long pageNo = normalizePageNo(request.getPageNo());
         long pageSize = normalizePageSize(request.getPageSize());
-        long total = topicMapper.selectCount(buildTopicListQuery(request));
-        long offset = (pageNo - 1) * pageSize;
+        Page<TopicEntity> page = topicMapper.selectPage(new Page<>(pageNo, pageSize), buildTopicListQuery(request));
 
-        List<AdminTopicItemResponse> items = topicMapper.selectList(buildTopicListQuery(request)
-                        .last("LIMIT " + offset + "," + pageSize))
+        List<AdminTopicItemResponse> items = page.getRecords()
                 .stream()
                 .map(this::toAdminTopicItemResponse)
                 .toList();
 
-        long totalPages = total == 0 ? 1 : (long) Math.ceil((double) total / pageSize);
-        return new AdminTopicListResponse(items, total, pageNo, pageSize, totalPages);
+        long totalPages = page.getPages() <= 0 ? 1 : page.getPages();
+        return new AdminTopicListResponse(items, page.getTotal(), pageNo, pageSize, totalPages);
     }
 
     /**

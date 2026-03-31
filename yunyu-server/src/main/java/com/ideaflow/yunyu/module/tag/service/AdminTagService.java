@@ -2,6 +2,7 @@ package com.ideaflow.yunyu.module.tag.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ideaflow.yunyu.common.constant.ResultCode;
 import com.ideaflow.yunyu.common.exception.BizException;
 import com.ideaflow.yunyu.module.tag.dto.AdminTagCreateRequest;
@@ -43,17 +44,15 @@ public class AdminTagService {
     public AdminTagListResponse listTags(AdminTagQueryRequest request) {
         long pageNo = normalizePageNo(request.getPageNo());
         long pageSize = normalizePageSize(request.getPageSize());
-        long total = tagMapper.selectCount(buildTagListQuery(request));
-        long offset = (pageNo - 1) * pageSize;
+        Page<TagEntity> page = tagMapper.selectPage(new Page<>(pageNo, pageSize), buildTagListQuery(request));
 
-        List<AdminTagItemResponse> items = tagMapper.selectList(buildTagListQuery(request)
-                        .last("LIMIT " + offset + "," + pageSize))
+        List<AdminTagItemResponse> items = page.getRecords()
                 .stream()
                 .map(this::toAdminTagItemResponse)
                 .toList();
 
-        long totalPages = total == 0 ? 1 : (long) Math.ceil((double) total / pageSize);
-        return new AdminTagListResponse(items, total, pageNo, pageSize, totalPages);
+        long totalPages = page.getPages() <= 0 ? 1 : page.getPages();
+        return new AdminTagListResponse(items, page.getTotal(), pageNo, pageSize, totalPages);
     }
 
     /**

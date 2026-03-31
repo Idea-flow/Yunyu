@@ -2,6 +2,7 @@ package com.ideaflow.yunyu.module.category.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ideaflow.yunyu.common.constant.ResultCode;
 import com.ideaflow.yunyu.common.exception.BizException;
 import com.ideaflow.yunyu.module.category.dto.AdminCategoryCreateRequest;
@@ -48,17 +49,15 @@ public class AdminCategoryService {
     public AdminCategoryListResponse listCategories(AdminCategoryQueryRequest request) {
         long pageNo = normalizePageNo(request.getPageNo());
         long pageSize = normalizePageSize(request.getPageSize());
-        long total = categoryMapper.selectCount(buildCategoryListQuery(request));
-        long offset = (pageNo - 1) * pageSize;
+        Page<CategoryEntity> page = categoryMapper.selectPage(new Page<>(pageNo, pageSize), buildCategoryListQuery(request));
 
-        List<AdminCategoryItemResponse> items = categoryMapper.selectList(buildCategoryListQuery(request)
-                        .last("LIMIT " + offset + "," + pageSize))
+        List<AdminCategoryItemResponse> items = page.getRecords()
                 .stream()
                 .map(this::toAdminCategoryItemResponse)
                 .toList();
 
-        long totalPages = total == 0 ? 1 : (long) Math.ceil((double) total / pageSize);
-        return new AdminCategoryListResponse(items, total, pageNo, pageSize, totalPages);
+        long totalPages = page.getPages() <= 0 ? 1 : page.getPages();
+        return new AdminCategoryListResponse(items, page.getTotal(), pageNo, pageSize, totalPages);
     }
 
     /**

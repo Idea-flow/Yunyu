@@ -64,6 +64,13 @@
 			<version>${mybatis.plus.version}</version>
 		</dependency>
 
+		<!-- 提供 MyBatis-Plus 分页插件所需的 SQL 解析能力，用于后台统一使用 `selectPage` 完成分页查询。 -->
+		<dependency>
+			<groupId>com.baomidou</groupId>
+			<artifactId>mybatis-plus-jsqlparser</artifactId>
+			<version>${mybatis.plus.version}</version>
+		</dependency>
+
 		<!-- 提供 OpenAPI3 文档生成与 Swagger UI 页面，用于接口文档展示与调试。 -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
