@@ -65,6 +65,18 @@ public class ApiResponse<T> {
     }
 
     /**
+     * 按自定义状态码和消息构建失败响应。
+     *
+     * @param code 业务状态码
+     * @param message 自定义消息
+     * @return 失败响应对象
+     * @param <T> 数据载荷类型
+     */
+    public static <T> ApiResponse<T> fail(int code, String message) {
+        return new ApiResponse<>(code, message, null);
+    }
+
+    /**
      * 获取业务状态码。
      *
      * @return 业务状态码

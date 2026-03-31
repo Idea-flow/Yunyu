@@ -136,7 +136,7 @@ public class DatabaseBootstrapService {
         log.info("开始检查数据库服务器连接，目标地址：{}:{}", properties.getHost(), properties.getPort());
 
         if (!canConnectServer(properties)) {
-            throw new BizException(ResultCode.INTERNAL_SERVER_ERROR, "数据库服务器不可连接，请检查 yunyu.init 配置");
+            throw new BizException(ResultCode.INTERNAL_SERVER_ERROR, "数据库服务器不可连接，请检查 spring.datasource 配置");
         }
         log.info("数据库服务器连接成功");
 
@@ -177,12 +177,13 @@ public class DatabaseBootstrapService {
 
     private void validateProperties(InitProperties properties) {
         if (!properties.isConfigured()) {
-            throw new BizException(ResultCode.INTERNAL_SERVER_ERROR, "数据库初始化配置不完整，请检查 yunyu.init 配置");
+            throw new BizException(ResultCode.INTERNAL_SERVER_ERROR, "数据库初始化配置不完整，请检查 spring.datasource 配置");
         }
     }
 
     private boolean hasCoreTables(InitProperties properties) {
         return tableExists(properties, "user")
+                && tableExists(properties, "user_auth")
                 && tableExists(properties, "post")
                 && tableExists(properties, "post_content")
                 && tableExists(properties, "site_config");
@@ -256,9 +257,60 @@ public class DatabaseBootstrapService {
             statement.setString(3, DEFAULT_ADMIN_PASSWORD);
             statement.setString(4, passwordEncoder.encode(DEFAULT_ADMIN_PASSWORD));
             statement.executeUpdate();
+            ensureDefaultAdminLocalAuth(connection);
             log.info("已创建默认管理员账号，账号：{}，密码：{}", DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD);
         } catch (SQLException exception) {
             throw new BizException(ResultCode.INTERNAL_SERVER_ERROR, "创建默认管理员账号失败");
+        }
+    }
+
+    /**
+     * 确保默认管理员存在 LOCAL 登录方式绑定。
+     *
+     * @param connection 数据库连接
+     * @throws SQLException SQL 异常
+     */
+    private void ensureDefaultAdminLocalAuth(Connection connection) throws SQLException {
+        Long userId = findDefaultAdminId(connection);
+        if (userId == null) {
+            throw new SQLException("默认管理员不存在，无法创建 LOCAL 认证绑定");
+        }
+
+        String sql = """
+                INSERT INTO user_auth (user_id, auth_type, auth_identity, auth_name, auth_email, email_verified, raw_user_info, created_time, updated_time)
+                VALUES (?, 'LOCAL', ?, ?, ?, 1, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ON DUPLICATE KEY UPDATE
+                auth_name = VALUES(auth_name),
+                auth_email = VALUES(auth_email),
+                email_verified = VALUES(email_verified),
+                updated_time = CURRENT_TIMESTAMP
+                """;
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, userId);
+            statement.setString(2, DEFAULT_ADMIN_EMAIL);
+            statement.setString(3, DEFAULT_ADMIN_USER_NAME);
+            statement.setString(4, DEFAULT_ADMIN_EMAIL);
+            statement.executeUpdate();
+        }
+    }
+
+    /**
+     * 查询默认管理员用户ID。
+     *
+     * @param connection 数据库连接
+     * @return 默认管理员用户ID
+     * @throws SQLException SQL 异常
+     */
+    private Long findDefaultAdminId(Connection connection) throws SQLException {
+        String sql = "SELECT id FROM user WHERE email = ? AND deleted = 0 LIMIT 1";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, DEFAULT_ADMIN_EMAIL);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getLong("id");
+                }
+                return null;
+            }
         }
     }
 

@@ -28,6 +28,7 @@
 	</scm>
 	<properties>
 		<java.version>25</java.version>
+		<jjwt.version>0.13.0</jjwt.version>
 		<springdoc.version>3.0.0</springdoc.version>
 	</properties>
 	<dependencies>
@@ -55,11 +56,40 @@
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
 
+		<!-- 提供 JdbcTemplate 与基础 JDBC 能力，用于当前阶段直接访问 MySQL 完成登录与初始化查询。 -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-jdbc</artifactId>
+		</dependency>
+
 		<!-- 提供 OpenAPI3 文档生成与 Swagger UI 页面，用于接口文档展示与调试。 -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>${springdoc.version}</version>
+		</dependency>
+
+		<!-- 提供 JWT 生成与解析 API，用于第一版 Bearer Token 登录认证。 -->
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-api</artifactId>
+			<version>${jjwt.version}</version>
+		</dependency>
+
+		<!-- 提供 JWT 运行时实现，用于实际完成 Token 签名与验证。 -->
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-impl</artifactId>
+			<version>${jjwt.version}</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!-- 提供 JWT JSON 序列化支持，用于处理 Token Claims 的 JSON 编解码。 -->
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-jackson</artifactId>
+			<version>${jjwt.version}</version>
+			<scope>runtime</scope>
 		</dependency>
 
 		<!-- 提供 MySQL 8 驱动，用于连接 Yunyu 当前阶段使用的 MySQL 数据库。 -->
