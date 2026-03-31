@@ -1,0 +1,40 @@
+# 说明：
+# 本文件用于忽略本地开发环境、编辑器配置、系统缓存、
+# 构建产物和敏感配置，避免无关文件进入 Git 仓库。
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Logs
+logs/
+*.log
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Node.js
+node_modules/
+.nuxt/
+.output/
+dist/
+coverage/
+
+# Java / Spring Boot
+target/
+build/
+out/
+*.class
+.gradle/
+
+# Temp
+tmp/
+temp/
+*.tmp
+
