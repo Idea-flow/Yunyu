@@ -1,9 +1,13 @@
 spring:
   application:
     name: yunyu-server
+  profiles:
+    active: dev
   threads:
     virtual:
       enabled: true
   main:
     keep-alive: true
 
+server:
+  port: 20000
