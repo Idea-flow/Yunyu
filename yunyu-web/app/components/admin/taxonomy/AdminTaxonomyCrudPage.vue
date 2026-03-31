@@ -1,0 +1,550 @@
+<script setup lang="ts">
+import type {
+  AdminTaxonomyForm,
+  AdminTaxonomyItem,
+  AdminTaxonomyKind
+} from '../../../types/taxonomy'
+
+/**
+ * 后台内容编排页面配置类型。
+ * 作用：为分类、标签、专题三个页面提供可复用的页面标题、字段可见性和文案配置。
+ */
+interface AdminTaxonomyPageConfig {
+  kind: AdminTaxonomyKind
+  pageTitle: string
+  tableTitle: string
+  operationTitle: string
+  operationDescription: string
+  searchPlaceholder: string
+  itemLabel: string
+  descriptionLabel: string
+  hasCoverField: boolean
+  hasSortField: boolean
+}
+
+/**
+ * 后台内容编排通用 CRUD 页面组件。
+ * 作用：统一承载分类、标签、专题的列表、筛选、新增、编辑和删除流程，减少重复页面代码。
+ */
+const props = defineProps<{
+  config: AdminTaxonomyPageConfig
+}>()
+
+const toast = useToast()
+const adminTaxonomy = useAdminTaxonomy()
+
+type ItemStatusFilter = 'ALL' | 'ACTIVE' | 'DISABLED'
+
+const isLoading = ref(false)
+const isSubmitting = ref(false)
+const isDeleteSubmitting = ref(false)
+const searchKeyword = ref('')
+const activeStatus = ref<ItemStatusFilter>('ALL')
+const editingItemId = ref<number | null>(null)
+const isFormModalOpen = ref(false)
+const isDeleteModalOpen = ref(false)
+const deletingItem = ref<AdminTaxonomyItem | null>(null)
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+const totalPages = ref(1)
+
+const items = ref<AdminTaxonomyItem[]>([])
+
+const formState = reactive<AdminTaxonomyForm>({
+  name: '',
+  slug: '',
+  description: '',
+  coverUrl: '',
+  status: 'ACTIVE',
+  sortOrder: 0
+})
+
+const statusOptions = [
+  { label: '全部状态', value: 'ALL' },
+  { label: '正常', value: 'ACTIVE' },
+  { label: '禁用', value: 'DISABLED' }
+] as const
+
+/**
+ * 判断当前表单是否处于编辑状态。
+ * 作用：用于切换弹窗标题与主按钮文案。
+ */
+const isEditing = computed(() => editingItemId.value !== null)
+
+/**
+ * 加载当前模块列表。
+ * 作用：按当前页面配置和筛选条件刷新列表数据。
+ */
+async function loadItems() {
+  isLoading.value = true
+
+  try {
+    const response = await adminTaxonomy.listItems(props.config.kind, {
+      keyword: searchKeyword.value || undefined,
+      status: activeStatus.value === 'ALL' ? undefined : activeStatus.value,
+      pageNo: currentPage.value,
+      pageSize: pageSize.value
+    })
+
+    items.value = response.list
+    total.value = response.total
+    totalPages.value = response.totalPages
+  } catch (error: any) {
+    toast.add({
+      title: `加载${props.config.itemLabel}失败`,
+      description: error?.message || `暂时无法获取${props.config.itemLabel}列表。`,
+      color: 'error'
+    })
+  } finally {
+    isLoading.value = false
+  }
+}
+
+/**
+ * 重置表单状态。
+ * 作用：在新建和保存完成后恢复默认表单，避免旧数据残留。
+ */
+function resetForm() {
+  editingItemId.value = null
+  formState.name = ''
+  formState.slug = ''
+  formState.description = ''
+  formState.coverUrl = ''
+  formState.status = 'ACTIVE'
+  formState.sortOrder = 0
+}
+
+/**
+ * 打开新建弹窗。
+ * 作用：重置表单并进入创建模式。
+ */
+function openCreateModal() {
+  resetForm()
+  isFormModalOpen.value = true
+}
+
+/**
+ * 打开编辑弹窗。
+ * 作用：将当前条目数据加载到表单中进行修改。
+ *
+ * @param item 当前条目
+ */
+function startEdit(item: AdminTaxonomyItem) {
+  editingItemId.value = item.id
+  formState.name = item.name
+  formState.slug = item.slug
+  formState.description = item.description
+  formState.coverUrl = item.coverUrl || ''
+  formState.status = item.status
+  formState.sortOrder = item.sortOrder
+  isFormModalOpen.value = true
+}
+
+/**
+ * 校验表单。
+ * 作用：在提交前给出最低限度的输入约束反馈。
+ */
+function validateForm() {
+  if (!formState.name.trim()) {
+    toast.add({ title: `请输入${props.config.itemLabel}名称`, color: 'warning' })
+    return false
+  }
+
+  if (!formState.slug.trim()) {
+    toast.add({ title: `请输入${props.config.itemLabel} Slug`, color: 'warning' })
+    return false
+  }
+
+  if (formState.sortOrder < 0) {
+    toast.add({ title: '排序值不能小于 0', color: 'warning' })
+    return false
+  }
+
+  return true
+}
+
+/**
+ * 提交表单。
+ * 作用：根据当前模式调用真实接口完成创建或更新，并在成功后刷新列表。
+ */
+async function handleSubmit() {
+  if (!validateForm()) {
+    return
+  }
+
+  isSubmitting.value = true
+
+  try {
+    const payload: AdminTaxonomyForm = {
+      name: formState.name.trim(),
+      slug: formState.slug.trim(),
+      description: formState.description.trim(),
+      coverUrl: formState.coverUrl.trim(),
+      status: formState.status,
+      sortOrder: formState.sortOrder
+    }
+
+    if (editingItemId.value) {
+      await adminTaxonomy.updateItem(props.config.kind, editingItemId.value, payload)
+      toast.add({ title: `${props.config.itemLabel}已更新`, color: 'success' })
+    } else {
+      await adminTaxonomy.createItem(props.config.kind, payload)
+      toast.add({ title: `${props.config.itemLabel}已创建`, color: 'success' })
+    }
+
+    resetForm()
+    isFormModalOpen.value = false
+    await loadItems()
+  } catch (error: any) {
+    toast.add({
+      title: isEditing.value ? '更新失败' : '创建失败',
+      description: error?.message || `${props.config.itemLabel}保存未成功，请稍后重试。`,
+      color: 'error'
+    })
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+/**
+ * 打开删除确认弹窗。
+ * 作用：记录待删除条目，避免误删。
+ *
+ * @param item 当前条目
+ */
+function openDeleteModal(item: AdminTaxonomyItem) {
+  deletingItem.value = item
+  isDeleteModalOpen.value = true
+}
+
+/**
+ * 确认删除当前条目。
+ * 作用：调用真实接口删除条目并刷新列表。
+ */
+async function confirmDelete() {
+  if (!deletingItem.value) {
+    return
+  }
+
+  isDeleteSubmitting.value = true
+
+  try {
+    await adminTaxonomy.deleteItem(props.config.kind, deletingItem.value.id)
+    toast.add({ title: `${props.config.itemLabel}已删除`, color: 'success' })
+
+    if (items.value.length === 1 && currentPage.value > 1) {
+      currentPage.value -= 1
+    }
+
+    deletingItem.value = null
+    isDeleteModalOpen.value = false
+    await loadItems()
+  } catch (error: any) {
+    toast.add({
+      title: '删除失败',
+      description: error?.message || `当前${props.config.itemLabel}暂时无法删除。`,
+      color: 'error'
+    })
+  } finally {
+    isDeleteSubmitting.value = false
+  }
+}
+
+/**
+ * 提交搜索。
+ * 作用：更新筛选条件后回到第一页并刷新列表。
+ */
+async function handleSearch() {
+  currentPage.value = 1
+  await loadItems()
+}
+
+/**
+ * 处理分页切换。
+ * 作用：按新页码重新查询当前模块列表。
+ *
+ * @param page 新页码
+ */
+async function handlePageChange(page: number) {
+  if (page === currentPage.value) {
+    return
+  }
+
+  currentPage.value = page
+  await loadItems()
+}
+
+/**
+ * 处理每页条数切换。
+ * 作用：切换分页容量后回到第一页并重新请求列表数据。
+ *
+ * @param value 新的每页条数
+ */
+async function handlePageSizeChange(value: string | number | null) {
+  const nextPageSize = Number(value)
+
+  if (!Number.isFinite(nextPageSize) || nextPageSize < 1 || nextPageSize === pageSize.value) {
+    return
+  }
+
+  pageSize.value = nextPageSize
+  currentPage.value = 1
+  await loadItems()
+}
+
+/**
+ * 解析状态文案。
+ * 作用：统一展示状态中文标签。
+ *
+ * @param status 状态值
+ * @returns 中文状态文案
+ */
+function resolveStatusLabel(status: AdminTaxonomyItem['status']) {
+  return status === 'ACTIVE' ? '正常' : '禁用'
+}
+
+/**
+ * 解析状态颜色。
+ * 作用：为不同状态提供一致的视觉反馈。
+ *
+ * @param status 状态值
+ * @returns Nuxt UI 颜色值
+ */
+function resolveStatusColor(status: AdminTaxonomyItem['status']) {
+  return status === 'ACTIVE' ? 'success' as const : 'warning' as const
+}
+
+await loadItems()
+</script>
+
+<template>
+  <UDashboardPanel>
+    <template #header>
+      <UDashboardNavbar :title="props.config.pageTitle" />
+    </template>
+
+    <template #body>
+      <div class="space-y-6 p-4 lg:p-6">
+        <UCard class="rounded-[30px] border border-slate-200/80 bg-white/85 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-[0_22px_48px_-30px_rgba(0,0,0,0.55)]">
+          <div class="flex flex-col gap-4 xl:flex-row xl:items-center">
+            <AdminInput
+              v-model="searchKeyword"
+              icon="i-lucide-search"
+              :placeholder="props.config.searchPlaceholder"
+            />
+
+            <AdminSelect
+              v-model="activeStatus"
+              :items="statusOptions"
+              class="min-w-40"
+              placeholder="状态"
+            />
+
+            <AdminPrimaryButton label="搜索" icon="i-lucide-search" @click="handleSearch" />
+          </div>
+        </UCard>
+
+        <UCard class="rounded-[30px] border border-slate-200/80 bg-white/85 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-[0_22px_48px_-30px_rgba(0,0,0,0.55)]">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">操作</p>
+              <p class="mt-1 text-base font-semibold text-slate-900 dark:text-slate-50">{{ props.config.operationTitle }}</p>
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ props.config.operationDescription }}</p>
+            </div>
+
+            <AdminPrimaryButton label="增加" icon="i-lucide-plus" @click="openCreateModal" />
+          </div>
+        </UCard>
+
+        <AdminTableCard
+          :title="props.config.tableTitle"
+          description="支持分类、标签、专题的真实数据查询与维护，可直接用于后台内容体系管理。"
+          :total="total"
+        >
+          <div v-if="isLoading" class="space-y-3">
+            <USkeleton class="h-[4.5rem] rounded-2xl" />
+            <USkeleton class="h-[4.5rem] rounded-2xl" />
+            <USkeleton class="h-[4.5rem] rounded-2xl" />
+          </div>
+
+          <div v-else class="overflow-hidden rounded-[1.55rem] border border-slate-200/80 bg-white/85 dark:border-slate-800 dark:bg-slate-950/60">
+            <div class="hidden grid-cols-[minmax(0,1.45fr)_0.7fr_0.8fr_0.9fr_0.85fr] gap-4 border-b border-slate-200/80 bg-slate-50/85 px-5 py-4 text-xs font-semibold tracking-[0.14em] text-slate-400 uppercase dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-500 lg:grid">
+              <p>{{ props.config.itemLabel }}</p>
+              <p>状态</p>
+              <p>排序/文章</p>
+              <p>更新时间</p>
+              <p class="text-right">操作</p>
+            </div>
+
+            <div class="divide-y divide-default/70">
+              <article
+                v-for="item in items"
+                :key="item.id"
+                class="grid gap-4 px-5 py-5 transition duration-200 hover:bg-sky-50/80 dark:hover:bg-sky-400/8 lg:grid-cols-[minmax(0,1.45fr)_0.7fr_0.8fr_0.9fr_0.85fr] lg:items-center"
+              >
+                <div class="min-w-0">
+                  <div class="flex items-center gap-3">
+                    <div
+                      v-if="props.config.hasCoverField && item.coverUrl"
+                      class="size-12 shrink-0 overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-700"
+                    >
+                      <img :src="item.coverUrl" :alt="item.name" class="h-full w-full object-cover">
+                    </div>
+
+                    <div class="min-w-0">
+                      <p class="truncate text-base font-semibold text-highlighted">{{ item.name }}</p>
+                      <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
+                        <span>{{ item.slug }}</span>
+                        <span class="text-border">·</span>
+                        <span>{{ item.description || '暂无说明' }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <UBadge :color="resolveStatusColor(item.status)" variant="soft">
+                    {{ resolveStatusLabel(item.status) }}
+                  </UBadge>
+                </div>
+
+                <div class="space-y-1 text-sm text-toned">
+                  <p v-if="props.config.hasSortField">排序 {{ item.sortOrder }}</p>
+                  <p>文章 {{ item.relatedPostCount }} 篇</p>
+                </div>
+
+                <div class="space-y-1 text-sm text-toned">
+                  <p>{{ item.updatedTime }}</p>
+                  <p class="text-xs text-muted">创建于 {{ item.createdTime }}</p>
+                </div>
+
+                <div class="flex items-center justify-start gap-2 lg:justify-end">
+                  <AdminActionIconButton
+                    icon="i-lucide-pencil-line"
+                    :label="`编辑${props.config.itemLabel}`"
+                    @click="startEdit(item)"
+                  />
+                  <AdminActionIconButton
+                    icon="i-lucide-trash-2"
+                    :label="`删除${props.config.itemLabel}`"
+                    tone="danger"
+                    @click="openDeleteModal(item)"
+                  />
+                </div>
+              </article>
+
+              <div v-if="!items.length" class="flex flex-col items-center justify-center gap-3 px-6 py-12 text-center">
+                <div class="inline-flex size-14 items-center justify-center rounded-[1.2rem] bg-sky-50 text-sky-600 dark:bg-sky-400/12 dark:text-sky-300">
+                  <UIcon name="i-lucide-search-x" class="size-5" />
+                </div>
+                <p class="text-base font-medium text-slate-900 dark:text-slate-50">没有找到匹配的{{ props.config.itemLabel }}</p>
+                <p class="max-w-md text-sm text-slate-500 dark:text-slate-400">可以尝试调整搜索关键词或状态筛选条件。</p>
+              </div>
+            </div>
+          </div>
+
+          <template #footer>
+            <AdminPaginationBar
+              :page="currentPage"
+              :page-size="pageSize"
+              :total="total"
+              :total-pages="totalPages"
+              @update:page="handlePageChange"
+              @update:page-size="handlePageSizeChange"
+            />
+          </template>
+        </AdminTableCard>
+      </div>
+
+      <AdminFormModal
+        v-model:open="isFormModalOpen"
+        eyebrow="内容编排维护"
+        :title="isEditing ? `修改${props.config.itemLabel}` : `增加${props.config.itemLabel}`"
+        :description="isEditing ? `修改${props.config.itemLabel}基础信息、状态和展示顺序。` : `创建新的${props.config.itemLabel}并整理其后台展示信息。`"
+        icon="i-lucide-folders"
+        width="wide"
+      >
+        <template #body>
+          <form class="space-y-5" @submit.prevent="handleSubmit">
+            <div class="grid gap-4 md:grid-cols-2">
+              <UFormField name="name" :label="`${props.config.itemLabel}名称`">
+                <AdminInput
+                  v-model="formState.name"
+                  :placeholder="`请输入${props.config.itemLabel}名称`"
+                />
+              </UFormField>
+
+              <UFormField name="slug" label="Slug">
+                <AdminInput
+                  v-model="formState.slug"
+                  placeholder="请输入唯一标识"
+                />
+              </UFormField>
+            </div>
+
+            <UFormField name="description" :label="props.config.descriptionLabel">
+              <AdminTextarea
+                v-model="formState.description"
+                :rows="4"
+                autoresize
+                placeholder="可选"
+              />
+            </UFormField>
+
+            <div class="grid gap-4 md:grid-cols-2">
+              <UFormField v-if="props.config.hasCoverField" name="coverUrl" label="封面地址">
+                <AdminInput
+                  v-model="formState.coverUrl"
+                  placeholder="可选"
+                />
+              </UFormField>
+
+              <UFormField v-if="props.config.hasSortField" name="sortOrder" label="排序值">
+                <AdminInput
+                  v-model="formState.sortOrder"
+                  type="number"
+                  placeholder="请输入排序值"
+                />
+              </UFormField>
+
+              <UFormField name="status" label="状态">
+                <AdminSelect
+                  v-model="formState.status"
+                  :items="statusOptions.slice(1)"
+                />
+              </UFormField>
+            </div>
+          </form>
+        </template>
+
+        <template #footer>
+          <div class="flex w-full justify-end gap-3">
+            <UButton
+              label="取消"
+              color="neutral"
+              variant="ghost"
+              @click="isFormModalOpen = false"
+            />
+            <AdminPrimaryButton
+              :label="isEditing ? '保存修改' : '增加条目'"
+              loading-label="保存中..."
+              :loading="isSubmitting"
+              :icon="isEditing ? 'i-lucide-save' : 'i-lucide-plus'"
+              @click="handleSubmit"
+            />
+          </div>
+        </template>
+      </AdminFormModal>
+
+      <AdminConfirmModal
+        v-model:open="isDeleteModalOpen"
+        :title="`确认删除${props.config.itemLabel}`"
+        :description="deletingItem ? `删除后将无法继续在后台管理“${deletingItem.name}”。` : `请确认是否继续删除当前${props.config.itemLabel}。`"
+        confirm-label="确认删除"
+        :loading="isDeleteSubmitting"
+        @confirm="confirmDelete"
+      />
+    </template>
+  </UDashboardPanel>
+</template>

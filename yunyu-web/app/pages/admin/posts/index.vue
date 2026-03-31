@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { AdminPostForm, AdminPostItem } from '../../types/post'
+import type { AdminPostItem } from '../../../types/post'
 
 /**
- * 后台文章管理页。
- * 作用：为站长提供文章查询、创建、编辑、删除与发布状态管理的统一后台工作页面。
+ * 后台文章列表页。
+ * 作用：为站长提供文章筛选、跳转新增页、跳转编辑页与删除管理的统一列表入口。
  */
 definePageMeta({
   layout: 'admin',
@@ -16,28 +16,17 @@ const adminPosts = useAdminPosts()
 type PostStatusFilter = 'ALL' | 'DRAFT' | 'PUBLISHED' | 'OFFLINE'
 
 const isLoading = ref(false)
-const isSubmitting = ref(false)
 const isDeleteSubmitting = ref(false)
 const searchKeyword = ref('')
 const activeStatus = ref<PostStatusFilter>('ALL')
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
-const editingPostId = ref<number | null>(null)
-const isFormModalOpen = ref(false)
+const totalPages = ref(1)
 const isDeleteModalOpen = ref(false)
 const deletingPost = ref<AdminPostItem | null>(null)
 
 const posts = ref<AdminPostItem[]>([])
-
-const formState = reactive<AdminPostForm>({
-  title: '',
-  slug: '',
-  summary: '',
-  coverUrl: '',
-  status: 'DRAFT',
-  contentMarkdown: ''
-})
 
 const statusOptions = [
   { label: '全部状态', value: 'ALL' },
@@ -47,14 +36,8 @@ const statusOptions = [
 ] as const
 
 /**
- * 判断当前是否处于编辑状态。
- * 用于切换弹窗标题和提交按钮文案。
- */
-const isEditing = computed(() => editingPostId.value !== null)
-
-/**
  * 加载文章列表。
- * 会根据当前搜索条件和分页参数请求后台文章接口。
+ * 会根据当前筛选条件和分页参数请求后台文章接口。
  */
 async function loadPosts() {
   isLoading.value = true
@@ -69,6 +52,7 @@ async function loadPosts() {
 
     posts.value = response.list
     total.value = response.total
+    totalPages.value = response.totalPages
   } catch (error: any) {
     const message = error?.message || '暂时无法获取文章列表。'
     toast.add({
@@ -84,119 +68,9 @@ async function loadPosts() {
 }
 
 /**
- * 重置文章表单。
- * 在新增或保存完成后恢复为默认状态。
- */
-function resetForm() {
-  editingPostId.value = null
-  formState.title = ''
-  formState.slug = ''
-  formState.summary = ''
-  formState.coverUrl = ''
-  formState.status = 'DRAFT'
-  formState.contentMarkdown = ''
-}
-
-/**
- * 打开新建文章弹窗。
- * 会先重置表单，再展示新增窗口。
- */
-function openCreateModal() {
-  resetForm()
-  isFormModalOpen.value = true
-}
-
-/**
- * 打开编辑文章弹窗。
- * 为了避免列表字段不完整，先请求文章详情后再填充表单。
- *
- * @param post 文章数据
- */
-async function startEdit(post: AdminPostItem) {
-  try {
-    const detail = await adminPosts.getPost(post.id)
-    editingPostId.value = detail.id
-    formState.title = detail.title
-    formState.slug = detail.slug
-    formState.summary = detail.summary || ''
-    formState.coverUrl = detail.coverUrl || ''
-    formState.status = detail.status
-    formState.contentMarkdown = detail.contentMarkdown || ''
-    isFormModalOpen.value = true
-  } catch (error: any) {
-    toast.add({
-      title: '加载文章详情失败',
-      description: error?.message || '暂时无法进入编辑状态。',
-      color: 'error'
-    })
-  }
-}
-
-/**
- * 校验文章表单。
- * 在提交前给出最基本的表单提示，避免无效请求进入后端。
- */
-function validateForm() {
-  if (!formState.title.trim()) {
-    toast.add({ title: '请输入文章标题', color: 'warning' })
-    return false
-  }
-
-  if (!formState.slug.trim()) {
-    toast.add({ title: '请输入文章 Slug', color: 'warning' })
-    return false
-  }
-
-  return true
-}
-
-/**
- * 提交文章表单。
- * 会根据当前状态自动区分创建和更新动作。
- */
-async function handleSubmit() {
-  if (!validateForm()) {
-    return
-  }
-
-  isSubmitting.value = true
-
-  try {
-    const payload: AdminPostForm = {
-      title: formState.title.trim(),
-      slug: formState.slug.trim(),
-      summary: formState.summary.trim(),
-      coverUrl: formState.coverUrl.trim(),
-      status: formState.status,
-      contentMarkdown: formState.contentMarkdown
-    }
-
-    if (editingPostId.value) {
-      await adminPosts.updatePost(editingPostId.value, payload)
-      toast.add({ title: '文章已更新', color: 'success' })
-    } else {
-      await adminPosts.createPost(payload)
-      toast.add({ title: '文章已创建', color: 'success' })
-    }
-
-    resetForm()
-    isFormModalOpen.value = false
-    await loadPosts()
-  } catch (error: any) {
-    toast.add({
-      title: isEditing.value ? '更新失败' : '创建失败',
-      description: error?.message || '文章保存未成功，请稍后重试。',
-      color: 'error'
-    })
-  } finally {
-    isSubmitting.value = false
-  }
-}
-
-/**
  * 打开删除确认弹窗。
  *
- * @param post 文章数据
+ * @param post 当前文章数据
  */
 function openDeleteModal(post: AdminPostItem) {
   deletingPost.value = post
@@ -220,7 +94,7 @@ async function confirmDelete() {
     isDeleteModalOpen.value = false
     deletingPost.value = null
 
-    if (editingPostId.value && posts.value.length === 1 && currentPage.value > 1) {
+    if (posts.value.length === 1 && currentPage.value > 1) {
       currentPage.value -= 1
     }
 
@@ -251,8 +125,44 @@ async function handleSearch() {
  * @param page 新页码
  */
 async function handlePageChange(page: number) {
+  if (page === currentPage.value) {
+    return
+  }
+
   currentPage.value = page
   await loadPosts()
+}
+
+/**
+ * 处理每页条数切换。
+ *
+ * @param nextPageSize 新的每页条数
+ */
+async function handlePageSizeChange(nextPageSize: number) {
+  if (nextPageSize === pageSize.value) {
+    return
+  }
+
+  pageSize.value = nextPageSize
+  currentPage.value = 1
+  await loadPosts()
+}
+
+/**
+ * 跳转到文章新增页。
+ * 使用独立页面承载内容编辑流程，替代原有长表单弹窗。
+ */
+async function goToCreatePage() {
+  await navigateTo('/admin/posts/create')
+}
+
+/**
+ * 跳转到文章编辑页。
+ *
+ * @param post 当前文章数据
+ */
+async function goToEditPage(post: AdminPostItem) {
+  await navigateTo(`/admin/posts/${post.id}/edit`)
 }
 
 /**
@@ -324,16 +234,16 @@ await loadPosts()
             <div>
               <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">操作</p>
               <p class="mt-1 text-base font-semibold text-slate-900 dark:text-slate-50">文章操作区</p>
-              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">新增文章内容并管理当前的发布状态</p>
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">新增和修改都改为独立页面，适合承载长内容编辑流程。</p>
             </div>
 
-            <AdminPrimaryButton label="增加" icon="i-lucide-file-plus-2" @click="openCreateModal" />
+            <AdminPrimaryButton label="增加" icon="i-lucide-file-plus-2" @click="goToCreatePage" />
           </div>
         </UCard>
 
         <AdminTableCard
           title="文章列表"
-          description="列表最右侧提供编辑和删除操作"
+          description="列表最右侧提供跳转编辑页和删除操作"
           :total="total"
         >
           <div v-if="isLoading" class="space-y-3">
@@ -389,7 +299,7 @@ await loadPosts()
                   <AdminActionIconButton
                     icon="i-lucide-pencil-line"
                     label="编辑文章"
-                    @click="startEdit(post)"
+                    @click="goToEditPage(post)"
                   />
                   <AdminActionIconButton
                     icon="i-lucide-trash-2"
@@ -420,97 +330,17 @@ await loadPosts()
           </div>
 
           <template #footer>
-            <div class="flex items-center justify-between gap-4 pt-1">
-              <p class="text-sm text-slate-500 dark:text-slate-400">
-                第 {{ currentPage }} 页，共 {{ Math.max(1, Math.ceil(total / pageSize)) }} 页
-              </p>
-              <UPagination
-                :model-value="currentPage"
-                :total="total"
-                :items-per-page="pageSize"
-                @update:model-value="handlePageChange"
-              />
-            </div>
+            <AdminPaginationBar
+              :page="currentPage"
+              :page-size="pageSize"
+              :total="total"
+              :total-pages="totalPages"
+              @update:page="handlePageChange"
+              @update:page-size="handlePageSizeChange"
+            />
           </template>
         </AdminTableCard>
       </div>
-
-      <AdminFormModal
-        v-model:open="isFormModalOpen"
-        eyebrow="内容编辑"
-        :title="isEditing ? '修改文章' : '增加文章'"
-        :description="isEditing ? '修改文章基础信息、状态和正文。' : '创建新的文章内容。'"
-        icon="i-lucide-file-pen-line"
-        width="editor"
-      >
-        <template #body>
-          <form class="space-y-5" @submit.prevent="handleSubmit">
-            <UFormField name="title" label="标题">
-              <AdminInput
-                v-model="formState.title"
-                placeholder="请输入文章标题"
-              />
-            </UFormField>
-
-            <UFormField name="slug" label="Slug">
-              <AdminInput
-                v-model="formState.slug"
-                placeholder="请输入唯一标识"
-              />
-            </UFormField>
-
-            <UFormField name="summary" label="摘要">
-              <AdminTextarea
-                v-model="formState.summary"
-                :rows="3"
-                autoresize
-                placeholder="可选"
-              />
-            </UFormField>
-
-            <UFormField name="coverUrl" label="封面地址">
-              <AdminInput
-                v-model="formState.coverUrl"
-                placeholder="可选"
-              />
-            </UFormField>
-
-            <UFormField name="status" label="状态">
-              <AdminSelect
-                v-model="formState.status"
-                :items="statusOptions.slice(1)"
-              />
-            </UFormField>
-
-            <UFormField name="contentMarkdown" label="正文">
-              <AdminTextarea
-                v-model="formState.contentMarkdown"
-                :rows="10"
-                autoresize
-                placeholder="请输入 Markdown 正文"
-              />
-            </UFormField>
-          </form>
-        </template>
-
-        <template #footer>
-          <div class="flex w-full justify-end gap-3">
-            <UButton
-              label="取消"
-              color="neutral"
-              variant="ghost"
-              @click="isFormModalOpen = false"
-            />
-            <AdminPrimaryButton
-              :label="isEditing ? '保存修改' : '增加文章'"
-              loading-label="保存中..."
-              :loading="isSubmitting"
-              :icon="isEditing ? 'i-lucide-save' : 'i-lucide-file-plus-2'"
-              @click="handleSubmit"
-            />
-          </div>
-        </template>
-      </AdminFormModal>
 
       <AdminConfirmModal
         v-model:open="isDeleteModalOpen"

@@ -88,6 +88,8 @@ public class AdminPostService {
         postEntity.setSlug(slug);
         postEntity.setSummary(normalizeOptionalValue(request.getSummary()));
         postEntity.setCoverUrl(normalizeOptionalValue(request.getCoverUrl()));
+        postEntity.setSeoTitle(normalizeOptionalValue(request.getSeoTitle()));
+        postEntity.setSeoDescription(normalizeOptionalValue(request.getSeoDescription()));
         postEntity.setUserId(SecurityUtils.getCurrentUser().getUserId());
         postEntity.setStatus(resolveStatus(request.getStatus()));
         postEntity.setIsTop(0);
@@ -127,6 +129,8 @@ public class AdminPostService {
         postEntity.setSlug(slug);
         postEntity.setSummary(normalizeOptionalValue(request.getSummary()));
         postEntity.setCoverUrl(normalizeOptionalValue(request.getCoverUrl()));
+        postEntity.setSeoTitle(normalizeOptionalValue(request.getSeoTitle()));
+        postEntity.setSeoDescription(normalizeOptionalValue(request.getSeoDescription()));
         String nextStatus = resolveStatus(request.getStatus());
         postEntity.setStatus(nextStatus);
         postEntity.setUpdatedTime(LocalDateTime.now());
@@ -340,8 +344,11 @@ public class AdminPostService {
         response.setSlug(postEntity.getSlug());
         response.setSummary(postEntity.getSummary());
         response.setCoverUrl(postEntity.getCoverUrl());
+        response.setCategoryId(postEntity.getCategoryId());
         response.setTopic("未设置专题");
         response.setStatus(postEntity.getStatus());
+        response.setSeoTitle(postEntity.getSeoTitle());
+        response.setSeoDescription(postEntity.getSeoDescription());
         response.setCoverReady(postEntity.getCoverUrl() != null && !postEntity.getCoverUrl().isBlank());
         response.setSummaryReady(postEntity.getSummary() != null && !postEntity.getSummary().isBlank());
         response.setReadingMinutes(postContentEntity == null || postContentEntity.getReadingTime() == null ? 1 : postContentEntity.getReadingTime());

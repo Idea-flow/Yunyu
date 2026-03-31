@@ -8,8 +8,11 @@ export interface AdminPostItem {
   slug: string
   summary: string | null
   coverUrl: string | null
+  categoryId?: number | null
   topic: string
   status: 'DRAFT' | 'PUBLISHED' | 'OFFLINE'
+  seoTitle?: string | null
+  seoDescription?: string | null
   coverReady: boolean
   summaryReady: boolean
   readingMinutes: number
@@ -52,5 +55,7 @@ export interface AdminPostForm {
   summary: string
   coverUrl: string
   status: 'DRAFT' | 'PUBLISHED' | 'OFFLINE'
+  seoTitle: string
+  seoDescription: string
   contentMarkdown: string
 }

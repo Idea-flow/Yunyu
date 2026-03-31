@@ -32,6 +32,24 @@ const navigationItems: AdminNavigationItem[] = [
     description: '内容编辑与状态管理'
   },
   {
+    label: '分类管理',
+    icon: 'i-lucide-folders',
+    to: '/admin/categories',
+    description: '分类维护与排序'
+  },
+  {
+    label: '标签管理',
+    icon: 'i-lucide-tags',
+    to: '/admin/tags',
+    description: '标签整理与状态维护'
+  },
+  {
+    label: '专题管理',
+    icon: 'i-lucide-book-open-text',
+    to: '/admin/topics',
+    description: '专题编排与展示顺序'
+  },
+  {
     label: '用户管理',
     icon: 'i-lucide-users',
     to: '/admin/users',

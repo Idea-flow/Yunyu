@@ -303,7 +303,26 @@ async function handleSearch() {
  * @param page 新页码
  */
 async function handlePageChange(page: number) {
+  if (page === currentPage.value) {
+    return
+  }
+
   currentPage.value = page
+  await loadUsers()
+}
+
+/**
+ * 处理每页条数切换。
+ *
+ * @param nextPageSize 新的每页条数
+ */
+async function handlePageSizeChange(nextPageSize: number) {
+  if (nextPageSize === pageSize.value) {
+    return
+  }
+
+  pageSize.value = nextPageSize
+  currentPage.value = 1
   await loadUsers()
 }
 
@@ -433,17 +452,14 @@ await loadUsers()
                 </div>
               </div>
               <template #footer>
-                <div class="flex items-center justify-between gap-4 pt-1">
-                  <p class="text-sm text-slate-500 dark:text-slate-400">
-                    第 {{ currentPage }} 页，共 {{ totalPages }} 页
-                  </p>
-                  <UPagination
-                    :model-value="currentPage"
-                    :total="total"
-                    :items-per-page="pageSize"
-                    @update:model-value="handlePageChange"
-                  />
-                </div>
+                <AdminPaginationBar
+                  :page="currentPage"
+                  :page-size="pageSize"
+                  :total="total"
+                  :total-pages="totalPages"
+                  @update:page="handlePageChange"
+                  @update:page-size="handlePageSizeChange"
+                />
               </template>
             </AdminTableCard>
         </div>
