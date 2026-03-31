@@ -19,7 +19,7 @@ export function useAuth() {
 
   /**
    * 获取当前登录用户。
-   * 当前方法会调用 Nuxt 服务端代理接口，避免浏览器直接跨域访问后端认证接口。
+   * 当前方法会直接请求后端认证接口，用于恢复当前登录用户并同步后台访问状态。
    */
   async function fetchCurrentUser(force = false) {
     if (loading.value) {
@@ -54,7 +54,7 @@ export function useAuth() {
 
   /**
    * 执行登录。
-   * 登录请求先进入 Nuxt 服务端代理层，由服务端向后端认证接口发起调用并写入 Cookie。
+   * 登录请求会直接发送到后端认证接口，成功后将访问令牌写入前端 Cookie。
    */
   async function login(payload: { account: string; password: string }) {
     const loginResponse = await apiClient.request<AuthLoginResponse>('/api/auth/login', {
@@ -69,7 +69,7 @@ export function useAuth() {
 
   /**
    * 执行退出登录。
-   * 当前会清理服务端 Cookie 和前端缓存的用户信息。
+   * 当前会清理前端 Cookie 和缓存的用户信息。
    */
   async function logout() {
     apiClient.accessToken.value = null

@@ -9,7 +9,6 @@ definePageMeta({
   middleware: 'admin'
 })
 
-const toast = useToast()
 const auth = useAuth()
 
 const overviewCards = [
@@ -36,15 +35,18 @@ const overviewCards = [
 const quickActions = [
   {
     title: '新建文章',
-    description: '进入编辑流程，创建新的内容草稿。'
+    description: '进入内容工作区，开始整理与创建文章。',
+    to: '/admin/posts'
   },
   {
     title: '管理专题',
-    description: '查看专题结构、排序与展示状态。'
+    description: '整理专题结构、排序与内容归属。',
+    to: '/admin/posts'
   },
   {
     title: '更新站点信息',
-    description: '调整导航、作者信息与页脚配置。'
+    description: '查看工作台状态与后续站点设置入口。',
+    to: '/admin'
   }
 ]
 
@@ -54,17 +56,6 @@ const pendingItems = [
   '站点首页推荐内容建议在本周内更新一次。'
 ]
 
-/**
- * 处理快捷操作点击。
- * 当前阶段先用提示反馈占位，后续接入真实业务路由和接口。
- */
-function handleQuickAction(title: string) {
-  toast.add({
-    title: `${title} 功能即将接入`,
-    description: '当前阶段已完成页面交互占位，后续会连接到实际业务流程。',
-    color: 'primary'
-  })
-}
 </script>
 
 <template>
@@ -138,7 +129,7 @@ function handleQuickAction(title: string) {
                 :key="action.title"
                 type="button"
                 class="rounded-2xl border border-default bg-default p-5 text-left transition hover:border-primary/40 hover:bg-muted"
-                @click="handleQuickAction(action.title)"
+                @click="navigateTo(action.to)"
               >
                 <p class="text-base font-semibold text-highlighted">{{ action.title }}</p>
                 <p class="mt-2 text-sm leading-7 text-toned">{{ action.description }}</p>

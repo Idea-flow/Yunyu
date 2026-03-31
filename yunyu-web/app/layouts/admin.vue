@@ -15,12 +15,17 @@ const navigationItems = computed<NavigationMenuItem[]>(() => [
   {
     label: '内容创作',
     icon: 'i-lucide-file-plus-2',
-    to: '/admin'
+    to: '/admin/posts'
   },
   {
     label: '文章管理',
     icon: 'i-lucide-files',
-    to: '/admin'
+    to: '/admin/posts'
+  },
+  {
+    label: '用户管理',
+    icon: 'i-lucide-users',
+    to: '/admin/users'
   },
   {
     label: '站点设置',
