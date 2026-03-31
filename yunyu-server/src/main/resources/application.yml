@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: yunyu-server
+  threads:
+    virtual:
+      enabled: true
+  main:
+    keep-alive: true
+

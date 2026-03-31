@@ -33,8 +33,11 @@ out/
 *.class
 .gradle/
 
+# Generated project meta
+yunyu-server/HELP.md
+yunyu-server/.gitattributes
+
 # Temp
 tmp/
 temp/
 *.tmp
-
