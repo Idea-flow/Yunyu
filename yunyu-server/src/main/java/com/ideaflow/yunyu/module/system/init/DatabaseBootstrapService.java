@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -29,6 +31,11 @@ public class DatabaseBootstrapService {
 
     private static final String INIT_SCRIPT_CLASSPATH = "db/init/001-init-schema.sql";
     private static final Logger log = LoggerFactory.getLogger(DatabaseBootstrapService.class);
+    private static final String DEFAULT_ADMIN_EMAIL = "yunyu";
+    private static final String DEFAULT_ADMIN_USER_NAME = "yunyu";
+    private static final String DEFAULT_ADMIN_PASSWORD = "yunyu";
+
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     /**
      * 检查数据库服务器是否可连接。
@@ -154,10 +161,17 @@ public class DatabaseBootstrapService {
         boolean initFlagExists = hasSystemInitFlag(properties);
         log.info("初始化完成标记是否存在：{}", initFlagExists ? "是" : "否");
         if (!initFlagExists) {
+            ensureDefaultAdmin(properties);
             upsertSystemInitFlag(properties);
             log.info("已写入系统初始化完成标记 `system.init`");
         } else {
             log.info("跳过初始化标记写入，`system.init` 已存在");
+        }
+
+        if (!hasSuperAdmin(properties)) {
+            ensureDefaultAdmin(properties);
+        } else {
+            log.info("跳过默认管理员创建，超级管理员账号已存在");
         }
     }
 
@@ -220,6 +234,31 @@ public class DatabaseBootstrapService {
             statement.executeUpdate();
         } catch (SQLException exception) {
             throw new BizException(ResultCode.INTERNAL_SERVER_ERROR, "写入初始化完成标记失败");
+        }
+    }
+
+    private void ensureDefaultAdmin(InitProperties properties) {
+        String sql = """
+                INSERT INTO user (email, user_name, password, password_hash, role, status, created_time, updated_time, deleted)
+                VALUES (?, ?, ?, ?, 'SUPER_ADMIN', 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0)
+                ON DUPLICATE KEY UPDATE
+                user_name = VALUES(user_name),
+                password = VALUES(password),
+                password_hash = VALUES(password_hash),
+                role = 'SUPER_ADMIN',
+                status = 'ACTIVE',
+                updated_time = CURRENT_TIMESTAMP
+                """;
+        try (Connection connection = DriverManager.getConnection(buildDatabaseUrl(properties), properties.getUsername(), properties.getPassword());
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, DEFAULT_ADMIN_EMAIL);
+            statement.setString(2, DEFAULT_ADMIN_USER_NAME);
+            statement.setString(3, DEFAULT_ADMIN_PASSWORD);
+            statement.setString(4, passwordEncoder.encode(DEFAULT_ADMIN_PASSWORD));
+            statement.executeUpdate();
+            log.info("已创建默认管理员账号，账号：{}，密码：{}", DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD);
+        } catch (SQLException exception) {
+            throw new BizException(ResultCode.INTERNAL_SERVER_ERROR, "创建默认管理员账号失败");
         }
     }
 
