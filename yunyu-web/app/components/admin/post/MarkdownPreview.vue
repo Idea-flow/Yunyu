@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 /**
  * Markdown 预览组件。
  * 作用：统一承接后台文章编辑页的 HTML 预览展示，避免在页面中重复拼装预览样式。
@@ -15,6 +17,8 @@ const props = withDefaults(defineProps<{
   containerClass: '',
   bodyClass: ''
 })
+
+const normalizedHtml = computed(() => props.html?.trim() || '')
 </script>
 
 <template>
@@ -30,10 +34,10 @@ const props = withDefaults(defineProps<{
     </div>
 
     <div
-      v-else-if="props.html"
+      v-else-if="normalizedHtml"
       class="prose prose-slate max-w-none whitespace-normal leading-8 dark:prose-invert prose-headings:scroll-mt-24 prose-pre:overflow-x-auto prose-pre:rounded-[1.1rem] prose-pre:border prose-pre:border-slate-200/80 prose-pre:bg-slate-950 prose-pre:p-0 dark:prose-pre:border-slate-700 prose-code:before:hidden prose-code:after:hidden"
       :class="props.bodyClass"
-      v-html="props.html"
+      v-html="normalizedHtml"
     />
 
     <div

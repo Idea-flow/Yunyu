@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { computed, toRef } from 'vue'
+import { computed } from 'vue'
 import MarkdownPreview from './MarkdownPreview.vue'
-import { useMarkdownRenderer } from '../../../composables/useMarkdownRenderer'
 
 /**
  * 后台 Markdown 工作台组件。
@@ -38,23 +37,30 @@ const contentModel = computed({
   get: () => props.modelValue ?? '',
   set: value => emit('update:modelValue', value)
 })
-const {
-  html: internalHtml,
-  toc: internalToc,
-  plainText: internalPlainText,
-  readingMinutes: internalReadingMinutes,
-  isRendering: isInternalRendering
-} = useMarkdownRenderer(toRef(props, 'modelValue'))
-const previewHtml = computed(() => props.html || internalHtml.value)
-const previewLoading = computed(() => props.isLoading || isInternalRendering.value)
-const currentContentLength = computed(() => props.contentLength || internalPlainText.value.length)
-const currentReadingMinutes = computed(() => props.readingMinutes || internalReadingMinutes.value)
-const currentTocCount = computed(() => props.tocCount || internalToc.value.length)
-const previewStatusLabel = computed(() => previewLoading.value ? '正在渲染' : '渲染完成')
+const previewHtml = computed(() => props.html || '')
+const previewLoading = computed(() => props.isLoading)
+const previewSkeletonLoading = computed(() => previewLoading.value && !hasPreviewContent.value)
+const currentContentLength = computed(() => props.contentLength)
+const currentReadingMinutes = computed(() => props.readingMinutes)
+const currentTocCount = computed(() => props.tocCount)
+const hasPreviewContent = computed(() => previewHtml.value.trim().length > 0)
+const previewStatusLabel = computed(() => {
+  if (previewLoading.value && !hasPreviewContent.value) {
+    return '正在渲染'
+  }
+
+  if (previewLoading.value && hasPreviewContent.value) {
+    return '已更新预览'
+  }
+
+  return hasPreviewContent.value ? '渲染完成' : '等待内容'
+})
 const previewStatusToneClass = computed(() =>
-  previewLoading.value
+  previewSkeletonLoading.value
     ? 'border-amber-200/80 bg-amber-50/90 text-amber-700 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200'
-    : 'border-emerald-200/80 bg-emerald-50/90 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-200'
+    : hasPreviewContent.value
+      ? 'border-emerald-200/80 bg-emerald-50/90 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-200'
+      : 'border-slate-200/80 bg-slate-50/90 text-slate-600 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300'
 )
 
 /**
@@ -161,31 +167,15 @@ function switchViewMode(mode: 'edit' | 'preview') {
           </div>
         </div>
 
-        <UFormField name="contentMarkdown" label="Markdown 正文" required class="flex-1">
-          <div class="relative h-full">
-            <div class="pointer-events-none absolute inset-x-5 top-4 z-10 flex items-center justify-between text-[0.72rem] font-medium tracking-[0.14em] text-slate-400 uppercase dark:text-slate-500">
-              <span>content.md</span>
-              <span>实时输入区</span>
-            </div>
-
-            <div class="pointer-events-none absolute inset-x-5 bottom-4 z-10 flex items-center justify-between">
-              <span class="rounded-full border border-slate-200/90 bg-white/92 px-3 py-1.5 text-xs font-medium text-slate-500 shadow-[0_10px_20px_-18px_rgba(15,23,42,0.22)] dark:border-slate-700 dark:bg-slate-950/88 dark:text-slate-300">
-                内容较长时可继续向下输入，编辑区会内部滚动
-              </span>
-              <span class="rounded-full border border-slate-200/90 bg-white/92 px-3 py-1.5 text-xs font-medium text-slate-400 shadow-[0_10px_20px_-18px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-slate-950/88 dark:text-slate-500">
-                向下滚动查看更多内容
-              </span>
-            </div>
-
-            <textarea
-              :value="contentModel"
-              class="h-full w-full resize-none rounded-[1.6rem] border border-slate-200/80 bg-white/98 px-5 pb-16 pt-12 font-mono text-[1rem] leading-8 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_18px_36px_-30px_rgba(15,23,42,0.2)] outline-none transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100/90 dark:border-slate-700 dark:bg-slate-950/94 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-600 dark:focus:border-sky-300 dark:focus:bg-slate-950 dark:focus:ring-sky-400/20 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.5)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/80"
-              placeholder="请输入 Markdown 正文内容"
-              spellcheck="false"
-              @input="handleUpdate(($event.target as HTMLTextAreaElement).value)"
-            />
-          </div>
-        </UFormField>
+        <div class="min-h-0 flex-1 overflow-hidden rounded-[1.8rem]">
+          <textarea
+            :value="contentModel"
+            class="h-full min-h-full w-full resize-none overflow-y-auto rounded-[1.8rem] border border-slate-200/80 bg-white/98 px-5 py-5 font-mono text-[1rem] leading-8 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_18px_36px_-30px_rgba(15,23,42,0.2)] outline-none transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100/90 dark:border-slate-700 dark:bg-slate-950/94 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-600 dark:focus:border-sky-300 dark:focus:bg-slate-950 dark:focus:ring-sky-400/20 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.5)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/80"
+            placeholder="请输入 Markdown 正文内容"
+            spellcheck="false"
+            @input="handleUpdate(($event.target as HTMLTextAreaElement).value)"
+          />
+        </div>
       </section>
 
       <section
@@ -206,15 +196,15 @@ function switchViewMode(mode: 'edit' | 'preview') {
         <div class="mb-4 flex items-center justify-between gap-3 rounded-[18px] border border-slate-200/80 bg-slate-50/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/70">
           <div class="flex items-center gap-3">
             <span class="relative flex h-3 w-3">
-              <span
-                class="absolute inline-flex h-full w-full rounded-full opacity-75"
-                :class="previewLoading ? 'animate-ping bg-amber-400/70 dark:bg-amber-300/60' : 'bg-emerald-400/30 dark:bg-emerald-300/30'"
-              />
-              <span
-                class="relative inline-flex h-3 w-3 rounded-full"
-                :class="previewLoading ? 'bg-amber-500 dark:bg-amber-300' : 'bg-emerald-500 dark:bg-emerald-300'"
-              />
-            </span>
+                <span
+                  class="absolute inline-flex h-full w-full rounded-full opacity-75"
+                  :class="previewSkeletonLoading ? 'animate-ping bg-amber-400/70 dark:bg-amber-300/60' : hasPreviewContent ? 'bg-emerald-400/30 dark:bg-emerald-300/30' : 'bg-slate-300/70 dark:bg-slate-500/40'"
+                />
+                <span
+                  class="relative inline-flex h-3 w-3 rounded-full"
+                  :class="previewSkeletonLoading ? 'bg-amber-500 dark:bg-amber-300' : hasPreviewContent ? 'bg-emerald-500 dark:bg-emerald-300' : 'bg-slate-400 dark:bg-slate-500'"
+                />
+              </span>
             <span class="text-sm font-medium text-slate-700 dark:text-slate-200">{{ previewStatusLabel }}</span>
           </div>
 
@@ -228,7 +218,7 @@ function switchViewMode(mode: 'edit' | 'preview') {
 
         <MarkdownPreview
           :html="previewHtml"
-          :is-loading="previewLoading"
+          :is-loading="previewSkeletonLoading"
           container-class="h-full flex-1"
           body-class="h-full overflow-y-auto pr-2 whitespace-normal break-words [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.5)_transparent] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/80"
         />
