@@ -71,31 +71,31 @@ const themeMenuItems = computed(() => [
     :items="themeMenuItems"
     :content="{ side: 'top', align: 'start', sideOffset: 12 }"
     :ui="{
-      content: 'min-w-72 rounded-[22px] border border-[color:var(--admin-line)] bg-[color:var(--admin-surface-strong)]/95 p-1 shadow-[0_24px_48px_-28px_rgba(25,63,105,0.35)] backdrop-blur-xl',
-      item: 'rounded-2xl text-[color:var(--admin-text-body)] transition-colors duration-200 data-highlighted:bg-[color:var(--admin-accent-soft)] data-highlighted:text-[color:var(--admin-text-strong)]',
+      content: 'min-w-72 rounded-[22px] border border-slate-200 bg-white/95 p-1 shadow-[0_24px_48px_-28px_rgba(15,23,42,0.3)] backdrop-blur-xl dark:border-slate-700 dark:bg-slate-950/95',
+      item: 'rounded-2xl text-slate-600 transition-colors duration-200 data-highlighted:bg-sky-50 data-highlighted:text-slate-900 dark:text-slate-300 dark:data-highlighted:bg-sky-400/15 dark:data-highlighted:text-slate-50',
       itemLabel: 'text-sm font-medium',
-      itemDescription: 'text-xs text-[color:var(--admin-text-muted)]',
-      itemLeadingIcon: 'size-4 text-[color:var(--admin-text-muted)]',
-      separator: 'bg-[color:var(--admin-line)]'
+      itemDescription: 'text-xs text-slate-400 dark:text-slate-500',
+      itemLeadingIcon: 'size-4 text-slate-400 dark:text-slate-500',
+      separator: 'bg-slate-200 dark:bg-slate-700'
     }"
   >
     <button
       type="button"
-      class="flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 rounded-[20px] border border-[color:var(--admin-line)] bg-[color:var(--admin-surface-strong)]/90 px-4 py-3 shadow-[0_14px_30px_-24px_rgba(25,63,105,0.3)] transition duration-200 hover:-translate-y-0.5 hover:border-[color:var(--admin-line-strong)] hover:shadow-[0_20px_32px_-24px_rgba(25,63,105,0.36)] focus:outline-none focus:ring-2 focus:ring-sky-400/70"
+      class="flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 rounded-[20px] border border-slate-200 bg-white/90 px-4 py-3 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.28)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-[0_20px_32px_-24px_rgba(15,23,42,0.34)] focus:outline-none focus:ring-2 focus:ring-sky-400/70 dark:border-slate-700 dark:bg-slate-900/85 dark:hover:border-sky-400/40"
       :aria-label="`当前主题：${activeTheme.label}`"
     >
       <div class="flex min-w-0 items-center gap-3">
-        <div class="inline-flex size-9 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--admin-accent-soft)] text-[color:var(--admin-accent)]">
+        <div class="inline-flex size-9 shrink-0 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 dark:bg-sky-400/12 dark:text-sky-300">
           <UIcon :name="activeTheme.icon" class="size-4" />
         </div>
 
         <div class="min-w-0 text-left">
-          <p class="text-sm font-semibold text-[color:var(--admin-text-strong)]">{{ activeTheme.label }}</p>
-          <p class="truncate text-xs text-[color:var(--admin-text-muted)]">{{ activeTheme.description }}</p>
+          <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">{{ activeTheme.label }}</p>
+          <p class="truncate text-xs text-slate-400 dark:text-slate-500">{{ activeTheme.description }}</p>
         </div>
       </div>
 
-      <UIcon name="i-lucide-chevrons-up-down" class="size-4 text-[color:var(--admin-text-muted)]" />
+      <UIcon name="i-lucide-chevrons-up-down" class="size-4 text-slate-400 dark:text-slate-500" />
     </button>
   </UDropdownMenu>
 </template>

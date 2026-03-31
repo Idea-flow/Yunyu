@@ -300,7 +300,7 @@ await loadPosts()
 
     <template #body>
       <div class="space-y-6 p-4 lg:p-6">
-        <UCard class="admin-surface-card rounded-[30px]">
+        <UCard class="rounded-[30px] border border-slate-200/80 bg-white/85 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-[0_22px_48px_-30px_rgba(0,0,0,0.55)]">
           <div class="flex flex-col gap-4 xl:flex-row xl:items-center">
             <AdminInput
               v-model="searchKeyword"
@@ -319,12 +319,12 @@ await loadPosts()
           </div>
         </UCard>
 
-        <UCard class="admin-surface-card rounded-[30px]">
+        <UCard class="rounded-[30px] border border-slate-200/80 bg-white/85 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-[0_22px_48px_-30px_rgba(0,0,0,0.55)]">
           <div class="flex items-center justify-between gap-3">
             <div>
-              <p class="admin-kicker">操作</p>
-              <p class="mt-1 text-base font-semibold text-[color:var(--admin-text-strong)]">文章操作区</p>
-              <p class="mt-1 text-sm text-[color:var(--admin-text-muted)]">新增文章内容并管理当前的发布状态</p>
+              <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">操作</p>
+              <p class="mt-1 text-base font-semibold text-slate-900 dark:text-slate-50">文章操作区</p>
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">新增文章内容并管理当前的发布状态</p>
             </div>
 
             <AdminPrimaryButton label="增加" icon="i-lucide-file-plus-2" @click="openCreateModal" />
@@ -342,8 +342,8 @@ await loadPosts()
             <USkeleton class="h-[4.5rem] rounded-2xl" />
           </div>
 
-          <div v-else class="admin-table-shell">
-            <div class="admin-table-head hidden grid-cols-[minmax(0,1.7fr)_0.8fr_0.8fr_0.8fr_0.8fr] gap-4 px-5 py-4 text-xs font-semibold uppercase tracking-[0.14em] lg:grid">
+          <div v-else class="overflow-hidden rounded-[1.55rem] border border-slate-200/80 bg-white/85 dark:border-slate-800 dark:bg-slate-950/60">
+            <div class="hidden grid-cols-[minmax(0,1.7fr)_0.8fr_0.8fr_0.8fr_0.8fr] gap-4 border-b border-slate-200/80 bg-slate-50/85 px-5 py-4 text-xs font-semibold tracking-[0.14em] text-slate-400 uppercase dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-500 lg:grid">
               <p>文章</p>
               <p>状态</p>
               <p>专题</p>
@@ -355,7 +355,7 @@ await loadPosts()
               <article
                 v-for="post in posts"
                 :key="post.id"
-                class="grid gap-4 px-5 py-5 transition duration-200 hover:bg-[color:var(--admin-accent-soft)] lg:grid-cols-[minmax(0,1.7fr)_0.8fr_0.8fr_0.8fr_0.8fr] lg:items-center"
+                class="grid gap-4 px-5 py-5 transition duration-200 hover:bg-sky-50/80 dark:hover:bg-sky-400/8 lg:grid-cols-[minmax(0,1.7fr)_0.8fr_0.8fr_0.8fr_0.8fr] lg:items-center"
               >
                 <div class="min-w-0">
                   <p class="truncate text-base font-semibold text-highlighted">{{ post.title }}</p>
@@ -409,19 +409,19 @@ await loadPosts()
                 </div>
               </article>
 
-              <div v-if="!posts.length" class="admin-empty-state">
-                <div class="admin-empty-state-icon">
+              <div v-if="!posts.length" class="flex flex-col items-center justify-center gap-3 px-6 py-12 text-center">
+                <div class="inline-flex size-14 items-center justify-center rounded-[1.2rem] bg-sky-50 text-sky-600 dark:bg-sky-400/12 dark:text-sky-300">
                   <UIcon name="i-lucide-file-search" class="size-5" />
                 </div>
-                <p class="text-base font-medium text-[color:var(--admin-text-strong)]">没有找到匹配的文章</p>
-                <p class="max-w-md text-sm text-[color:var(--admin-text-muted)]">可以尝试调整关键词或筛选条件。</p>
+                <p class="text-base font-medium text-slate-900 dark:text-slate-50">没有找到匹配的文章</p>
+                <p class="max-w-md text-sm text-slate-500 dark:text-slate-400">可以尝试调整关键词或筛选条件。</p>
               </div>
             </div>
           </div>
 
           <template #footer>
-            <div class="admin-pagination-bar">
-              <p class="admin-pagination-meta">
+            <div class="flex items-center justify-between gap-4 pt-1">
+              <p class="text-sm text-slate-500 dark:text-slate-400">
                 第 {{ currentPage }} 页，共 {{ Math.max(1, Math.ceil(total / pageSize)) }} 页
               </p>
               <UPagination
