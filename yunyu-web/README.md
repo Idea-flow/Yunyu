@@ -29,7 +29,7 @@ pnpm dev
 可通过 `.env` 配置后端接口地址：
 
 ```bash
-NUXT_PUBLIC_API_BASE=http://localhost:8080
+NUXT_PUBLIC_API_BASE=http://127.0.0.1:20000
 ```
 
 ## 常用命令

@@ -8,6 +8,7 @@ import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * 全局异常处理器。
@@ -41,6 +42,17 @@ public class GlobalExceptionHandler {
     })
     public ApiResponse<Void> handleValidationException(Exception exception) {
         return ApiResponse.fail(ResultCode.BAD_REQUEST, "请求参数错误");
+    }
+
+    /**
+     * 处理资源不存在异常。
+     *
+     * @param exception 资源不存在异常
+     * @return 统一失败响应
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ApiResponse<Void> handleNoResourceFoundException(NoResourceFoundException exception) {
+        return ApiResponse.fail(ResultCode.NOT_FOUND);
     }
 
     /**

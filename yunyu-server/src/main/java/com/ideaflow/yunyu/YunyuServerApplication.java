@@ -37,7 +37,7 @@ public class YunyuServerApplication {
                 "Local: \t\thttp://localhost:" + port + path + "/\n\t" +
                 "External: \thttp://" + ip + ":" + port + path + "/\n\t" +
                 "swagger-ui: \thttp://" + ip + ":" + port + path + "/swagger-ui.html\n\t" +
-                "api-docs: \thttp://" + ip + ":" + port + path + "/api-docs\n\t" +
+                "api-docs: \thttp://" + ip + ":" + port + path + "/v3/api-docs\n\t" +
                 "----------------------------------------------------------");
 	}
 

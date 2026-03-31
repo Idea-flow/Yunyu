@@ -4,6 +4,7 @@ import com.ideaflow.yunyu.security.jwt.JsonAccessDeniedHandler;
 import com.ideaflow.yunyu.security.jwt.JsonAuthenticationEntryPoint;
 import com.ideaflow.yunyu.security.jwt.JwtAuthenticationFilter;
 import com.ideaflow.yunyu.security.jwt.JwtProperties;
+import org.springframework.security.config.Customizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -50,6 +51,7 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
