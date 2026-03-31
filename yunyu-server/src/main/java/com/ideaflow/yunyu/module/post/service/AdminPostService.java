@@ -141,7 +141,7 @@ public class AdminPostService {
         }
         postMapper.insert(postEntity);
 
-        saveOrUpdatePostContent(postEntity.getId(), request.getContentMarkdown());
+        saveOrUpdatePostContent(postEntity.getId(), request.getContentMarkdown(), request.getContentHtml(), request.getContentTocJson());
         savePostTags(postEntity.getId(), request.getTagIds());
         saveTopicPosts(postEntity.getId(), request.getTopicIds());
         return getPost(postEntity.getId());
@@ -178,7 +178,7 @@ public class AdminPostService {
         }
         postMapper.updateById(postEntity);
 
-        saveOrUpdatePostContent(postId, request.getContentMarkdown());
+        saveOrUpdatePostContent(postId, request.getContentMarkdown(), request.getContentHtml(), request.getContentTocJson());
         savePostTags(postId, request.getTagIds());
         saveTopicPosts(postId, request.getTopicIds());
         return getPost(postId);
@@ -245,9 +245,13 @@ public class AdminPostService {
      *
      * @param postId 文章ID
      * @param contentMarkdown Markdown 正文
+     * @param contentHtml HTML 正文
+     * @param contentTocJson 目录 JSON
      */
-    private void saveOrUpdatePostContent(Long postId, String contentMarkdown) {
+    private void saveOrUpdatePostContent(Long postId, String contentMarkdown, String contentHtml, String contentTocJson) {
         String markdown = contentMarkdown == null ? "" : contentMarkdown.trim();
+        String html = contentHtml == null || contentHtml.isBlank() ? markdown : contentHtml.trim();
+        String tocJson = contentTocJson == null || contentTocJson.isBlank() ? null : contentTocJson.trim();
         String plainText = markdown.replaceAll("`{1,3}[^`]*`{1,3}", " ")
                 .replaceAll("!\\[[^\\]]*\\]\\([^\\)]*\\)", " ")
                 .replaceAll("\\[[^\\]]*\\]\\([^\\)]*\\)", " ")
@@ -268,7 +272,8 @@ public class AdminPostService {
         }
 
         postContentEntity.setContentMarkdown(markdown);
-        postContentEntity.setContentHtml(markdown);
+        postContentEntity.setContentHtml(html);
+        postContentEntity.setContentTocJson(tocJson);
         postContentEntity.setContentPlainText(plainText);
         postContentEntity.setReadingTime(readingTime);
         postContentEntity.setUpdatedTime(LocalDateTime.now());

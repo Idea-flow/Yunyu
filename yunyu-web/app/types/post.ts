@@ -57,6 +57,16 @@ export interface AdminPostQuery {
  * 后台文章表单类型。
  * 作用：承接后台新增和编辑文章时提交的表单字段。
  */
+export interface ArticleTocItem {
+  id: string
+  text: string
+  level: number
+}
+
+/**
+ * 后台文章表单类型。
+ * 作用：承接后台新增和编辑文章时提交的主内容与派生内容字段。
+ */
 export interface AdminPostForm {
   title: string
   slug: string
@@ -69,4 +79,7 @@ export interface AdminPostForm {
   seoTitle: string
   seoDescription: string
   contentMarkdown: string
+  contentHtml?: string
+  contentToc?: ArticleTocItem[]
+  contentTocJson?: string
 }

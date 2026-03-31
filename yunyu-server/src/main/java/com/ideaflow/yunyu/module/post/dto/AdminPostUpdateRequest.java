@@ -43,4 +43,8 @@ public class AdminPostUpdateRequest {
     private String seoDescription;
 
     private String contentMarkdown;
+
+    private String contentHtml;
+
+    private String contentTocJson;
 }

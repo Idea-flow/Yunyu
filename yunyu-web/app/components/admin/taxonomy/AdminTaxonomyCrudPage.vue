@@ -261,6 +261,17 @@ async function handleSearch() {
 }
 
 /**
+ * 重置筛选条件。
+ * 作用：将关键词和状态筛选恢复默认值，并重新加载第一页数据。
+ */
+async function handleResetFilters() {
+  searchKeyword.value = ''
+  activeStatus.value = 'ALL'
+  currentPage.value = 1
+  await loadItems()
+}
+
+/**
  * 处理分页切换。
  * 作用：按新页码重新查询当前模块列表。
  *
@@ -326,24 +337,36 @@ await loadItems()
 
     <template #body>
       <div class="space-y-6 p-4 lg:p-6">
-        <UCard class="rounded-[30px] border border-slate-200/80 bg-white/85 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-[0_22px_48px_-30px_rgba(0,0,0,0.55)]">
-          <div class="flex flex-col gap-4 xl:flex-row xl:items-center">
+        <AdminFilterPanel>
+          <template #search>
             <AdminInput
               v-model="searchKeyword"
               icon="i-lucide-search"
+              class="w-full"
               :placeholder="props.config.searchPlaceholder"
             />
+          </template>
 
+          <div class="min-w-[11rem] flex-1 sm:max-w-[calc(50%-0.375rem)] lg:max-w-[12rem]">
             <AdminSelect
               v-model="activeStatus"
               :items="statusOptions"
-              class="min-w-40"
+              class="w-full"
               placeholder="状态"
             />
+          </div>
 
+          <div class="flex w-full flex-wrap items-center gap-3 pt-1 sm:ml-auto sm:w-auto sm:pt-0">
+            <UButton
+              label="重置"
+              color="neutral"
+              variant="outline"
+              class="cursor-pointer rounded-2xl"
+              @click="handleResetFilters"
+            />
             <AdminPrimaryButton label="搜索" icon="i-lucide-search" @click="handleSearch" />
           </div>
-        </UCard>
+        </AdminFilterPanel>
 
         <UCard class="rounded-[30px] border border-slate-200/80 bg-white/85 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-[0_22px_48px_-30px_rgba(0,0,0,0.55)]">
           <div class="flex items-center justify-between gap-3">

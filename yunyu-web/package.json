@@ -12,7 +12,10 @@
   "dependencies": {
     "@nuxt/ui": "^4.6.0",
     "@nuxtjs/color-mode": "^4.0.0",
+    "markdown-it": "^14.1.1",
+    "markdown-it-anchor": "^9.2.0",
     "nuxt": "^4.4.2",
+    "shiki": "^4.0.2",
     "tailwindcss": "^4.2.2",
     "vue": "^3.5.30",
     "vue-router": "^5.0.4"
