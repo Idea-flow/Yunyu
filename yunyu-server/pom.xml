@@ -29,6 +29,7 @@
 	<properties>
 		<java.version>25</java.version>
 		<jjwt.version>0.13.0</jjwt.version>
+		<mybatis.plus.version>3.5.15</mybatis.plus.version>
 		<springdoc.version>3.0.0</springdoc.version>
 	</properties>
 	<dependencies>
@@ -56,10 +57,11 @@
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
 
-		<!-- 提供 JdbcTemplate 与基础 JDBC 能力，用于当前阶段直接访问 MySQL 完成登录与初始化查询。 -->
+		<!-- 提供 MyBatis-Plus 与 Spring Boot 4 的集成能力，用于正式业务阶段的模块化数据库访问。 -->
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-jdbc</artifactId>
+			<groupId>com.baomidou</groupId>
+			<artifactId>mybatis-plus-spring-boot4-starter</artifactId>
+			<version>${mybatis.plus.version}</version>
 		</dependency>
 
 		<!-- 提供 OpenAPI3 文档生成与 Swagger UI 页面，用于接口文档展示与调试。 -->

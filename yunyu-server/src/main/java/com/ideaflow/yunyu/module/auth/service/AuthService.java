@@ -1,22 +1,24 @@
 package com.ideaflow.yunyu.module.auth.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.ideaflow.yunyu.common.constant.ResultCode;
 import com.ideaflow.yunyu.common.exception.BizException;
 import com.ideaflow.yunyu.module.auth.dto.LoginRequest;
+import com.ideaflow.yunyu.module.auth.entity.UserAuthEntity;
+import com.ideaflow.yunyu.module.auth.mapper.UserAuthMapper;
 import com.ideaflow.yunyu.module.auth.vo.CurrentUserResponse;
 import com.ideaflow.yunyu.module.auth.vo.LoginResponse;
+import com.ideaflow.yunyu.module.user.entity.UserEntity;
+import com.ideaflow.yunyu.module.user.mapper.UserMapper;
 import com.ideaflow.yunyu.security.LoginUser;
 import com.ideaflow.yunyu.security.SecurityUtils;
 import com.ideaflow.yunyu.security.jwt.JwtTokenService;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * 认证服务类。
@@ -25,18 +27,21 @@ import java.util.List;
 @Service
 public class AuthService {
 
-    private final JdbcTemplate jdbcTemplate;
+    private final UserMapper userMapper;
+    private final UserAuthMapper userAuthMapper;
     private final JwtTokenService jwtTokenService;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     /**
      * 创建认证服务。
      *
-     * @param jdbcTemplate JDBC 模板
+     * @param userMapper 用户 Mapper
+     * @param userAuthMapper 用户认证方式 Mapper
      * @param jwtTokenService JWT 服务
      */
-    public AuthService(JdbcTemplate jdbcTemplate, JwtTokenService jwtTokenService) {
-        this.jdbcTemplate = jdbcTemplate;
+    public AuthService(UserMapper userMapper, UserAuthMapper userAuthMapper, JwtTokenService jwtTokenService) {
+        this.userMapper = userMapper;
+        this.userAuthMapper = userAuthMapper;
         this.jwtTokenService = jwtTokenService;
     }
 
@@ -48,21 +53,21 @@ public class AuthService {
      * @return 登录响应
      */
     public LoginResponse login(LoginRequest request, String loginIp) {
-        UserRecord userRecord = findUserByAccount(request.getAccount());
-        if (userRecord == null) {
+        UserEntity userEntity = findUserByAccount(request.getAccount());
+        if (userEntity == null) {
             throw new BizException(ResultCode.BAD_REQUEST, "账号或密码错误");
         }
-        if (!"ACTIVE".equals(userRecord.status())) {
+        if (!"ACTIVE".equals(userEntity.getStatus())) {
             throw new BizException(ResultCode.FORBIDDEN, "当前账号已被禁用");
         }
-        if (!passwordEncoder.matches(request.getPassword(), userRecord.passwordHash())) {
+        if (!passwordEncoder.matches(request.getPassword(), userEntity.getPasswordHash())) {
             throw new BizException(ResultCode.BAD_REQUEST, "账号或密码错误");
         }
 
-        ensureLocalAuthBinding(userRecord);
-        updateLastLoginInfo(userRecord.id(), loginIp);
+        ensureLocalAuthBinding(userEntity);
+        updateLastLoginInfo(userEntity.getId(), loginIp);
 
-        LoginUser loginUser = toLoginUser(userRecord);
+        LoginUser loginUser = toLoginUser(userEntity);
         String accessToken = jwtTokenService.generateToken(loginUser);
         return new LoginResponse(
                 accessToken,
@@ -82,22 +87,18 @@ public class AuthService {
      * @return 当前认证用户
      */
     public LoginUser loadLoginUser(Long userId) {
-        String sql = """
-                SELECT id, email, user_name, password_hash, role, status
-                FROM user
-                WHERE id = ? AND deleted = 0
-                LIMIT 1
-                """;
-        List<UserRecord> results = jdbcTemplate.query(sql, this::mapUserRecord, userId);
-        if (results.isEmpty()) {
+        UserEntity userEntity = userMapper.selectOne(new LambdaQueryWrapper<UserEntity>()
+                .eq(UserEntity::getId, userId)
+                .eq(UserEntity::getDeleted, 0)
+                .last("LIMIT 1"));
+        if (userEntity == null) {
             throw new BizException(ResultCode.UNAUTHORIZED, ResultCode.UNAUTHORIZED.getMessage());
         }
 
-        UserRecord userRecord = results.getFirst();
-        if (!"ACTIVE".equals(userRecord.status())) {
+        if (!"ACTIVE".equals(userEntity.getStatus())) {
             throw new BizException(ResultCode.FORBIDDEN, "当前账号已被禁用");
         }
-        return toLoginUser(userRecord);
+        return toLoginUser(userEntity);
     }
 
     /**
@@ -122,16 +123,14 @@ public class AuthService {
      * @param account 登录账号
      * @return 用户记录
      */
-    private UserRecord findUserByAccount(String account) {
-        String sql = """
-                SELECT id, email, user_name, password_hash, role, status
-                FROM user
-                WHERE deleted = 0
-                  AND (email = ? OR user_name = ?)
-                LIMIT 1
-                """;
-        List<UserRecord> results = jdbcTemplate.query(sql, this::mapUserRecord, account, account);
-        return results.isEmpty() ? null : results.getFirst();
+    private UserEntity findUserByAccount(String account) {
+        return userMapper.selectOne(new LambdaQueryWrapper<UserEntity>()
+                .eq(UserEntity::getDeleted, 0)
+                .and(wrapper -> wrapper
+                        .eq(UserEntity::getEmail, account)
+                        .or()
+                        .eq(UserEntity::getUserName, account))
+                .last("LIMIT 1"));
     }
 
     /**
@@ -141,71 +140,55 @@ public class AuthService {
      * @param loginIp 登录IP
      */
     private void updateLastLoginInfo(Long userId, String loginIp) {
-        String sql = """
-                UPDATE user
-                SET last_login_at = ?, last_login_ip = ?, updated_time = CURRENT_TIMESTAMP
-                WHERE id = ?
-                """;
-        jdbcTemplate.update(sql, LocalDateTime.now(), loginIp, userId);
+        userMapper.update(null, new LambdaUpdateWrapper<UserEntity>()
+                .eq(UserEntity::getId, userId)
+                .set(UserEntity::getLastLoginAt, LocalDateTime.now())
+                .set(UserEntity::getLastLoginIp, loginIp)
+                .set(UserEntity::getUpdatedTime, LocalDateTime.now()));
     }
 
     /**
      * 确保本地登录方式绑定存在。
      *
-     * @param userRecord 用户记录
+     * @param userEntity 用户记录
      */
-    private void ensureLocalAuthBinding(UserRecord userRecord) {
-        String sql = """
-                INSERT INTO user_auth (user_id, auth_type, auth_identity, auth_name, auth_email, email_verified, raw_user_info, created_time, updated_time)
-                VALUES (?, 'LOCAL', ?, ?, ?, 1, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                ON DUPLICATE KEY UPDATE
-                auth_name = VALUES(auth_name),
-                auth_email = VALUES(auth_email),
-                email_verified = VALUES(email_verified),
-                updated_time = CURRENT_TIMESTAMP
-                """;
-        jdbcTemplate.update(sql, userRecord.id(), userRecord.email(), userRecord.userName(), userRecord.email());
+    private void ensureLocalAuthBinding(UserEntity userEntity) {
+        UserAuthEntity userAuthEntity = userAuthMapper.selectOne(new LambdaQueryWrapper<UserAuthEntity>()
+                .eq(UserAuthEntity::getUserId, userEntity.getId())
+                .eq(UserAuthEntity::getAuthType, "LOCAL")
+                .last("LIMIT 1"));
+        if (userAuthEntity == null) {
+            userAuthEntity = new UserAuthEntity();
+            userAuthEntity.setUserId(userEntity.getId());
+            userAuthEntity.setAuthType("LOCAL");
+            userAuthEntity.setAuthIdentity(userEntity.getEmail());
+            userAuthEntity.setAuthName(userEntity.getUserName());
+            userAuthEntity.setAuthEmail(userEntity.getEmail());
+            userAuthEntity.setEmailVerified(1);
+            userAuthMapper.insert(userAuthEntity);
+            return;
+        }
+
+        userAuthEntity.setAuthIdentity(userEntity.getEmail());
+        userAuthEntity.setAuthName(userEntity.getUserName());
+        userAuthEntity.setAuthEmail(userEntity.getEmail());
+        userAuthEntity.setEmailVerified(1);
+        userAuthMapper.updateById(userAuthEntity);
     }
 
     /**
      * 将用户记录转换为当前登录用户对象。
      *
-     * @param userRecord 用户记录
+     * @param userEntity 用户记录
      * @return 当前登录用户
      */
-    private LoginUser toLoginUser(UserRecord userRecord) {
+    private LoginUser toLoginUser(UserEntity userEntity) {
         return new LoginUser(
-                userRecord.id(),
-                userRecord.email(),
-                userRecord.userName(),
-                userRecord.role(),
-                userRecord.status()
+                userEntity.getId(),
+                userEntity.getEmail(),
+                userEntity.getUserName(),
+                userEntity.getRole(),
+                userEntity.getStatus()
         );
-    }
-
-    /**
-     * 映射用户查询结果。
-     *
-     * @param resultSet 结果集
-     * @param rowNum 行号
-     * @return 用户记录
-     * @throws SQLException SQL 异常
-     */
-    private UserRecord mapUserRecord(ResultSet resultSet, int rowNum) throws SQLException {
-        return new UserRecord(
-                resultSet.getLong("id"),
-                resultSet.getString("email"),
-                resultSet.getString("user_name"),
-                resultSet.getString("password_hash"),
-                resultSet.getString("role"),
-                resultSet.getString("status")
-        );
-    }
-
-    /**
-     * 用户查询记录。
-     * 作用：作为认证流程中的内部查询载体，减少零散字段传递。
-     */
-    private record UserRecord(Long id, String email, String userName, String passwordHash, String role, String status) {
     }
 }
