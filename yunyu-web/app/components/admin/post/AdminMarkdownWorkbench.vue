@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import MarkdownPreview from './MarkdownPreview.vue'
+import type { ArticleTocItem } from '../../../types/post'
 
 /**
  * 后台 Markdown 工作台组件。
@@ -10,12 +11,16 @@ import MarkdownPreview from './MarkdownPreview.vue'
 const props = withDefaults(defineProps<{
   modelValue?: string
   html: string
+  toc?: ArticleTocItem[]
+  plainText?: string
   isLoading?: boolean
   contentLength?: number
   readingMinutes?: number
   tocCount?: number
 }>(), {
   modelValue: '',
+  toc: () => [],
+  plainText: '',
   isLoading: false,
   contentLength: 0,
   readingMinutes: 1,
@@ -27,6 +32,8 @@ const emit = defineEmits<{
 }>()
 
 const viewMode = ref<'edit' | 'preview'>('edit')
+const previewPanelTab = ref<'html' | 'toc' | 'plainText' | 'stats'>('html')
+const isPreviewModalOpen = ref(false)
 const editorTools = [
   { label: '标题', hint: '# / ## / ###' },
   { label: '强调', hint: '**加粗**' },
@@ -43,7 +50,59 @@ const previewSkeletonLoading = computed(() => previewLoading.value && !hasPrevie
 const currentContentLength = computed(() => props.contentLength)
 const currentReadingMinutes = computed(() => props.readingMinutes)
 const currentTocCount = computed(() => props.tocCount)
+const tocSource = computed(() => props.toc || [])
+const plainTextSource = computed(() => props.plainText || '')
 const hasPreviewContent = computed(() => previewHtml.value.trim().length > 0)
+const previewTabs = [
+  { key: 'html', label: 'HTML', icon: 'i-lucide-file-code-2' },
+  { key: 'toc', label: '目录', icon: 'i-lucide-list-tree' },
+  { key: 'plainText', label: '纯文本', icon: 'i-lucide-wrap-text' },
+  { key: 'stats', label: '统计', icon: 'i-lucide-chart-column' }
+] as const
+const tocSourceText = computed(() => JSON.stringify(tocSource.value, null, 2))
+const statsSourceText = computed(() => JSON.stringify({
+  contentLength: currentContentLength.value,
+  readingMinutes: currentReadingMinutes.value,
+  tocCount: currentTocCount.value,
+  hasHtml: hasPreviewContent.value,
+  isLoading: previewLoading.value
+}, null, 2))
+const currentPreviewPanelText = computed(() => {
+  switch (previewPanelTab.value) {
+    case 'toc':
+      return tocSourceText.value
+    case 'plainText':
+      return plainTextSource.value
+    case 'stats':
+      return statsSourceText.value
+    default:
+      return previewHtml.value
+  }
+})
+const currentPreviewPanelTitle = computed(() => {
+  switch (previewPanelTab.value) {
+    case 'toc':
+      return '当前目录结构'
+    case 'plainText':
+      return '当前纯文本内容'
+    case 'stats':
+      return '当前渲染统计'
+    default:
+      return '当前渲染 HTML'
+  }
+})
+const currentPreviewPanelDescription = computed(() => {
+  switch (previewPanelTab.value) {
+    case 'toc':
+      return '这里展示当前正文解析后的目录数据，便于确认标题层级和目录生成结果。'
+    case 'plainText':
+      return '这里展示当前正文提取后的纯文本内容，便于确认字数统计和摘要基础文本。'
+    case 'stats':
+      return '这里展示当前正文渲染过程中的核心统计数据，便于定位内容指标是否正常。'
+    default:
+      return '这里展示当前正文生成的 HTML 原文，便于直接检查预览内容与渲染结果。'
+  }
+})
 const previewStatusLabel = computed(() => {
   if (previewLoading.value && !hasPreviewContent.value) {
     return '正在渲染'
@@ -81,6 +140,32 @@ function handleUpdate(value: string | number | null) {
  */
 function switchViewMode(mode: 'edit' | 'preview') {
   viewMode.value = mode
+}
+
+/**
+ * 打开渲染结果预览弹窗。
+ * 用于集中查看 HTML、目录、纯文本与统计等原始渲染结果，辅助排查预览区异常问题。
+ */
+function openPreviewModal() {
+  isPreviewModalOpen.value = true
+}
+
+/**
+ * 切换预览面板标签。
+ * 用于在弹窗内查看不同类型的原始渲染结果。
+ *
+ * @param tab 当前选中的面板标识
+ */
+function switchPreviewPanelTab(tab: 'html' | 'toc' | 'plainText' | 'stats') {
+  previewPanelTab.value = tab
+}
+
+/**
+ * 关闭渲染结果预览弹窗。
+ * 用于在查看完当前原始渲染结果后收起预览弹窗。
+ */
+function closePreviewModal() {
+  isPreviewModalOpen.value = false
 }
 </script>
 
@@ -179,7 +264,7 @@ function switchViewMode(mode: 'edit' | 'preview') {
       </section>
 
       <section
-        class="flex h-[46rem] flex-col rounded-[28px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.86))] p-4 shadow-[0_22px_48px_-34px_rgba(15,23,42,0.32)] dark:border-slate-700 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(15,23,42,0.72))] dark:shadow-[0_24px_50px_-34px_rgba(0,0,0,0.55)] xl:h-[56rem]"
+        class="flex h-[46rem] min-w-0 overflow-hidden rounded-[28px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.86))] p-4 shadow-[0_22px_48px_-34px_rgba(15,23,42,0.32)] dark:border-slate-700 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(15,23,42,0.72))] dark:shadow-[0_24px_50px_-34px_rgba(0,0,0,0.55)] xl:h-[56rem]"
         :class="viewMode === 'edit' ? 'hidden xl:block' : ''"
       >
         <div class="mb-4 flex items-start justify-between gap-3 rounded-[22px] border border-slate-200/80 bg-white/78 px-4 py-3 shadow-[0_16px_32px_-28px_rgba(15,23,42,0.24)] dark:border-slate-700 dark:bg-slate-950/58">
@@ -208,21 +293,108 @@ function switchViewMode(mode: 'edit' | 'preview') {
             <span class="text-sm font-medium text-slate-700 dark:text-slate-200">{{ previewStatusLabel }}</span>
           </div>
 
-          <span
-            class="inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold"
-            :class="previewStatusToneClass"
-          >
-            {{ previewStatusLabel }}
-          </span>
+          <div class="flex items-center gap-2">
+            <span
+              class="inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold"
+              :class="previewStatusToneClass"
+            >
+              {{ previewStatusLabel }}
+            </span>
+
+            <UButton
+              color="neutral"
+              variant="soft"
+              icon="i-lucide-code-xml"
+              label="预览"
+              class="rounded-full"
+              @click="openPreviewModal"
+            />
+          </div>
         </div>
 
         <MarkdownPreview
           :html="previewHtml"
           :is-loading="previewSkeletonLoading"
-          container-class="h-full flex-1"
-          body-class="h-full overflow-y-auto pr-2 whitespace-normal break-words [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.5)_transparent] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/80"
+          container-class="h-full min-h-0 min-w-0 flex-1 overflow-hidden"
+          body-class="h-full min-h-0 min-w-0 overflow-auto pr-2 whitespace-normal break-words [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.5)_transparent] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/80"
         />
       </section>
     </div>
+
+    <UModal
+      v-model:open="isPreviewModalOpen"
+      title="渲染结果预览"
+      description="查看文章正文当前生成的 HTML、目录、纯文本与统计信息。"
+      :ui="{
+        overlay: 'bg-slate-950/40 backdrop-blur-[6px] dark:bg-slate-950/60',
+        content: 'w-[calc(100vw-2rem)] max-w-5xl overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/95 shadow-[0_40px_80px_-42px_rgba(15,23,42,0.42)] backdrop-blur-2xl dark:border-slate-700 dark:bg-slate-950/92 dark:shadow-[0_42px_80px_-42px_rgba(0,0,0,0.72)]',
+        header: 'border-b border-slate-200 px-6 pt-6 pb-4 dark:border-slate-800',
+        body: 'bg-white/50 px-6 py-5 dark:bg-slate-950/40',
+        footer: 'border-t border-slate-200 bg-slate-50/80 px-6 pt-4 pb-6 dark:border-slate-800 dark:bg-slate-900/65'
+      }"
+    >
+      <template #header>
+        <div class="flex items-start gap-4">
+          <div class="inline-flex size-12 shrink-0 items-center justify-center rounded-[1.1rem] border border-sky-200 bg-sky-50 text-sky-600 shadow-[0_14px_28px_-24px_rgba(14,165,233,0.55)] dark:border-sky-400/25 dark:bg-sky-400/10 dark:text-sky-300">
+            <UIcon name="i-lucide-file-code-2" class="size-5" />
+          </div>
+
+          <div class="min-w-0 space-y-1">
+            <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">Render Result</p>
+            <p class="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">{{ currentPreviewPanelTitle }}</p>
+            <p class="max-w-3xl text-sm leading-7 text-slate-600 dark:text-slate-300">
+              {{ currentPreviewPanelDescription }}
+            </p>
+          </div>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="space-y-4">
+          <div class="flex flex-wrap gap-2">
+            <UButton
+              v-for="tab in previewTabs"
+              :key="tab.key"
+              color="neutral"
+              :variant="previewPanelTab === tab.key ? 'solid' : 'soft'"
+              :icon="tab.icon"
+              :label="tab.label"
+              class="rounded-full"
+              @click="switchPreviewPanelTab(tab.key)"
+            />
+          </div>
+
+          <div class="rounded-[24px] border border-slate-200/80 bg-slate-50/85 p-4 dark:border-slate-700 dark:bg-slate-900/72">
+            <div v-if="currentPreviewPanelText.trim().length > 0" class="overflow-hidden rounded-[20px] border border-slate-200/80 bg-slate-950 dark:border-slate-700">
+              <pre class="max-h-[32rem] overflow-auto px-5 py-4 text-sm leading-7 text-slate-100 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.5)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-600/80">{{ currentPreviewPanelText }}</pre>
+            </div>
+
+            <div
+              v-else
+              class="flex min-h-48 items-center justify-center rounded-[20px] border border-dashed border-slate-300/80 bg-white/70 px-6 py-8 text-center dark:border-slate-700 dark:bg-slate-950/55"
+            >
+              <div class="space-y-2">
+                <p class="text-base font-semibold text-slate-900 dark:text-slate-50">当前标签页还没有内容</p>
+                <p class="text-sm leading-7 text-slate-500 dark:text-slate-400">
+                  可以切换到其他标签页查看对应的原始渲染结果。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex w-full justify-end">
+          <UButton
+            color="neutral"
+            variant="soft"
+            label="关闭"
+            class="rounded-full"
+            @click="closePreviewModal"
+          />
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

@@ -754,28 +754,13 @@ await Promise.all([
             <AdminMarkdownWorkbench
               v-model="formState.contentMarkdown"
               :html="renderedContentHtml"
+              :toc="renderedContentToc"
+              :plain-text="renderedPlainText"
               :is-loading="isRenderingMarkdown"
               :content-length="contentLength"
               :reading-minutes="estimatedReadingMinutes"
               :toc-count="renderedContentToc.length"
             />
-
-            <div class="grid gap-3 lg:grid-cols-3">
-              <div :class="workspaceSurfaceClass">
-                <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">写作建议</p>
-                <p class="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">正文较长时优先在这个页面完成完整编辑，不再使用弹窗承载。</p>
-              </div>
-
-              <div :class="workspaceSurfaceClass">
-                <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">结构建议</p>
-                <p class="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">长内容建议通过二级标题和段落分组，让预览检查更直观。</p>
-              </div>
-
-              <div :class="workspaceSurfaceClass">
-                <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">发布建议</p>
-                <p class="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">准备发布前请结合右侧摘要卡，检查封面、SEO 和内容归属是否完整。</p>
-              </div>
-            </div>
           </div>
         </UCard>
       </div>

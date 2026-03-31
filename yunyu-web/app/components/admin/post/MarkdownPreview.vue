@@ -23,7 +23,7 @@ const normalizedHtml = computed(() => props.html?.trim() || '')
 
 <template>
   <div
-    class="min-h-72 rounded-[24px] border border-slate-200/80 bg-white/78 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] dark:border-slate-700 dark:bg-slate-950/52"
+    class="min-h-72 min-w-0 overflow-hidden rounded-[24px] border border-slate-200/80 bg-white/78 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] dark:border-slate-700 dark:bg-slate-950/52"
     :class="props.containerClass"
   >
     <div v-if="props.isLoading" class="space-y-3">
@@ -35,7 +35,7 @@ const normalizedHtml = computed(() => props.html?.trim() || '')
 
     <div
       v-else-if="normalizedHtml"
-      class="prose prose-slate max-w-none whitespace-normal leading-8 dark:prose-invert prose-headings:scroll-mt-24 prose-pre:overflow-x-auto prose-pre:rounded-[1.1rem] prose-pre:border prose-pre:border-slate-200/80 prose-pre:bg-slate-950 prose-pre:p-0 dark:prose-pre:border-slate-700 prose-code:before:hidden prose-code:after:hidden"
+      class="prose prose-slate min-w-0 max-w-none whitespace-normal leading-8 dark:prose-invert prose-headings:scroll-mt-24 prose-headings:break-words prose-p:break-words prose-li:break-words prose-a:break-all prose-img:max-w-full prose-pre:max-w-full prose-pre:overflow-x-auto prose-pre:rounded-[1.1rem] prose-pre:border prose-pre:border-slate-200/80 prose-pre:bg-slate-950 prose-pre:p-0 dark:prose-pre:border-slate-700 prose-code:before:hidden prose-code:after:hidden"
       :class="props.bodyClass"
       v-html="normalizedHtml"
     />

@@ -28,7 +28,10 @@ const shikiHighlighterPromise = getSingletonHighlighter({
     'typescript',
     'ts',
     'js',
+    'jsx',
+    'tsx',
     'java',
+    'vue',
     'xml',
     'html',
     'css',
@@ -155,14 +158,30 @@ async function renderTokensToHtml(tokens: any[]) {
 
     const language = token.info?.trim().split(/\s+/)[0] || 'plaintext'
     const code = token.content || ''
-    const renderedHtml = await highlighter.codeToHtml(code, {
-      lang: language,
-      themes: {
-        light: 'github-light',
-        dark: 'github-dark-default'
-      },
-      defaultColor: false
-    })
+
+    let renderedHtml = ''
+
+    try {
+      renderedHtml = await highlighter.codeToHtml(code, {
+        lang: language,
+        themes: {
+          light: 'github-light',
+          dark: 'github-dark-default'
+        },
+        defaultColor: false
+      })
+    } catch (error) {
+      console.warn(`[MarkdownRenderer] Shiki language "${language}" not found, fallback to plaintext.`, error)
+      renderedHtml = await highlighter.codeToHtml(code, {
+        lang: 'plaintext',
+        themes: {
+          light: 'github-light',
+          dark: 'github-dark-default'
+        },
+        defaultColor: false
+      })
+    }
+
     fenceHtmlByIndex.set(index, renderedHtml)
   }))
 
@@ -238,6 +257,12 @@ export function useMarkdownRenderer(markdownRef: Ref<string>) {
       toc.value = result.toc
       plainText.value = result.plainText
       readingMinutes.value = result.readingMinutes
+    } catch (error) {
+      console.error('[MarkdownRenderer] Markdown render failed.', error)
+      html.value = ''
+      toc.value = []
+      plainText.value = ''
+      readingMinutes.value = 1
     } finally {
       isRendering.value = false
     }
