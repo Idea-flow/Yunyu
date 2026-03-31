@@ -1,0 +1,20 @@
+{
+  "name": "yunyu-web",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev --port 19999",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@nuxt/ui": "^4.6.0",
+    "@nuxtjs/color-mode": "^4.0.0",
+    "nuxt": "^4.4.2",
+    "tailwindcss": "^4.2.2",
+    "vue": "^3.5.30",
+    "vue-router": "^5.0.4"
+  }
+}

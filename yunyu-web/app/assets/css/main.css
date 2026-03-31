@@ -1,0 +1,22 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme static {
+  --font-sans: "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+:root {
+  --ui-radius: 1rem;
+  --ui-container: 80rem;
+  --ui-primary: var(--ui-color-sky-500);
+  color-scheme: light;
+}
+
+.dark {
+  --ui-primary: var(--ui-color-sky-400);
+  color-scheme: dark;
+}
+
+body {
+  font-family: var(--font-sans);
+}
