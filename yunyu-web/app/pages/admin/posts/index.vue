@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AdminPostItem } from '../../../types/post'
+import type { AdminTaxonomyItem } from '../../../types/taxonomy'
 
 /**
  * 后台文章列表页。
@@ -12,13 +13,19 @@ definePageMeta({
 
 const toast = useToast()
 const adminPosts = useAdminPosts()
+const adminTaxonomy = useAdminTaxonomy()
 
 type PostStatusFilter = 'ALL' | 'DRAFT' | 'PUBLISHED' | 'OFFLINE'
+type PostTaxonomyFilter = 'ALL' | number
 
 const isLoading = ref(false)
+const isLoadingFilters = ref(false)
 const isDeleteSubmitting = ref(false)
 const searchKeyword = ref('')
 const activeStatus = ref<PostStatusFilter>('ALL')
+const activeCategoryId = ref<PostTaxonomyFilter>('ALL')
+const activeTagId = ref<PostTaxonomyFilter>('ALL')
+const activeTopicId = ref<PostTaxonomyFilter>('ALL')
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
@@ -27,6 +34,15 @@ const isDeleteModalOpen = ref(false)
 const deletingPost = ref<AdminPostItem | null>(null)
 
 const posts = ref<AdminPostItem[]>([])
+const categoryOptions = ref<Array<{ label: string, value: PostTaxonomyFilter }>>([
+  { label: '全部分类', value: 'ALL' }
+])
+const tagOptions = ref<Array<{ label: string, value: PostTaxonomyFilter }>>([
+  { label: '全部标签', value: 'ALL' }
+])
+const topicOptions = ref<Array<{ label: string, value: PostTaxonomyFilter }>>([
+  { label: '全部专题', value: 'ALL' }
+])
 
 const statusOptions = [
   { label: '全部状态', value: 'ALL' },
@@ -46,6 +62,9 @@ async function loadPosts() {
     const response = await adminPosts.listPosts({
       keyword: searchKeyword.value || undefined,
       status: activeStatus.value === 'ALL' ? undefined : activeStatus.value,
+      categoryId: activeCategoryId.value === 'ALL' ? undefined : activeCategoryId.value,
+      tagId: activeTagId.value === 'ALL' ? undefined : activeTagId.value,
+      topicId: activeTopicId.value === 'ALL' ? undefined : activeTopicId.value,
       pageNo: currentPage.value,
       pageSize: pageSize.value
     })
@@ -65,6 +84,52 @@ async function loadPosts() {
   } finally {
     isLoading.value = false
   }
+}
+
+/**
+ * 加载文章筛选所需的内容编排选项。
+ * 作用：从真实接口读取分类、标签、专题列表，用于文章管理页的筛选区。
+ */
+async function loadFilterOptions() {
+  isLoadingFilters.value = true
+
+  try {
+    const [categoryResponse, tagResponse, topicResponse] = await Promise.all([
+      adminTaxonomy.listItems('category', { pageNo: 1, pageSize: 100, status: 'ACTIVE' }),
+      adminTaxonomy.listItems('tag', { pageNo: 1, pageSize: 100, status: 'ACTIVE' }),
+      adminTaxonomy.listItems('topic', { pageNo: 1, pageSize: 100, status: 'ACTIVE' })
+    ])
+
+    categoryOptions.value = buildTaxonomyFilterOptions('全部分类', categoryResponse.list)
+    tagOptions.value = buildTaxonomyFilterOptions('全部标签', tagResponse.list)
+    topicOptions.value = buildTaxonomyFilterOptions('全部专题', topicResponse.list)
+  } catch (error: any) {
+    toast.add({
+      title: '加载筛选项失败',
+      description: error?.message || '分类、标签、专题筛选数据暂时无法读取。',
+      color: 'error'
+    })
+  } finally {
+    isLoadingFilters.value = false
+  }
+}
+
+/**
+ * 构建内容编排筛选选项。
+ * 作用：统一为分类、标签、专题筛选生成带“全部”选项的下拉数据。
+ *
+ * @param allLabel 全部选项文案
+ * @param items 内容编排条目列表
+ * @returns 下拉选项
+ */
+function buildTaxonomyFilterOptions(allLabel: string, items: AdminTaxonomyItem[]) {
+  return [
+    { label: allLabel, value: 'ALL' as const },
+    ...items.map(item => ({
+      label: item.name,
+      value: item.id as PostTaxonomyFilter
+    }))
+  ]
 }
 
 /**
@@ -199,7 +264,39 @@ function resolveStatusColor(status: AdminPostItem['status']) {
   }
 }
 
-await loadPosts()
+/**
+ * 解析文章归属摘要。
+ * 用于在文章列表中同时展示分类、标签和专题信息，让内容归档关系更直观。
+ *
+ * @param post 当前文章
+ * @returns 归属摘要
+ */
+function resolvePostMetaSummary(post: AdminPostItem) {
+  const sections: string[] = []
+
+  if (post.categoryName) {
+    sections.push(`分类 · ${post.categoryName}`)
+  }
+
+  if (post.tagNames?.length) {
+    sections.push(`标签 · ${post.tagNames.slice(0, 2).join(' / ')}`)
+  }
+
+  if (post.topicNames?.length) {
+    sections.push(`专题 · ${post.topicNames.slice(0, 2).join(' / ')}`)
+  }
+
+  if (!sections.length) {
+    return '暂未设置分类、标签或专题'
+  }
+
+  return sections.join('  ·  ')
+}
+
+await Promise.all([
+  loadFilterOptions(),
+  loadPosts()
+])
 </script>
 
 <template>
@@ -218,12 +315,38 @@ await loadPosts()
               placeholder="搜索标题或 Slug"
             />
 
-            <AdminSelect
-              v-model="activeStatus"
-              :items="statusOptions"
-              class="min-w-40"
-              placeholder="状态"
-            />
+            <div class="grid flex-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <AdminSelect
+                v-model="activeStatus"
+                :items="statusOptions"
+                class="min-w-40"
+                placeholder="状态"
+              />
+
+              <AdminSelect
+                v-model="activeCategoryId"
+                :items="categoryOptions"
+                class="min-w-40"
+                :disabled="isLoadingFilters"
+                placeholder="分类"
+              />
+
+              <AdminSelect
+                v-model="activeTagId"
+                :items="tagOptions"
+                class="min-w-40"
+                :disabled="isLoadingFilters"
+                placeholder="标签"
+              />
+
+              <AdminSelect
+                v-model="activeTopicId"
+                :items="topicOptions"
+                class="min-w-40"
+                :disabled="isLoadingFilters"
+                placeholder="专题"
+              />
+            </div>
 
             <AdminPrimaryButton label="搜索" icon="i-lucide-search" @click="handleSearch" />
           </div>
@@ -253,10 +376,10 @@ await loadPosts()
           </div>
 
           <div v-else class="overflow-hidden rounded-[1.55rem] border border-slate-200/80 bg-white/85 dark:border-slate-800 dark:bg-slate-950/60">
-            <div class="hidden grid-cols-[minmax(0,1.7fr)_0.8fr_0.8fr_0.8fr_0.8fr] gap-4 border-b border-slate-200/80 bg-slate-50/85 px-5 py-4 text-xs font-semibold tracking-[0.14em] text-slate-400 uppercase dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-500 lg:grid">
+            <div class="hidden grid-cols-[minmax(0,1.65fr)_0.75fr_1.05fr_0.8fr_0.8fr] gap-4 border-b border-slate-200/80 bg-slate-50/85 px-5 py-4 text-xs font-semibold tracking-[0.14em] text-slate-400 uppercase dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-500 lg:grid">
               <p>文章</p>
               <p>状态</p>
-              <p>专题</p>
+              <p>内容归属</p>
               <p>最近更新</p>
               <p class="text-right">操作</p>
             </div>
@@ -265,7 +388,7 @@ await loadPosts()
               <article
                 v-for="post in posts"
                 :key="post.id"
-                class="grid gap-4 px-5 py-5 transition duration-200 hover:bg-sky-50/80 dark:hover:bg-sky-400/8 lg:grid-cols-[minmax(0,1.7fr)_0.8fr_0.8fr_0.8fr_0.8fr] lg:items-center"
+                class="grid gap-4 px-5 py-5 transition duration-200 hover:bg-sky-50/80 dark:hover:bg-sky-400/8 lg:grid-cols-[minmax(0,1.65fr)_0.75fr_1.05fr_0.8fr_0.8fr] lg:items-center"
               >
                 <div class="min-w-0">
                   <p class="truncate text-base font-semibold text-highlighted">{{ post.title }}</p>
@@ -284,8 +407,35 @@ await loadPosts()
                   </UBadge>
                 </div>
 
-                <div class="text-sm text-toned">
-                  {{ post.topic }}
+                <div class="min-w-0 space-y-2">
+                  <p class="truncate text-sm text-toned">
+                    {{ resolvePostMetaSummary(post) }}
+                  </p>
+                  <div class="flex flex-wrap gap-2">
+                    <UBadge
+                      v-if="post.categoryName"
+                      color="info"
+                      variant="subtle"
+                    >
+                      分类 {{ post.categoryName }}
+                    </UBadge>
+                    <UBadge
+                      v-for="tagName in (post.tagNames || []).slice(0, 2)"
+                      :key="`${post.id}-tag-${tagName}`"
+                      color="neutral"
+                      variant="subtle"
+                    >
+                      #{{ tagName }}
+                    </UBadge>
+                    <UBadge
+                      v-for="topicName in (post.topicNames || []).slice(0, 2)"
+                      :key="`${post.id}-topic-${topicName}`"
+                      color="success"
+                      variant="subtle"
+                    >
+                      专题 {{ topicName }}
+                    </UBadge>
+                  </div>
                 </div>
 
                 <div class="space-y-1 text-sm text-toned">

@@ -5,18 +5,31 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ideaflow.yunyu.common.constant.ResultCode;
 import com.ideaflow.yunyu.common.exception.BizException;
+import com.ideaflow.yunyu.module.category.entity.CategoryEntity;
+import com.ideaflow.yunyu.module.category.mapper.CategoryMapper;
 import com.ideaflow.yunyu.module.post.dto.AdminPostCreateRequest;
 import com.ideaflow.yunyu.module.post.dto.AdminPostQueryRequest;
 import com.ideaflow.yunyu.module.post.dto.AdminPostUpdateRequest;
 import com.ideaflow.yunyu.module.post.entity.PostContentEntity;
 import com.ideaflow.yunyu.module.post.entity.PostEntity;
+import com.ideaflow.yunyu.module.post.entity.PostTagEntity;
+import com.ideaflow.yunyu.module.post.entity.TopicPostEntity;
 import com.ideaflow.yunyu.module.post.mapper.PostContentMapper;
 import com.ideaflow.yunyu.module.post.mapper.PostMapper;
+import com.ideaflow.yunyu.module.post.mapper.PostTagMapper;
+import com.ideaflow.yunyu.module.post.mapper.TopicPostMapper;
 import com.ideaflow.yunyu.module.post.vo.AdminPostItemResponse;
 import com.ideaflow.yunyu.module.post.vo.AdminPostListResponse;
+import com.ideaflow.yunyu.module.tag.entity.TagEntity;
+import com.ideaflow.yunyu.module.tag.mapper.TagMapper;
+import com.ideaflow.yunyu.module.topic.entity.TopicEntity;
+import com.ideaflow.yunyu.module.topic.mapper.TopicMapper;
 import com.ideaflow.yunyu.security.SecurityUtils;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,16 +42,37 @@ public class AdminPostService {
 
     private final PostMapper postMapper;
     private final PostContentMapper postContentMapper;
+    private final CategoryMapper categoryMapper;
+    private final TagMapper tagMapper;
+    private final TopicMapper topicMapper;
+    private final PostTagMapper postTagMapper;
+    private final TopicPostMapper topicPostMapper;
 
     /**
      * 创建后台文章管理服务。
      *
      * @param postMapper 文章 Mapper
      * @param postContentMapper 文章内容 Mapper
+     * @param categoryMapper 分类 Mapper
+     * @param tagMapper 标签 Mapper
+     * @param topicMapper 专题 Mapper
+     * @param postTagMapper 文章标签关联 Mapper
+     * @param topicPostMapper 专题文章关联 Mapper
      */
-    public AdminPostService(PostMapper postMapper, PostContentMapper postContentMapper) {
+    public AdminPostService(PostMapper postMapper,
+                            PostContentMapper postContentMapper,
+                            CategoryMapper categoryMapper,
+                            TagMapper tagMapper,
+                            TopicMapper topicMapper,
+                            PostTagMapper postTagMapper,
+                            TopicPostMapper topicPostMapper) {
         this.postMapper = postMapper;
         this.postContentMapper = postContentMapper;
+        this.categoryMapper = categoryMapper;
+        this.tagMapper = tagMapper;
+        this.topicMapper = topicMapper;
+        this.postTagMapper = postTagMapper;
+        this.topicPostMapper = topicPostMapper;
     }
 
     /**
@@ -86,6 +120,7 @@ public class AdminPostService {
         postEntity.setSlug(slug);
         postEntity.setSummary(normalizeOptionalValue(request.getSummary()));
         postEntity.setCoverUrl(normalizeOptionalValue(request.getCoverUrl()));
+        postEntity.setCategoryId(resolveCategoryId(request.getCategoryId()));
         postEntity.setSeoTitle(normalizeOptionalValue(request.getSeoTitle()));
         postEntity.setSeoDescription(normalizeOptionalValue(request.getSeoDescription()));
         postEntity.setUserId(SecurityUtils.getCurrentUser().getUserId());
@@ -107,6 +142,8 @@ public class AdminPostService {
         postMapper.insert(postEntity);
 
         saveOrUpdatePostContent(postEntity.getId(), request.getContentMarkdown());
+        savePostTags(postEntity.getId(), request.getTagIds());
+        saveTopicPosts(postEntity.getId(), request.getTopicIds());
         return getPost(postEntity.getId());
     }
 
@@ -127,6 +164,7 @@ public class AdminPostService {
         postEntity.setSlug(slug);
         postEntity.setSummary(normalizeOptionalValue(request.getSummary()));
         postEntity.setCoverUrl(normalizeOptionalValue(request.getCoverUrl()));
+        postEntity.setCategoryId(resolveCategoryId(request.getCategoryId()));
         postEntity.setSeoTitle(normalizeOptionalValue(request.getSeoTitle()));
         postEntity.setSeoDescription(normalizeOptionalValue(request.getSeoDescription()));
         String nextStatus = resolveStatus(request.getStatus());
@@ -141,6 +179,8 @@ public class AdminPostService {
         postMapper.updateById(postEntity);
 
         saveOrUpdatePostContent(postId, request.getContentMarkdown());
+        savePostTags(postId, request.getTagIds());
+        saveTopicPosts(postId, request.getTopicIds());
         return getPost(postId);
     }
 
@@ -181,6 +221,20 @@ public class AdminPostService {
 
         if (request.getStatus() != null && !request.getStatus().isBlank()) {
             queryWrapper.eq(PostEntity::getStatus, request.getStatus().trim());
+        }
+
+        if (request.getCategoryId() != null && request.getCategoryId() > 0) {
+            queryWrapper.eq(PostEntity::getCategoryId, request.getCategoryId());
+        }
+
+        if (request.getTagId() != null && request.getTagId() > 0) {
+            queryWrapper.inSql(PostEntity::getId,
+                    "SELECT post_id FROM post_tag WHERE tag_id = " + request.getTagId());
+        }
+
+        if (request.getTopicId() != null && request.getTopicId() > 0) {
+            queryWrapper.inSql(PostEntity::getId,
+                    "SELECT post_id FROM topic_post WHERE topic_id = " + request.getTopicId());
         }
 
         return queryWrapper;
@@ -227,6 +281,53 @@ public class AdminPostService {
     }
 
     /**
+     * 保存文章标签关联。
+     *
+     * @param postId 文章ID
+     * @param tagIds 标签ID列表
+     */
+    private void savePostTags(Long postId, List<Long> tagIds) {
+        List<Long> normalizedTagIds = normalizeRelationIds(tagIds);
+        validateTagIds(normalizedTagIds);
+
+        postTagMapper.delete(new LambdaQueryWrapper<PostTagEntity>()
+                .eq(PostTagEntity::getPostId, postId));
+
+        for (Long tagId : normalizedTagIds) {
+            PostTagEntity postTagEntity = new PostTagEntity();
+            postTagEntity.setPostId(postId);
+            postTagEntity.setTagId(tagId);
+            postTagEntity.setCreatedTime(LocalDateTime.now());
+            postTagMapper.insert(postTagEntity);
+        }
+    }
+
+    /**
+     * 保存文章专题关联。
+     *
+     * @param postId 文章ID
+     * @param topicIds 专题ID列表
+     */
+    private void saveTopicPosts(Long postId, List<Long> topicIds) {
+        List<Long> normalizedTopicIds = normalizeRelationIds(topicIds);
+        validateTopicIds(normalizedTopicIds);
+
+        topicPostMapper.delete(new LambdaQueryWrapper<TopicPostEntity>()
+                .eq(TopicPostEntity::getPostId, postId));
+
+        int sortOrder = 0;
+        for (Long topicId : normalizedTopicIds) {
+            TopicPostEntity topicPostEntity = new TopicPostEntity();
+            topicPostEntity.setPostId(postId);
+            topicPostEntity.setTopicId(topicId);
+            topicPostEntity.setSortOrder(sortOrder);
+            topicPostEntity.setCreatedTime(LocalDateTime.now());
+            topicPostMapper.insert(topicPostEntity);
+            sortOrder += 10;
+        }
+    }
+
+    /**
      * 查询文章，不存在时抛出异常。
      *
      * @param postId 文章ID
@@ -260,6 +361,83 @@ public class AdminPostService {
         Long count = postMapper.selectCount(queryWrapper);
         if (count != null && count > 0) {
             throw new BizException(ResultCode.BAD_REQUEST, "该 slug 已被占用");
+        }
+    }
+
+    /**
+     * 解析分类ID。
+     *
+     * @param categoryId 原始分类ID
+     * @return 合法分类ID
+     */
+    private Long resolveCategoryId(Long categoryId) {
+        if (categoryId == null) {
+            return null;
+        }
+
+        CategoryEntity categoryEntity = categoryMapper.selectOne(new LambdaQueryWrapper<CategoryEntity>()
+                .eq(CategoryEntity::getId, categoryId)
+                .eq(CategoryEntity::getDeleted, 0)
+                .last("LIMIT 1"));
+        if (categoryEntity == null) {
+            throw new BizException(ResultCode.BAD_REQUEST, "所选分类不存在");
+        }
+        return categoryId;
+    }
+
+    /**
+     * 标准化关联ID列表。
+     *
+     * @param relationIds 原始关联ID列表
+     * @return 去重后的关联ID列表
+     */
+    private List<Long> normalizeRelationIds(List<Long> relationIds) {
+        if (relationIds == null || relationIds.isEmpty()) {
+            return List.of();
+        }
+
+        Set<Long> relationIdSet = new LinkedHashSet<>();
+        for (Long relationId : relationIds) {
+            if (relationId != null && relationId > 0) {
+                relationIdSet.add(relationId);
+            }
+        }
+        return new ArrayList<>(relationIdSet);
+    }
+
+    /**
+     * 校验标签ID列表是否全部存在。
+     *
+     * @param tagIds 标签ID列表
+     */
+    private void validateTagIds(List<Long> tagIds) {
+        if (tagIds.isEmpty()) {
+            return;
+        }
+
+        Long count = tagMapper.selectCount(new LambdaQueryWrapper<TagEntity>()
+                .in(TagEntity::getId, tagIds)
+                .eq(TagEntity::getDeleted, 0));
+        if (count == null || count != tagIds.size()) {
+            throw new BizException(ResultCode.BAD_REQUEST, "所选标签中存在无效项");
+        }
+    }
+
+    /**
+     * 校验专题ID列表是否全部存在。
+     *
+     * @param topicIds 专题ID列表
+     */
+    private void validateTopicIds(List<Long> topicIds) {
+        if (topicIds.isEmpty()) {
+            return;
+        }
+
+        Long count = topicMapper.selectCount(new LambdaQueryWrapper<TopicEntity>()
+                .in(TopicEntity::getId, topicIds)
+                .eq(TopicEntity::getDeleted, 0));
+        if (count == null || count != topicIds.size()) {
+            throw new BizException(ResultCode.BAD_REQUEST, "所选专题中存在无效项");
         }
     }
 
@@ -322,7 +500,7 @@ public class AdminPostService {
         if (pageSize == null || pageSize < 1) {
             return 10;
         }
-        return Math.min(pageSize, 50);
+        return Math.min(pageSize, 100);
     }
 
     /**
@@ -335,6 +513,14 @@ public class AdminPostService {
         PostContentEntity postContentEntity = postContentMapper.selectOne(new LambdaQueryWrapper<PostContentEntity>()
                 .eq(PostContentEntity::getPostId, postEntity.getId())
                 .last("LIMIT 1"));
+        CategoryEntity categoryEntity = postEntity.getCategoryId() == null ? null : categoryMapper.selectOne(new LambdaQueryWrapper<CategoryEntity>()
+                .eq(CategoryEntity::getId, postEntity.getCategoryId())
+                .eq(CategoryEntity::getDeleted, 0)
+                .last("LIMIT 1"));
+        List<Long> tagIds = postTagMapper.selectTagIdsByPostId(postEntity.getId());
+        List<String> tagNames = postTagMapper.selectTagNamesByPostId(postEntity.getId());
+        List<Long> topicIds = topicPostMapper.selectTopicIdsByPostId(postEntity.getId());
+        List<String> topicNames = topicPostMapper.selectTopicNamesByPostId(postEntity.getId());
 
         AdminPostItemResponse response = new AdminPostItemResponse();
         response.setId(postEntity.getId());
@@ -343,7 +529,12 @@ public class AdminPostService {
         response.setSummary(postEntity.getSummary());
         response.setCoverUrl(postEntity.getCoverUrl());
         response.setCategoryId(postEntity.getCategoryId());
-        response.setTopic("未设置专题");
+        response.setCategoryName(categoryEntity == null ? null : categoryEntity.getName());
+        response.setTagIds(tagIds == null ? List.of() : tagIds);
+        response.setTagNames(tagNames == null ? List.of() : tagNames);
+        response.setTopicIds(topicIds == null ? List.of() : topicIds);
+        response.setTopicNames(topicNames == null ? List.of() : topicNames);
+        response.setTopic(topicNames == null || topicNames.isEmpty() ? "未设置专题" : String.join(" / ", topicNames));
         response.setStatus(postEntity.getStatus());
         response.setSeoTitle(postEntity.getSeoTitle());
         response.setSeoDescription(postEntity.getSeoDescription());

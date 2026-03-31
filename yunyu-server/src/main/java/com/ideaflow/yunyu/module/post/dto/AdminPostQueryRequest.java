@@ -11,6 +11,9 @@ public class AdminPostQueryRequest {
 
     private String keyword;
     private String status;
+    private Long categoryId;
+    private Long tagId;
+    private Long topicId;
     private Integer pageNo = 1;
     private Integer pageSize = 10;
 }

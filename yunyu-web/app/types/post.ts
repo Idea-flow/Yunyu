@@ -9,6 +9,11 @@ export interface AdminPostItem {
   summary: string | null
   coverUrl: string | null
   categoryId?: number | null
+  categoryName?: string | null
+  tagIds?: number[]
+  tagNames?: string[]
+  topicIds?: number[]
+  topicNames?: string[]
   topic: string
   status: 'DRAFT' | 'PUBLISHED' | 'OFFLINE'
   seoTitle?: string | null
@@ -41,6 +46,9 @@ export interface AdminPostListResponse {
 export interface AdminPostQuery {
   keyword?: string
   status?: '' | 'DRAFT' | 'PUBLISHED' | 'OFFLINE'
+  categoryId?: number
+  tagId?: number
+  topicId?: number
   pageNo?: number
   pageSize?: number
 }
@@ -54,6 +62,9 @@ export interface AdminPostForm {
   slug: string
   summary: string
   coverUrl: string
+  categoryId: number | null
+  tagIds: number[]
+  topicIds: number[]
   status: 'DRAFT' | 'PUBLISHED' | 'OFFLINE'
   seoTitle: string
   seoDescription: string

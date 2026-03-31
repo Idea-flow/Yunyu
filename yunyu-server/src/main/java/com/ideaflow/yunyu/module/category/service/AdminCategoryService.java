@@ -249,7 +249,7 @@ public class AdminCategoryService {
         if (pageSize == null || pageSize < 1) {
             return 10;
         }
-        return Math.min(pageSize, 50);
+        return Math.min(pageSize, 100);
     }
 
     /**

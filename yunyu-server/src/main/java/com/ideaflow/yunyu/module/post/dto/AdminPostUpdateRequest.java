@@ -3,6 +3,7 @@ package com.ideaflow.yunyu.module.post.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 import lombok.Data;
 
 /**
@@ -25,6 +26,12 @@ public class AdminPostUpdateRequest {
 
     @Size(max = 255, message = "封面地址长度不能超过255个字符")
     private String coverUrl;
+
+    private Long categoryId;
+
+    private List<Long> tagIds;
+
+    private List<Long> topicIds;
 
     @Pattern(regexp = "DRAFT|PUBLISHED|OFFLINE", message = "状态不合法")
     private String status;

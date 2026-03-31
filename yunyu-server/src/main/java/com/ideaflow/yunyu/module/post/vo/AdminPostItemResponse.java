@@ -1,6 +1,7 @@
 package com.ideaflow.yunyu.module.post.vo;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.Data;
 
 /**
@@ -16,6 +17,11 @@ public class AdminPostItemResponse {
     private String summary;
     private String coverUrl;
     private Long categoryId;
+    private String categoryName;
+    private List<Long> tagIds;
+    private List<String> tagNames;
+    private List<Long> topicIds;
+    private List<String> topicNames;
     private String topic;
     private String status;
     private String seoTitle;

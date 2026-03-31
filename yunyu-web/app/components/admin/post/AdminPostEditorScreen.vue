@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AdminPostForm } from '../../../types/post'
+import type { AdminTaxonomyItem } from '../../../types/taxonomy'
 
 /**
  * 后台文章编辑页组件。
@@ -15,13 +16,17 @@ const props = withDefaults(defineProps<{
 
 const toast = useToast()
 const adminPosts = useAdminPosts()
+const adminTaxonomy = useAdminTaxonomy()
 
 const isSubmitting = ref(false)
 const isLoadingDetail = ref(false)
+const isLoadingTaxonomy = ref(false)
 const contentViewMode = ref<'edit' | 'preview'>('edit')
-
-const topicTags = ref(['内容策划待接入', '专题模块待接入'])
-const keywordTags = ref(['SEO关键词待接入', '标签模块待接入'])
+const categoryOptions = ref<Array<{ label: string, value: number | null }>>([
+  { label: '暂不设置分类', value: null }
+])
+const tagOptions = ref<AdminTaxonomyItem[]>([])
+const topicOptions = ref<AdminTaxonomyItem[]>([])
 
 const statusOptions = [
   { label: '草稿', value: 'DRAFT' },
@@ -34,6 +39,9 @@ const formState = reactive<AdminPostForm>({
   slug: '',
   summary: '',
   coverUrl: '',
+  categoryId: null,
+  tagIds: [],
+  topicIds: [],
   status: 'DRAFT',
   seoTitle: '',
   seoDescription: '',
@@ -92,6 +100,15 @@ const contentLength = computed(() => formState.contentMarkdown.trim().length)
 const seoTitleLength = computed(() => formState.seoTitle.trim().length)
 const seoDescriptionLength = computed(() => formState.seoDescription.trim().length)
 const estimatedReadingMinutes = computed(() => Math.max(1, Math.ceil(contentLength.value / 500)))
+const selectedCategoryLabel = computed(() =>
+  categoryOptions.value.find(option => option.value === formState.categoryId)?.label || '暂不设置分类'
+)
+const selectedTagItems = computed(() =>
+  tagOptions.value.filter(item => formState.tagIds.includes(item.id))
+)
+const selectedTopicItems = computed(() =>
+  topicOptions.value.filter(item => formState.topicIds.includes(item.id))
+)
 
 /**
  * 计算 Markdown 预览内容。
@@ -172,6 +189,9 @@ async function loadPostDetail() {
     formState.slug = detail.slug
     formState.summary = detail.summary || ''
     formState.coverUrl = detail.coverUrl || ''
+    formState.categoryId = detail.categoryId ?? null
+    formState.tagIds = detail.tagIds || []
+    formState.topicIds = detail.topicIds || []
     formState.status = detail.status
     formState.seoTitle = detail.seoTitle || ''
     formState.seoDescription = detail.seoDescription || ''
@@ -185,6 +205,52 @@ async function loadPostDetail() {
     await navigateTo('/admin/posts')
   } finally {
     isLoadingDetail.value = false
+  }
+}
+
+/**
+ * 加载内容编排选项。
+ * 作用：从真实后台接口读取分类、标签、专题列表，为文章编辑页提供真实选择数据。
+ */
+async function loadTaxonomyOptions() {
+  isLoadingTaxonomy.value = true
+
+  try {
+    const [categoryResponse, tagResponse, topicResponse] = await Promise.all([
+      adminTaxonomy.listItems('category', {
+        pageNo: 1,
+        pageSize: 100,
+        status: 'ACTIVE'
+      }),
+      adminTaxonomy.listItems('tag', {
+        pageNo: 1,
+        pageSize: 100,
+        status: 'ACTIVE'
+      }),
+      adminTaxonomy.listItems('topic', {
+        pageNo: 1,
+        pageSize: 100,
+        status: 'ACTIVE'
+      })
+    ])
+
+    categoryOptions.value = [
+      { label: '暂不设置分类', value: null },
+      ...categoryResponse.list.map(item => ({
+        label: item.name,
+        value: item.id
+      }))
+    ]
+    tagOptions.value = tagResponse.list
+    topicOptions.value = topicResponse.list
+  } catch (error: any) {
+    toast.add({
+      title: '加载内容编排数据失败',
+      description: error?.message || '分类、标签、专题暂时无法读取。',
+      color: 'error'
+    })
+  } finally {
+    isLoadingTaxonomy.value = false
   }
 }
 
@@ -205,6 +271,9 @@ async function handleSubmit() {
       slug: formState.slug.trim(),
       summary: formState.summary.trim(),
       coverUrl: formState.coverUrl.trim(),
+      categoryId: formState.categoryId,
+      tagIds: [...formState.tagIds],
+      topicIds: [...formState.topicIds],
       status: formState.status,
       seoTitle: formState.seoTitle.trim(),
       seoDescription: formState.seoDescription.trim(),
@@ -239,7 +308,34 @@ async function goBackToList() {
   await navigateTo('/admin/posts')
 }
 
-await loadPostDetail()
+/**
+ * 切换标签选中状态。
+ * 作用：支持文章与多个标签建立关联，并保持当前选择顺序稳定。
+ *
+ * @param tagId 标签ID
+ */
+function toggleTag(tagId: number) {
+  formState.tagIds = formState.tagIds.includes(tagId)
+    ? formState.tagIds.filter(id => id !== tagId)
+    : [...formState.tagIds, tagId]
+}
+
+/**
+ * 切换专题选中状态。
+ * 作用：支持文章与多个专题建立关联，便于后续专题页聚合同一篇文章。
+ *
+ * @param topicId 专题ID
+ */
+function toggleTopic(topicId: number) {
+  formState.topicIds = formState.topicIds.includes(topicId)
+    ? formState.topicIds.filter(id => id !== topicId)
+    : [...formState.topicIds, topicId]
+}
+
+await Promise.all([
+  loadTaxonomyOptions(),
+  loadPostDetail()
+])
 </script>
 
 <template>
@@ -396,48 +492,75 @@ await loadPostDetail()
                 </div>
               </template>
 
-              <div class="grid gap-5 lg:grid-cols-3">
+              <div v-if="isLoadingTaxonomy" class="grid gap-5 lg:grid-cols-3">
+                <USkeleton class="h-36 rounded-[24px]" />
+                <USkeleton class="h-36 rounded-[24px]" />
+                <USkeleton class="h-36 rounded-[24px]" />
+              </div>
+
+              <div v-else class="grid gap-5 lg:grid-cols-3">
                 <div class="rounded-[24px] border border-slate-200/80 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-900/70">
                   <div class="flex items-center justify-between gap-3">
                     <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">分类</p>
-                    <UBadge color="warning" variant="soft">待接口</UBadge>
+                    <UBadge color="info" variant="soft">{{ selectedCategoryLabel }}</UBadge>
                   </div>
-                  <p class="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                    分类模块尚未接入后台接口，当前工作台先预留结构区，后续可直接挂接真实分类选择器。
-                  </p>
+                  <div class="mt-4 space-y-3">
+                    <AdminSelect
+                      v-model="formState.categoryId"
+                      :items="categoryOptions"
+                      placeholder="请选择分类"
+                    />
+                    <p class="text-sm leading-7 text-slate-600 dark:text-slate-300">
+                      分类为单选，主要用于文章主归档和列表组织。
+                    </p>
+                  </div>
                 </div>
 
                 <div class="rounded-[24px] border border-slate-200/80 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-900/70">
                   <div class="flex items-center justify-between gap-3">
                     <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">标签</p>
-                    <UBadge color="warning" variant="soft">待接口</UBadge>
+                    <UBadge color="info" variant="soft">已选 {{ formState.tagIds.length }}</UBadge>
                   </div>
-                  <div class="mt-3 flex flex-wrap gap-2">
-                    <UBadge
-                      v-for="keyword in keywordTags"
-                      :key="keyword"
-                      color="neutral"
-                      variant="subtle"
+                  <div v-if="tagOptions.length" class="mt-4 flex flex-wrap gap-2">
+                    <button
+                      v-for="tag in tagOptions"
+                      :key="tag.id"
+                      type="button"
+                      class="cursor-pointer rounded-full border px-3 py-2 text-sm font-medium transition duration-200"
+                      :class="formState.tagIds.includes(tag.id)
+                        ? 'border-sky-400 bg-sky-500 text-white shadow-[0_10px_24px_-18px_rgba(14,165,233,0.82)] dark:border-sky-300 dark:bg-sky-400 dark:text-slate-950'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:border-sky-400/50 dark:hover:text-slate-50'"
+                      @click="toggleTag(tag.id)"
                     >
-                      {{ keyword }}
-                    </UBadge>
+                      {{ tag.name }}
+                    </button>
+                  </div>
+                  <div v-else class="mt-4 text-sm leading-7 text-slate-500 dark:text-slate-400">
+                    当前没有可用标签，请先到标签管理页创建数据。
                   </div>
                 </div>
 
                 <div class="rounded-[24px] border border-slate-200/80 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-900/70">
                   <div class="flex items-center justify-between gap-3">
                     <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">专题</p>
-                    <UBadge color="warning" variant="soft">待接口</UBadge>
+                    <UBadge color="info" variant="soft">已选 {{ formState.topicIds.length }}</UBadge>
                   </div>
-                  <div class="mt-3 flex flex-wrap gap-2">
-                    <UBadge
-                      v-for="topic in topicTags"
-                      :key="topic"
-                      color="neutral"
-                      variant="subtle"
+                  <div v-if="topicOptions.length" class="mt-4 flex flex-wrap gap-2">
+                    <button
+                      v-for="topic in topicOptions"
+                      :key="topic.id"
+                      type="button"
+                      class="cursor-pointer rounded-full border px-3 py-2 text-sm font-medium transition duration-200"
+                      :class="formState.topicIds.includes(topic.id)
+                        ? 'border-emerald-400 bg-emerald-500 text-white shadow-[0_10px_24px_-18px_rgba(16,185,129,0.82)] dark:border-emerald-300 dark:bg-emerald-400 dark:text-slate-950'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-200 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:border-emerald-400/50 dark:hover:text-slate-50'"
+                      @click="toggleTopic(topic.id)"
                     >
-                      {{ topic }}
-                    </UBadge>
+                      {{ topic.name }}
+                    </button>
+                  </div>
+                  <div v-else class="mt-4 text-sm leading-7 text-slate-500 dark:text-slate-400">
+                    当前没有可用专题，请先到专题管理页创建数据。
                   </div>
                 </div>
               </div>
@@ -516,6 +639,14 @@ await loadPostDetail()
                 <div class="rounded-[24px] border border-slate-200/80 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-900/70">
                   <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">当前状态</p>
                   <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">{{ statusHint }}</p>
+                </div>
+
+                <div class="rounded-[24px] border border-slate-200/80 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-900/70">
+                  <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">内容归属</p>
+                  <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">{{ selectedCategoryLabel }}</p>
+                  <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                    标签 {{ selectedTagItems.length }} 个，专题 {{ selectedTopicItems.length }} 个
+                  </p>
                 </div>
 
                 <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
