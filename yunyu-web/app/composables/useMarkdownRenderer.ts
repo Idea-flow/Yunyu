@@ -15,6 +15,16 @@ interface MarkdownRenderResult {
   readingMinutes: number
 }
 
+/**
+ * 代码块渲染元信息类型。
+ * 作用：统一描述单个 Markdown 代码块的语言、展示标签和折叠能力，供 HTML 组装时复用。
+ */
+interface CodeBlockRenderMeta {
+  language: string
+  displayLanguage: string
+  isCollapsible: boolean
+}
+
 const markdownRenderer = createMarkdownRenderer()
 const shikiHighlighterPromise = getSingletonHighlighter({
   themes: ['github-light', 'github-dark-default'],
@@ -53,11 +63,7 @@ function createMarkdownRenderer() {
     linkify: true,
     breaks: true
   }).use(markdownItAnchor, {
-    slugify: createSlugifyFactory(),
-    permalink: markdownItAnchor.permalink.linkInsideHeader({
-      symbol: '#',
-      placement: 'before'
-    })
+    slugify: createSlugifyFactory()
   })
 }
 
@@ -141,6 +147,59 @@ function extractPlainText(markdown: string) {
 }
 
 /**
+ * 转义 HTML 属性值。
+ * 作用：避免代码语言名等动态文本插入 HTML 属性时破坏结构。
+ *
+ * @param value 原始文本
+ * @returns 可安全写入 HTML 属性的文本
+ */
+function escapeHtmlAttribute(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
+/**
+ * 解析代码块语言信息。
+ * 作用：从 Markdown fence 信息中提取语言名，并生成更适合展示的标签文本。
+ *
+ * @param info fence info 原文
+ * @returns 代码块元信息
+ */
+function resolveCodeBlockMeta(info: string | undefined): CodeBlockRenderMeta {
+  const rawLanguage = info?.trim().split(/\s+/)[0] || 'plaintext'
+  const normalizedLanguage = rawLanguage.toLowerCase()
+  const displayMap: Record<string, string> = {
+    ts: 'TypeScript',
+    js: 'JavaScript',
+    tsx: 'TSX',
+    jsx: 'JSX',
+    bash: 'Bash',
+    shell: 'Shell',
+    yml: 'YAML',
+    md: 'Markdown',
+    vue: 'Vue',
+    html: 'HTML',
+    css: 'CSS',
+    scss: 'SCSS',
+    sql: 'SQL',
+    xml: 'XML',
+    json: 'JSON',
+    java: 'Java',
+    plaintext: 'Plain Text',
+    text: 'Plain Text'
+  }
+
+  return {
+    language: normalizedLanguage,
+    displayLanguage: displayMap[normalizedLanguage] || rawLanguage.toUpperCase(),
+    isCollapsible: true
+  }
+}
+
+/**
  * 将 Markdown token 渲染为带代码高亮的 HTML。
  * 作用：让代码块通过 Shiki 输出更高质量的高亮结果。
  *
@@ -156,14 +215,14 @@ async function renderTokensToHtml(tokens: any[]) {
       return
     }
 
-    const language = token.info?.trim().split(/\s+/)[0] || 'plaintext'
+    const meta = resolveCodeBlockMeta(token.info)
     const code = token.content || ''
 
     let renderedHtml = ''
 
     try {
       renderedHtml = await highlighter.codeToHtml(code, {
-        lang: language,
+        lang: meta.language,
         themes: {
           light: 'github-light',
           dark: 'github-dark-default'
@@ -171,7 +230,7 @@ async function renderTokensToHtml(tokens: any[]) {
         defaultColor: false
       })
     } catch (error) {
-      console.warn(`[MarkdownRenderer] Shiki language "${language}" not found, fallback to plaintext.`, error)
+      console.warn(`[MarkdownRenderer] Shiki language "${meta.language}" not found, fallback to plaintext.`, error)
       renderedHtml = await highlighter.codeToHtml(code, {
         lang: 'plaintext',
         themes: {
@@ -182,7 +241,33 @@ async function renderTokensToHtml(tokens: any[]) {
       })
     }
 
-    fenceHtmlByIndex.set(index, renderedHtml)
+    const languageAttr = escapeHtmlAttribute(meta.language)
+    const displayLanguageAttr = escapeHtmlAttribute(meta.displayLanguage)
+
+    fenceHtmlByIndex.set(index, `
+<div
+  class="yy-md-code-block"
+  data-code-language="${languageAttr}"
+  data-code-language-label="${displayLanguageAttr}"
+  data-code-collapsible="${meta.isCollapsible ? 'true' : 'false'}"
+>
+  <div class="yy-md-code-toolbar">
+    <div class="yy-md-code-toolbar-meta">
+      <span class="yy-md-code-language-pill">${displayLanguageAttr}</span>
+    </div>
+    <div class="yy-md-code-toolbar-actions">
+      <button type="button" class="yy-md-code-action yy-md-code-action-icon" data-code-toggle data-state="collapsed" aria-label="展开代码" title="展开代码" hidden>
+        <span data-code-icon-host aria-hidden="true"></span>
+      </button>
+      <button type="button" class="yy-md-code-action yy-md-code-action-icon" data-code-copy aria-label="复制代码" title="复制代码">
+        <span data-code-icon-host aria-hidden="true"></span>
+      </button>
+    </div>
+  </div>
+  <div class="yy-md-code-body">
+    ${renderedHtml}
+  </div>
+</div>`.trim())
   }))
 
   const originalFenceRule = markdownRenderer.renderer.rules.fence

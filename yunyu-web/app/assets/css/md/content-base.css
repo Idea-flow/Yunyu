@@ -1,0 +1,234 @@
+.yy-md {
+  --yy-md-text: rgb(51 65 85);
+  --yy-md-heading: rgb(15 23 42);
+  --yy-md-muted: rgb(100 116 139);
+  --yy-md-strong: rgb(15 23 42);
+  --yy-md-link: rgb(3 105 161);
+  --yy-md-link-hover: rgb(2 132 199);
+  --yy-md-selection: rgba(14, 165, 233, 0.18);
+  --yy-md-quote-bg: rgba(241, 245, 249, 0.96);
+  --yy-md-quote-border: rgba(56, 189, 248, 0.45);
+  --yy-md-quote-text: rgb(51 65 85);
+  --yy-md-inline-code-bg: rgba(226, 232, 240, 0.92);
+  --yy-md-inline-code-text: rgb(15 23 42);
+  --yy-md-table-border: rgba(203, 213, 225, 0.92);
+  --yy-md-table-head-bg: rgba(248, 250, 252, 0.98);
+  --yy-md-table-row-bg: rgba(255, 255, 255, 0.78);
+  --yy-md-hr: rgba(148, 163, 184, 0.28);
+  --yy-md-image-border: rgba(226, 232, 240, 0.92);
+  color: var(--yy-md-text);
+  font-size: 1rem;
+  line-height: 2;
+  word-break: break-word;
+}
+
+.yy-md ::selection {
+  background: var(--yy-md-selection);
+}
+
+.yy-md > :first-child {
+  margin-top: 0;
+}
+
+.yy-md > :last-child {
+  margin-bottom: 0;
+}
+
+.yy-md h1,
+.yy-md h2,
+.yy-md h3,
+.yy-md h4,
+.yy-md h5,
+.yy-md h6 {
+  color: var(--yy-md-heading);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+  margin-top: 1.75em;
+  margin-bottom: 0.75em;
+  scroll-margin-top: 6rem;
+}
+
+.yy-md h1 {
+  font-size: clamp(2rem, 2.8vw, 2.7rem);
+}
+
+.yy-md h2 {
+  font-size: clamp(1.5rem, 2.1vw, 2rem);
+}
+
+.yy-md h3 {
+  font-size: clamp(1.2rem, 1.6vw, 1.45rem);
+}
+
+.yy-md h4,
+.yy-md h5,
+.yy-md h6 {
+  font-size: 1.05rem;
+}
+
+.yy-md p,
+.yy-md ul,
+.yy-md ol,
+.yy-md blockquote,
+.yy-md table,
+.yy-md pre,
+.yy-md figure {
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+}
+
+.yy-md p,
+.yy-md li,
+.yy-md blockquote {
+  color: var(--yy-md-text);
+}
+
+.yy-md strong {
+  color: var(--yy-md-strong);
+  font-weight: 700;
+}
+
+.yy-md em {
+  color: color-mix(in srgb, var(--yy-md-text) 76%, white 24%);
+  font-style: italic;
+}
+
+.yy-md a {
+  color: var(--yy-md-link);
+  font-weight: 600;
+  text-decoration-line: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.22em;
+  text-decoration-color: color-mix(in srgb, var(--yy-md-link) 42%, transparent 58%);
+  transition: color 180ms ease, text-decoration-color 180ms ease;
+  overflow-wrap: anywhere;
+}
+
+.yy-md a:hover {
+  color: var(--yy-md-link-hover);
+  text-decoration-color: color-mix(in srgb, var(--yy-md-link-hover) 70%, transparent 30%);
+}
+
+.yy-md a[target='_blank']::after {
+  content: "↗";
+  display: inline-block;
+  margin-left: 0.22rem;
+  font-size: 0.78em;
+  vertical-align: text-top;
+  opacity: 0.72;
+}
+
+.yy-md ul,
+.yy-md ol {
+  padding-left: 1.45rem;
+}
+
+.yy-md li + li {
+  margin-top: 0.45rem;
+}
+
+.yy-md li > ul,
+.yy-md li > ol {
+  margin-top: 0.6rem;
+  margin-bottom: 0;
+}
+
+.yy-md blockquote {
+  border-left: 4px solid var(--yy-md-quote-border);
+  border-radius: 1rem;
+  background: var(--yy-md-quote-bg);
+  color: var(--yy-md-quote-text);
+  padding: 1rem 1.1rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.yy-md blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.yy-md hr {
+  border: 0;
+  height: 1px;
+  margin: 2rem 0;
+  background: linear-gradient(90deg, transparent 0%, var(--yy-md-hr) 18%, var(--yy-md-hr) 82%, transparent 100%);
+}
+
+.yy-md :not(pre) > code {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 0.72rem;
+  background: var(--yy-md-inline-code-bg);
+  color: var(--yy-md-inline-code-text);
+  padding: 0.16rem 0.5rem;
+  font-size: 0.92em;
+  line-height: 1.6;
+  font-family: "SFMono-Regular", "SF Mono", "JetBrains Mono", "Consolas", monospace;
+}
+
+.yy-md pre {
+  overflow: hidden;
+}
+
+.yy-md img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--yy-md-image-border);
+  border-radius: 1.25rem;
+}
+
+.yy-md table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 1.15rem;
+  box-shadow: 0 18px 36px -32px rgba(15, 23, 42, 0.24);
+}
+
+.yy-md thead tr {
+  background: var(--yy-md-table-head-bg);
+}
+
+.yy-md tbody tr {
+  background: var(--yy-md-table-row-bg);
+}
+
+.yy-md th,
+.yy-md td {
+  min-width: 8rem;
+  border: 1px solid var(--yy-md-table-border);
+  padding: 0.85rem 1rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.yy-md th {
+  color: var(--yy-md-heading);
+  font-weight: 700;
+}
+
+.yy-md td {
+  color: var(--yy-md-text);
+}
+
+.yy-md tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--yy-md-table-row-bg) 88%, var(--yy-md-table-head-bg) 12%);
+}
+
+@media (max-width: 1024px) {
+  .yy-md {
+    font-size: 0.98rem;
+    line-height: 1.9;
+  }
+
+  .yy-md h1 {
+    font-size: clamp(1.75rem, 6vw, 2.2rem);
+  }
+
+  .yy-md h2 {
+    font-size: clamp(1.35rem, 4.8vw, 1.72rem);
+  }
+}

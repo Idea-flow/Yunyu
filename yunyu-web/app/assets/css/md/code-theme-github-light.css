@@ -1,0 +1,16 @@
+.yy-md[data-code-theme='github-light'] {
+  --yy-code-block-bg: #f8fafc;
+  --yy-code-block-border: rgba(203, 213, 225, 0.92);
+  --yy-code-text: #0f172a;
+  --yy-code-toolbar-bg: rgba(255, 255, 255, 0.88);
+  --yy-code-toolbar-border: rgba(226, 232, 240, 0.9);
+  --yy-code-label-text: #475569;
+  --yy-code-label-dot: #0ea5e9;
+  --yy-code-action-bg: rgba(248, 250, 252, 0.96);
+  --yy-code-action-border: rgba(203, 213, 225, 0.92);
+  --yy-code-action-text: #334155;
+  --yy-code-action-bg-hover: rgba(240, 249, 255, 0.96);
+  --yy-code-action-border-hover: rgba(125, 211, 252, 0.82);
+  --yy-code-action-text-hover: #0369a1;
+  --yy-code-collapse-mask: rgba(248, 250, 252, 0.98);
+}

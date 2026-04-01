@@ -1,0 +1,58 @@
+.yy-md[data-content-theme='documentation'] {
+  --yy-md-text: rgb(51 65 85);
+  --yy-md-heading: rgb(15 23 42);
+  --yy-md-muted: rgb(100 116 139);
+  --yy-md-strong: rgb(15 23 42);
+  --yy-md-link: rgb(37 99 235);
+  --yy-md-link-hover: rgb(29 78 216);
+  --yy-md-selection: rgba(59, 130, 246, 0.18);
+  --yy-md-quote-bg: rgba(248, 250, 252, 0.98);
+  --yy-md-quote-border: rgba(59, 130, 246, 0.32);
+  --yy-md-quote-text: rgb(30 41 59);
+  --yy-md-inline-code-bg: rgba(241, 245, 249, 0.96);
+  --yy-md-inline-code-text: rgb(15 23 42);
+  --yy-md-table-border: rgba(203, 213, 225, 0.96);
+  --yy-md-table-head-bg: rgba(248, 250, 252, 0.99);
+  --yy-md-table-row-bg: rgba(255, 255, 255, 0.98);
+  --yy-md-hr: rgba(148, 163, 184, 0.25);
+  --yy-md-image-border: rgba(226, 232, 240, 0.96);
+}
+
+.yy-md[data-content-theme='documentation'] h1,
+.yy-md[data-content-theme='documentation'] h2,
+.yy-md[data-content-theme='documentation'] h3,
+.yy-md[data-content-theme='documentation'] h4,
+.yy-md[data-content-theme='documentation'] h5,
+.yy-md[data-content-theme='documentation'] h6 {
+  letter-spacing: -0.015em;
+}
+
+.yy-md[data-content-theme='documentation'] p,
+.yy-md[data-content-theme='documentation'] ul,
+.yy-md[data-content-theme='documentation'] ol,
+.yy-md[data-content-theme='documentation'] blockquote,
+.yy-md[data-content-theme='documentation'] table,
+.yy-md[data-content-theme='documentation'] pre,
+.yy-md[data-content-theme='documentation'] figure {
+  margin-bottom: 1rem;
+}
+
+.dark .yy-md[data-content-theme='documentation'] {
+  --yy-md-text: rgb(203 213 225);
+  --yy-md-heading: rgb(241 245 249);
+  --yy-md-muted: rgb(148 163 184);
+  --yy-md-strong: rgb(248 250 252);
+  --yy-md-link: rgb(147 197 253);
+  --yy-md-link-hover: rgb(191 219 254);
+  --yy-md-selection: rgba(59, 130, 246, 0.24);
+  --yy-md-quote-bg: rgba(15, 23, 42, 0.92);
+  --yy-md-quote-border: rgba(96, 165, 250, 0.38);
+  --yy-md-quote-text: rgb(226 232 240);
+  --yy-md-inline-code-bg: rgba(30, 41, 59, 0.94);
+  --yy-md-inline-code-text: rgb(226 232 240);
+  --yy-md-table-border: rgba(51, 65, 85, 0.96);
+  --yy-md-table-head-bg: rgba(15, 23, 42, 0.98);
+  --yy-md-table-row-bg: rgba(2, 6, 23, 0.7);
+  --yy-md-hr: rgba(96, 165, 250, 0.2);
+  --yy-md-image-border: rgba(51, 65, 85, 0.96);
+}

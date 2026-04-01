@@ -1,0 +1,16 @@
+.yy-md[data-code-theme='vitesse-dark'] {
+  --yy-code-block-bg: #121826;
+  --yy-code-block-border: rgba(71, 85, 105, 0.82);
+  --yy-code-text: #e2e8f0;
+  --yy-code-toolbar-bg: rgba(15, 23, 42, 0.9);
+  --yy-code-toolbar-border: rgba(71, 85, 105, 0.74);
+  --yy-code-label-text: #f8fafc;
+  --yy-code-label-dot: #22d3ee;
+  --yy-code-action-bg: rgba(30, 41, 59, 0.9);
+  --yy-code-action-border: rgba(100, 116, 139, 0.54);
+  --yy-code-action-text: #cbd5e1;
+  --yy-code-action-bg-hover: rgba(56, 189, 248, 0.14);
+  --yy-code-action-border-hover: rgba(56, 189, 248, 0.38);
+  --yy-code-action-text-hover: #e0f2fe;
+  --yy-code-collapse-mask: rgba(18, 24, 38, 0.98);
+}

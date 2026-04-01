@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick } from 'vue'
 import MarkdownPreview from './MarkdownPreview.vue'
+import ArticleTocTree from '../../content/ArticleTocTree.vue'
 import type { ArticleTocItem } from '../../../types/post'
 
 /**
@@ -32,14 +33,35 @@ const emit = defineEmits<{
 }>()
 
 const viewMode = ref<'edit' | 'preview'>('edit')
-const previewPanelTab = ref<'html' | 'toc' | 'plainText' | 'stats'>('html')
+const previewPanelTab = ref<'finalPreview' | 'html' | 'toc' | 'plainText' | 'stats'>('finalPreview')
 const isPreviewModalOpen = ref(false)
+const activeTocId = ref('')
+const finalPreviewPanelRef = ref<HTMLElement | null>(null)
+const previewContentTheme = ref<'editorial' | 'documentation' | 'minimal'>('editorial')
+const previewCodeTheme = ref<'github-light' | 'github-dark' | 'vitesse-light' | 'vitesse-dark'>('github-light')
 const editorTools = [
   { label: '标题', hint: '# / ## / ###' },
   { label: '强调', hint: '**加粗**' },
   { label: '链接', hint: '[文本](url)' },
   { label: '代码', hint: '```language' }
 ]
+const contentThemeOptions = [
+  { value: 'editorial', label: '杂志感', hint: '阅读氛围更强' },
+  { value: 'documentation', label: '文档感', hint: '结构更规整' },
+  { value: 'minimal', label: '极简', hint: '更轻更紧凑' }
+] as const
+const codeThemeOptions = [
+  { value: 'github-light', label: 'GitHub Light', hint: '浅色稳定' },
+  { value: 'github-dark', label: 'GitHub Dark', hint: '深色稳定' },
+  { value: 'vitesse-light', label: 'Vitesse Light', hint: '技术感更强' },
+  { value: 'vitesse-dark', label: 'Vitesse Dark', hint: '深色技术感' }
+] as const
+const currentPreviewContentThemeLabel = computed(() =>
+  contentThemeOptions.find(item => item.value === previewContentTheme.value)?.label || '杂志感'
+)
+const currentPreviewCodeThemeLabel = computed(() =>
+  codeThemeOptions.find(item => item.value === previewCodeTheme.value)?.label || 'GitHub Light'
+)
 const contentModel = computed({
   get: () => props.modelValue ?? '',
   set: value => emit('update:modelValue', value)
@@ -54,6 +76,7 @@ const tocSource = computed(() => props.toc || [])
 const plainTextSource = computed(() => props.plainText || '')
 const hasPreviewContent = computed(() => previewHtml.value.trim().length > 0)
 const previewTabs = [
+  { key: 'finalPreview', label: '最终预览', icon: 'i-lucide-panels-top-left' },
   { key: 'html', label: 'HTML', icon: 'i-lucide-file-code-2' },
   { key: 'toc', label: '目录', icon: 'i-lucide-list-tree' },
   { key: 'plainText', label: '纯文本', icon: 'i-lucide-wrap-text' },
@@ -69,6 +92,8 @@ const statsSourceText = computed(() => JSON.stringify({
 }, null, 2))
 const currentPreviewPanelText = computed(() => {
   switch (previewPanelTab.value) {
+    case 'finalPreview':
+      return previewHtml.value
     case 'toc':
       return tocSourceText.value
     case 'plainText':
@@ -81,6 +106,8 @@ const currentPreviewPanelText = computed(() => {
 })
 const currentPreviewPanelTitle = computed(() => {
   switch (previewPanelTab.value) {
+    case 'finalPreview':
+      return '最终文章预览'
     case 'toc':
       return '当前目录结构'
     case 'plainText':
@@ -93,6 +120,8 @@ const currentPreviewPanelTitle = computed(() => {
 })
 const currentPreviewPanelDescription = computed(() => {
   switch (previewPanelTab.value) {
+    case 'finalPreview':
+      return '这里按文章最终展示样式渲染当前正文内容，便于直接确认排版、段落节奏和阅读观感。'
     case 'toc':
       return '这里展示当前正文解析后的目录数据，便于确认标题层级和目录生成结果。'
     case 'plainText':
@@ -156,7 +185,7 @@ function openPreviewModal() {
  *
  * @param tab 当前选中的面板标识
  */
-function switchPreviewPanelTab(tab: 'html' | 'toc' | 'plainText' | 'stats') {
+function switchPreviewPanelTab(tab: 'finalPreview' | 'html' | 'toc' | 'plainText' | 'stats') {
   previewPanelTab.value = tab
 }
 
@@ -166,6 +195,68 @@ function switchPreviewPanelTab(tab: 'html' | 'toc' | 'plainText' | 'stats') {
  */
 function closePreviewModal() {
   isPreviewModalOpen.value = false
+}
+
+/**
+ * 切换最终预览内容主题。
+ * 作用：在预览弹窗里快速比较不同正文主题的排版与阅读观感。
+ *
+ * @param theme 目标内容主题
+ */
+function switchPreviewContentTheme(theme: 'editorial' | 'documentation' | 'minimal') {
+  previewContentTheme.value = theme
+}
+
+/**
+ * 切换最终预览代码主题。
+ * 作用：在预览弹窗里快速比较不同代码高亮主题的视觉表现。
+ *
+ * @param theme 目标代码主题
+ */
+function switchPreviewCodeTheme(theme: 'github-light' | 'github-dark' | 'vitesse-light' | 'vitesse-dark') {
+  previewCodeTheme.value = theme
+}
+
+/**
+ * 顺序切换内容主题。
+ * 作用：在实时预览区提供更轻量的主题切换入口，不占用过多工作台空间。
+ */
+function cyclePreviewContentTheme() {
+  const currentIndex = contentThemeOptions.findIndex(item => item.value === previewContentTheme.value)
+  const nextIndex = currentIndex >= contentThemeOptions.length - 1 ? 0 : currentIndex + 1
+  previewContentTheme.value = contentThemeOptions[nextIndex].value
+}
+
+/**
+ * 顺序切换代码主题。
+ * 作用：在实时预览区提供更轻量的代码高亮切换入口，便于快速比较效果。
+ */
+function cyclePreviewCodeTheme() {
+  const currentIndex = codeThemeOptions.findIndex(item => item.value === previewCodeTheme.value)
+  const nextIndex = currentIndex >= codeThemeOptions.length - 1 ? 0 : currentIndex + 1
+  previewCodeTheme.value = codeThemeOptions[nextIndex].value
+}
+
+/**
+ * 跳转到最终预览中的指定标题。
+ * 作用：在目录树中点击某个标题后，切换到最终预览并滚动到对应锚点位置。
+ *
+ * @param item 当前目录项
+ */
+async function jumpToTocItem(item: ArticleTocItem) {
+  activeTocId.value = item.id
+  previewPanelTab.value = 'finalPreview'
+  await nextTick()
+
+  const target = finalPreviewPanelRef.value?.querySelector<HTMLElement>(`#${CSS.escape(item.id)}`)
+  if (!target) {
+    return
+  }
+
+  target.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  })
 }
 </script>
 
@@ -301,6 +392,26 @@ function closePreviewModal() {
               {{ previewStatusLabel }}
             </span>
 
+            <button
+              type="button"
+              class="inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-200/80 bg-white/90 px-3 py-2 text-xs font-semibold text-slate-600 transition duration-200 hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-50"
+              :title="`切换内容主题，当前：${currentPreviewContentThemeLabel}`"
+              @click="cyclePreviewContentTheme"
+            >
+              <UIcon name="i-lucide-palette" class="size-3.5" />
+              <span>{{ currentPreviewContentThemeLabel }}</span>
+            </button>
+
+            <button
+              type="button"
+              class="inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-200/80 bg-white/90 px-3 py-2 text-xs font-semibold text-slate-600 transition duration-200 hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-50"
+              :title="`切换代码主题，当前：${currentPreviewCodeThemeLabel}`"
+              @click="cyclePreviewCodeTheme"
+            >
+              <UIcon name="i-lucide-file-code-2" class="size-3.5" />
+              <span>{{ currentPreviewCodeThemeLabel }}</span>
+            </button>
+
             <UButton
               color="neutral"
               variant="soft"
@@ -315,6 +426,8 @@ function closePreviewModal() {
         <MarkdownPreview
           :html="previewHtml"
           :is-loading="previewSkeletonLoading"
+          :content-theme="previewContentTheme"
+          :code-theme="previewCodeTheme"
           container-class="h-full min-h-0 min-w-0 flex-1 overflow-hidden"
           body-class="h-full min-h-0 min-w-0 overflow-auto pr-2 whitespace-normal break-words [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.5)_transparent] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/80"
         />
@@ -364,8 +477,97 @@ function closePreviewModal() {
             />
           </div>
 
+          <div
+            v-if="previewPanelTab === 'finalPreview'"
+            class="rounded-[22px] border border-slate-200/80 bg-white/75 p-4 dark:border-slate-700 dark:bg-slate-950/58"
+          >
+            <div class="grid gap-4 lg:grid-cols-2">
+              <div class="space-y-3">
+                <div class="flex items-center justify-between gap-3">
+                  <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">内容主题</p>
+                  <UBadge color="neutral" variant="soft">{{ previewContentTheme }}</UBadge>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <UButton
+                    v-for="theme in contentThemeOptions"
+                    :key="theme.value"
+                    color="neutral"
+                    :variant="previewContentTheme === theme.value ? 'solid' : 'soft'"
+                    class="rounded-full"
+                    :label="theme.label"
+                    @click="switchPreviewContentTheme(theme.value)"
+                  />
+                </div>
+                <p class="text-sm text-slate-500 dark:text-slate-400">
+                  {{ contentThemeOptions.find(item => item.value === previewContentTheme)?.hint }}
+                </p>
+              </div>
+
+              <div class="space-y-3">
+                <div class="flex items-center justify-between gap-3">
+                  <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">代码主题</p>
+                  <UBadge color="neutral" variant="soft">{{ previewCodeTheme }}</UBadge>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <UButton
+                    v-for="theme in codeThemeOptions"
+                    :key="theme.value"
+                    color="neutral"
+                    :variant="previewCodeTheme === theme.value ? 'solid' : 'soft'"
+                    class="rounded-full"
+                    :label="theme.label"
+                    @click="switchPreviewCodeTheme(theme.value)"
+                  />
+                </div>
+                <p class="text-sm text-slate-500 dark:text-slate-400">
+                  {{ codeThemeOptions.find(item => item.value === previewCodeTheme)?.hint }}
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div class="rounded-[24px] border border-slate-200/80 bg-slate-50/85 p-4 dark:border-slate-700 dark:bg-slate-900/72">
-            <div v-if="currentPreviewPanelText.trim().length > 0" class="overflow-hidden rounded-[20px] border border-slate-200/80 bg-slate-950 dark:border-slate-700">
+            <div
+              v-if="previewPanelTab === 'finalPreview'"
+              ref="finalPreviewPanelRef"
+              class="overflow-hidden rounded-[20px] border border-slate-200/80 bg-white/92 dark:border-slate-700 dark:bg-slate-950/78"
+            >
+              <MarkdownPreview
+                :html="previewHtml"
+                :is-loading="previewSkeletonLoading"
+                empty-text="当前还没有可预览的正文内容。"
+                :content-theme="previewContentTheme"
+                :code-theme="previewCodeTheme"
+                container-class="min-h-[32rem] border-0 bg-transparent p-0 shadow-none"
+                body-class="max-h-[32rem] overflow-auto px-6 py-6 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.5)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/80"
+              />
+            </div>
+
+            <div
+              v-else-if="previewPanelTab === 'toc' && tocSource.length"
+              class="overflow-hidden rounded-[20px] border border-slate-200/80 bg-white/92 p-3 dark:border-slate-700 dark:bg-slate-950/78"
+            >
+              <div class="mb-3 flex items-center justify-between gap-3 rounded-[18px] border border-slate-200/80 bg-slate-50/85 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/72">
+                <div class="space-y-1">
+                  <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">目录树</p>
+                  <p class="text-sm text-slate-500 dark:text-slate-400">点击目录项可切到最终预览并跳转到对应标题。</p>
+                </div>
+                <UBadge color="info" variant="soft">{{ tocSource.length }} 项</UBadge>
+              </div>
+
+              <div class="max-h-[28rem] overflow-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.5)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/80">
+                <ArticleTocTree
+                  :items="tocSource"
+                  :active-id="activeTocId"
+                  @select="jumpToTocItem"
+                />
+              </div>
+            </div>
+
+            <div
+              v-else-if="currentPreviewPanelText.trim().length > 0"
+              class="overflow-hidden rounded-[20px] border border-slate-200/80 bg-slate-950 dark:border-slate-700"
+            >
               <pre class="max-h-[32rem] overflow-auto px-5 py-4 text-sm leading-7 text-slate-100 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.5)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-600/80">{{ currentPreviewPanelText }}</pre>
             </div>
 

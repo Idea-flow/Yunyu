@@ -1,0 +1,16 @@
+.yy-md[data-code-theme='vitesse-light'] {
+  --yy-code-block-bg: #fff7ed;
+  --yy-code-block-border: rgba(253, 186, 116, 0.55);
+  --yy-code-text: #7c2d12;
+  --yy-code-toolbar-bg: rgba(255, 247, 237, 0.96);
+  --yy-code-toolbar-border: rgba(253, 186, 116, 0.34);
+  --yy-code-label-text: #9a3412;
+  --yy-code-label-dot: #f97316;
+  --yy-code-action-bg: rgba(255, 237, 213, 0.9);
+  --yy-code-action-border: rgba(251, 146, 60, 0.35);
+  --yy-code-action-text: #9a3412;
+  --yy-code-action-bg-hover: rgba(254, 215, 170, 0.95);
+  --yy-code-action-border-hover: rgba(249, 115, 22, 0.5);
+  --yy-code-action-text-hover: #7c2d12;
+  --yy-code-collapse-mask: rgba(255, 247, 237, 0.98);
+}

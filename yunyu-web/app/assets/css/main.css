@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+@import "./md/index.css";
 
 @theme static {
   --font-sans: "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;

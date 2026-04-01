@@ -1,0 +1,39 @@
+.yy-md[data-content-theme='editorial'] {
+  --yy-md-text: rgb(51 65 85);
+  --yy-md-heading: rgb(15 23 42);
+  --yy-md-muted: rgb(100 116 139);
+  --yy-md-strong: rgb(15 23 42);
+  --yy-md-link: rgb(2 132 199);
+  --yy-md-link-hover: rgb(3 105 161);
+  --yy-md-selection: rgba(14, 165, 233, 0.22);
+  --yy-md-quote-bg: linear-gradient(180deg, rgba(240, 249, 255, 0.98), rgba(248, 250, 252, 0.98));
+  --yy-md-quote-border: rgba(14, 165, 233, 0.45);
+  --yy-md-quote-text: rgb(30 41 59);
+  --yy-md-inline-code-bg: rgba(226, 232, 240, 0.82);
+  --yy-md-inline-code-text: rgb(15 23 42);
+  --yy-md-table-border: rgba(203, 213, 225, 0.9);
+  --yy-md-table-head-bg: rgba(241, 245, 249, 0.95);
+  --yy-md-table-row-bg: rgba(255, 255, 255, 0.9);
+  --yy-md-hr: rgba(125, 211, 252, 0.3);
+  --yy-md-image-border: rgba(226, 232, 240, 0.95);
+}
+
+.dark .yy-md[data-content-theme='editorial'] {
+  --yy-md-text: rgb(203 213 225);
+  --yy-md-heading: rgb(248 250 252);
+  --yy-md-muted: rgb(148 163 184);
+  --yy-md-strong: rgb(248 250 252);
+  --yy-md-link: rgb(125 211 252);
+  --yy-md-link-hover: rgb(186 230 253);
+  --yy-md-selection: rgba(56, 189, 248, 0.24);
+  --yy-md-quote-bg: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.92));
+  --yy-md-quote-border: rgba(56, 189, 248, 0.48);
+  --yy-md-quote-text: rgb(226 232 240);
+  --yy-md-inline-code-bg: rgba(30, 41, 59, 0.92);
+  --yy-md-inline-code-text: rgb(226 232 240);
+  --yy-md-table-border: rgba(51, 65, 85, 0.92);
+  --yy-md-table-head-bg: rgba(15, 23, 42, 0.96);
+  --yy-md-table-row-bg: rgba(2, 6, 23, 0.68);
+  --yy-md-hr: rgba(56, 189, 248, 0.24);
+  --yy-md-image-border: rgba(51, 65, 85, 0.92);
+}

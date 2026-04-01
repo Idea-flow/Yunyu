@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
+
 /**
  * 主题切换组件。
  * 负责在明亮、暗黑、系统三种模式之间切换，
  * 作为前后台统一主题机制的基础交互入口。
  */
 const colorMode = useColorMode()
+const isMounted = ref(false)
 
 /**
  * 设置主题偏好。
@@ -19,7 +22,7 @@ function setTheme(preference: 'light' | 'dark' | 'system') {
  * 用于在界面上直观表达用户当前选择的主题模式。
  */
 function isActive(preference: 'light' | 'dark' | 'system') {
-  return colorMode.preference === preference
+  return currentPreference.value === preference
 }
 
 const themeOptions = [
@@ -44,11 +47,23 @@ const themeOptions = [
 ]
 
 /**
+ * 获取当前用于界面展示的主题偏好。
+ * 作用：在 SSR 和客户端首帧阶段统一按 `system` 渲染，避免 hydration 时因真实主题已切换而产生不一致。
+ */
+const currentPreference = computed<'light' | 'dark' | 'system'>(() => {
+  if (!isMounted.value) {
+    return 'system'
+  }
+
+  return colorMode.preference as 'light' | 'dark' | 'system'
+})
+
+/**
  * 获取当前激活主题的配置。
  * 用于在触发按钮上展示当前主题名称和图标。
  */
 const activeTheme = computed(() =>
-  themeOptions.find(item => item.value === colorMode.preference) ?? themeOptions[2]
+  themeOptions.find(item => item.value === currentPreference.value) ?? themeOptions[2]
 )
 
 /**
@@ -64,6 +79,10 @@ const themeMenuItems = computed(() => [
     onSelect: () => setTheme(item.value)
   }))
 ])
+
+onMounted(() => {
+  isMounted.value = true
+})
 </script>
 
 <template>

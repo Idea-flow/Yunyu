@@ -1,0 +1,152 @@
+.yy-md-code-block {
+  --yy-code-body-max-height: 9.5rem;
+  overflow: hidden;
+  border: 1px solid var(--yy-code-block-border);
+  border-radius: 1.15rem;
+  background: var(--yy-code-block-bg);
+  box-shadow: 0 16px 32px -28px rgba(15, 23, 42, 0.24);
+}
+
+.yy-md-code-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--yy-code-toolbar-border);
+  background: var(--yy-code-toolbar-bg);
+  padding: 0.42rem 0.55rem;
+}
+
+.yy-md-code-toolbar-meta,
+.yy-md-code-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.yy-md-code-language-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--yy-code-label-text);
+  padding: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.88;
+}
+
+.yy-md-code-language-pill::before {
+  content: "";
+  display: inline-flex;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: var(--yy-code-label-dot);
+}
+
+.yy-md-code-action {
+  cursor: pointer;
+  border: 1px solid var(--yy-code-action-border);
+  border-radius: 999px;
+  background: var(--yy-code-action-bg);
+  color: var(--yy-code-action-text);
+  padding: 0.26rem 0.66rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.yy-md-code-action:hover {
+  background: var(--yy-code-action-bg-hover);
+  border-color: var(--yy-code-action-border-hover);
+  color: var(--yy-code-action-text-hover);
+}
+
+.yy-md-code-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  font-size: 0.92rem;
+}
+
+.yy-md-code-action-icon-glyph {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
+}
+
+.yy-md-code-body {
+  position: relative;
+  overflow: hidden;
+}
+
+.yy-md-code-block[data-code-collapsed='true'] .yy-md-code-body {
+  max-height: var(--yy-code-body-max-height);
+}
+
+.yy-md-code-block[data-code-collapsed='true'] .yy-md-code-body::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2.8rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, var(--yy-code-collapse-mask) 100%);
+}
+
+.yy-md pre,
+.yy-md .shiki {
+  margin: 0;
+  background: var(--yy-code-block-bg) !important;
+  color: var(--yy-code-text, inherit);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.yy-md .shiki {
+  display: block;
+  overflow-x: auto;
+  padding: 0.78rem 0.9rem 0.88rem;
+  line-height: 1.7;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+}
+
+.yy-md .shiki code {
+  display: grid;
+  min-width: max-content;
+  font-size: 0.84rem;
+  font-family: "SFMono-Regular", "SF Mono", "JetBrains Mono", "Consolas", monospace;
+}
+
+.yy-md .shiki code .line {
+  display: inline-block;
+  min-height: 1.7em;
+}
+
+.yy-md pre::-webkit-scrollbar,
+.yy-md .shiki::-webkit-scrollbar {
+  height: 0.55rem;
+  width: 0.55rem;
+}
+
+.yy-md pre::-webkit-scrollbar-track,
+.yy-md .shiki::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.yy-md pre::-webkit-scrollbar-thumb,
+.yy-md .shiki::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.7);
+  border-radius: 999px;
+}
