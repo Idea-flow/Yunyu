@@ -30,6 +30,7 @@ const hasContent = computed(() => normalizedHtml.value.length > 0)
 const containerRef = ref<HTMLElement | null>(null)
 const cleanupCallbacks: Array<() => void> = []
 const collapseHeight = 152
+const yunyuToast = useYunyuToast()
 const actionIconMap: Record<string, string> = {
   'lucide:copy': `
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -91,10 +92,12 @@ async function copyCode(text: string, button: HTMLButtonElement) {
     await navigator.clipboard.writeText(text)
     button.setAttribute('aria-label', '复制成功')
     button.setAttribute('title', '复制成功')
+    yunyuToast.success('代码已复制', '可以直接粘贴到编辑器或终端中使用。')
   } catch (error) {
     console.error('[ArticleContentRenderer] Copy code failed.', error)
     button.setAttribute('aria-label', '复制失败')
     button.setAttribute('title', '复制失败')
+    yunyuToast.error('复制失败', '当前环境暂时无法访问剪贴板，请手动复制代码。')
   }
 
   window.setTimeout(() => {
