@@ -16,7 +16,7 @@ export function useApiClient() {
   /**
    * 发起后端 API 请求。
    * 当前统一使用环境变量中的后端地址，并自动携带认证令牌，
-   * 这样后续切换线上环境时只需要调整 `NUXT_PUBLIC_API_BASE`。
+   * 这样后续切换线上环境时只需要调整 `YUNYU_PUBLIC_API_BASE`。
    */
   async function request<T>(
     path: string,
