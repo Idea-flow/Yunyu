@@ -15,7 +15,7 @@ services:
     ports:
       - "${MYSQL_PORT:-3306}:3306"
     volumes:
-      - yunyu_mysql_data:/var/lib/mysql
+      - ./yunyu_mysql_data:/var/lib/mysql
     networks:
       - yunyu-network
     healthcheck:
@@ -43,9 +43,6 @@ services:
       - "${SERVER_PORT:-20000}:20000"
     networks:
       - yunyu-network
-
-volumes:
-  yunyu_mysql_data:
 
 networks:
   yunyu-network:
