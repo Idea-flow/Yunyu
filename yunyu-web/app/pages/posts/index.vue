@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FrontFilterBar from '../../components/content/FrontFilterBar.vue'
 import FrontPostCard from '../../components/content/FrontPostCard.vue'
 import FrontPaginationBar from '../../components/content/FrontPaginationBar.vue'
 
@@ -38,6 +39,31 @@ const { data, pending } = await useAsyncData(
 
 const postList = computed(() => data.value)
 const currentTag = computed(() => tagOptions.value?.find(tag => tag.slug === selectedTagSlug.value) || null)
+const resultText = computed(() => {
+  if (!postList.value) {
+    return currentTag.value?.description || ''
+  }
+
+  const conditions: string[] = []
+
+  if (typeof route.query.keyword === 'string' && route.query.keyword.trim()) {
+    conditions.push(`关键词“${route.query.keyword.trim()}”`)
+  }
+
+  if (currentTag.value) {
+    conditions.push(`标签“${currentTag.value.name}”`)
+  }
+
+  if (!conditions.length) {
+    return `共 ${postList.value.total} 篇公开文章，按发布时间倒序浏览。`
+  }
+
+  return `当前按${conditions.join('、')}筛选，共找到 ${postList.value.total} 篇文章。`
+})
+
+watch(() => route.query.keyword, value => {
+  searchKeyword.value = typeof value === 'string' ? value : ''
+})
 
 useSeoMeta({
   title: () => currentTag.value ? `${currentTag.value.name} - 文章列表 - 云屿` : '文章列表 - 云屿',
@@ -49,10 +75,12 @@ useSeoMeta({
  * 作用：把当前关键词同步到路由查询参数，触发服务端列表重新加载。
  */
 async function handleSearch() {
+  const keyword = searchKeyword.value.trim()
+
   await router.push({
     path: '/posts',
     query: {
-      ...(searchKeyword.value ? { keyword: searchKeyword.value } : {}),
+      ...(keyword ? { keyword } : {}),
       ...(selectedTagSlug.value ? { tagSlug: selectedTagSlug.value } : {}),
       pageNo: 1
     }
@@ -66,10 +94,12 @@ async function handleSearch() {
  * @param tagSlug 标签 slug
  */
 async function handleTagChange(tagSlug: string) {
+  const keyword = searchKeyword.value.trim()
+
   await router.push({
     path: '/posts',
     query: {
-      ...(searchKeyword.value ? { keyword: searchKeyword.value } : {}),
+      ...(keyword ? { keyword } : {}),
       ...(tagSlug ? { tagSlug } : {}),
       pageNo: 1
     }
@@ -97,23 +127,19 @@ async function changePage(nextPage: number) {
 <template>
   <main class="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] dark:bg-[linear-gradient(180deg,#020617_0%,#081120_100%)]">
     <section class="mx-auto max-w-[1360px] px-5 py-8 sm:px-8 lg:px-10">
-      <div class="rounded-[32px] border border-white/60 bg-white/82 p-6 shadow-[0_26px_70px_-46px_rgba(15,23,42,0.35)] dark:border-white/10 dark:bg-slate-950/72 sm:p-8">
-        <p class="text-xs font-semibold uppercase tracking-[0.34em] text-sky-600 dark:text-sky-300">文章列表</p>
-        <h1 class="mt-3 text-3xl font-semibold">
-          {{ currentTag ? `${currentTag.name} · 文章列表` : '按更新顺序浏览全部内容' }}
-        </h1>
-        <p class="mt-4 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">
-          {{ currentTag?.description || '这里已经切到真实公开接口，后续首页、专题、分类页也都会共用同一套前台内容查询能力。' }}
-        </p>
-
-        <div class="mt-6 flex flex-col gap-3">
-          <UInput
-            v-model="searchKeyword"
-            size="xl"
-            placeholder="搜索标题或摘要"
-            class="w-full"
-            @keyup.enter="handleSearch"
-          />
+      <FrontFilterBar
+        v-model:keyword="searchKeyword"
+        eyebrow="文章列表"
+        :title="currentTag ? `${currentTag.name} · 文章列表` : '按更新顺序浏览全部内容'"
+        :description="currentTag?.description || '通过关键词和标签快速缩小公开文章范围，统一浏览云屿全部前台内容。'"
+        eyebrow-class="text-sky-600 dark:text-sky-300"
+        search-placeholder="搜索标题或摘要"
+        :pending="pending"
+        :result-text="resultText"
+        show-search
+        @search="handleSearch"
+      >
+        <template #filters>
           <div class="flex flex-col gap-3 lg:flex-row">
             <USelect
               :model-value="selectedTagSlug || undefined"
@@ -126,12 +152,9 @@ async function changePage(nextPage: number) {
               class="w-full lg:max-w-[320px]"
               @update:model-value="value => handleTagChange(String(value || ''))"
             />
-            <UButton color="primary" size="xl" icon="i-lucide-search" class="justify-center lg:px-6" @click="handleSearch">
-              搜索
-            </UButton>
           </div>
-        </div>
-      </div>
+        </template>
+      </FrontFilterBar>
 
       <div class="mt-6 space-y-4">
         <USkeleton v-if="pending" class="h-48 rounded-[28px]" />
@@ -142,6 +165,13 @@ async function changePage(nextPage: number) {
           :key="post.slug"
           :post="post"
         />
+
+        <div
+          v-if="!pending && !(postList?.list?.length)"
+          class="rounded-[28px] border border-dashed border-slate-200 bg-white/70 px-6 py-12 text-center text-sm text-slate-500 dark:border-white/10 dark:bg-slate-950/50 dark:text-slate-400"
+        >
+          当前筛选条件下暂无文章，换个关键词或标签试试看。
+        </div>
       </div>
 
       <FrontPaginationBar

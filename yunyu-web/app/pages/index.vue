@@ -38,90 +38,75 @@ useSeoMeta({
           </h1>
         </div>
 
-        <div v-if="pending" class="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_392px]">
-          <USkeleton class="h-[520px] rounded-[32px]" />
-          <div class="grid gap-4">
-            <USkeleton class="h-[252px] rounded-[28px]" />
-            <USkeleton class="h-[252px] rounded-[28px]" />
+        <div v-if="pending" class="mt-8 space-y-6">
+          <USkeleton class="aspect-[16/9] w-full rounded-[32px]" />
+          <div class="grid gap-4 lg:grid-cols-2">
+            <USkeleton class="h-[220px] rounded-[28px]" />
+            <USkeleton class="h-[220px] rounded-[28px]" />
           </div>
         </div>
 
         <div
           v-else-if="featuredPost"
-          class="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_392px]"
+          class="mt-8 space-y-6"
         >
           <NuxtLink
             :to="`/posts/${featuredPost.slug}`"
-            class="group relative overflow-hidden rounded-[32px] border border-white/60 bg-white/78 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.35)] backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 dark:border-white/10 dark:bg-slate-950/68"
+            class="group relative block overflow-hidden rounded-[32px] border border-white/60 bg-white/78 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.35)] backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 dark:border-white/10 dark:bg-slate-950/68"
           >
-            <div class="grid min-h-[520px] lg:grid-cols-[minmax(0,1.05fr)_0.95fr]">
-              <div class="flex flex-col justify-between p-7 sm:p-8 lg:p-10">
-                <div>
+            <div class="relative aspect-[16/9] min-h-[420px]">
+              <img
+                :src="featuredPost.coverUrl"
+                :alt="featuredPost.title"
+                class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+              >
+              <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(15,23,42,0.82)_0%,rgba(15,23,42,0.62)_34%,rgba(15,23,42,0.22)_64%,rgba(15,23,42,0.12)_100%)]" />
+              <div class="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(180deg,rgba(15,23,42,0)_0%,rgba(15,23,42,0.52)_100%)]" />
+
+              <div class="absolute inset-0 flex items-end">
+                <div class="w-full max-w-[44rem] p-7 text-white sm:max-w-[40rem] sm:p-8 lg:max-w-[36rem] lg:p-10">
                   <div class="flex flex-wrap gap-2">
                     <UBadge color="primary" variant="soft" size="lg">主打推荐</UBadge>
                     <UBadge color="neutral" variant="soft" size="lg">{{ featuredPost.categoryName }}</UBadge>
                   </div>
-                  <h2 class="mt-6 max-w-3xl text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">
+                  <h2 class="mt-6 max-w-[12ch] text-3xl font-semibold leading-tight sm:max-w-[11ch] sm:text-4xl lg:max-w-[10ch] lg:text-5xl">
                     {{ featuredPost.title }}
                   </h2>
-                  <p class="mt-5 max-w-2xl text-sm leading-8 text-slate-600 sm:text-base dark:text-slate-300">
+                  <p class="mt-5 max-w-[34rem] text-sm leading-8 text-white/82 sm:max-w-[30rem] sm:text-base lg:max-w-[28rem]">
                     {{ featuredPost.summary }}
                   </p>
                 </div>
-
-                <div class="mt-8 flex flex-wrap items-end justify-between gap-5">
-                  <div class="flex items-center gap-3">
-                    <img
-                      :src="featuredPost.authorAvatarUrl"
-                      :alt="featuredPost.authorName"
-                      class="h-12 w-12 rounded-full object-cover ring-2 ring-white/70 dark:ring-slate-800"
-                    >
-                    <div>
-                      <p class="text-sm font-semibold">{{ featuredPost.authorName }}</p>
-                      <p class="text-xs text-slate-500 dark:text-slate-400">
-                        内容编辑 · {{ featuredPost.publishedAt }} · {{ featuredPost.readingMinutes }} 分钟
-                      </p>
-                    </div>
-                  </div>
-
-                  <div class="flex flex-wrap gap-2">
-                    <NuxtLink
-                      v-for="tag in featuredPost.tagItems"
-                      :key="`${featuredPost.slug}-${tag.slug}`"
-                      :to="`/tags/${tag.slug}`"
-                      class="relative z-10 rounded-full border border-slate-200/80 bg-white/80 px-3 py-1 text-xs font-medium text-slate-600 transition hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:border-sky-800 dark:hover:text-sky-200"
-                      @click.stop
-                    >
-                      #{{ tag.name }}
-                    </NuxtLink>
-                  </div>
-                </div>
-              </div>
-
-              <div class="relative min-h-[320px] overflow-hidden">
-                <img
-                  :src="featuredPost.coverUrl"
-                  :alt="featuredPost.title"
-                  class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                >
-                <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.02)_0%,rgba(15,23,42,0.3)_100%)]" />
               </div>
             </div>
           </NuxtLink>
 
-          <aside class="flex flex-col gap-4">
+          <div class="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
             <div class="rounded-[28px] border border-white/60 bg-white/74 p-6 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.36)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/68">
-              <div class="flex items-start justify-between gap-4">
-                <div>
-                  <p class="text-xs font-semibold uppercase tracking-[0.34em] text-sky-600 dark:text-sky-300">
-                    站点速览
-                  </p>
-                  <p class="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                    {{ siteInfo?.defaultDescription || '聚焦新番观察、场景美学与专题化阅读体验。' }}
-                  </p>
+              <div class="flex flex-wrap items-end justify-between gap-5">
+                <div class="flex items-center gap-3">
+                  <img
+                    :src="featuredPost.authorAvatarUrl"
+                    :alt="featuredPost.authorName"
+                    class="h-12 w-12 rounded-full object-cover ring-2 ring-white/70 dark:ring-slate-800"
+                  >
+                  <div>
+                    <p class="text-sm font-semibold">{{ featuredPost.authorName }}</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                      内容编辑 · {{ featuredPost.publishedAt }} · {{ featuredPost.readingMinutes }} 分钟
+                    </p>
+                  </div>
                 </div>
-                <div class="rounded-2xl bg-sky-50 p-3 text-sky-600 dark:bg-sky-400/10 dark:text-sky-300">
-                  <UIcon name="i-lucide-sparkles" class="size-5" />
+
+                <div class="flex flex-wrap gap-2">
+                  <NuxtLink
+                    v-for="tag in featuredPost.tagItems"
+                    :key="`${featuredPost.slug}-${tag.slug}`"
+                    :to="`/tags/${tag.slug}`"
+                    class="relative z-10 rounded-full border border-slate-200/80 bg-white/80 px-3 py-1 text-xs font-medium text-slate-600 transition hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:border-sky-800 dark:hover:text-sky-200"
+                    @click.stop
+                  >
+                    #{{ tag.name }}
+                  </NuxtLink>
                 </div>
               </div>
 
@@ -146,6 +131,23 @@ useSeoMeta({
             </div>
 
             <div class="rounded-[28px] border border-white/60 bg-white/74 p-6 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.36)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/68">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[0.34em] text-sky-600 dark:text-sky-300">
+                    站点速览
+                  </p>
+                  <p class="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                    {{ siteInfo?.defaultDescription || '聚焦新番观察、场景美学与专题化阅读体验。' }}
+                  </p>
+                </div>
+                <div class="rounded-2xl bg-sky-50 p-3 text-sky-600 dark:bg-sky-400/10 dark:text-sky-300">
+                  <UIcon name="i-lucide-sparkles" class="size-5" />
+                </div>
+              </div>
+
+            </div>
+
+            <div class="rounded-[28px] border border-white/60 bg-white/74 p-6 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.36)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/68 lg:col-span-2">
               <div class="flex items-center justify-between gap-4">
                 <div>
                   <p class="text-xs font-semibold uppercase tracking-[0.34em] text-orange-500 dark:text-orange-300">
@@ -178,7 +180,7 @@ useSeoMeta({
                 </NuxtLink>
               </div>
             </div>
-          </aside>
+          </div>
         </div>
 
         <div
