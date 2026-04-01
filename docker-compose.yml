@@ -1,5 +1,5 @@
 services:
-  mysql:
+  yunyu-mysql:
     image: mysql:8.4
     container_name: yunyu-mysql
     restart: unless-stopped
@@ -16,6 +16,8 @@ services:
       - "${MYSQL_PORT:-3306}:3306"
     volumes:
       - yunyu_mysql_data:/var/lib/mysql
+    networks:
+      - yunyu-network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root123456}"]
       interval: 10s
@@ -28,17 +30,23 @@ services:
     container_name: yunyu-server
     restart: unless-stopped
     depends_on:
-      mysql:
+      yunyu-mysql:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-yunyu}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_URL: jdbc:mysql://yunyu-mysql:3306/${MYSQL_DATABASE:-yunyu}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-yunyu}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-yunyu123456}
       YUNYU_JWT_SECRET: ${YUNYU_JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
       TZ: ${TZ:-Asia/Shanghai}
     ports:
       - "${SERVER_PORT:-20000}:20000"
+    networks:
+      - yunyu-network
 
 volumes:
   yunyu_mysql_data:
+
+networks:
+  yunyu-network:
+    name: yunyu-network

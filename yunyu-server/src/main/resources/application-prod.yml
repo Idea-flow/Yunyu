@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://mysql:3306/yunyu?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://yunyu-mysql:3306/yunyu?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai}
     username: ${SPRING_DATASOURCE_USERNAME:yunyu}
     password: ${SPRING_DATASOURCE_PASSWORD:yunyu123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
