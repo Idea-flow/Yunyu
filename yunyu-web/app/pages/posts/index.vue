@@ -10,6 +10,7 @@ import FrontPaginationBar from '../../components/content/FrontPaginationBar.vue'
 const route = useRoute()
 const router = useRouter()
 const siteContent = useSiteContent()
+const ALL_TAG_VALUE = '__ALL_TAGS__'
 const searchKeyword = ref(typeof route.query.keyword === 'string' ? route.query.keyword : '')
 const selectedTagSlug = computed(() => typeof route.query.tagSlug === 'string' ? route.query.tagSlug : '')
 
@@ -107,6 +108,23 @@ async function handleTagChange(tagSlug: string) {
 }
 
 /**
+ * 获取下拉框当前选中值。
+ * 作用：把“全部标签”映射为非空哨兵值，避免 SSR 和客户端运行时因空字符串选项触发组件异常。
+ */
+const selectedTagValue = computed(() => selectedTagSlug.value || ALL_TAG_VALUE)
+
+/**
+ * 处理标签下拉框变更。
+ * 作用：把下拉框中的哨兵值还原成业务层可识别的空字符串，再复用现有路由筛选逻辑。
+ *
+ * @param value 下拉框返回值
+ */
+async function handleTagSelectChange(value: string | number) {
+  const nextValue = String(value)
+  await handleTagChange(nextValue === ALL_TAG_VALUE ? '' : nextValue)
+}
+
+/**
  * 切换分页。
  * 作用：更新当前页码并保持现有搜索条件不丢失。
  *
@@ -142,15 +160,15 @@ async function changePage(nextPage: number) {
         <template #filters>
           <div class="flex flex-col gap-3 lg:flex-row">
             <USelect
-              :model-value="selectedTagSlug || undefined"
+              :model-value="selectedTagValue"
               :items="[
-                { label: '全部标签', value: '' },
+                { label: '全部标签', value: ALL_TAG_VALUE },
                 ...((tagOptions || []).map(tag => ({ label: `${tag.name} (${tag.articleCount})`, value: tag.slug })))
               ]"
               size="xl"
               placeholder="按标签筛选"
               class="w-full lg:max-w-[320px]"
-              @update:model-value="value => handleTagChange(String(value || ''))"
+              @update:model-value="handleTagSelectChange"
             />
           </div>
         </template>

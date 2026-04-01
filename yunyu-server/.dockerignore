@@ -1,0 +1,6 @@
+target
+.mvn
+Dockerfile
+mvnw
+mvnw.cmd
+.git

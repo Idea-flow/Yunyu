@@ -32,7 +32,7 @@ const props = withDefaults(defineProps<{
 
 /**
  * 计算卡片根容器样式。
- * 作用：根据卡片布局模式统一生成横向列表和纵向推荐卡片的基础结构。
+ * 作用：根据卡片布局模式统一生成横向列表和纵向推荐卡片的基础容器结构。
  */
 const rootClassName = computed(() => {
   const baseClass = [
@@ -45,6 +45,30 @@ const rootClassName = computed(() => {
   }
 
   return [baseClass, 'grid gap-4 p-4 sm:grid-cols-[240px_minmax(0,1fr)]', props.rootClass].filter(Boolean).join(' ')
+})
+
+/**
+ * 计算图片跳转区域样式。
+ * 作用：让图片区在不同布局下都能独立承载文章主跳转，同时避免和内部标签链接产生嵌套链接问题。
+ */
+const imageLinkClassName = computed(() => {
+  return props.layout === 'stack' ? 'block overflow-hidden' : 'block'
+})
+
+/**
+ * 计算正文容器样式。
+ * 作用：统一卡片文字区的内边距和排版承载区域。
+ */
+const bodyClassName = computed(() => {
+  return props.layout === 'stack' ? 'p-5' : 'min-w-0 py-1'
+})
+
+/**
+ * 计算正文主跳转区域样式。
+ * 作用：让标题、摘要和元信息保持整块可点，同时不与专题/标签链接互相嵌套。
+ */
+const contentLinkClassName = computed(() => {
+  return 'block'
 })
 
 /**
@@ -107,19 +131,21 @@ function getTagLink(slug: string) {
 </script>
 
 <template>
-  <NuxtLink :to="`/posts/${post.slug}`" :class="rootClassName">
-    <div v-if="layout === 'stack'" class="overflow-hidden">
-      <img :src="post.coverUrl" :alt="post.title" :class="imageClassName">
-    </div>
+  <article :class="rootClassName">
+    <NuxtLink :to="`/posts/${post.slug}`" :class="imageLinkClassName">
+      <div v-if="layout === 'stack'" class="overflow-hidden">
+        <img :src="post.coverUrl" :alt="post.title" :class="imageClassName">
+      </div>
 
-    <img
-      v-else
-      :src="post.coverUrl"
-      :alt="post.title"
-      :class="imageClassName"
-    >
+      <img
+        v-else
+        :src="post.coverUrl"
+        :alt="post.title"
+        :class="imageClassName"
+      >
+    </NuxtLink>
 
-    <div :class="layout === 'stack' ? 'p-5' : 'min-w-0 py-1'">
+    <div :class="bodyClassName">
       <div class="flex flex-wrap gap-2">
         <UBadge v-if="showCategory" color="neutral" variant="soft">{{ post.categoryName }}</UBadge>
         <NuxtLink
@@ -144,21 +170,23 @@ function getTagLink(slug: string) {
         </NuxtLink>
       </div>
 
-      <h3 :class="titleClassName">{{ post.title }}</h3>
-      <p :class="summaryClassName">
-        {{ post.summary }}
-      </p>
+      <NuxtLink :to="`/posts/${post.slug}`" :class="contentLinkClassName">
+        <h3 :class="titleClassName">{{ post.title }}</h3>
+        <p :class="summaryClassName">
+          {{ post.summary }}
+        </p>
 
-      <div
-        :class="layout === 'stack'
-          ? 'mt-5 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400'
-          : 'mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500 dark:text-slate-400'"
-      >
-        <span>{{ post.authorName }}</span>
-        <span>{{ post.publishedAt }}</span>
-        <span>{{ post.readingMinutes }} 分钟阅读</span>
-        <span v-if="layout === 'row'">{{ post.viewCount }} 浏览</span>
-      </div>
+        <div
+          :class="layout === 'stack'
+            ? 'mt-5 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400'
+            : 'mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500 dark:text-slate-400'"
+        >
+          <span>{{ post.authorName }}</span>
+          <span>{{ post.publishedAt }}</span>
+          <span>{{ post.readingMinutes }} 分钟阅读</span>
+          <span v-if="layout === 'row'">{{ post.viewCount }} 浏览</span>
+        </div>
+      </NuxtLink>
     </div>
-  </NuxtLink>
+  </article>
 </template>
