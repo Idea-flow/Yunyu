@@ -28,7 +28,7 @@ useSeoMeta({
   <main class="min-h-screen bg-[linear-gradient(180deg,#f7fbff_0%,#eff6ff_35%,#ffffff_100%)] text-slate-900 transition-colors duration-300 dark:bg-[linear-gradient(180deg,#020617_0%,#081120_42%,#020617_100%)] dark:text-slate-100">
     <section class="relative overflow-hidden">
       <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.22),transparent_28rem),radial-gradient(circle_at_80%_12%,rgba(251,146,60,0.18),transparent_22rem)]" />
-      <div class="relative mx-auto max-w-[1360px] px-5 pb-12 pt-8 sm:px-8 lg:px-10 lg:pb-16 lg:pt-10">
+      <div class="relative mx-auto max-w-[1360px] px-5 pb-12 pt-2 sm:px-8 lg:px-10 lg:pb-16 lg:pt-2">
         <div>
           <p class="text-xs font-semibold uppercase tracking-[0.42em] text-sky-600 dark:text-sky-300">
             Yunyu / 云屿

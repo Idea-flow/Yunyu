@@ -88,9 +88,9 @@ onMounted(() => {
 <template>
   <UDropdownMenu
     :items="themeMenuItems"
-    :content="{ side: 'top', align: 'start', sideOffset: 12 }"
+    :content="{ side: 'bottom', align: 'end', sideOffset: 12 }"
     :ui="{
-      content: 'min-w-72 rounded-[22px] border border-slate-200 bg-white/95 p-1 shadow-[0_24px_48px_-28px_rgba(15,23,42,0.3)] backdrop-blur-xl dark:border-slate-700 dark:bg-slate-950/95',
+      content: 'min-w-64 rounded-[22px] border border-slate-200 bg-white/95 p-1 shadow-[0_24px_48px_-28px_rgba(15,23,42,0.3)] backdrop-blur-xl dark:border-slate-700 dark:bg-slate-950/95',
       item: 'rounded-2xl text-slate-600 transition-colors duration-200 data-highlighted:bg-sky-50 data-highlighted:text-slate-900 dark:text-slate-300 dark:data-highlighted:bg-sky-400/15 dark:data-highlighted:text-slate-50',
       itemLabel: 'text-sm font-medium',
       itemDescription: 'text-xs text-slate-400 dark:text-slate-500',
@@ -100,21 +100,11 @@ onMounted(() => {
   >
     <button
       type="button"
-      class="flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 rounded-[20px] border border-slate-200 bg-white/90 px-4 py-3 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.28)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-[0_20px_32px_-24px_rgba(15,23,42,0.34)] focus:outline-none focus:ring-2 focus:ring-sky-400/70 dark:border-slate-700 dark:bg-slate-900/85 dark:hover:border-sky-400/40"
+      class="inline-flex size-11 cursor-pointer items-center justify-center rounded-2xl border border-slate-200/80 bg-white/86 text-slate-600 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.22)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:text-sky-700 hover:shadow-[0_18px_32px_-24px_rgba(15,23,42,0.3)] focus:outline-none focus:ring-2 focus:ring-sky-400/70 dark:border-slate-700 dark:bg-slate-900/82 dark:text-slate-300 dark:hover:border-sky-400/40 dark:hover:text-sky-200"
       :aria-label="`当前主题：${activeTheme.label}`"
+      :title="`当前主题：${activeTheme.label}`"
     >
-      <div class="flex min-w-0 items-center gap-3">
-        <div class="inline-flex size-9 shrink-0 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 dark:bg-sky-400/12 dark:text-sky-300">
-          <UIcon :name="activeTheme.icon" class="size-4" />
-        </div>
-
-        <div class="min-w-0 text-left">
-          <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">{{ activeTheme.label }}</p>
-          <p class="truncate text-xs text-slate-400 dark:text-slate-500">{{ activeTheme.description }}</p>
-        </div>
-      </div>
-
-      <UIcon name="i-lucide-chevrons-up-down" class="size-4 text-slate-400 dark:text-slate-500" />
+      <UIcon :name="activeTheme.icon" class="size-5" />
     </button>
   </UDropdownMenu>
 </template>
