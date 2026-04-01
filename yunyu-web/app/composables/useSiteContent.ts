@@ -5,6 +5,8 @@ import type {
   SitePostDetail,
   SitePostListResponse,
   SitePostQuery,
+  SiteTagDetail,
+  SiteTagItem,
   SiteTopicDetail,
   SiteTopicItem
 } from '../types/site'
@@ -91,12 +93,36 @@ export function useSiteContent() {
     })
   }
 
+  /**
+   * 查询前台标签列表。
+   *
+   * @returns 标签列表
+   */
+  async function listTags() {
+    return await apiClient.request<SiteTagItem[]>('/api/site/tags')
+  }
+
+  /**
+   * 查询前台标签详情。
+   *
+   * @param slug 标签 slug
+   * @param query 查询参数
+   * @returns 标签详情
+   */
+  async function getTagDetail(slug: string, query: SitePostQuery = {}) {
+    return await apiClient.request<SiteTagDetail>(`/api/site/tags/${slug}`, {
+      params: query
+    })
+  }
+
   return {
     getHome,
     listPosts,
     getPostDetail,
     listCategories,
     getCategoryDetail,
+    listTags,
+    getTagDetail,
     listTopics,
     getTopicDetail
   }

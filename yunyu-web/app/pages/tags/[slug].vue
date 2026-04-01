@@ -3,8 +3,8 @@ import FrontPaginationBar from '../../components/content/FrontPaginationBar.vue'
 import FrontPostCard from '../../components/content/FrontPostCard.vue'
 
 /**
- * 前台专题详情页。
- * 作用：展示单个专题的说明和专题下的文章列表。
+ * 前台标签详情页。
+ * 作用：展示单个标签说明和该标签下的文章列表。
  */
 const route = useRoute()
 const router = useRouter()
@@ -16,9 +16,9 @@ const pageNo = computed(() => {
 })
 
 const { data, error } = await useAsyncData(
-  () => `site-topic-${route.fullPath}`,
+  () => `site-tag-${route.fullPath}`,
   async () => {
-    return await siteContent.getTopicDetail(String(route.params.slug || ''), {
+    return await siteContent.getTagDetail(String(route.params.slug || ''), {
       pageNo: pageNo.value,
       pageSize: 10
     })
@@ -31,24 +31,24 @@ const { data, error } = await useAsyncData(
 if (error.value) {
   throw createError({
     statusCode: 404,
-    statusMessage: error.value.message || '专题不存在'
+    statusMessage: error.value.message || '标签不存在'
   })
 }
 
 useSeoMeta({
-  title: () => `${data.value?.topic.name || '专题'} - 云屿`,
-  description: () => data.value?.topic.summary || '云屿专题页'
+  title: () => `${data.value?.tag.name || '标签'} - 云屿`,
+  description: () => data.value?.tag.description || '云屿标签页'
 })
 
 /**
  * 切换分页。
- * 作用：更新当前页码，让专题文章列表继续按真实接口翻页。
+ * 作用：更新当前页码，让标签文章列表继续按真实接口翻页。
  *
  * @param nextPage 目标页码
  */
 async function changePage(nextPage: number) {
   await router.push({
-    path: `/topics/${route.params.slug}`,
+    path: `/tags/${route.params.slug}`,
     query: {
       pageNo: nextPage
     }
@@ -59,14 +59,13 @@ async function changePage(nextPage: number) {
 <template>
   <main v-if="data" class="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] dark:bg-[linear-gradient(180deg,#020617_0%,#081120_100%)]">
     <section class="mx-auto max-w-[1360px] px-5 py-8 sm:px-8 lg:px-10">
-      <div class="overflow-hidden rounded-[32px] border border-white/60 bg-white/82 shadow-[0_26px_70px_-46px_rgba(15,23,42,0.35)] dark:border-white/10 dark:bg-slate-950/72 md:grid md:grid-cols-[minmax(0,1fr)_360px]">
-        <div class="p-6 sm:p-8">
-          <p class="text-xs font-semibold uppercase tracking-[0.34em] text-sky-600 dark:text-sky-300">专题页</p>
-          <h1 class="mt-3 text-3xl font-semibold">{{ data.topic.name }}</h1>
-          <p class="mt-4 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">{{ data.topic.summary }}</p>
-          <p class="mt-5 text-sm text-slate-500 dark:text-slate-400">当前共有 {{ data.topic.articleCount }} 篇文章</p>
-        </div>
-        <img :src="data.topic.coverUrl" :alt="data.topic.name" class="h-full w-full object-cover">
+      <div class="rounded-[32px] border border-white/60 bg-white/82 p-6 shadow-[0_26px_70px_-46px_rgba(15,23,42,0.35)] dark:border-white/10 dark:bg-slate-950/72 sm:p-8">
+        <p class="text-xs font-semibold uppercase tracking-[0.34em] text-emerald-500 dark:text-emerald-300">标签页</p>
+        <h1 class="mt-3 text-3xl font-semibold">{{ data.tag.name }}</h1>
+        <p class="mt-4 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">
+          {{ data.tag.description || '从这个标签进入，查看相同主题标签下的全部公开文章。' }}
+        </p>
+        <p class="mt-5 text-sm text-slate-500 dark:text-slate-400">当前共有 {{ data.tag.articleCount }} 篇文章</p>
       </div>
 
       <div class="mt-6 space-y-4">

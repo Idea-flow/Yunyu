@@ -8,6 +8,8 @@ import com.ideaflow.yunyu.module.site.vo.SiteCategoryItemResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteHomeResponse;
 import com.ideaflow.yunyu.module.site.vo.SitePostDetailResponse;
 import com.ideaflow.yunyu.module.site.vo.SitePostListResponse;
+import com.ideaflow.yunyu.module.site.vo.SiteTagDetailResponse;
+import com.ideaflow.yunyu.module.site.vo.SiteTagItemResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteTopicDetailResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteTopicItemResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 前台内容公开控制器。
- * 作用：向前台页面暴露首页、文章、分类和专题的公开只读接口。
+ * 作用：向前台页面暴露首页、文章、分类、标签和专题的公开只读接口。
  */
 @Tag(name = "前台内容接口")
 @RestController
@@ -121,5 +123,30 @@ public class SiteContentController {
     public ApiResponse<SiteTopicDetailResponse> getTopicDetail(@PathVariable String slug,
                                                                SitePostQueryRequest request) {
         return ApiResponse.success(siteContentService.getTopicDetail(slug, request));
+    }
+
+    /**
+     * 查询前台标签列表。
+     *
+     * @return 标签列表
+     */
+    @Operation(summary = "查询前台标签列表")
+    @GetMapping("/tags")
+    public ApiResponse<List<SiteTagItemResponse>> listTags() {
+        return ApiResponse.success(siteContentService.listTags());
+    }
+
+    /**
+     * 查询前台标签详情。
+     *
+     * @param slug 标签 slug
+     * @param request 查询请求
+     * @return 标签详情
+     */
+    @Operation(summary = "查询前台标签详情")
+    @GetMapping("/tags/{slug}")
+    public ApiResponse<SiteTagDetailResponse> getTagDetail(@PathVariable String slug,
+                                                           SitePostQueryRequest request) {
+        return ApiResponse.success(siteContentService.getTagDetail(slug, request));
     }
 }

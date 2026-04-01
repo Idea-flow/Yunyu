@@ -7,6 +7,7 @@ const navigationItems = [
   { label: '首页', to: '/' },
   { label: '文章', to: '/posts' },
   { label: '分类', to: '/categories' },
+  { label: '标签', to: '/tags' },
   { label: '专题', to: '/topics' }
 ]
 </script>
@@ -49,6 +50,7 @@ const navigationItems = [
         <div class="flex items-center gap-4">
           <NuxtLink to="/posts" class="hover:text-slate-900 dark:hover:text-slate-50">文章</NuxtLink>
           <NuxtLink to="/categories" class="hover:text-slate-900 dark:hover:text-slate-50">分类</NuxtLink>
+          <NuxtLink to="/tags" class="hover:text-slate-900 dark:hover:text-slate-50">标签</NuxtLink>
           <NuxtLink to="/topics" class="hover:text-slate-900 dark:hover:text-slate-50">专题</NuxtLink>
         </div>
       </div>

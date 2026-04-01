@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FrontPostCard from '../components/content/FrontPostCard.vue'
 /**
  * 前台首页。
  * 作用：承接前台首页的品牌头图、推荐文章、最新内容、分类入口和专题内容展示。
@@ -37,7 +38,7 @@ useSeoMeta({
           </h1>
         </div>
 
-        <div v-if="pending" class="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_360px]">
+        <div v-if="pending" class="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_392px]">
           <USkeleton class="h-[520px] rounded-[32px]" />
           <div class="grid gap-4">
             <USkeleton class="h-[252px] rounded-[28px]" />
@@ -47,7 +48,7 @@ useSeoMeta({
 
         <div
           v-else-if="featuredPost"
-          class="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_360px]"
+          class="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_392px]"
         >
           <NuxtLink
             :to="`/posts/${featuredPost.slug}`"
@@ -84,13 +85,15 @@ useSeoMeta({
                   </div>
 
                   <div class="flex flex-wrap gap-2">
-                    <span
-                      v-for="tagName in featuredPost.tagNames"
-                      :key="`${featuredPost.slug}-${tagName}`"
-                      class="rounded-full border border-slate-200/80 bg-white/80 px-3 py-1 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300"
+                    <NuxtLink
+                      v-for="tag in featuredPost.tagItems"
+                      :key="`${featuredPost.slug}-${tag.slug}`"
+                      :to="`/tags/${tag.slug}`"
+                      class="relative z-10 rounded-full border border-slate-200/80 bg-white/80 px-3 py-1 text-xs font-medium text-slate-600 transition hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:border-sky-800 dark:hover:text-sky-200"
+                      @click.stop
                     >
-                      #{{ tagName }}
-                    </span>
+                      #{{ tag.name }}
+                    </NuxtLink>
                   </div>
                 </div>
               </div>
@@ -106,61 +109,76 @@ useSeoMeta({
             </div>
           </NuxtLink>
 
-          <div class="grid gap-4">
-              <div class="rounded-[28px] border border-white/60 bg-white/72 p-5 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.36)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/68">
-              <p class="text-xs font-semibold uppercase tracking-[0.34em] text-sky-600 dark:text-sky-300">
-                站点速览
-              </p>
-              <p class="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                {{ siteInfo?.defaultDescription || '聚焦新番观察、场景美学与专题化阅读体验。' }}
-              </p>
+          <aside class="flex flex-col gap-4">
+            <div class="rounded-[28px] border border-white/60 bg-white/74 p-6 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.36)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/68">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[0.34em] text-sky-600 dark:text-sky-300">
+                    站点速览
+                  </p>
+                  <p class="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                    {{ siteInfo?.defaultDescription || '聚焦新番观察、场景美学与专题化阅读体验。' }}
+                  </p>
+                </div>
+                <div class="rounded-2xl bg-sky-50 p-3 text-sky-600 dark:bg-sky-400/10 dark:text-sky-300">
+                  <UIcon name="i-lucide-sparkles" class="size-5" />
+                </div>
+              </div>
 
-              <div class="mt-5 grid gap-3">
+              <div class="mt-6 grid grid-cols-3 gap-3">
                 <div
                   v-for="stat in [
-                    { label: '推荐文章', value: String(homeData?.featuredPosts?.length || 0).padStart(2, '0'), hint: '首页首屏优先进入的内容' },
-                    { label: '最新文章', value: String(homeData?.latestPosts?.length || 0).padStart(2, '0'), hint: '已经接入真实公开接口' },
-                    { label: '当前分类', value: String(homeData?.categories?.length || 0).padStart(2, '0'), hint: '可继续扩展更多前台导航页' }
+                    { label: '推荐', value: String(homeData?.featuredPosts?.length || 0).padStart(2, '0') },
+                    { label: '最新', value: String(homeData?.latestPosts?.length || 0).padStart(2, '0') },
+                    { label: '分类', value: String(homeData?.categories?.length || 0).padStart(2, '0') }
                   ]"
                   :key="stat.label"
-                  class="rounded-[22px] border border-slate-200/70 bg-white/85 p-4 dark:border-slate-800 dark:bg-slate-900/90"
+                  class="rounded-[22px] border border-slate-200/75 bg-white/88 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/88"
                 >
-                  <p class="text-xs uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">{{ stat.label }}</p>
-                  <p class="mt-2 text-2xl font-semibold">{{ stat.value }}</p>
-                  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ stat.hint }}</p>
+                  <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">
+                    {{ stat.label }}
+                  </p>
+                  <p class="mt-2 text-3xl font-semibold leading-none text-slate-900 dark:text-slate-50">
+                    {{ stat.value }}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div class="rounded-[28px] border border-white/60 bg-white/72 p-5 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.36)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/68">
-              <div class="flex items-center justify-between gap-3">
+            <div class="rounded-[28px] border border-white/60 bg-white/74 p-6 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.36)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/68">
+              <div class="flex items-center justify-between gap-4">
                 <div>
                   <p class="text-xs font-semibold uppercase tracking-[0.34em] text-orange-500 dark:text-orange-300">
                     本周专题
                   </p>
-                  <h3 class="mt-3 text-xl font-semibold">从主题进入，会更沉浸</h3>
+                  <h3 class="mt-3 text-lg font-semibold leading-8">从主题进入，会更沉浸</h3>
                 </div>
-                <UIcon name="i-lucide-book-open-text" class="size-6 text-orange-400" />
+                <div class="rounded-2xl bg-orange-50 p-3 text-orange-500 dark:bg-orange-400/10 dark:text-orange-300">
+                  <UIcon name="i-lucide-book-open-text" class="size-5" />
+                </div>
               </div>
 
               <div class="mt-5 space-y-3">
                 <NuxtLink
-                  v-for="topic in topics"
+                  v-for="topic in topics.slice(0, 3)"
                   :key="topic.slug"
                   :to="`/topics/${topic.slug}`"
-                  class="flex items-start gap-3 rounded-[22px] border border-slate-200/75 bg-white/90 p-3 transition hover:border-sky-200 hover:bg-sky-50/70 dark:border-slate-800 dark:bg-slate-900/90 dark:hover:border-sky-900 dark:hover:bg-slate-900"
+                  class="flex items-center gap-4 rounded-[22px] border border-slate-200/75 bg-white/90 p-4 transition hover:border-sky-200 hover:bg-sky-50/70 dark:border-slate-800 dark:bg-slate-900/88 dark:hover:border-sky-900 dark:hover:bg-slate-900"
                 >
-                  <img :src="topic.coverUrl" :alt="topic.name" class="h-16 w-16 rounded-2xl object-cover">
-                  <div class="min-w-0">
-                    <p class="text-sm font-semibold">{{ topic.name }}</p>
-                    <p class="mt-1 line-clamp-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
+                  <img :src="topic.coverUrl" :alt="topic.name" class="h-[4.5rem] w-[4.5rem] shrink-0 rounded-[20px] object-cover">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center justify-between gap-3">
+                      <p class="truncate text-sm font-semibold text-slate-900 dark:text-slate-50">{{ topic.name }}</p>
+                      <span class="shrink-0 text-[11px] font-medium text-slate-400 dark:text-slate-500">{{ topic.articleCount }} 篇</span>
+                    </div>
+                    <p class="mt-2 line-clamp-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
                       {{ topic.summary }}
                     </p>
                   </div>
                 </NuxtLink>
               </div>
             </div>
-          </div>
+          </aside>
         </div>
 
         <div
@@ -183,32 +201,14 @@ useSeoMeta({
       </div>
 
       <div class="mt-6 grid gap-5 lg:grid-cols-3">
-        <NuxtLink
+        <FrontPostCard
           v-for="post in recommendedPosts"
           :key="post.slug"
-          :to="`/posts/${post.slug}`"
-          class="group overflow-hidden rounded-[28px] border border-white/60 bg-white/82 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.36)] transition duration-300 hover:-translate-y-0.5 dark:border-white/10 dark:bg-slate-950/68"
-        >
-          <div class="overflow-hidden">
-            <img :src="post.coverUrl" :alt="post.title" class="h-56 w-full object-cover transition duration-500 group-hover:scale-[1.04]">
-          </div>
-          <div class="p-5">
-            <div class="flex flex-wrap gap-2">
-              <UBadge color="neutral" variant="soft">{{ post.categoryName }}</UBadge>
-              <UBadge v-for="topicName in post.topicNames.slice(0, 1)" :key="topicName" color="primary" variant="soft">
-                {{ topicName }}
-              </UBadge>
-            </div>
-            <h3 class="mt-4 text-lg font-semibold leading-8">{{ post.title }}</h3>
-            <p class="mt-3 line-clamp-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-              {{ post.summary }}
-            </p>
-            <div class="mt-5 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-              <span>{{ post.publishedAt }}</span>
-              <span>{{ post.readingMinutes }} 分钟阅读</span>
-            </div>
-          </div>
-        </NuxtLink>
+          :post="post"
+          layout="stack"
+          :topic-limit="1"
+          image-height-class="h-56"
+        />
       </div>
     </section>
 
@@ -255,36 +255,15 @@ useSeoMeta({
 
       <div class="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div class="space-y-4">
-          <NuxtLink
+          <FrontPostCard
             v-for="post in latestPosts"
             :key="post.slug"
-            :to="`/posts/${post.slug}`"
-            class="grid gap-4 rounded-[28px] border border-white/60 bg-white/82 p-4 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.36)] transition hover:border-sky-200 dark:border-white/10 dark:bg-slate-950/68 dark:hover:border-sky-900 sm:grid-cols-[220px_minmax(0,1fr)]"
-          >
-            <img :src="post.coverUrl" :alt="post.title" class="h-48 w-full rounded-[22px] object-cover sm:h-full">
-            <div class="min-w-0 py-1">
-              <div class="flex flex-wrap gap-2">
-                <UBadge color="neutral" variant="soft">{{ post.categoryName }}</UBadge>
-                <span
-                  v-for="tagName in post.tagNames.slice(0, 2)"
-                  :key="`${post.slug}-${tagName}`"
-                  class="rounded-full border border-slate-200/80 px-2.5 py-1 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400"
-                >
-                  #{{ tagName }}
-                </span>
-              </div>
-              <h3 class="mt-4 text-xl font-semibold leading-8">{{ post.title }}</h3>
-              <p class="mt-3 line-clamp-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                {{ post.summary }}
-              </p>
-              <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-500 dark:text-slate-400">
-                <span>{{ post.authorName }}</span>
-                <span>{{ post.publishedAt }}</span>
-                <span>{{ post.readingMinutes }} 分钟阅读</span>
-                <span>{{ post.viewCount }} 浏览</span>
-              </div>
-            </div>
-          </NuxtLink>
+            :post="post"
+            :topic-limit="1"
+            :show-tags="true"
+            image-height-class="h-48"
+            root-class="sm:grid-cols-[220px_minmax(0,1fr)]"
+          />
         </div>
 
         <aside class="space-y-4">

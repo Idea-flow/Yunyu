@@ -18,7 +18,9 @@ public class SitePostDetailResponse {
     private String coverUrl;
     private String categoryName;
     private String categorySlug;
+    private List<SiteTagLinkResponse> tagItems;
     private List<String> tagNames;
+    private List<SiteTopicLinkResponse> topicItems;
     private List<String> topicNames;
     private String authorName;
     private String authorAvatarUrl;

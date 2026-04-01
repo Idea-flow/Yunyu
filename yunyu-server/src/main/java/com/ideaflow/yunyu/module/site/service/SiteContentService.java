@@ -26,8 +26,12 @@ import com.ideaflow.yunyu.module.site.vo.SiteHomeResponse;
 import com.ideaflow.yunyu.module.site.vo.SitePostDetailResponse;
 import com.ideaflow.yunyu.module.site.vo.SitePostListResponse;
 import com.ideaflow.yunyu.module.site.vo.SitePostSummaryResponse;
+import com.ideaflow.yunyu.module.site.vo.SiteTagDetailResponse;
+import com.ideaflow.yunyu.module.site.vo.SiteTagItemResponse;
+import com.ideaflow.yunyu.module.site.vo.SiteTagLinkResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteTopicDetailResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteTopicItemResponse;
+import com.ideaflow.yunyu.module.site.vo.SiteTopicLinkResponse;
 import com.ideaflow.yunyu.module.tag.entity.TagEntity;
 import com.ideaflow.yunyu.module.tag.mapper.TagMapper;
 import com.ideaflow.yunyu.module.topic.entity.TopicEntity;
@@ -214,6 +218,23 @@ public class SiteContentService {
     }
 
     /**
+     * 查询前台标签列表。
+     *
+     * @return 标签列表
+     */
+    public List<SiteTagItemResponse> listTags() {
+        List<TagEntity> tagEntities = tagMapper.selectList(new LambdaQueryWrapper<TagEntity>()
+                .eq(TagEntity::getDeleted, 0)
+                .eq(TagEntity::getStatus, "ACTIVE")
+                .orderByAsc(TagEntity::getName)
+                .orderByAsc(TagEntity::getId));
+
+        return tagEntities.stream()
+                .map(this::toSiteTagItemResponse)
+                .toList();
+    }
+
+    /**
      * 查询前台专题详情。
      *
      * @param slug 专题 slug
@@ -227,6 +248,24 @@ public class SiteContentService {
 
         SiteTopicDetailResponse response = new SiteTopicDetailResponse();
         response.setTopic(toSiteTopicItemResponse(topicEntity));
+        response.setPosts(listPosts(actualRequest));
+        return response;
+    }
+
+    /**
+     * 查询前台标签详情。
+     *
+     * @param slug 标签 slug
+     * @param request 查询请求
+     * @return 标签详情
+     */
+    public SiteTagDetailResponse getTagDetail(String slug, SitePostQueryRequest request) {
+        TagEntity tagEntity = findTagBySlug(slug);
+        SitePostQueryRequest actualRequest = copyRequest(request);
+        actualRequest.setTagSlug(tagEntity.getSlug());
+
+        SiteTagDetailResponse response = new SiteTagDetailResponse();
+        response.setTag(toSiteTagItemResponse(tagEntity));
         response.setPosts(listPosts(actualRequest));
         return response;
     }
@@ -386,7 +425,9 @@ public class SiteContentService {
         response.setCoverUrl(defaultString(postEntity.getCoverUrl()));
         response.setCategoryName(categoryEntity == null ? "" : defaultString(categoryEntity.getName()));
         response.setCategorySlug(categoryEntity == null ? "" : defaultString(categoryEntity.getSlug()));
+        response.setTagItems(listTagItems(postEntity.getId()));
         response.setTagNames(listTagNames(postEntity.getId()));
+        response.setTopicItems(listTopicItems(postEntity.getId()));
         response.setTopicNames(listTopicNames(postEntity.getId()));
         response.setAuthorName(userEntity == null ? "" : defaultString(userEntity.getUserName()));
         response.setAuthorAvatarUrl(userEntity == null ? "" : defaultString(userEntity.getAvatarUrl()));
@@ -430,6 +471,22 @@ public class SiteContentService {
         response.setSummary(defaultString(topicEntity.getSummary()));
         response.setCoverUrl(defaultString(topicEntity.getCoverUrl()));
         response.setArticleCount(countPostsByTopicId(topicEntity.getId()));
+        return response;
+    }
+
+    /**
+     * 转换前台标签摘要响应。
+     *
+     * @param tagEntity 标签实体
+     * @return 标签摘要响应
+     */
+    private SiteTagItemResponse toSiteTagItemResponse(TagEntity tagEntity) {
+        SiteTagItemResponse response = new SiteTagItemResponse();
+        response.setId(tagEntity.getId());
+        response.setName(tagEntity.getName());
+        response.setSlug(tagEntity.getSlug());
+        response.setDescription(defaultString(tagEntity.getDescription()));
+        response.setArticleCount(countPostsByTagId(tagEntity.getId()));
         return response;
     }
 
@@ -548,6 +605,18 @@ public class SiteContentService {
      * @return 标签名称列表
      */
     private List<String> listTagNames(Long postId) {
+        return listTagItems(postId).stream()
+                .map(SiteTagLinkResponse::getName)
+                .toList();
+    }
+
+    /**
+     * 查询文章标签链接列表。
+     *
+     * @param postId 文章ID
+     * @return 标签链接列表
+     */
+    private List<SiteTagLinkResponse> listTagItems(Long postId) {
         List<PostTagEntity> relations = postTagMapper.selectList(new LambdaQueryWrapper<PostTagEntity>()
                 .eq(PostTagEntity::getPostId, postId));
 
@@ -555,14 +624,19 @@ public class SiteContentService {
             return Collections.emptyList();
         }
 
-        List<String> tagNames = new ArrayList<>();
+        List<SiteTagLinkResponse> tagItems = new ArrayList<>();
         for (PostTagEntity relation : relations) {
             TagEntity tagEntity = tagMapper.selectById(relation.getTagId());
-            if (tagEntity != null && Objects.equals(tagEntity.getDeleted(), 0)) {
-                tagNames.add(tagEntity.getName());
+            if (tagEntity != null
+                    && Objects.equals(tagEntity.getDeleted(), 0)
+                    && Objects.equals(tagEntity.getStatus(), "ACTIVE")) {
+                SiteTagLinkResponse response = new SiteTagLinkResponse();
+                response.setName(tagEntity.getName());
+                response.setSlug(tagEntity.getSlug());
+                tagItems.add(response);
             }
         }
-        return tagNames;
+        return tagItems;
     }
 
     /**
@@ -572,6 +646,18 @@ public class SiteContentService {
      * @return 专题名称列表
      */
     private List<String> listTopicNames(Long postId) {
+        return listTopicItems(postId).stream()
+                .map(SiteTopicLinkResponse::getName)
+                .toList();
+    }
+
+    /**
+     * 查询文章专题链接列表。
+     *
+     * @param postId 文章ID
+     * @return 专题链接列表
+     */
+    private List<SiteTopicLinkResponse> listTopicItems(Long postId) {
         List<TopicPostEntity> relations = topicPostMapper.selectList(new LambdaQueryWrapper<TopicPostEntity>()
                 .eq(TopicPostEntity::getPostId, postId)
                 .orderByAsc(TopicPostEntity::getSortOrder)
@@ -581,14 +667,19 @@ public class SiteContentService {
             return Collections.emptyList();
         }
 
-        List<String> topicNames = new ArrayList<>();
+        List<SiteTopicLinkResponse> topicItems = new ArrayList<>();
         for (TopicPostEntity relation : relations) {
             TopicEntity topicEntity = topicMapper.selectById(relation.getTopicId());
-            if (topicEntity != null && Objects.equals(topicEntity.getDeleted(), 0)) {
-                topicNames.add(topicEntity.getName());
+            if (topicEntity != null
+                    && Objects.equals(topicEntity.getDeleted(), 0)
+                    && Objects.equals(topicEntity.getStatus(), "ACTIVE")) {
+                SiteTopicLinkResponse response = new SiteTopicLinkResponse();
+                response.setName(topicEntity.getName());
+                response.setSlug(topicEntity.getSlug());
+                topicItems.add(response);
             }
         }
-        return topicNames;
+        return topicItems;
     }
 
     /**
@@ -616,6 +707,20 @@ public class SiteContentService {
                 .eq(PostEntity::getDeleted, 0)
                 .eq(PostEntity::getStatus, "PUBLISHED")
                 .inSql(PostEntity::getId, "SELECT post_id FROM topic_post WHERE topic_id = " + topicId));
+        return count == null ? 0L : count;
+    }
+
+    /**
+     * 统计标签下已发布文章数量。
+     *
+     * @param tagId 标签ID
+     * @return 文章数量
+     */
+    private Long countPostsByTagId(Long tagId) {
+        Long count = postMapper.selectCount(new LambdaQueryWrapper<PostEntity>()
+                .eq(PostEntity::getDeleted, 0)
+                .eq(PostEntity::getStatus, "PUBLISHED")
+                .inSql(PostEntity::getId, "SELECT post_id FROM post_tag WHERE tag_id = " + tagId));
         return count == null ? 0L : count;
     }
 

@@ -22,6 +22,24 @@ export interface SiteBaseInfo {
  * 前台文章摘要类型。
  * 作用：统一描述首页卡片、列表页和相关推荐卡片的文章数据结构。
  */
+export interface SiteTagLink {
+  name: string
+  slug: string
+}
+
+/**
+ * 前台文章摘要类型。
+ * 作用：统一描述首页卡片、列表页和相关推荐卡片的文章数据结构。
+ */
+export interface SiteTopicLink {
+  name: string
+  slug: string
+}
+
+/**
+ * 前台文章摘要类型。
+ * 作用：统一描述首页卡片、列表页和相关推荐卡片的文章数据结构。
+ */
 export interface SitePostSummary {
   id: number
   slug: string
@@ -30,7 +48,9 @@ export interface SitePostSummary {
   coverUrl: string
   categoryName: string
   categorySlug: string
+  tagItems: SiteTagLink[]
   tagNames: string[]
+  topicItems: SiteTopicLink[]
   topicNames: string[]
   authorName: string
   authorAvatarUrl: string
@@ -81,6 +101,18 @@ export interface SiteTopicItem {
 }
 
 /**
+ * 前台标签摘要类型。
+ * 作用：统一描述标签列表页和标签详情页的标签展示结构。
+ */
+export interface SiteTagItem {
+  id: number
+  name: string
+  slug: string
+  description: string
+  articleCount: number
+}
+
+/**
  * 前台首页聚合响应类型。
  * 作用：统一承接首页所需的站点信息、推荐文章、最新文章、分类和专题数据。
  */
@@ -104,7 +136,9 @@ export interface SitePostDetail {
   coverUrl: string
   categoryName: string
   categorySlug: string
+  tagItems: SiteTagLink[]
   tagNames: string[]
+  topicItems: SiteTopicLink[]
   topicNames: string[]
   authorName: string
   authorAvatarUrl: string
@@ -137,6 +171,15 @@ export interface SiteCategoryDetail {
  */
 export interface SiteTopicDetail {
   topic: SiteTopicItem
+  posts: SitePostListResponse
+}
+
+/**
+ * 前台标签详情类型。
+ * 作用：统一描述标签页顶部信息与该标签下文章分页结果。
+ */
+export interface SiteTagDetail {
+  tag: SiteTagItem
   posts: SitePostListResponse
 }
 

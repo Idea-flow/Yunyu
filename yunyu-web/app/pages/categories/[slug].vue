@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import FrontPaginationBar from '../../components/content/FrontPaginationBar.vue'
+import FrontPostCard from '../../components/content/FrontPostCard.vue'
+
 /**
  * 前台分类详情页。
  * 作用：展示单个分类的说明和该分类下的文章列表。
@@ -67,46 +70,22 @@ async function changePage(nextPage: number) {
       </div>
 
       <div class="mt-6 space-y-4">
-        <NuxtLink
+        <FrontPostCard
           v-for="post in data.posts.list"
           :key="post.slug"
-          :to="`/posts/${post.slug}`"
-          class="grid gap-4 rounded-[28px] border border-white/60 bg-white/82 p-4 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.36)] transition hover:border-sky-200 dark:border-white/10 dark:bg-slate-950/68 dark:hover:border-sky-900 sm:grid-cols-[240px_minmax(0,1fr)]"
-        >
-          <img :src="post.coverUrl" :alt="post.title" class="h-52 w-full rounded-[22px] object-cover sm:h-full">
-          <div class="min-w-0 py-1">
-            <h2 class="text-2xl font-semibold leading-9">{{ post.title }}</h2>
-            <p class="mt-3 line-clamp-3 text-sm leading-7 text-slate-600 dark:text-slate-300">{{ post.summary }}</p>
-            <div class="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500 dark:text-slate-400">
-              <span>{{ post.authorName }}</span>
-              <span>{{ post.publishedAt }}</span>
-              <span>{{ post.readingMinutes }} 分钟阅读</span>
-            </div>
-          </div>
-        </NuxtLink>
+          :post="post"
+          :show-category="false"
+          root-class="sm:grid-cols-[240px_minmax(0,1fr)]"
+          title-class="mt-0"
+        />
       </div>
 
-      <div v-if="data.posts.totalPages > 1" class="mt-8 flex items-center justify-center gap-3">
-        <UButton
-          variant="outline"
-          color="neutral"
-          :disabled="data.posts.pageNo <= 1"
-          @click="changePage(data.posts.pageNo - 1)"
-        >
-          上一页
-        </UButton>
-        <span class="text-sm text-slate-500 dark:text-slate-400">
-          第 {{ data.posts.pageNo }} / {{ data.posts.totalPages }} 页
-        </span>
-        <UButton
-          variant="outline"
-          color="neutral"
-          :disabled="data.posts.pageNo >= data.posts.totalPages"
-          @click="changePage(data.posts.pageNo + 1)"
-        >
-          下一页
-        </UButton>
-      </div>
+      <FrontPaginationBar
+        class="mt-8"
+        :page-no="data.posts.pageNo"
+        :total-pages="data.posts.totalPages"
+        @change="changePage"
+      />
     </section>
   </main>
 </template>

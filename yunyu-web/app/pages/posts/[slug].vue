@@ -89,12 +89,21 @@ function handleTocSelect(item: ArticleTocItem) {
                 <UBadge color="neutral" variant="soft" size="lg">{{ post.categoryName }}</UBadge>
               </NuxtLink>
               <NuxtLink
-                v-for="topicName in post.topicNames"
-                :key="`${post.slug}-${topicName}`"
-                to="/topics"
+                v-for="topic in post.topicItems"
+                :key="`${post.slug}-${topic.slug}`"
+                :to="`/topics/${topic.slug}`"
               >
                 <UBadge color="primary" variant="soft" size="lg">
-                  {{ topicName }}
+                  {{ topic.name }}
+                </UBadge>
+              </NuxtLink>
+              <NuxtLink
+                v-for="tag in post.tagItems"
+                :key="`${post.slug}-${tag.slug}`"
+                :to="`/tags/${tag.slug}`"
+              >
+                <UBadge color="success" variant="soft" size="lg">
+                  #{{ tag.name }}
                 </UBadge>
               </NuxtLink>
             </div>
@@ -195,13 +204,14 @@ function handleTocSelect(item: ArticleTocItem) {
               内容标签
             </p>
             <div class="mt-4 flex flex-wrap gap-2">
-              <span
-                v-for="tagName in post.tagNames"
-                :key="`${post.slug}-${tagName}`"
-                class="rounded-full border border-slate-200/80 bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300"
+              <NuxtLink
+                v-for="tag in post.tagItems"
+                :key="`${post.slug}-${tag.slug}`"
+                :to="`/tags/${tag.slug}`"
+                class="rounded-full border border-slate-200/80 bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:border-sky-800 dark:hover:text-sky-200"
               >
-                #{{ tagName }}
-              </span>
+                #{{ tag.name }}
+              </NuxtLink>
             </div>
           </div>
         </aside>
