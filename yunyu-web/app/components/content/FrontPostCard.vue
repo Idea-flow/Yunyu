@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import YunyuImage from '~/components/common/YunyuImage.vue'
 import type { SitePostSummary } from '../../types/site'
 
 /**
@@ -134,15 +135,21 @@ function getTagLink(slug: string) {
   <article :class="rootClassName">
     <NuxtLink :to="`/posts/${post.slug}`" :class="imageLinkClassName">
       <div v-if="layout === 'stack'" class="overflow-hidden">
-        <img :src="post.coverUrl" :alt="post.title" :class="imageClassName">
+        <YunyuImage
+          :src="post.coverUrl"
+          :alt="post.title"
+          :image-class="imageClassName"
+          rounded-class="rounded-t-[28px] rounded-b-none"
+        />
       </div>
 
-      <img
+      <YunyuImage
         v-else
         :src="post.coverUrl"
         :alt="post.title"
-        :class="imageClassName"
-      >
+        :image-class="imageClassName"
+        rounded-class="rounded-[22px]"
+      />
     </NuxtLink>
 
     <div :class="bodyClassName">

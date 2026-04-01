@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import YunyuImage from '~/components/common/YunyuImage.vue'
 import FrontPaginationBar from '../../components/content/FrontPaginationBar.vue'
 import FrontPostCard from '../../components/content/FrontPostCard.vue'
 
@@ -66,7 +67,13 @@ async function changePage(nextPage: number) {
           <p class="mt-4 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">{{ data.category.description }}</p>
           <p class="mt-5 text-sm text-slate-500 dark:text-slate-400">当前共有 {{ data.category.articleCount }} 篇文章</p>
         </div>
-        <img :src="data.category.coverUrl" :alt="data.category.name" class="h-full w-full object-cover">
+        <YunyuImage
+          :src="data.category.coverUrl"
+          :alt="data.category.name"
+          wrapper-class="h-full w-full"
+          image-class="h-full w-full"
+          rounded-class="rounded-none"
+        />
       </div>
 
       <div class="mt-6 space-y-4">

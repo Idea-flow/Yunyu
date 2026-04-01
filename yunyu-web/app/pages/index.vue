@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import FrontPostCard from '../components/content/FrontPostCard.vue'
+import YunyuImage from '~/components/common/YunyuImage.vue'
+import YunyuHero from '~/components/common/YunyuHero.vue'
+import YunyuSectionTitle from '~/components/common/YunyuSectionTitle.vue'
 /**
  * 前台首页。
  * 作用：承接前台首页的品牌头图、推荐文章、最新内容、分类入口和专题内容展示。
@@ -18,6 +21,34 @@ const categories = computed(() => homeData.value?.categories || [])
 const topics = computed(() => homeData.value?.topics || [])
 const siteInfo = computed(() => homeData.value?.siteInfo)
 
+/**
+ * 计算首页首屏统计项。
+ * 作用：把首页已有内容数据转成统一的品牌信息摘要，服务首屏展示。
+ */
+const heroStats = computed(() => ([
+  { label: '推荐', value: String(homeData.value?.featuredPosts?.length || 0).padStart(2, '0') },
+  { label: '最新', value: String(homeData.value?.latestPosts?.length || 0).padStart(2, '0') },
+  { label: '分类', value: String(homeData.value?.categories?.length || 0).padStart(2, '0') }
+]))
+
+/**
+ * 计算首页主打文章标签。
+ * 作用：控制首屏标签数量，避免主视觉区域信息过满。
+ */
+const featuredTags = computed(() => featuredPost.value?.tagItems?.slice(0, 3) || [])
+
+/**
+ * 计算首页推荐专题。
+ * 作用：为首页中段提供更聚焦的专题入口，而不是一次性摊开全部内容。
+ */
+const spotlightTopics = computed(() => topics.value.slice(0, 4))
+
+/**
+ * 计算首页重点分类。
+ * 作用：保留最适合首屏后段承接的分类数量，提升阅读地图的聚焦感。
+ */
+const spotlightCategories = computed(() => categories.value.slice(0, 4))
+
 useSeoMeta({
   title: () => siteInfo.value?.defaultTitle || '云屿 Yunyu',
   description: () => siteInfo.value?.defaultDescription || '云屿前台首页'
@@ -25,237 +56,249 @@ useSeoMeta({
 </script>
 
 <template>
-  <main class="min-h-screen bg-[linear-gradient(180deg,#f7fbff_0%,#eff6ff_35%,#ffffff_100%)] text-slate-900 transition-colors duration-300 dark:bg-[linear-gradient(180deg,#020617_0%,#081120_42%,#020617_100%)] dark:text-slate-100">
+  <main class="min-h-screen overflow-hidden bg-[linear-gradient(180deg,#f7fbff_0%,#edf5ff_36%,#ffffff_100%)] text-slate-900 transition-colors duration-300 dark:bg-[linear-gradient(180deg,#030712_0%,#071120_38%,#020617_100%)] dark:text-slate-100">
     <section class="relative overflow-hidden">
-      <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.22),transparent_28rem),radial-gradient(circle_at_80%_12%,rgba(251,146,60,0.18),transparent_22rem)]" />
-      <div class="relative mx-auto max-w-[1360px] px-5 pb-12 pt-2 sm:px-8 lg:px-10 lg:pb-16 lg:pt-2">
-        <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.42em] text-sky-600 dark:text-sky-300">
-            Yunyu / 云屿
-          </p>
-          <h1 class="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
-            {{ siteInfo?.siteSubTitle || '在二次元场景与情绪里漫游的内容站' }}
-          </h1>
-        </div>
-
-        <div v-if="pending" class="mt-8 space-y-6">
-          <USkeleton class="aspect-[16/9] w-full rounded-[32px]" />
-          <div class="grid gap-4 lg:grid-cols-2">
-            <USkeleton class="h-[220px] rounded-[28px]" />
-            <USkeleton class="h-[220px] rounded-[28px]" />
-          </div>
+      <div class="relative">
+        <div v-if="pending" class="space-y-8">
+          <USkeleton class="h-[78svh] min-h-[540px] w-full rounded-none" />
         </div>
 
         <div
           v-else-if="featuredPost"
-          class="mt-8 space-y-6"
+          class="space-y-16"
         >
-          <NuxtLink
-            :to="`/posts/${featuredPost.slug}`"
-            class="group relative block overflow-hidden rounded-[32px] border border-white/60 bg-white/78 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.35)] backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 dark:border-white/10 dark:bg-slate-950/68"
-          >
-            <div class="relative aspect-[16/9] min-h-[420px]">
-              <img
-                :src="featuredPost.coverUrl"
-                :alt="featuredPost.title"
-                class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+          <YunyuHero :src="featuredPost.coverUrl" :alt="featuredPost.title">
+            <p class="text-xs font-semibold uppercase tracking-[0.46em] text-white/76 drop-shadow-md">
+              {{ siteInfo?.siteName || 'Yunyu / 云屿' }}
+            </p>
+
+            <h1 class="mt-5 text-[2.9rem] font-semibold leading-[1.04] tracking-[-0.04em] text-white drop-shadow-lg sm:text-[4rem] lg:text-[4.8rem]">
+              把热爱、情绪与阅读节奏，做成一座可以慢慢逛的个人内容站。
+            </h1>
+
+            <p class="mt-5 max-w-[36rem] text-base leading-8 text-white/84 drop-shadow-md">
+              {{ siteInfo?.siteSubTitle || '在二次元场景与情绪里漫游的内容站' }}。这里不只展示文章，更把专题、分类与主打内容整理成一条更有沉浸感的阅读路径。
+            </p>
+
+            <div class="mt-6 flex flex-wrap gap-2">
+              <div class="rounded-full border border-white/18 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-white/90 backdrop-blur-md">
+                Editor's Pick
+              </div>
+              <div class="rounded-full border border-white/18 bg-white/10 px-4 py-2 text-xs font-medium text-white/88 backdrop-blur-md">
+                {{ featuredPost.categoryName }}
+              </div>
+              <NuxtLink
+                v-for="tag in featuredTags"
+                :key="`${featuredPost.slug}-${tag.slug}`"
+                :to="`/tags/${tag.slug}`"
+                class="rounded-full border border-white/18 bg-white/10 px-3 py-2 text-xs font-medium text-white/88 backdrop-blur-sm transition hover:bg-white/18"
               >
-              <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(15,23,42,0.82)_0%,rgba(15,23,42,0.62)_34%,rgba(15,23,42,0.22)_64%,rgba(15,23,42,0.12)_100%)]" />
-              <div class="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(180deg,rgba(15,23,42,0)_0%,rgba(15,23,42,0.52)_100%)]" />
-
-              <div class="absolute inset-0 flex items-end">
-                <div class="w-full max-w-[44rem] p-7 text-white sm:max-w-[40rem] sm:p-8 lg:max-w-[36rem] lg:p-10">
-                  <div class="flex flex-wrap gap-2">
-                    <UBadge color="primary" variant="soft" size="lg">主打推荐</UBadge>
-                    <UBadge color="neutral" variant="soft" size="lg">{{ featuredPost.categoryName }}</UBadge>
-                  </div>
-                  <h2 class="mt-6 max-w-[12ch] text-3xl font-semibold leading-tight sm:max-w-[11ch] sm:text-4xl lg:max-w-[10ch] lg:text-5xl">
-                    {{ featuredPost.title }}
-                  </h2>
-                  <p class="mt-5 max-w-[34rem] text-sm leading-8 text-white/82 sm:max-w-[30rem] sm:text-base lg:max-w-[28rem]">
-                    {{ featuredPost.summary }}
-                  </p>
-                </div>
-              </div>
+                #{{ tag.name }}
+              </NuxtLink>
             </div>
-          </NuxtLink>
 
-          <div class="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-            <div class="rounded-[28px] border border-white/60 bg-white/74 p-6 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.36)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/68">
-              <div class="flex flex-wrap items-end justify-between gap-5">
-                <div class="flex items-center gap-3">
-                  <img
-                    :src="featuredPost.authorAvatarUrl"
-                    :alt="featuredPost.authorName"
-                    class="h-12 w-12 rounded-full object-cover ring-2 ring-white/70 dark:ring-slate-800"
-                  >
-                  <div>
-                    <p class="text-sm font-semibold">{{ featuredPost.authorName }}</p>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">
-                      内容编辑 · {{ featuredPost.publishedAt }} · {{ featuredPost.readingMinutes }} 分钟
-                    </p>
-                  </div>
-                </div>
-
-                <div class="flex flex-wrap gap-2">
-                  <NuxtLink
-                    v-for="tag in featuredPost.tagItems"
-                    :key="`${featuredPost.slug}-${tag.slug}`"
-                    :to="`/tags/${tag.slug}`"
-                    class="relative z-10 rounded-full border border-slate-200/80 bg-white/80 px-3 py-1 text-xs font-medium text-slate-600 transition hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:border-sky-800 dark:hover:text-sky-200"
-                    @click.stop
-                  >
-                    #{{ tag.name }}
-                  </NuxtLink>
+            <div class="mt-7 flex flex-wrap items-center gap-5 text-white/90">
+              <div class="flex items-center gap-3">
+                <YunyuImage
+                  :src="featuredPost.authorAvatarUrl"
+                  :alt="featuredPost.authorName"
+                  wrapper-class="h-11 w-11 ring-2 ring-white/26"
+                  image-class="h-full w-full"
+                  rounded-class="rounded-full"
+                />
+                <div>
+                  <p class="text-sm font-medium text-white drop-shadow-md">{{ featuredPost.authorName }}</p>
+                  <p class="text-xs text-white/66">{{ featuredPost.publishedAt }} · {{ featuredPost.readingMinutes }} 分钟阅读</p>
                 </div>
               </div>
 
-              <div class="mt-6 grid grid-cols-3 gap-3">
-                <div
-                  v-for="stat in [
-                    { label: '推荐', value: String(homeData?.featuredPosts?.length || 0).padStart(2, '0') },
-                    { label: '最新', value: String(homeData?.latestPosts?.length || 0).padStart(2, '0') },
-                    { label: '分类', value: String(homeData?.categories?.length || 0).padStart(2, '0') }
-                  ]"
+              <div class="flex flex-wrap gap-3">
+                <span
+                  v-for="stat in heroStats"
                   :key="stat.label"
-                  class="rounded-[22px] border border-slate-200/75 bg-white/88 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/88"
+                  class="rounded-full border border-white/16 bg-white/10 px-3 py-1.5 text-sm text-white/84 backdrop-blur-sm"
                 >
-                  <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">
-                    {{ stat.label }}
-                  </p>
-                  <p class="mt-2 text-3xl font-semibold leading-none text-slate-900 dark:text-slate-50">
-                    {{ stat.value }}
-                  </p>
-                </div>
+                  {{ stat.label }} {{ stat.value }}
+                </span>
               </div>
             </div>
 
-            <div class="rounded-[28px] border border-white/60 bg-white/74 p-6 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.36)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/68">
-              <div class="flex items-start justify-between gap-4">
-                <div>
-                  <p class="text-xs font-semibold uppercase tracking-[0.34em] text-sky-600 dark:text-sky-300">
-                    站点速览
-                  </p>
-                  <p class="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                    {{ siteInfo?.defaultDescription || '聚焦新番观察、场景美学与专题化阅读体验。' }}
-                  </p>
-                </div>
-                <div class="rounded-2xl bg-sky-50 p-3 text-sky-600 dark:bg-sky-400/10 dark:text-sky-300">
-                  <UIcon name="i-lucide-sparkles" class="size-5" />
-                </div>
-              </div>
+            <div class="mt-8 flex flex-wrap gap-3">
+              <NuxtLink
+                :to="`/posts/${featuredPost.slug}`"
+                class="inline-flex items-center gap-2 rounded-full bg-white/92 px-6 py-3 text-sm font-medium text-slate-900 transition hover:bg-white"
+              >
+                <span>进入主打内容</span>
+                <UIcon name="i-lucide-arrow-right" class="size-4" />
+              </NuxtLink>
+              <NuxtLink
+                to="/topics"
+                class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-6 py-3 text-sm font-medium text-white/90 backdrop-blur-sm transition hover:bg-white/18"
+              >
+                <span>按专题继续阅读</span>
+                <UIcon name="i-lucide-book-open-text" class="size-4" />
+              </NuxtLink>
+            </div>
+          </YunyuHero>
 
+          <section class="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-10">
+            <div class="grid gap-8 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+            <div class="rounded-[34px] border border-white/60 bg-white/70 p-7 shadow-[0_30px_80px_-50px_rgba(15,23,42,0.34)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/62">
+              <p class="text-xs font-semibold uppercase tracking-[0.34em] text-slate-500 dark:text-slate-400">
+                Reading Note
+              </p>
+              <p class="mt-5 text-[1.8rem] font-semibold leading-tight text-slate-950 dark:text-slate-50">
+                云屿不是内容仓库，而是一条有顺序、有情绪、有节奏的阅读路径。
+              </p>
+              <p class="mt-5 text-sm leading-8 text-slate-600 dark:text-slate-300">
+                {{ siteInfo?.defaultDescription || '聚焦新番观察、场景美学与专题化阅读体验。' }}
+                首页后续会持续把“主打推荐、推荐阅读、分类地图、专题路线、最新内容”整理成可连续进入的内容流。
+              </p>
             </div>
 
-            <div class="rounded-[28px] border border-white/60 bg-white/74 p-6 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.36)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/68 lg:col-span-2">
-              <div class="flex items-center justify-between gap-4">
-                <div>
-                  <p class="text-xs font-semibold uppercase tracking-[0.34em] text-orange-500 dark:text-orange-300">
-                    本周专题
-                  </p>
-                  <h3 class="mt-3 text-lg font-semibold leading-8">从主题进入，会更沉浸</h3>
-                </div>
-                <div class="rounded-2xl bg-orange-50 p-3 text-orange-500 dark:bg-orange-400/10 dark:text-orange-300">
-                  <UIcon name="i-lucide-book-open-text" class="size-5" />
-                </div>
-              </div>
-
-              <div class="mt-5 space-y-3">
-                <NuxtLink
-                  v-for="topic in topics.slice(0, 3)"
-                  :key="topic.slug"
-                  :to="`/topics/${topic.slug}`"
-                  class="flex items-center gap-4 rounded-[22px] border border-slate-200/75 bg-white/90 p-4 transition hover:border-sky-200 hover:bg-sky-50/70 dark:border-slate-800 dark:bg-slate-900/88 dark:hover:border-sky-900 dark:hover:bg-slate-900"
-                >
-                  <img :src="topic.coverUrl" :alt="topic.name" class="h-[4.5rem] w-[4.5rem] shrink-0 rounded-[20px] object-cover">
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-center justify-between gap-3">
-                      <p class="truncate text-sm font-semibold text-slate-900 dark:text-slate-50">{{ topic.name }}</p>
-                      <span class="shrink-0 text-[11px] font-medium text-slate-400 dark:text-slate-500">{{ topic.articleCount }} 篇</span>
-                    </div>
-                    <p class="mt-2 line-clamp-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
-                      {{ topic.summary }}
-                    </p>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <NuxtLink
+                v-for="topic in spotlightTopics"
+                :key="topic.slug"
+                :to="`/topics/${topic.slug}`"
+                class="group overflow-hidden rounded-[30px] border border-white/60 bg-white/76 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.34)] transition hover:-translate-y-0.5 hover:border-sky-200 dark:border-white/10 dark:bg-slate-950/62 dark:hover:border-sky-900"
+              >
+                <YunyuImage
+                  :src="topic.coverUrl"
+                  :alt="topic.name"
+                  image-class="h-44 w-full transition duration-500 group-hover:scale-[1.03]"
+                  rounded-class="rounded-t-[30px] rounded-b-none"
+                />
+                <div class="p-5">
+                  <div class="flex items-center justify-between gap-3">
+                    <p class="text-base font-semibold text-slate-950 dark:text-slate-50">{{ topic.name }}</p>
+                    <span class="text-[11px] font-medium text-slate-400 dark:text-slate-500">{{ topic.articleCount }} 篇</span>
                   </div>
-                </NuxtLink>
-              </div>
+                  <p class="mt-3 line-clamp-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                    {{ topic.summary }}
+                  </p>
+                </div>
+              </NuxtLink>
             </div>
-          </div>
+            </div>
+          </section>
         </div>
 
         <div
           v-else-if="error"
-          class="mt-8 rounded-[28px] border border-rose-200 bg-rose-50/80 p-6 text-sm text-rose-600 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-300"
+          class="rounded-[28px] border border-rose-200 bg-rose-50/80 p-6 text-sm text-rose-600 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-300"
         >
           {{ error.message }}
         </div>
       </div>
     </section>
 
-    <section class="mx-auto max-w-[1360px] px-5 py-8 sm:px-8 lg:px-10">
-      <div class="flex items-end justify-between gap-5">
-        <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.34em] text-sky-600 dark:text-sky-300">
-            推荐阅读
-          </p>
-          <h2 class="mt-3 text-2xl font-semibold">先从这三篇进入云屿</h2>
-        </div>
-      </div>
+    <section class="mx-auto max-w-[1440px] px-5 py-10 sm:px-8 lg:px-10">
+      <YunyuSectionTitle
+        eyebrow="推荐阅读"
+        title="先从这三篇进入云屿"
+        description="推荐区负责承接首页首屏后的第一段阅读路径，让用户先进入最能代表当前气质的内容。"
+        link-label="查看全部文章"
+        link-to="/posts"
+      />
 
-      <div class="mt-6 grid gap-5 lg:grid-cols-3">
+      <div class="mt-8 grid gap-5 lg:grid-cols-3">
         <FrontPostCard
           v-for="post in recommendedPosts"
           :key="post.slug"
           :post="post"
           layout="stack"
           :topic-limit="1"
-          image-height-class="h-56"
+          image-height-class="h-64"
         />
       </div>
     </section>
 
-    <section class="mx-auto max-w-[1360px] px-5 py-8 sm:px-8 lg:px-10">
-      <div class="flex items-end justify-between gap-5">
-        <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.34em] text-orange-500 dark:text-orange-300">
-            分类入口
-          </p>
-          <h2 class="mt-3 text-2xl font-semibold">先按兴趣，再按情绪进入</h2>
-        </div>
-      </div>
+    <section class="mx-auto max-w-[1440px] px-5 py-10 sm:px-8 lg:px-10">
+      <YunyuSectionTitle
+        eyebrow="分类地图"
+        title="先按兴趣，再按情绪进入"
+        description="分类区后续承担首页的阅读地图功能，不只是展示入口，而是告诉用户可以从哪条方向开始逛。"
+        tone="orange"
+        link-label="查看全部分类"
+        link-to="/categories"
+      />
 
-      <div class="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
-        <NuxtLink
-          v-for="category in categories"
-          :key="category.slug"
-          :to="`/categories/${category.slug}`"
-          class="overflow-hidden rounded-[28px] border border-white/60 bg-white/82 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.36)] dark:border-white/10 dark:bg-slate-950/68"
-        >
-          <img :src="category.coverUrl" :alt="category.name" class="h-44 w-full object-cover">
-          <div class="p-5">
-            <div class="flex items-center justify-between gap-3">
-              <h3 class="text-lg font-semibold">{{ category.name }}</h3>
-              <span class="text-xs text-slate-500 dark:text-slate-400">{{ category.articleCount }} 篇</span>
+      <div class="mt-8 grid gap-5 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
+        <div class="grid gap-4 sm:grid-cols-2">
+          <NuxtLink
+            v-for="category in spotlightCategories"
+            :key="category.slug"
+            :to="`/categories/${category.slug}`"
+            class="group grid gap-4 rounded-[30px] border border-white/60 bg-white/74 p-4 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.34)] transition hover:-translate-y-0.5 hover:border-orange-200 dark:border-white/10 dark:bg-slate-950/62 dark:hover:border-orange-900"
+          >
+            <YunyuImage
+              :src="category.coverUrl"
+              :alt="category.name"
+              image-class="h-48 w-full transition duration-500 group-hover:scale-[1.03]"
+              rounded-class="rounded-[24px]"
+            />
+            <div class="px-1 pb-1">
+              <div class="flex items-center justify-between gap-3">
+                <h3 class="text-xl font-semibold text-slate-950 dark:text-slate-50">{{ category.name }}</h3>
+                <span class="text-xs text-slate-500 dark:text-slate-400">{{ category.articleCount }} 篇</span>
+              </div>
+              <p class="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                {{ category.description }}
+              </p>
             </div>
-            <p class="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-              {{ category.description }}
-            </p>
+          </NuxtLink>
+        </div>
+
+        <div class="rounded-[34px] border border-white/60 bg-white/70 p-6 shadow-[0_30px_80px_-50px_rgba(15,23,42,0.34)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/62">
+          <YunyuSectionTitle
+            eyebrow="专题路线"
+            title="从主题进入，会更沉浸"
+            description="专题承担连续阅读的组织能力，让同一主题下的文章不再散落，而是形成可持续进入的阅读流。"
+            tone="orange"
+            link-label="查看全部专题"
+            link-to="/topics"
+          />
+
+          <div class="mt-8 space-y-4">
+            <NuxtLink
+              v-for="topic in spotlightTopics"
+              :key="topic.slug"
+              :to="`/topics/${topic.slug}`"
+              class="flex items-center gap-4 rounded-[24px] border border-slate-200/75 bg-white/88 p-4 transition hover:border-sky-200 hover:bg-sky-50/70 dark:border-slate-800 dark:bg-slate-900/82 dark:hover:border-sky-900 dark:hover:bg-slate-900"
+            >
+              <YunyuImage
+                :src="topic.coverUrl"
+                :alt="topic.name"
+                wrapper-class="h-[4.75rem] w-[4.75rem] shrink-0"
+                image-class="h-full w-full"
+                rounded-class="rounded-[20px]"
+              />
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between gap-3">
+                  <p class="truncate text-sm font-semibold text-slate-950 dark:text-slate-50">{{ topic.name }}</p>
+                  <span class="shrink-0 text-[11px] font-medium text-slate-400 dark:text-slate-500">{{ topic.articleCount }} 篇</span>
+                </div>
+                <p class="mt-2 line-clamp-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
+                  {{ topic.summary }}
+                </p>
+              </div>
+            </NuxtLink>
           </div>
-        </NuxtLink>
+        </div>
       </div>
     </section>
 
-    <section class="mx-auto max-w-[1360px] px-5 py-8 sm:px-8 lg:px-10">
-      <div class="flex items-end justify-between gap-5">
-        <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.34em] text-sky-600 dark:text-sky-300">
-            最新内容
-          </p>
-          <h2 class="mt-3 text-2xl font-semibold">把内容做成可以慢慢逛的阅读流</h2>
-        </div>
-      </div>
+    <section class="mx-auto max-w-[1440px] px-5 py-10 pb-16 sm:px-8 lg:px-10 lg:pb-24">
+      <YunyuSectionTitle
+        eyebrow="最新内容"
+        title="把内容做成可以慢慢逛的阅读流"
+        description="最新区不是简单倒序列表，而是首页最后一段持续更新的阅读流，让用户在主打内容之外继续延展。"
+        link-label="查看全部专题"
+        link-to="/topics"
+      />
 
-      <div class="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div class="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div class="space-y-4">
           <FrontPostCard
             v-for="post in latestPosts"
@@ -263,21 +306,38 @@ useSeoMeta({
             :post="post"
             :topic-limit="1"
             :show-tags="true"
-            image-height-class="h-48"
-            root-class="sm:grid-cols-[220px_minmax(0,1fr)]"
+            image-height-class="h-52"
+            root-class="sm:grid-cols-[240px_minmax(0,1fr)]"
           />
         </div>
 
         <aside class="space-y-4">
+          <div class="rounded-[34px] border border-white/60 bg-white/72 p-6 shadow-[0_28px_80px_-52px_rgba(15,23,42,0.34)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/62">
+            <p class="text-xs font-semibold uppercase tracking-[0.34em] text-sky-600 dark:text-sky-300">
+              Reading Atlas
+            </p>
+            <p class="mt-4 text-[1.7rem] font-semibold leading-tight text-slate-950 dark:text-slate-50">
+              首页后段保留“继续阅读”的动力，而不是让浏览在首屏后断掉。
+            </p>
+            <p class="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
+              这里后续会继续增加系列文章、延伸阅读、阅读路线与更完整的内容索引，让云屿真正具备“逛”的感觉。
+            </p>
+          </div>
+
           <div
-            v-for="topic in topics"
+            v-for="topic in spotlightTopics"
             :key="topic.slug"
-            class="overflow-hidden rounded-[28px] border border-white/60 bg-white/82 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.36)] dark:border-white/10 dark:bg-slate-950/68"
+            class="overflow-hidden rounded-[30px] border border-white/60 bg-white/76 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.34)] dark:border-white/10 dark:bg-slate-950/62"
           >
-            <img :src="topic.coverUrl" :alt="topic.name" class="h-44 w-full object-cover">
+            <YunyuImage
+              :src="topic.coverUrl"
+              :alt="topic.name"
+              image-class="h-48 w-full"
+              rounded-class="rounded-t-[30px] rounded-b-none"
+            />
             <div class="p-5">
               <div class="flex items-center justify-between gap-3">
-                <NuxtLink :to="`/topics/${topic.slug}`" class="text-lg font-semibold hover:text-sky-700 dark:hover:text-sky-200">{{ topic.name }}</NuxtLink>
+                <NuxtLink :to="`/topics/${topic.slug}`" class="text-lg font-semibold text-slate-950 transition hover:text-sky-700 dark:text-slate-50 dark:hover:text-sky-200">{{ topic.name }}</NuxtLink>
                 <span class="text-xs text-slate-500 dark:text-slate-400">{{ topic.articleCount }} 篇</span>
               </div>
               <p class="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import YunyuImage from '~/components/common/YunyuImage.vue'
 import FrontFilterBar from '../../components/content/FrontFilterBar.vue'
 
 /**
@@ -85,7 +86,12 @@ async function handleSearch() {
           :to="`/topics/${topic.slug}`"
           class="overflow-hidden rounded-[28px] border border-white/60 bg-white/82 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.36)] transition hover:border-sky-200 dark:border-white/10 dark:bg-slate-950/68 dark:hover:border-sky-900"
         >
-          <img :src="topic.coverUrl" :alt="topic.name" class="h-52 w-full object-cover">
+          <YunyuImage
+            :src="topic.coverUrl"
+            :alt="topic.name"
+            image-class="h-52 w-full"
+            rounded-class="rounded-t-[28px] rounded-b-none"
+          />
           <div class="p-5">
             <div class="flex items-center justify-between gap-3">
               <h2 class="text-lg font-semibold">{{ topic.name }}</h2>

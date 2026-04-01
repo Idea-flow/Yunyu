@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, createVNode, nextTick, onBeforeUnmount, onMounted, ref, render, resolveComponent, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 /**
  * 文章内容渲染组件。
@@ -30,7 +30,24 @@ const hasContent = computed(() => normalizedHtml.value.length > 0)
 const containerRef = ref<HTMLElement | null>(null)
 const cleanupCallbacks: Array<() => void> = []
 const collapseHeight = 152
-const NuxtIcon = resolveComponent('Icon')
+const actionIconMap: Record<string, string> = {
+  'lucide:copy': `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+  `,
+  'lucide:chevron-down': `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="m6 9 6 6 6-6"></path>
+    </svg>
+  `,
+  'lucide:chevron-up': `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="m18 15-6-6-6 6"></path>
+    </svg>
+  `
+}
 
 /**
  * 清理已注册的代码块事件。
@@ -44,19 +61,19 @@ function cleanupCodeEnhancements() {
 
 /**
  * 挂载代码块工具条图标。
- * 作用：将代码块中通过 `v-html` 注入的按钮占位节点，升级为真实的 Nuxt Icon 组件渲染结果。
+ * 作用：为通过 `v-html` 注入的按钮占位节点填充静态 SVG，
+ * 避免在 SSR 和 hydration 阶段依赖运行时组件解析造成结构不一致。
  *
  * @param target 图标挂载目标节点
  * @param name 图标名称
  */
 function mountActionIcon(target: HTMLElement, name: string) {
-  render(createVNode(NuxtIcon, {
-    name,
-    class: 'yy-md-code-action-icon-glyph'
-  }), target)
+  target.innerHTML = actionIconMap[name] || ''
+  target.classList.add('yy-md-code-action-icon-glyph')
 
   cleanupCallbacks.push(() => {
-    render(null, target)
+    target.innerHTML = ''
+    target.classList.remove('yy-md-code-action-icon-glyph')
   })
 }
 
@@ -180,6 +197,10 @@ function enhanceCodeBlocks() {
  * 作用：在 HTML 内容或加载状态变化后，等待 DOM 更新完成再增强代码块交互。
  */
 async function refreshEnhancements() {
+  if (import.meta.server) {
+    return
+  }
+
   await nextTick()
   enhanceCodeBlocks()
 }
