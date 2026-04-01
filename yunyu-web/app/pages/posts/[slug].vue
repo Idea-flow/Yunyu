@@ -331,23 +331,19 @@ onBeforeUnmount(() => {
             <div class="absolute -bottom-10 -left-8 h-28 w-28 rounded-full bg-[linear-gradient(135deg,rgba(52,211,153,0.18),rgba(14,165,233,0.16))] blur-2xl dark:bg-[linear-gradient(135deg,rgba(52,211,153,0.1),rgba(14,165,233,0.1))]" />
 
             <div class="relative z-10">
-              <div class="flex items-center justify-between gap-3 border-b border-slate-200/60 px-5 pb-3 pt-5 dark:border-white/10">
+              <div class="flex items-center justify-between gap-3 border-b border-slate-200/60 px-5 pb-3 pt-4 dark:border-white/10">
                 <div>
                   <p class="text-xs font-semibold uppercase tracking-[0.34em] text-orange-500 dark:text-orange-300">
                     目录
                   </p>
-                  <h2 class="mt-3 text-xl font-semibold">文章结构</h2>
+                  <h2 class="mt-2 text-lg font-semibold">文章结构</h2>
                 </div>
                 <div class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/72 text-sky-600 shadow-[0_12px_28px_-20px_rgba(14,165,233,0.38)] dark:bg-white/10 dark:text-sky-200">
                   <UIcon name="i-lucide-book-marked" class="size-5" />
                 </div>
               </div>
 
-              <p class="px-5 pt-4 text-sm leading-7 text-slate-500 dark:text-slate-400">
-                通过目录快速回到你关心的段落，保持阅读节奏不断裂。
-              </p>
-
-              <div class="px-4 pb-4 pt-4">
+              <div class="px-4 pb-4 pt-3">
                 <div class="max-h-[32rem] overflow-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.3)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/60 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/60">
                   <ArticleTocTree :items="tocItems" :active-id="activeTocId" @select="handleTocSelect" />
                 </div>
