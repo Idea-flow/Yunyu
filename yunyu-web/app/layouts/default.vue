@@ -266,8 +266,14 @@ async function handleUserMenuSelect(item: { key: string }) {
         >
           <div class="flex min-w-0 items-center gap-3 sm:gap-4">
             <NuxtLink to="/" class="flex shrink-0 items-center gap-3">
-              <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#38bdf8,#fb923c)] text-sm font-semibold text-white shadow-[0_12px_28px_-16px_rgba(56,189,248,0.7)]">
-                云
+              <div
+                class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl shadow-[0_12px_28px_-18px_rgba(15,23,42,0.18)]"
+              >
+                <img
+                  src="/icon-512-maskable.png"
+                  alt="云屿图标"
+                  class="h-full w-full object-cover"
+                >
               </div>
               <div class="min-w-0">
                 <p class="text-[clamp(1.25rem,1.05rem+0.75vw,1.7rem)] font-semibold leading-[0.96] tracking-[-0.05em] [font-family:var(--font-display)]" :class="brandTitleClassName">云屿</p>
@@ -294,7 +300,7 @@ async function handleUserMenuSelect(item: { key: string }) {
           </div>
 
           <div class="flex shrink-0 items-center gap-2">
-            <ThemeModeSwitch />
+            <ThemeModeSwitch variant="icon" />
 
             <YunyuDropdownMenu
               v-if="isLoggedIn"

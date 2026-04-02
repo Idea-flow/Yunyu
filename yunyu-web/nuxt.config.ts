@@ -37,18 +37,23 @@ export default defineNuxtConfig({
         },
         {
           rel: 'icon',
-          type: 'image/svg+xml',
-          href: '/favicon.svg'
+          type: 'image/x-icon',
+          href: '/favicon.ico',
+          sizes: 'any'
         },
         {
-          rel: 'alternate icon',
-          type: 'image/x-icon',
-          href: '/favicon.ico'
+          rel: 'apple-touch-icon',
+          href: '/apple-touch-icon.png'
+        },
+        {
+          rel: 'manifest',
+          href: '/site.webmanifest'
         }
       ],
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'theme-color', content: '#f7f5ef' },
         {
           name: 'description',
           content: '云屿前端项目，基于 Nuxt 4 构建内容站与后台管理界面。'

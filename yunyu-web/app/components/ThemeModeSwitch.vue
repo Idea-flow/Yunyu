@@ -5,8 +5,19 @@ import { computed, onMounted, ref } from 'vue'
  * 主题切换组件。
  * 作用：以前后台共用的单按钮方式切换明亮、暗黑、系统三种主题模式。
  */
+interface ThemeModeSwitchProps {
+  /**
+   * 组件展示风格。
+   * 作用：允许在导航栏中使用纯图标样式，在后台继续复用默认按钮样式。
+   */
+  variant?: 'default' | 'icon'
+}
+
 const colorMode = useColorMode()
 const isMounted = ref(false)
+const props = withDefaults(defineProps<ThemeModeSwitchProps>(), {
+  variant: 'default'
+})
 
 const themeOptions = [
   {
@@ -57,6 +68,18 @@ const nextTheme = computed(() => {
 })
 
 /**
+ * 计算按钮样式。
+ * 作用：根据不同使用场景切换为默认按钮态或纯图标态，避免导航栏额外出现背景块。
+ */
+const buttonClassName = computed(() => {
+  if (props.variant === 'icon') {
+    return 'inline-flex size-10 items-center justify-center text-slate-600 transition duration-200 hover:text-slate-900 focus:outline-none focus:ring-0 dark:text-slate-300 dark:hover:text-slate-50'
+  }
+
+  return 'inline-flex size-10 items-center justify-center rounded-[8px] border border-slate-200 bg-white text-slate-600 transition duration-200 hover:border-slate-300 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-400/35 dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-50'
+})
+
+/**
  * 顺序切换主题模式。
  * 作用：按照“明亮 -> 暗黑 -> 系统”的顺序循环切换。
  */
@@ -72,7 +95,7 @@ onMounted(() => {
 <template>
   <button
     type="button"
-    class="inline-flex size-10 items-center justify-center rounded-[8px] border border-slate-200 bg-white text-slate-600 transition duration-200 hover:border-slate-300 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-400/35 dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-50"
+    :class="buttonClassName"
     :aria-label="`当前主题：${activeTheme.label}，点击切换到${nextTheme.label}`"
     :title="`当前主题：${activeTheme.label}，点击切换到${nextTheme.label}`"
     @click="cycleTheme"
