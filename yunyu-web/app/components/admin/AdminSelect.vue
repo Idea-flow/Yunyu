@@ -11,11 +11,13 @@ const props = withDefaults(defineProps<{
   placeholder?: string
   disabled?: boolean
   icon?: string
+  compact?: boolean
 }>(), {
   modelValue: null,
   placeholder: '',
   disabled: false,
-  icon: undefined
+  icon: undefined,
+  compact: false
 })
 
 const emit = defineEmits<{
@@ -28,7 +30,9 @@ const emit = defineEmits<{
  */
 const selectUi = computed(() => ({
   base: [
-    'w-full min-h-10 rounded-[8px] border border-slate-200/80 bg-white/94 px-3.5 py-2.5 text-slate-800',
+    props.compact
+      ? 'w-full min-h-8 rounded-[8px] border border-slate-200/75 bg-white/94 px-3 py-1.5 text-slate-800'
+      : 'w-full min-h-10 rounded-[8px] border border-slate-200/80 bg-white/94 px-3.5 py-2.5 text-slate-800',
     'shadow-[0_8px_18px_-18px_rgba(15,23,42,0.22)]',
     'transition-[border-color,box-shadow,background-color,color] duration-200',
     'placeholder:text-slate-400',
@@ -41,8 +45,12 @@ const selectUi = computed(() => ({
     'dark:focus-visible:border-sky-300 dark:focus-visible:bg-slate-950 dark:focus-visible:ring-sky-400/20'
   ].join(' '),
   leadingIcon: 'text-slate-400 dark:text-slate-500',
-  value: 'truncate pr-2 text-[0.95rem] font-medium text-slate-800 dark:text-slate-100',
-  placeholder: 'truncate pr-2 text-[0.95rem] font-medium text-slate-400 dark:text-slate-500',
+  value: props.compact
+    ? 'truncate pr-2 text-sm font-medium text-slate-800 dark:text-slate-100'
+    : 'truncate pr-2 text-[0.95rem] font-medium text-slate-800 dark:text-slate-100',
+  placeholder: props.compact
+    ? 'truncate pr-2 text-sm font-medium text-slate-400 dark:text-slate-500'
+    : 'truncate pr-2 text-[0.95rem] font-medium text-slate-400 dark:text-slate-500',
   trailingIcon: 'text-slate-400 transition-transform duration-200 group-data-[state=open]:rotate-180 dark:text-slate-500',
   content: [
     'min-w-[var(--reka-select-trigger-width)] max-w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-[10px] border border-slate-200/90 bg-white/98 p-1.5',
@@ -87,7 +95,7 @@ function handleUpdate(value: string | number | null) {
     :placeholder="props.placeholder"
     :disabled="props.disabled"
     :icon="props.icon"
-    size="xl"
+    :size="props.compact ? 'lg' : 'xl'"
     color="neutral"
     variant="outline"
     class="group w-full"

@@ -45,6 +45,11 @@ const navigationItems: AdminNavigationItem[] = [
     to: '/admin/topics'
   },
   {
+    label: '评论管理',
+    icon: 'i-lucide-messages-square',
+    to: '/admin/comments'
+  },
+  {
     label: '用户管理',
     icon: 'i-lucide-users',
     to: '/admin/users'

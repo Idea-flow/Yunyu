@@ -10,6 +10,12 @@ import type {
   SiteTopicDetail,
   SiteTopicItem
 } from '../types/site'
+import type {
+  SiteCommentCreateRequest,
+  SiteCommentCreateResponse,
+  SiteCommentListResponse,
+  SiteCommentQuery
+} from '../types/comment'
 
 /**
  * 前台内容接口组合式函数。
@@ -47,6 +53,34 @@ export function useSiteContent() {
    */
   async function getPostDetail(slug: string) {
     return await apiClient.request<SitePostDetail>(`/api/site/posts/${slug}`)
+  }
+
+  /**
+   * 查询文章评论列表。
+   *
+   * @param slug 文章 slug
+   * @param query 查询参数
+   * @returns 评论分页结果
+   */
+  async function listPostComments(slug: string, query: SiteCommentQuery = {}) {
+    return await apiClient.request<SiteCommentListResponse>(`/api/site/posts/${slug}/comments`, {
+      method: 'GET',
+      query
+    })
+  }
+
+  /**
+   * 发布文章评论。
+   *
+   * @param slug 文章 slug
+   * @param payload 评论请求
+   * @returns 发布结果
+   */
+  async function createPostComment(slug: string, payload: SiteCommentCreateRequest) {
+    return await apiClient.request<SiteCommentCreateResponse>(`/api/site/posts/${slug}/comments`, {
+      method: 'POST',
+      body: payload
+    })
   }
 
   /**
@@ -119,6 +153,8 @@ export function useSiteContent() {
     getHome,
     listPosts,
     getPostDetail,
+    listPostComments,
+    createPostComment,
     listCategories,
     getCategoryDetail,
     listTags,

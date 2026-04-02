@@ -2,6 +2,7 @@
 import { nextTick, onBeforeUnmount, onMounted } from 'vue'
 import type { ArticleTocItem } from '../../types/post'
 import ArticleContentRenderer from '../../components/content/ArticleContentRenderer.vue'
+import ArticleCommentPanel from '../../components/content/ArticleCommentPanel.vue'
 import ArticleTocTree from '../../components/content/ArticleTocTree.vue'
 import YunyuImage from '~/components/common/YunyuImage.vue'
 import YunyuSectionTitle from '~/components/common/YunyuSectionTitle.vue'
@@ -249,7 +250,7 @@ onBeforeUnmount(() => {
     </div>
 
     <section v-if="post" class="relative overflow-hidden">
-      <div class="relative h-[34svh] min-h-[280px] w-full sm:h-[38svh] lg:h-[42svh]">
+      <div class="relative h-[39svh] min-h-[320px] w-full sm:h-[44svh] lg:h-[49svh]">
         <div class="absolute inset-0">
           <YunyuImage
             :src="post.coverUrl"
@@ -260,6 +261,61 @@ onBeforeUnmount(() => {
           />
           <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.16)_0%,rgba(15,23,42,0.12)_18%,rgba(15,23,42,0.18)_40%,rgba(15,23,42,0.52)_100%)] dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.08)_0%,rgba(2,6,23,0.14)_18%,rgba(2,6,23,0.22)_40%,rgba(2,6,23,0.62)_100%)]" />
         </div>
+        <div class="absolute inset-x-0 bottom-0 z-10">
+          <div class="mx-auto max-w-[1440px] px-5 pb-8 sm:px-8 sm:pb-10 lg:px-10 lg:pb-12">
+            <div class="max-w-[56rem]">
+              <div class="flex flex-wrap gap-2">
+                <NuxtLink :to="`/categories/${post.categorySlug}`">
+                  <UBadge color="neutral" variant="soft" size="lg" class="backdrop-blur-md">
+                    {{ post.categoryName }}
+                  </UBadge>
+                </NuxtLink>
+                <NuxtLink
+                  v-for="topic in post.topicItems"
+                  :key="`${post.slug}-${topic.slug}`"
+                  :to="`/topics/${topic.slug}`"
+                >
+                  <UBadge color="primary" variant="soft" size="lg" class="backdrop-blur-md">
+                    {{ topic.name }}
+                  </UBadge>
+                </NuxtLink>
+              </div>
+
+              <h1 class="mt-4 max-w-[48rem] text-[clamp(1.72rem,1.44rem+1.35vw,2.95rem)] font-semibold leading-[1.06] tracking-[-0.04em] [font-family:var(--font-display)] [text-wrap:balance] text-white drop-shadow-[0_16px_40px_rgba(15,23,42,0.32)]">
+                {{ post.title }}
+              </h1>
+
+              <p class="mt-3 max-w-[38rem] text-[0.92rem] leading-7 tracking-[-0.01em] text-white/84 drop-shadow-[0_10px_28px_rgba(15,23,42,0.24)]">
+                {{ post.summary }}
+              </p>
+
+              <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-[0.82rem] text-white/82">
+                <span class="inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/12 px-3 py-1.5 backdrop-blur-sm">
+                  <svg class="size-4 text-rose-300" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span class="text-white/70">作者</span>
+                  <span class="font-medium text-white">{{ post.authorName }}</span>
+                </span>
+                <span class="inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/12 px-3 py-1.5 backdrop-blur-sm">
+                  <UIcon name="i-lucide-clock-3" class="size-4 text-sky-300" />
+                  <span class="text-white/70">发布</span>
+                  <span class="font-medium text-white">{{ post.publishedAt }}</span>
+                </span>
+                <span class="inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/12 px-3 py-1.5 backdrop-blur-sm">
+                  <UIcon name="i-lucide-book-open" class="size-4 text-orange-300" />
+                  <span class="text-white/70">阅读</span>
+                  <span class="font-medium text-white">{{ post.readingMinutes }} 分钟</span>
+                </span>
+                <span class="inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/12 px-3 py-1.5 backdrop-blur-sm">
+                  <UIcon name="i-lucide-eye" class="size-4 text-emerald-300" />
+                  <span class="text-white/70">热度</span>
+                  <span class="font-medium text-white">{{ post.viewCount }} 次浏览</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(244,248,255,0.9)_100%)] dark:bg-[linear-gradient(180deg,rgba(2,6,23,0)_0%,rgba(2,6,23,0.96)_100%)]" />
       </div>
     </section>
@@ -267,65 +323,6 @@ onBeforeUnmount(() => {
     <section v-if="post" class="relative z-10 mx-auto -mt-10 max-w-[1440px] px-5 pb-16 sm:-mt-12 sm:px-8 lg:-mt-16 lg:px-10 lg:pb-24">
       <div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div ref="articleContentRef" class="space-y-8">
-          <section class="overflow-hidden rounded-[34px] border border-white/60 bg-white/88 px-6 py-6 shadow-[0_34px_94px_-56px_rgba(15,23,42,0.32)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/76 sm:px-8 sm:py-7">
-            <div class="flex flex-wrap gap-2">
-              <NuxtLink :to="`/categories/${post.categorySlug}`">
-                <UBadge color="neutral" variant="soft" size="lg">
-                  {{ post.categoryName }}
-                </UBadge>
-              </NuxtLink>
-              <NuxtLink
-                v-for="topic in post.topicItems"
-                :key="`${post.slug}-${topic.slug}`"
-                :to="`/topics/${topic.slug}`"
-              >
-                <UBadge color="primary" variant="soft" size="lg">
-                  {{ topic.name }}
-                </UBadge>
-              </NuxtLink>
-            </div>
-
-            <h1 class="mt-4 max-w-[54rem] text-[clamp(2rem,1.6rem+1.8vw,3.6rem)] font-semibold leading-[1.02] tracking-[-0.045em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 dark:text-slate-50">
-              {{ post.title }}
-            </h1>
-
-            <p class="mt-4 max-w-[42rem] text-[0.98rem] leading-8 tracking-[-0.01em] text-slate-600 dark:text-slate-300">
-              {{ post.summary }}
-            </p>
-
-            <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-sm text-slate-500 dark:text-slate-400">
-              <span class="inline-flex items-center gap-2">
-                <svg class="size-4 text-rose-400" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                {{ post.authorName }}
-              </span>
-              <span class="inline-flex items-center gap-2">
-                <UIcon name="i-lucide-clock-3" class="size-4 text-sky-500 dark:text-sky-300" />
-                {{ post.publishedAt }}
-              </span>
-              <span class="inline-flex items-center gap-2">
-                <UIcon name="i-lucide-book-open" class="size-4 text-orange-500 dark:text-orange-300" />
-                {{ post.readingMinutes }} 分钟阅读
-              </span>
-              <span class="inline-flex items-center gap-2">
-                <UIcon name="i-lucide-eye" class="size-4 text-emerald-500 dark:text-emerald-300" />
-                {{ post.viewCount }} 次浏览
-              </span>
-            </div>
-
-            <div class="mt-5 flex flex-wrap gap-2">
-              <NuxtLink
-                v-for="tag in heroTags"
-                :key="`${post.slug}-${tag.slug}`"
-                :to="`/tags/${tag.slug}`"
-                class="rounded-full border border-slate-200/85 bg-slate-50/90 px-3 py-1.5 text-[0.74rem] font-medium text-slate-600 transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900/82 dark:text-slate-300 dark:hover:border-sky-800 dark:hover:bg-slate-900 dark:hover:text-sky-200"
-              >
-                #{{ tag.name }}
-              </NuxtLink>
-            </div>
-          </section>
-
           <ArticleContentRenderer
             :html="post.contentHtml"
             content-theme="editorial"
@@ -333,6 +330,11 @@ onBeforeUnmount(() => {
             :code-default-expanded="false"
             container-class="relative overflow-hidden rounded-[38px] border border-white/55 bg-white/84 px-2 py-5 shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)] backdrop-blur-xl before:pointer-events-none before:absolute before:inset-x-10 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-sky-200/90 before:to-transparent dark:border-white/10 dark:bg-slate-950/70 dark:before:via-sky-400/30"
             body-class="px-4 sm:px-6 lg:px-12"
+          />
+
+          <ArticleCommentPanel
+            :post-slug="post.slug"
+            :allow-comment="post.allowComment"
           />
 
           <section class="rounded-[36px] border border-white/60 bg-white/86 p-5 shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)] dark:border-white/10 dark:bg-slate-950/74 sm:p-6">
