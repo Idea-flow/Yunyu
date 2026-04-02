@@ -1,10 +1,21 @@
 .yy-md-code-block {
   --yy-code-body-max-height: 9.5rem;
+  position: relative;
   overflow: hidden;
   border: 1px solid var(--yy-code-block-border);
-  border-radius: 1.15rem;
+  border-radius: 1.3rem;
   background: var(--yy-code-block-bg);
-  box-shadow: 0 16px 32px -28px rgba(15, 23, 42, 0.24);
+  box-shadow: 0 24px 48px -34px rgba(15, 23, 42, 0.28);
+}
+
+.yy-md-code-block::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--yy-code-top-highlight) 18%, var(--yy-code-top-highlight) 82%, transparent 100%);
+  pointer-events: none;
+  opacity: 0.9;
 }
 
 .yy-md-code-toolbar {
@@ -14,7 +25,7 @@
   gap: 0.5rem;
   border-bottom: 1px solid var(--yy-code-toolbar-border);
   background: var(--yy-code-toolbar-bg);
-  padding: 0.42rem 0.55rem;
+  padding: 0.58rem 0.75rem;
 }
 
 .yy-md-code-toolbar-meta,
@@ -34,9 +45,9 @@
   background: transparent;
   color: var(--yy-code-label-text);
   padding: 0;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   opacity: 0.88;
 }
@@ -56,27 +67,29 @@
   border-radius: 999px;
   background: var(--yy-code-action-bg);
   color: var(--yy-code-action-text);
-  padding: 0.26rem 0.66rem;
-  font-size: 0.74rem;
+  padding: 0.32rem 0.72rem;
+  font-size: 0.72rem;
   font-weight: 600;
+  letter-spacing: 0.04em;
   line-height: 1;
-  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
 }
 
 .yy-md-code-action:hover {
   background: var(--yy-code-action-bg-hover);
   border-color: var(--yy-code-action-border-hover);
   color: var(--yy-code-action-text-hover);
+  transform: translateY(-1px);
 }
 
 .yy-md-code-action-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.9rem;
-  height: 1.9rem;
+  width: 2rem;
+  height: 2rem;
   padding: 0;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
 }
 
 .yy-md-code-action-icon-glyph {
@@ -116,8 +129,8 @@
 .yy-md .shiki {
   display: block;
   overflow-x: auto;
-  padding: 0.78rem 0.9rem 0.88rem;
-  line-height: 1.7;
+  padding: 0.98rem 1.05rem 1.08rem;
+  line-height: 1.8;
   scrollbar-width: thin;
   scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
 }
@@ -125,13 +138,13 @@
 .yy-md .shiki code {
   display: grid;
   min-width: max-content;
-  font-size: 0.84rem;
+  font-size: 0.85rem;
   font-family: "SFMono-Regular", "SF Mono", "JetBrains Mono", "Consolas", monospace;
 }
 
 .yy-md .shiki code .line {
   display: inline-block;
-  min-height: 1.7em;
+  min-height: 1.8em;
 }
 
 .yy-md pre::-webkit-scrollbar,

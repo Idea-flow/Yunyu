@@ -141,12 +141,34 @@
 }
 
 .yy-md blockquote {
+  position: relative;
   border-left: 4px solid var(--yy-md-quote-border);
   border-radius: 1.15rem;
   background: var(--yy-md-quote-bg);
   color: var(--yy-md-quote-text);
-  padding: 1.15rem 1.25rem;
+  padding: 1.2rem 1.3rem 1.2rem 1.45rem;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.yy-md blockquote::before {
+  content: "“";
+  position: absolute;
+  left: 0.95rem;
+  top: 0.5rem;
+  font-size: 2.2rem;
+  line-height: 1;
+  color: color-mix(in srgb, var(--yy-md-quote-border) 68%, white 32%);
+  font-family: var(--font-display);
+  opacity: 0.9;
+}
+
+.yy-md blockquote > * {
+  position: relative;
+  z-index: 1;
+}
+
+.yy-md blockquote > :first-child {
+  text-indent: 1rem;
 }
 
 .yy-md blockquote > :last-child {
@@ -190,10 +212,13 @@
 }
 
 .yy-md figcaption {
-  margin-top: -0.35rem;
+  max-width: 42rem;
+  margin: -0.2rem auto 0;
   text-align: center;
-  font-size: 0.9rem;
-  line-height: 1.8;
+  font-size: 0.82rem;
+  line-height: 1.9;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--yy-md-muted);
 }
 
