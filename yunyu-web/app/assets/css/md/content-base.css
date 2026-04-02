@@ -11,9 +11,11 @@
   --yy-md-quote-text: rgb(51 65 85);
   --yy-md-inline-code-bg: rgba(226, 232, 240, 0.92);
   --yy-md-inline-code-text: rgb(15 23 42);
+  --yy-md-inline-code-border: rgba(148, 163, 184, 0.32);
   --yy-md-table-border: rgba(203, 213, 225, 0.92);
   --yy-md-table-head-bg: rgba(248, 250, 252, 0.98);
   --yy-md-table-row-bg: rgba(255, 255, 255, 0.78);
+  --yy-md-table-accent: rgba(56, 189, 248, 0.24);
   --yy-md-hr: rgba(148, 163, 184, 0.28);
   --yy-md-image-border: rgba(226, 232, 240, 0.92);
   color: var(--yy-md-text);
@@ -176,22 +178,45 @@
 }
 
 .yy-md hr {
+  position: relative;
   border: 0;
   height: 1px;
-  margin: 2.5rem 0;
+  margin: 3.3rem 0 3rem;
   background: linear-gradient(90deg, transparent 0%, var(--yy-md-hr) 18%, var(--yy-md-hr) 82%, transparent 100%);
 }
 
+.yy-md hr::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--yy-md-heading) 14%, white 86%);
+  box-shadow: 0 0 0 0.42rem rgba(255, 255, 255, 0.96);
+  transform: translate(-50%, -50%);
+}
+
 .yy-md :not(pre) > code {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  border-radius: 0.72rem;
+  border: 1px solid var(--yy-md-inline-code-border);
+  border-radius: 0.78rem;
   background: var(--yy-md-inline-code-bg);
   color: var(--yy-md-inline-code-text);
-  padding: 0.16rem 0.5rem;
-  font-size: 0.92em;
+  padding: 0.12rem 0.48rem 0.16rem;
+  font-size: 0.9em;
+  font-weight: 500;
+  letter-spacing: 0.01em;
   line-height: 1.6;
   font-family: "SFMono-Regular", "SF Mono", "JetBrains Mono", "Consolas", monospace;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.yy-md :not(pre) > a > code {
+  color: inherit;
 }
 
 .yy-md pre {
@@ -224,12 +249,26 @@
 
 .yy-md table {
   display: block;
+  position: relative;
   width: 100%;
   overflow-x: auto;
+  border: 1px solid var(--yy-md-table-border);
   border-collapse: separate;
   border-spacing: 0;
-  border-radius: 1.15rem;
-  box-shadow: 0 18px 36px -32px rgba(15, 23, 42, 0.24);
+  border-radius: 1.35rem;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 24px 48px -36px rgba(15, 23, 42, 0.24);
+}
+
+.yy-md table::before {
+  content: "";
+  position: sticky;
+  left: 0;
+  display: block;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--yy-md-table-accent) 16%, var(--yy-md-table-accent) 84%, transparent 100%);
+  opacity: 0.9;
 }
 
 .yy-md thead tr {
@@ -243,8 +282,9 @@
 .yy-md th,
 .yy-md td {
   min-width: 8rem;
-  border: 1px solid var(--yy-md-table-border);
-  padding: 0.85rem 1rem;
+  border-right: 1px solid var(--yy-md-table-border);
+  border-bottom: 1px solid var(--yy-md-table-border);
+  padding: 0.95rem 1.08rem;
   text-align: left;
   vertical-align: top;
 }
@@ -252,14 +292,26 @@
 .yy-md th {
   color: var(--yy-md-heading);
   font-weight: 700;
+  font-size: 0.77rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .yy-md td {
   color: var(--yy-md-text);
+  line-height: 1.9;
 }
 
 .yy-md tbody tr:nth-child(even) {
   background: color-mix(in srgb, var(--yy-md-table-row-bg) 88%, var(--yy-md-table-head-bg) 12%);
+}
+
+.yy-md tr > :last-child {
+  border-right: 0;
+}
+
+.yy-md tbody tr:last-child > * {
+  border-bottom: 0;
 }
 
 @media (max-width: 1024px) {

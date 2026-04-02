@@ -68,32 +68,6 @@ body {
   box-shadow: 0 18px 40px -32px rgba(0, 0, 0, 0.5);
 }
 
-.admin-breath-panel {
-  border: 1px solid rgb(255 255 255 / 0.5);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0%, rgba(255, 255, 255, 0.58) 100%);
-  box-shadow: 0 18px 36px -30px rgba(15, 23, 42, 0.16);
-  backdrop-filter: blur(20px);
-  border-radius: 18px;
-}
-
-.dark .admin-breath-panel {
-  border-color: rgb(255 255 255 / 0.1);
-  background: linear-gradient(180deg, rgba(2, 6, 23, 0.76) 0%, rgba(15, 23, 42, 0.66) 100%);
-  box-shadow: 0 20px 40px -32px rgba(0, 0, 0, 0.42);
-}
-
-.admin-breath-soft {
-  border: 1px solid rgb(255 255 255 / 0.58);
-  background: rgb(255 255 255 / 0.56);
-  backdrop-filter: blur(14px);
-  border-radius: 14px;
-}
-
-.dark .admin-breath-soft {
-  border-color: rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.05);
-}
-
 .admin-surface {
   border: 1px solid rgb(226 232 240 / 0.9);
   background: rgb(255 255 255 / 0.94);
