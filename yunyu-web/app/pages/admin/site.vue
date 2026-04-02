@@ -231,43 +231,38 @@ onMounted(async () => {
 </script>
 
 <template>
-  <UDashboardPanel>
-    <template #header>
-      <UDashboardNavbar title="站点设置">
-        <template #right>
-          <div class="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap sm:gap-3">
-            <UBadge
-              :color="hasUnsavedChanges ? 'warning' : 'success'"
-              variant="soft"
-              class="rounded-[8px] px-3 py-1"
-            >
-              {{ hasUnsavedChanges ? '待保存' : '已保存' }}
-            </UBadge>
-            <UButton
-              :loading="isLoading"
-              icon="i-lucide-refresh-cw"
-              label="刷新"
-              color="neutral"
-              variant="outline"
-              size="sm"
-              class="rounded-[8px]"
-              @click="loadSiteConfig"
-            />
-            <AdminPrimaryButton
-              :loading="isSubmitting"
-              icon="i-lucide-save"
-              label="保存"
-              loading-label="保存中..."
-              @click="handleSubmit"
-            />
-          </div>
-        </template>
-      </UDashboardNavbar>
-    </template>
+  <div class="space-y-4">
+    <section class="overflow-hidden rounded-[18px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.6))] shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.76),rgba(15,23,42,0.66))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)]">
+      <div class="flex flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="min-w-0">
+          <h1 class="truncate text-base font-semibold text-slate-900 dark:text-slate-50">站点设置</h1>
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ hasUnsavedChanges ? '待保存' : '已保存' }}</p>
+        </div>
 
-    <template #body>
-      <div class="space-y-4 p-4 lg:p-6">
-        <section class="admin-surface p-2">
+        <div class="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap">
+          <UButton
+            :loading="isLoading"
+            icon="i-lucide-refresh-cw"
+            label="刷新"
+            color="neutral"
+            variant="outline"
+            size="sm"
+            class="rounded-[10px]"
+            @click="loadSiteConfig"
+          />
+          <AdminPrimaryButton
+            :loading="isSubmitting"
+            icon="i-lucide-save"
+            label="保存"
+            loading-label="保存中..."
+            @click="handleSubmit"
+          />
+        </div>
+      </div>
+    </section>
+
+    <div class="space-y-4">
+      <section class="rounded-[18px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.6))] p-2.5 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.76),rgba(15,23,42,0.66))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)]">
           <div class="overflow-x-auto [scrollbar-width:thin]">
             <div class="flex min-w-max items-center gap-2">
               <button
@@ -275,23 +270,23 @@ onMounted(async () => {
                 :key="item.key"
                 type="button"
                 :class="[
-                  'flex min-w-[168px] items-center gap-3 rounded-[10px] px-4 py-3 text-left transition duration-200',
+                  'flex min-w-[168px] items-center gap-2.5 rounded-[12px] border px-3.5 py-2.5 text-left transition duration-200',
                   activeTab === item.key
-                    ? 'bg-sky-50 text-slate-900 dark:bg-sky-400/10 dark:text-slate-50'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-50'
+                    ? 'border-sky-100/90 bg-[linear-gradient(135deg,rgba(248,252,255,0.92),rgba(255,250,245,0.58))] text-slate-900 dark:border-sky-400/20 dark:bg-[linear-gradient(135deg,rgba(56,189,248,0.10),rgba(251,146,60,0.05))] dark:text-slate-50'
+                    : 'border-transparent text-slate-500 hover:border-white/70 hover:bg-white/68 hover:text-slate-900 dark:text-slate-400 dark:hover:border-white/10 dark:hover:bg-white/5 dark:hover:text-slate-50'
                 ]"
                 @click="switchTab(item.key)"
               >
-                <div class="flex size-8 shrink-0 items-center justify-center rounded-[8px] bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                <div class="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-slate-100/90 text-slate-700 dark:bg-white/5 dark:text-slate-200">
                   <UIcon :name="item.icon" class="size-4" />
                 </div>
-                <span class="whitespace-nowrap text-sm font-medium">{{ item.label }}</span>
+                <span class="whitespace-nowrap text-[13px] font-semibold">{{ item.label }}</span>
               </button>
             </div>
           </div>
-        </section>
+      </section>
 
-        <section class="admin-surface p-4 lg:p-5">
+      <section class="rounded-[18px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.6))] p-4 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.76),rgba(15,23,42,0.66))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)] lg:p-5">
           <div v-if="activeTab === 'basic'" class="grid gap-4 md:grid-cols-2">
             <div class="space-y-2">
               <p class="text-sm font-medium text-slate-700 dark:text-slate-300">站点名称</p>
@@ -366,8 +361,7 @@ onMounted(async () => {
               <AdminSelect v-model="formState.homeStyle" :items="homeStyleOptions" placeholder="首页风格" />
             </div>
           </div>
-        </section>
-      </div>
-    </template>
-  </UDashboardPanel>
+      </section>
+    </div>
+  </div>
 </template>

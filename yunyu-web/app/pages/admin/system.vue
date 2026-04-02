@@ -206,97 +206,96 @@ onMounted(async () => {
 </script>
 
 <template>
-  <UDashboardPanel>
-    <template #header>
-      <UDashboardNavbar title="系统监控">
-        <template #right>
-          <div class="flex items-center gap-2">
-            <UBadge color="neutral" variant="soft" class="rounded-[8px] px-3 py-1">
-              {{ formatDateTime(lastUpdatedAt) }}
-            </UBadge>
-            <UButton
-              icon="i-lucide-activity"
-              label="线程快照"
-              color="neutral"
-              variant="outline"
-              class="rounded-[8px]"
-              @click="openThreadDump"
-            />
-            <UButton
-              :loading="isLoading"
-              icon="i-lucide-refresh-cw"
-              label="刷新"
-              class="rounded-[8px]"
-              @click="loadOverview"
-            />
-          </div>
-        </template>
-      </UDashboardNavbar>
-    </template>
+  <div class="space-y-4">
+    <section class="overflow-hidden rounded-[18px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.6))] shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.76),rgba(15,23,42,0.66))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)]">
+      <div class="flex flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="min-w-0">
+          <h1 class="truncate text-base font-semibold text-slate-900 dark:text-slate-50">系统监控</h1>
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ formatDateTime(lastUpdatedAt) }}</p>
+        </div>
 
-    <template #body>
-      <div class="space-y-6 p-4 lg:p-6">
-        <section class="grid gap-4 md:grid-cols-4">
+        <div class="flex flex-wrap items-center gap-2">
+          <UButton
+            icon="i-lucide-activity"
+            label="线程快照"
+            color="neutral"
+            variant="outline"
+            class="rounded-[10px]"
+            @click="openThreadDump"
+          />
+          <UButton
+            :loading="isLoading"
+            icon="i-lucide-refresh-cw"
+            label="刷新"
+            class="rounded-[10px]"
+            @click="loadOverview"
+          />
+        </div>
+      </div>
+    </section>
+
+    <div class="space-y-4">
+      <section class="grid gap-4 md:grid-cols-4">
           <div
             v-for="card in insightCards"
             :key="card.title"
-            class="admin-surface p-5"
+            class="rounded-[16px] border border-white/55 bg-white/70 p-5 shadow-[0_16px_32px_-30px_rgba(15,23,42,0.14)] backdrop-blur-lg dark:border-white/10 dark:bg-white/5 dark:shadow-none"
           >
             <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ card.title }}</p>
             <p class="mt-4 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">{{ card.value }}</p>
           </div>
-        </section>
+      </section>
 
-        <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <section class="admin-surface p-5">
+      <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <section class="rounded-[18px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.6))] p-5 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.76),rgba(15,23,42,0.66))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)]">
             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <div class="admin-surface-soft p-4">
+              <div class="rounded-[14px] border border-white/60 bg-white/56 p-4 backdrop-blur-md dark:border-white/10 dark:bg-white/5">
                 <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Heap 使用率</p>
                 <p class="mt-3 text-2xl font-semibold text-slate-900 dark:text-slate-50">{{ heapUsagePercent }}%</p>
                 <UProgress :value="heapUsagePercent" color="primary" class="mt-4" />
               </div>
 
-              <div class="admin-surface-soft p-4">
+              <div class="rounded-[14px] border border-white/60 bg-white/56 p-4 backdrop-blur-md dark:border-white/10 dark:bg-white/5">
                 <p class="text-sm font-medium text-slate-500 dark:text-slate-400">运行时长</p>
                 <p class="mt-3 text-lg font-semibold text-slate-900 dark:text-slate-50">{{ formatDuration(overview?.jvm?.uptimeMs) }}</p>
               </div>
 
-              <div class="admin-surface-soft p-4">
+              <div class="rounded-[14px] border border-white/60 bg-white/56 p-4 backdrop-blur-md dark:border-white/10 dark:bg-white/5">
                 <p class="text-sm font-medium text-slate-500 dark:text-slate-400">时区</p>
                 <p class="mt-3 text-lg font-semibold text-slate-900 dark:text-slate-50">{{ overview?.jvm?.defaultTimeZone || '--' }}</p>
               </div>
 
-              <div class="admin-surface-soft p-4">
+              <div class="rounded-[14px] border border-white/60 bg-white/56 p-4 backdrop-blur-md dark:border-white/10 dark:bg-white/5">
                 <p class="text-sm font-medium text-slate-500 dark:text-slate-400">处理器</p>
                 <p class="mt-3 text-lg font-semibold text-slate-900 dark:text-slate-50">{{ overview?.jvm?.availableProcessors || '--' }}</p>
               </div>
             </div>
-          </section>
+        </section>
 
-          <section class="admin-surface p-5">
+        <section class="rounded-[18px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.6))] p-5 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.76),rgba(15,23,42,0.66))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)]">
             <div class="space-y-3">
-              <div class="admin-surface-soft p-4">
+              <div class="rounded-[14px] border border-white/60 bg-white/56 p-4 backdrop-blur-md dark:border-white/10 dark:bg-white/5">
                 <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Java</p>
                 <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">{{ overview?.jvm?.javaVersion || '--' }}</p>
               </div>
-              <div class="admin-surface-soft p-4">
+              <div class="rounded-[14px] border border-white/60 bg-white/56 p-4 backdrop-blur-md dark:border-white/10 dark:bg-white/5">
                 <p class="text-sm font-medium text-slate-500 dark:text-slate-400">VM</p>
                 <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">{{ overview?.jvm?.vmName || '--' }}</p>
               </div>
-              <div class="admin-surface-soft p-4">
+              <div class="rounded-[14px] border border-white/60 bg-white/56 p-4 backdrop-blur-md dark:border-white/10 dark:bg-white/5">
                 <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Vendor</p>
                 <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">{{ overview?.jvm?.javaVendor || '--' }}</p>
               </div>
-              <div class="admin-surface-soft p-4">
+              <div class="rounded-[14px] border border-white/60 bg-white/56 p-4 backdrop-blur-md dark:border-white/10 dark:bg-white/5">
                 <p class="text-sm font-medium text-slate-500 dark:text-slate-400">启动时间</p>
                 <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">{{ formatDateTime(overview?.jvm?.startTime) }}</p>
               </div>
             </div>
-          </section>
-        </div>
+        </section>
+      </div>
 
-        <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <section class="admin-surface p-5">
+      <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <section class="rounded-[18px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.6))] p-5 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.76),rgba(15,23,42,0.66))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)]">
             <div class="flex items-center justify-between gap-3">
               <h2 class="text-base font-semibold text-slate-900 dark:text-slate-50">启动参数</h2>
               <UBadge color="neutral" variant="soft" class="rounded-[8px] px-3 py-1">
@@ -315,9 +314,9 @@ onMounted(async () => {
                 <span class="truncate">{{ argument }}</span>
               </UBadge>
             </div>
-          </section>
+        </section>
 
-          <section class="admin-surface p-5">
+        <section class="rounded-[18px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.6))] p-5 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.76),rgba(15,23,42,0.66))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)]">
             <div class="flex items-center justify-between gap-3">
               <h2 class="text-base font-semibold text-slate-900 dark:text-slate-50">指标</h2>
               <UBadge color="neutral" variant="soft" class="rounded-[8px] px-3 py-1">
@@ -329,18 +328,16 @@ onMounted(async () => {
               <div
                 v-for="metricName in overview?.metricsNames?.slice(0, 12) || []"
                 :key="metricName"
-                class="admin-surface-soft px-4 py-3 text-sm text-slate-700 dark:text-slate-200"
+                class="rounded-[14px] border border-white/60 bg-white/56 px-4 py-3 text-sm text-slate-700 backdrop-blur-md dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
               >
                 {{ metricName }}
               </div>
             </div>
-          </section>
-        </div>
+        </section>
       </div>
-    </template>
-  </UDashboardPanel>
+    </div>
 
-  <UModal v-model:open="threadDumpOpen" :ui="{ content: 'sm:max-w-5xl rounded-[14px]' }">
+    <UModal v-model:open="threadDumpOpen" :ui="{ content: 'sm:max-w-5xl rounded-[14px]' }">
     <template #content>
       <div class="rounded-[14px] border border-slate-200/80 bg-white/95 p-6 dark:border-slate-800 dark:bg-slate-950/95">
         <div class="flex items-center justify-between gap-3">
@@ -382,5 +379,6 @@ onMounted(async () => {
         </div>
       </div>
     </template>
-  </UModal>
+    </UModal>
+  </div>
 </template>
