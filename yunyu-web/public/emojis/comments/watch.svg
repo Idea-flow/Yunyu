@@ -1,0 +1,16 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="48" cy="49" r="18" fill="url(#watch-face)"/>
+  <circle cx="41" cy="46" r="4.2" fill="#33241D"/>
+  <circle cx="55" cy="46" r="4.2" fill="#33241D"/>
+  <path d="M40 58C42.5 60 45.2 61 48 61C50.8 61 53.5 60 56 58" stroke="#33241D" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="24" cy="47" r="10" fill="#D6EEFF"/>
+  <circle cx="72" cy="47" r="10" fill="#D6EEFF"/>
+  <circle cx="24" cy="47" r="5.8" fill="#243B53"/>
+  <circle cx="72" cy="47" r="5.8" fill="#243B53"/>
+  <defs>
+    <linearGradient id="watch-face" x1="32" y1="33" x2="61" y2="67" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE39A"/>
+      <stop offset="1" stop-color="#FFB85A"/>
+    </linearGradient>
+  </defs>
+</svg>

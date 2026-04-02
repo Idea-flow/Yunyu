@@ -1,0 +1,19 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="34" cy="49" r="18" fill="url(#call-face)"/>
+  <circle cx="30" cy="46" r="3.8" fill="#37271F"/>
+  <circle cx="40" cy="46" r="3.8" fill="#37271F"/>
+  <path d="M27.5 56C30 58.4 32.3 59.5 34.4 59.5C36.7 59.5 39.3 58.2 42 55.5" stroke="#37271F" stroke-width="4.4" stroke-linecap="round"/>
+  <path d="M49 28L78.5 42.5L49 57V28Z" fill="url(#call-horn)"/>
+  <path d="M70.5 34.5C74.7 37.2 77 40.5 77.4 44.6C77.8 48.2 76.5 51.5 73.6 54.5" stroke="#F59E0B" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M77.5 28.5C84 33.2 87.3 39 87.5 46C87.7 51.8 85 57.5 79.5 63" stroke="#F59E0B" stroke-width="4.5" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="call-face" x1="20" y1="32" x2="45" y2="66" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE39B"/>
+      <stop offset="1" stop-color="#FFB85A"/>
+    </linearGradient>
+    <linearGradient id="call-horn" x1="49" y1="28" x2="79" y2="57" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7DD3FC"/>
+      <stop offset="1" stop-color="#0EA5E9"/>
+    </linearGradient>
+  </defs>
+</svg>
