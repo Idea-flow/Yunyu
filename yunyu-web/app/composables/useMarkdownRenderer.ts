@@ -63,7 +63,14 @@ function createMarkdownRenderer() {
     linkify: true,
     breaks: true
   }).use(markdownItAnchor, {
-    slugify: createSlugifyFactory()
+    slugify: createSlugifyFactory(),
+    permalink: (markdownItAnchor as any).permalink.linkInsideHeader({
+      symbol: '#',
+      placement: 'after',
+      class: 'yy-md-heading-anchor',
+      assistiveText: '复制标题链接',
+      visuallyHiddenClass: 'yy-md-visually-hidden'
+    })
   })
 }
 
@@ -253,6 +260,11 @@ async function renderTokensToHtml(tokens: any[]) {
 >
   <div class="yy-md-code-toolbar">
     <div class="yy-md-code-toolbar-meta">
+      <span class="yy-md-code-window-controls" aria-hidden="true">
+        <span class="yy-md-code-window-dot yy-md-code-window-dot-close"></span>
+        <span class="yy-md-code-window-dot yy-md-code-window-dot-minimize"></span>
+        <span class="yy-md-code-window-dot yy-md-code-window-dot-expand"></span>
+      </span>
       <span class="yy-md-code-language-pill">${displayLanguageAttr}</span>
     </div>
     <div class="yy-md-code-toolbar-actions">

@@ -13,5 +13,8 @@
   --yy-code-action-bg-hover: rgba(240, 249, 255, 0.96);
   --yy-code-action-border-hover: rgba(125, 211, 252, 0.82);
   --yy-code-action-text-hover: #0369a1;
+  --yy-code-collapse-hint-bg: rgba(255, 255, 255, 0.82);
+  --yy-code-collapse-hint-border: rgba(203, 213, 225, 0.9);
+  --yy-code-collapse-hint-text: #475569;
   --yy-code-collapse-mask: rgba(248, 250, 252, 0.98);
 }

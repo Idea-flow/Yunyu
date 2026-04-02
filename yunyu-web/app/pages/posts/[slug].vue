@@ -338,10 +338,10 @@ onBeforeUnmount(() => {
             :code-theme="articleCodeTheme"
             :code-default-expanded="false"
             container-class="rounded-[38px] border border-white/55 bg-white/84 px-2 py-4 shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/70"
-            body-class="px-3 sm:px-6 lg:px-12"
+            body-class="px-4 sm:px-6 lg:px-12"
           />
 
-          <section class="rounded-[36px] border border-white/60 bg-white/86 p-6 shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)] dark:border-white/10 dark:bg-slate-950/74">
+          <section class="rounded-[36px] border border-white/60 bg-white/86 p-5 shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)] dark:border-white/10 dark:bg-slate-950/74 sm:p-6">
             <YunyuSectionTitle
               eyebrow="继续阅读"
               title="沿这条线继续读"
@@ -358,7 +358,7 @@ onBeforeUnmount(() => {
               >
                 <div class="min-w-0">
                   <p class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-sky-600 dark:text-sky-300">
-                    Next Reading
+                    Editor's Pick
                   </p>
                   <h3 class="mt-4 text-[clamp(1.7rem,1.4rem+0.8vw,2.3rem)] font-semibold leading-[1.08] tracking-[-0.035em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 transition group-hover:text-sky-700 dark:text-slate-50 dark:group-hover:text-sky-200">
                     {{ relatedLeadPost.title }}
@@ -386,15 +386,19 @@ onBeforeUnmount(() => {
                   v-for="item in relatedStreamPosts"
                   :key="item.slug"
                   :to="`/posts/${item.slug}`"
-                  class="group rounded-[26px] border border-slate-200/75 bg-white/88 p-4 transition hover:-translate-y-0.5 hover:border-sky-200 dark:border-slate-800 dark:bg-slate-900/82 dark:hover:border-sky-900"
+                  class="group rounded-[26px] border border-slate-200/75 bg-white/88 p-4 transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-[0_24px_54px_-40px_rgba(14,165,233,0.34)] dark:border-slate-800 dark:bg-slate-900/82 dark:hover:border-sky-900"
                 >
-                  <p class="text-[0.68rem] uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">{{ item.categoryName }}</p>
+                  <p class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">From {{ item.categoryName }}</p>
                   <h3 class="mt-3 text-[clamp(1.12rem,1.02rem+0.32vw,1.35rem)] font-semibold leading-7 tracking-[-0.03em] [font-family:var(--font-display)] text-slate-950 transition group-hover:text-sky-700 dark:text-slate-50 dark:group-hover:text-sky-200">
                     {{ item.title }}
                   </h3>
                   <p class="mt-2 line-clamp-2 text-sm leading-7 text-slate-500 dark:text-slate-400">
                     {{ item.summary }}
                   </p>
+                  <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[0.68rem] uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
+                    <span>{{ item.publishedAt }}</span>
+                    <span>{{ item.readingMinutes }} 分钟阅读</span>
+                  </div>
                 </NuxtLink>
               </div>
             </div>

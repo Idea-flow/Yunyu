@@ -5,6 +5,7 @@
   --yy-md-strong: rgb(15 23 42);
   --yy-md-link: rgb(3 105 161);
   --yy-md-link-hover: rgb(2 132 199);
+  --yy-md-link-glow: rgba(56, 189, 248, 0.18);
   --yy-md-selection: rgba(14, 165, 233, 0.18);
   --yy-md-quote-bg: rgba(241, 245, 249, 0.96);
   --yy-md-quote-border: rgba(56, 189, 248, 0.45);
@@ -18,6 +19,9 @@
   --yy-md-table-accent: rgba(56, 189, 248, 0.24);
   --yy-md-hr: rgba(148, 163, 184, 0.28);
   --yy-md-image-border: rgba(226, 232, 240, 0.92);
+  --yy-md-list-marker: rgba(14, 165, 233, 0.72);
+  --yy-md-anchor-bg: rgba(241, 245, 249, 0.95);
+  --yy-md-anchor-border: rgba(203, 213, 225, 0.9);
   color: var(--yy-md-text);
   font-size: 1.02rem;
   line-height: 2.05;
@@ -92,6 +96,83 @@
   color: var(--yy-md-text);
 }
 
+.yy-md h1[id],
+.yy-md h2[id],
+.yy-md h3[id],
+.yy-md h4[id],
+.yy-md h5[id],
+.yy-md h6[id] {
+  position: relative;
+}
+
+.yy-md h1:target,
+.yy-md h2:target,
+.yy-md h3:target,
+.yy-md h4:target,
+.yy-md h5:target,
+.yy-md h6:target {
+  color: color-mix(in srgb, var(--yy-md-heading) 86%, var(--yy-md-link-hover) 14%);
+}
+
+.yy-md .yy-md-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.yy-md .yy-md-heading-anchor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-left: 0.5rem;
+  border: 1px solid var(--yy-md-anchor-border);
+  border-radius: 999px;
+  background: var(--yy-md-anchor-bg);
+  color: color-mix(in srgb, var(--yy-md-link) 70%, white 30%);
+  font-family: "SFMono-Regular", "SF Mono", "JetBrains Mono", "Consolas", monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  vertical-align: middle;
+  box-shadow: 0 10px 24px -18px rgba(15, 23, 42, 0.22);
+  opacity: 0;
+  transform: translateY(-1px);
+  transition: opacity 180ms ease, transform 180ms ease, color 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+.yy-md h1:hover .yy-md-heading-anchor,
+.yy-md h2:hover .yy-md-heading-anchor,
+.yy-md h3:hover .yy-md-heading-anchor,
+.yy-md h4:hover .yy-md-heading-anchor,
+.yy-md h5:hover .yy-md-heading-anchor,
+.yy-md h6:hover .yy-md-heading-anchor,
+.yy-md .yy-md-heading-anchor:focus-visible,
+.yy-md h1:target .yy-md-heading-anchor,
+.yy-md h2:target .yy-md-heading-anchor,
+.yy-md h3:target .yy-md-heading-anchor,
+.yy-md h4:target .yy-md-heading-anchor,
+.yy-md h5:target .yy-md-heading-anchor,
+.yy-md h6:target .yy-md-heading-anchor {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.yy-md .yy-md-heading-anchor:hover,
+.yy-md .yy-md-heading-anchor:focus-visible {
+  color: var(--yy-md-link-hover);
+  border-color: color-mix(in srgb, var(--yy-md-link-hover) 28%, white 72%);
+  background: color-mix(in srgb, var(--yy-md-link-glow) 48%, white 52%);
+}
+
 .yy-md strong {
   color: var(--yy-md-strong);
   font-weight: 700;
@@ -103,18 +184,20 @@
 }
 
 .yy-md a {
+  position: relative;
   color: var(--yy-md-link);
   font-weight: 600;
   text-decoration-line: underline;
   text-decoration-thickness: 0.08em;
-  text-underline-offset: 0.22em;
+  text-underline-offset: 0.24em;
   text-decoration-color: color-mix(in srgb, var(--yy-md-link) 42%, transparent 58%);
-  transition: color 180ms ease, text-decoration-color 180ms ease;
+  transition: color 180ms ease, text-decoration-color 180ms ease, text-underline-offset 180ms ease;
   overflow-wrap: anywhere;
 }
 
 .yy-md a:hover {
   color: var(--yy-md-link-hover);
+  text-underline-offset: 0.3em;
   text-decoration-color: color-mix(in srgb, var(--yy-md-link-hover) 70%, transparent 30%);
 }
 
@@ -129,16 +212,51 @@
 
 .yy-md ul,
 .yy-md ol {
-  padding-left: 1.45rem;
+  padding-left: 0;
+}
+
+.yy-md ul {
+  list-style: none;
+}
+
+.yy-md ol {
+  padding-left: 1.35rem;
+}
+
+.yy-md ul > li,
+.yy-md ol > li {
+  position: relative;
+  padding-left: 1.6rem;
+}
+
+.yy-md ul > li::before {
+  content: "";
+  position: absolute;
+  left: 0.2rem;
+  top: 0.9rem;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--yy-md-list-marker);
+  box-shadow: 0 0 0 0.28rem rgba(14, 165, 233, 0.08);
+}
+
+.yy-md ol > li::marker {
+  color: color-mix(in srgb, var(--yy-md-link) 78%, white 22%);
+  font-weight: 700;
+}
+
+.yy-md li > p {
+  margin-bottom: 0.65rem;
 }
 
 .yy-md li + li {
-  margin-top: 0.6rem;
+  margin-top: 0.72rem;
 }
 
 .yy-md li > ul,
 .yy-md li > ol {
-  margin-top: 0.6rem;
+  margin-top: 0.72rem;
   margin-bottom: 0;
 }
 
@@ -248,27 +366,17 @@
 }
 
 .yy-md table {
-  display: block;
   position: relative;
   width: 100%;
-  overflow-x: auto;
+  min-width: 100%;
+  overflow: hidden;
   border: 1px solid var(--yy-md-table-border);
   border-collapse: separate;
   border-spacing: 0;
+  table-layout: auto;
   border-radius: 1.35rem;
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 24px 48px -36px rgba(15, 23, 42, 0.24);
-}
-
-.yy-md table::before {
-  content: "";
-  position: sticky;
-  left: 0;
-  display: block;
-  width: 100%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, var(--yy-md-table-accent) 16%, var(--yy-md-table-accent) 84%, transparent 100%);
-  opacity: 0.9;
 }
 
 .yy-md thead tr {
@@ -279,9 +387,29 @@
   background: var(--yy-md-table-row-bg);
 }
 
+.yy-md thead th {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.yy-md thead tr:first-child > :first-child {
+  border-top-left-radius: calc(1.35rem - 1px);
+}
+
+.yy-md thead tr:first-child > :last-child {
+  border-top-right-radius: calc(1.35rem - 1px);
+}
+
+.yy-md tbody tr:last-child > :first-child {
+  border-bottom-left-radius: calc(1.35rem - 1px);
+}
+
+.yy-md tbody tr:last-child > :last-child {
+  border-bottom-right-radius: calc(1.35rem - 1px);
+}
+
 .yy-md th,
 .yy-md td {
-  min-width: 8rem;
+  min-width: 7.5rem;
   border-right: 1px solid var(--yy-md-table-border);
   border-bottom: 1px solid var(--yy-md-table-border);
   padding: 0.95rem 1.08rem;
@@ -300,6 +428,16 @@
 .yy-md td {
   color: var(--yy-md-text);
   line-height: 1.9;
+}
+
+.yy-md th[align='center'],
+.yy-md td[align='center'] {
+  text-align: center;
+}
+
+.yy-md th[align='right'],
+.yy-md td[align='right'] {
+  text-align: right;
 }
 
 .yy-md tbody tr:nth-child(even) {
@@ -326,5 +464,16 @@
 
   .yy-md h2 {
     font-size: clamp(1.35rem, 4.8vw, 1.72rem);
+  }
+
+  .yy-md table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .yy-md th,
+  .yy-md td {
+    min-width: 9rem;
   }
 }

@@ -25,40 +25,56 @@
   gap: 0.5rem;
   border-bottom: 1px solid var(--yy-code-toolbar-border);
   background: var(--yy-code-toolbar-bg);
-  padding: 0.58rem 0.75rem;
+  padding: 0.42rem 0.72rem;
 }
 
 .yy-md-code-toolbar-meta,
 .yy-md-code-toolbar-actions {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.5rem;
+}
+
+.yy-md-code-window-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+  margin-right: 0.06rem;
+}
+
+.yy-md-code-window-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 999px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.yy-md-code-window-dot-close {
+  background: #ff5f57;
+}
+
+.yy-md-code-window-dot-minimize {
+  background: #febc2e;
+}
+
+.yy-md-code-window-dot-expand {
+  background: #28c840;
 }
 
 .yy-md-code-language-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
   border: 0;
   border-radius: 0;
   background: transparent;
   color: var(--yy-code-label-text);
   padding: 0;
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   opacity: 0.88;
-}
-
-.yy-md-code-language-pill::before {
-  content: "";
-  display: inline-flex;
-  width: 0.42rem;
-  height: 0.42rem;
-  border-radius: 999px;
-  background: var(--yy-code-label-dot);
 }
 
 .yy-md-code-action {
@@ -86,8 +102,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 1.95rem;
+  height: 1.95rem;
   padding: 0;
   font-size: 0.9rem;
 }
@@ -101,10 +117,39 @@
 .yy-md-code-body {
   position: relative;
   overflow: hidden;
+  max-height: none;
+  transition: max-height 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: max-height;
 }
 
 .yy-md-code-block[data-code-collapsed='true'] .yy-md-code-body {
   max-height: var(--yy-code-body-max-height);
+}
+
+.yy-md-code-block[data-code-collapsed='true'][data-code-overflowing='true'] .yy-md-code-body::before {
+  content: "下方还有内容";
+  pointer-events: none;
+  position: absolute;
+  left: 50%;
+  bottom: 0.7rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 6.3rem;
+  height: 1.65rem;
+  padding: 0 0.7rem;
+  border: 1px solid var(--yy-code-collapse-hint-border);
+  border-radius: 999px;
+  background: var(--yy-code-collapse-hint-bg);
+  color: var(--yy-code-collapse-hint-text);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  box-shadow: 0 14px 28px -22px rgba(15, 23, 42, 0.32);
+  transform: translateX(-50%);
+  backdrop-filter: blur(10px);
 }
 
 .yy-md-code-block[data-code-collapsed='true'] .yy-md-code-body::after {
@@ -112,7 +157,7 @@
   pointer-events: none;
   position: absolute;
   inset: auto 0 0 0;
-  height: 2.8rem;
+  height: 4.6rem;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, var(--yy-code-collapse-mask) 100%);
 }
 

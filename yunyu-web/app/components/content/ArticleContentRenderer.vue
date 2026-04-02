@@ -107,16 +107,66 @@ async function copyCode(text: string, button: HTMLButtonElement) {
 }
 
 /**
+ * 设置代码块内容容器高度。
+ * 作用：统一维护代码块当前展示高度，避免展开和收起时直接切换状态造成闪烁。
+ *
+ * @param codeBody 代码块内容容器
+ * @param height 目标高度
+ */
+function setCodeBodyHeight(codeBody: HTMLElement, height: number | 'none') {
+  codeBody.style.maxHeight = height === 'none' ? 'none' : `${Math.max(height, collapseHeight)}px`
+}
+
+/**
+ * 同步代码块高度状态。
+ * 作用：在初始化或切换折叠状态时，根据真实内容高度驱动平滑过渡。
+ *
+ * @param codeBody 代码块内容容器
+ * @param isExpanded 当前是否展开
+ * @param animate 是否启用动画
+ */
+function syncCodeBodyHeight(codeBody: HTMLElement, isExpanded: boolean, animate: boolean) {
+  const fullHeight = codeBody.scrollHeight
+
+  if (!animate) {
+    setCodeBodyHeight(codeBody, isExpanded ? 'none' : collapseHeight)
+    return
+  }
+
+  const startHeight = Math.max(codeBody.getBoundingClientRect().height, collapseHeight)
+  setCodeBodyHeight(codeBody, startHeight)
+
+  requestAnimationFrame(() => {
+    setCodeBodyHeight(codeBody, isExpanded ? fullHeight : collapseHeight)
+  })
+
+  const handleTransitionEnd = (event: TransitionEvent) => {
+    if (event.propertyName !== 'max-height') {
+      return
+    }
+
+    codeBody.removeEventListener('transitionend', handleTransitionEnd)
+    setCodeBodyHeight(codeBody, isExpanded ? 'none' : collapseHeight)
+  }
+
+  codeBody.addEventListener('transitionend', handleTransitionEnd)
+  cleanupCallbacks.push(() => codeBody.removeEventListener('transitionend', handleTransitionEnd))
+}
+
+/**
  * 切换代码块折叠状态。
  * 作用：当代码内容超出阈值时，允许用户在收起和展开之间切换。
  *
  * @param block 代码块外层容器
+ * @param codeBody 代码块内容容器
  * @param button 折叠按钮
  */
-function toggleCodeBlock(block: HTMLElement, button: HTMLButtonElement) {
+function toggleCodeBlock(block: HTMLElement, codeBody: HTMLElement, button: HTMLButtonElement) {
   const isCollapsed = block.dataset.codeCollapsed !== 'false'
-  block.dataset.codeCollapsed = isCollapsed ? 'false' : 'true'
-  syncToggleButtonState(button, !isCollapsed)
+  const isExpanded = isCollapsed
+  block.dataset.codeCollapsed = isExpanded ? 'false' : 'true'
+  syncToggleButtonState(button, isExpanded)
+  syncCodeBodyHeight(codeBody, isExpanded, true)
 }
 
 /**
@@ -176,18 +226,21 @@ function enhanceCodeBlocks() {
     }
 
     const isOverflowing = codeBody.scrollHeight > collapseHeight
+    block.dataset.codeOverflowing = isOverflowing ? 'true' : 'false'
     block.dataset.codeCollapsed = isOverflowing && !props.codeDefaultExpanded ? 'true' : 'false'
 
     if (!isOverflowing) {
+      setCodeBodyHeight(codeBody, 'none')
       toggleButton.hidden = true
       continue
     }
 
     toggleButton.hidden = false
     syncToggleButtonState(toggleButton, props.codeDefaultExpanded)
+    syncCodeBodyHeight(codeBody, props.codeDefaultExpanded, false)
 
     const handleToggle = () => {
-      toggleCodeBlock(block, toggleButton)
+      toggleCodeBlock(block, codeBody, toggleButton)
     }
 
     toggleButton.addEventListener('click', handleToggle)
