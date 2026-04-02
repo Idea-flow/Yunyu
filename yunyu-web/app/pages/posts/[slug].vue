@@ -300,7 +300,7 @@ onBeforeUnmount(() => {
                 </NuxtLink>
               </div>
 
-              <h1 class="mt-5 max-w-[40rem] text-[clamp(1.82rem,1.48rem+1.55vw,3.15rem)] font-semibold leading-[1.02] tracking-[-0.045em] [font-family:var(--font-display)] [text-wrap:balance] text-white drop-shadow-[0_18px_42px_rgba(15,23,42,0.34)]">
+              <h1 class="mt-5 max-w-[36rem] text-[clamp(1.34rem,1.18rem+0.82vw,2.08rem)] font-semibold leading-[1.08] tracking-[-0.032em] [font-family:var(--font-display)] [text-wrap:balance] text-white drop-shadow-[0_14px_32px_rgba(15,23,42,0.3)]">
                 {{ post.title }}
               </h1>
 
@@ -414,21 +414,21 @@ onBeforeUnmount(() => {
         </div>
 
         <aside class="space-y-5 xl:sticky xl:top-28 xl:self-start">
-          <div class="overflow-hidden rounded-[30px] border border-white/55 bg-white/82 p-5 shadow-[0_24px_76px_-50px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/68">
-            <div class="flex items-start justify-between gap-3 border-b border-slate-200/60 pb-4 dark:border-white/10">
+          <div class="overflow-hidden rounded-[26px] border border-white/55 bg-white/78 p-4 shadow-[0_18px_52px_-42px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/64">
+            <div class="flex items-start justify-between gap-3 border-b border-slate-200/50 pb-3 dark:border-white/10">
               <div>
-                <p class="text-[0.68rem] font-semibold uppercase tracking-[0.3em] text-orange-500 dark:text-orange-300">
+                <p class="text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-orange-500/85 dark:text-orange-300/85">
                   目录
                 </p>
-                <h2 class="mt-2 text-[1.12rem] font-semibold tracking-[-0.03em] [font-family:var(--font-display)] text-slate-950 dark:text-slate-50">阅读导航</h2>
+                <h2 class="mt-1 text-[0.98rem] font-semibold tracking-[-0.028em] [font-family:var(--font-display)] text-slate-950 dark:text-slate-50">阅读导航</h2>
               </div>
-              <div class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200/75 bg-white/80 text-sky-600 shadow-[0_14px_30px_-24px_rgba(14,165,233,0.35)] dark:border-white/10 dark:bg-white/5 dark:text-sky-200">
-                <UIcon name="i-lucide-book-marked" class="size-5" />
+              <div class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[1rem] border border-slate-200/70 bg-white/72 text-sky-600 shadow-[0_10px_22px_-22px_rgba(14,165,233,0.24)] dark:border-white/10 dark:bg-white/5 dark:text-sky-200">
+                <UIcon name="i-lucide-book-marked" class="size-4" />
               </div>
             </div>
 
-            <div class="mt-4 rounded-[1.4rem] bg-slate-50/74 px-2 py-2 dark:bg-slate-900/50">
-              <div ref="tocScrollContainerRef" class="max-h-[32rem] overflow-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.3)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/60 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/60">
+            <div class="mt-2.5 rounded-[1.15rem] bg-slate-50/66 px-1.5 py-1.5 dark:bg-slate-900/42">
+              <div ref="tocScrollContainerRef" class="max-h-[32rem] overflow-auto pr-0.5 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.24)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/50 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/50">
               <ArticleTocTree :items="tocItems" :active-id="activeTocId" @select="handleTocSelect" />
               </div>
             </div>

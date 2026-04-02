@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.ideaflow.yunyu.common.constant.ResultCode;
 import com.ideaflow.yunyu.common.exception.BizException;
 import com.ideaflow.yunyu.module.auth.dto.LoginRequest;
+import com.ideaflow.yunyu.module.auth.dto.RegisterRequest;
 import com.ideaflow.yunyu.module.auth.entity.UserAuthEntity;
 import com.ideaflow.yunyu.module.auth.mapper.UserAuthMapper;
 import com.ideaflow.yunyu.module.auth.vo.CurrentUserResponse;
@@ -17,8 +18,10 @@ import com.ideaflow.yunyu.security.jwt.JwtTokenService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
 
 /**
  * 认证服务类。
@@ -64,20 +67,36 @@ public class AuthService {
             throw new BizException(ResultCode.BAD_REQUEST, "账号或密码错误");
         }
 
-        ensureLocalAuthBinding(userEntity);
-        updateLastLoginInfo(userEntity.getId(), loginIp);
+        return issueLoginResponse(userEntity, loginIp);
+    }
 
-        LoginUser loginUser = toLoginUser(userEntity);
-        String accessToken = jwtTokenService.generateToken(loginUser);
-        return new LoginResponse(
-                accessToken,
-                "Bearer",
-                jwtTokenService.getExpireSeconds(),
-                loginUser.getUserId(),
-                loginUser.getEmail(),
-                loginUser.getUserName(),
-                loginUser.getRole()
-        );
+    /**
+     * 执行邮箱密码注册。
+     *
+     * @param request 注册请求
+     * @param loginIp 注册IP
+     * @return 注册后自动登录响应
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public LoginResponse register(RegisterRequest request, String loginIp) {
+        String email = normalizeEmail(request.getEmail());
+        ensureEmailUnique(email);
+
+        UserEntity userEntity = new UserEntity();
+        String passwordHash = passwordEncoder.encode(request.getPassword());
+
+        userEntity.setEmail(email);
+        userEntity.setUserName(buildDefaultUserName(email));
+        userEntity.setPassword(passwordHash);
+        userEntity.setPasswordHash(passwordHash);
+        userEntity.setRole("USER");
+        userEntity.setStatus("ACTIVE");
+        userEntity.setDeleted(0);
+        userEntity.setCreatedTime(LocalDateTime.now());
+        userEntity.setUpdatedTime(LocalDateTime.now());
+        userMapper.insert(userEntity);
+
+        return issueLoginResponse(userEntity, loginIp);
     }
 
     /**
@@ -124,13 +143,73 @@ public class AuthService {
      * @return 用户记录
      */
     private UserEntity findUserByAccount(String account) {
+        String normalizedAccount = normalizeAccount(account);
         return userMapper.selectOne(new LambdaQueryWrapper<UserEntity>()
                 .eq(UserEntity::getDeleted, 0)
                 .and(wrapper -> wrapper
-                        .eq(UserEntity::getEmail, account)
+                        .eq(UserEntity::getEmail, normalizedAccount)
                         .or()
-                        .eq(UserEntity::getUserName, account))
+                        .eq(UserEntity::getUserName, normalizedAccount))
                 .last("LIMIT 1"));
+    }
+
+    /**
+     * 校验邮箱是否已被有效用户占用。
+     *
+     * @param email 标准化后的邮箱
+     */
+    private void ensureEmailUnique(String email) {
+        Long count = userMapper.selectCount(new LambdaQueryWrapper<UserEntity>()
+                .eq(UserEntity::getEmail, email)
+                .eq(UserEntity::getDeleted, 0));
+        if (count != null && count > 0) {
+            throw new BizException(ResultCode.BAD_REQUEST, "该邮箱已被注册");
+        }
+    }
+
+    /**
+     * 生成注册用户的默认展示名称。
+     *
+     * @param email 注册邮箱
+     * @return 默认展示名称
+     */
+    private String buildDefaultUserName(String email) {
+        String localPart = email;
+        int splitIndex = email.indexOf('@');
+        if (splitIndex > 0) {
+            localPart = email.substring(0, splitIndex);
+        }
+
+        String userName = localPart.trim();
+        if (userName.isBlank()) {
+            return "云屿用户";
+        }
+
+        return userName.length() > 32 ? userName.substring(0, 32) : userName;
+    }
+
+    /**
+     * 标准化邮箱内容。
+     *
+     * @param email 原始邮箱
+     * @return 标准化后的邮箱
+     */
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * 标准化登录账号。
+     *
+     * @param account 原始账号
+     * @return 标准化后的账号
+     */
+    private String normalizeAccount(String account) {
+        String normalizedAccount = account.trim();
+        if (normalizedAccount.contains("@")) {
+            return normalizeEmail(normalizedAccount);
+        }
+        return normalizedAccount;
     }
 
     /**
@@ -174,6 +253,30 @@ public class AuthService {
         userAuthEntity.setAuthEmail(userEntity.getEmail());
         userAuthEntity.setEmailVerified(1);
         userAuthMapper.updateById(userAuthEntity);
+    }
+
+    /**
+     * 生成登录响应并同步登录态信息。
+     *
+     * @param userEntity 用户记录
+     * @param loginIp 登录IP
+     * @return 登录响应
+     */
+    private LoginResponse issueLoginResponse(UserEntity userEntity, String loginIp) {
+        ensureLocalAuthBinding(userEntity);
+        updateLastLoginInfo(userEntity.getId(), loginIp);
+
+        LoginUser loginUser = toLoginUser(userEntity);
+        String accessToken = jwtTokenService.generateToken(loginUser);
+        return new LoginResponse(
+                accessToken,
+                "Bearer",
+                jwtTokenService.getExpireSeconds(),
+                loginUser.getUserId(),
+                loginUser.getEmail(),
+                loginUser.getUserName(),
+                loginUser.getRole()
+        );
     }
 
     /**

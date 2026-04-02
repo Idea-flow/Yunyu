@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SiteCommentItem } from '../../types/comment'
 import CommentComposer from './CommentComposer.vue'
+import CommentRichContent from './CommentRichContent.vue'
 import FrontPaginationBar from './FrontPaginationBar.vue'
 
 /**
@@ -39,25 +40,19 @@ const replyContent = ref('')
 const isLoggedIn = computed(() => Boolean(auth.currentUser.value))
 
 /**
- * 计算评论区顶部统计文案。
- * 作用：让评论区始终显示当前文章已公开评论总数，而不是仅显示当前页楼层数量。
- */
-const commentSummaryText = computed(() => `${commentCount.value} 条评论`)
-
-/**
  * 计算主评论输入框占位提示。
  * 作用：根据登录态和文章评论开关调整根评论发布区的输入引导文案。
  */
 const rootCommentPlaceholder = computed(() => {
   if (!props.allowComment) {
-    return '当前文章暂未开放评论'
+    return '评论已关闭'
   }
 
   if (!isLoggedIn.value) {
-    return '登录后即可参与评论交流'
+    return '登录后发表评论'
   }
 
-  return '写下你对这篇文章的看法、补充或想继续聊的话题'
+  return '写下你的评论'
 })
 
 /**
@@ -66,11 +61,11 @@ const rootCommentPlaceholder = computed(() => {
  */
 const replyCommentPlaceholder = computed(() => {
   if (!props.allowComment) {
-    return '当前文章暂未开放回复'
+    return '评论已关闭'
   }
 
   if (!isLoggedIn.value) {
-    return '登录后即可在当前楼层继续回复'
+    return '登录后回复'
   }
 
   if (replyTarget.value) {
@@ -78,38 +73,6 @@ const replyCommentPlaceholder = computed(() => {
   }
 
   return '写下你的回复内容'
-})
-
-/**
- * 计算主评论帮助文案。
- * 作用：在主评论输入区向用户说明评论开放状态与审核机制。
- */
-const rootHelperText = computed(() => {
-  if (!props.allowComment) {
-    return '当前文章暂不接受新的评论内容。'
-  }
-
-  if (!isLoggedIn.value) {
-    return '登录后即可发表评论，普通用户的新评论会先进入审核队列。'
-  }
-
-  return '请保持友善交流，避免发布无关或攻击性内容。'
-})
-
-/**
- * 计算楼层回复帮助文案。
- * 作用：在当前评论下方说明就地回复的规则，减少用户的操作疑惑。
- */
-const replyHelperText = computed(() => {
-  if (!props.allowComment) {
-    return '当前文章暂不接受新的回复内容。'
-  }
-
-  if (!isLoggedIn.value) {
-    return '登录后即可在这里直接回复，不需要回到顶部。'
-  }
-
-  return '回复提交后会进入审核流程，通过后展示在当前楼层。'
 })
 
 /**
@@ -363,35 +326,19 @@ watch(() => props.postSlug, async () => {
 </script>
 
 <template>
-  <section class="rounded-[36px] border border-white/60 bg-white/86 p-5 shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)] dark:border-white/10 dark:bg-slate-950/74 sm:p-6">
-    <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-      <div>
-        <p class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-sky-600 dark:text-sky-300">评论</p>
-        <h2 class="mt-3 text-[clamp(1.55rem,1.35rem+0.56vw,1.95rem)] font-semibold tracking-[-0.03em] [font-family:var(--font-display)] text-slate-950 dark:text-slate-50">
-          在这篇文章下继续聊
-        </h2>
-        <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-500 dark:text-slate-400">
-          {{ commentSummaryText }}。普通用户的新评论会先进入审核队列，通过后才会展示在这里。
-        </p>
-      </div>
-
-      <div class="rounded-[22px] border border-slate-200/80 bg-white/78 px-4 py-3 text-sm text-slate-500 shadow-[0_16px_40px_-36px_rgba(15,23,42,0.24)] dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-300">
-        <p class="font-medium text-slate-900 dark:text-slate-50">
-          {{ isLoggedIn ? `当前登录：${auth.currentUser?.userName || auth.currentUser?.email}` : '未登录用户' }}
-        </p>
-        <p class="mt-1 text-xs leading-6 text-slate-500 dark:text-slate-400">
-          {{ props.allowComment ? '登录后即可评论或回复他人。' : '作者当前关闭了这篇文章的评论功能。' }}
-        </p>
-      </div>
+  <section class="rounded-[28px] border border-slate-200/60 bg-white/78 p-5 shadow-[0_12px_30px_-30px_rgba(15,23,42,0.08)] dark:border-white/8 dark:bg-slate-950/52 sm:p-6">
+    <div class="flex items-center justify-between gap-4 border-b border-slate-200/60 pb-4 dark:border-white/8">
+      <h2 class="text-[1.2rem] font-semibold tracking-[-0.03em] [font-family:var(--font-display)] text-slate-950 dark:text-slate-50">
+        评论
+      </h2>
+      <p class="text-sm text-slate-400 dark:text-slate-500">{{ commentCount }} 条</p>
     </div>
 
-    <div class="mt-8">
+    <div class="mt-5">
       <CommentComposer
         v-model="rootContent"
-        title="发表一条评论"
         :placeholder="rootCommentPlaceholder"
         submit-label="发布评论"
-        :helper-text="rootHelperText"
         :loading="isRootSubmitting"
         :disabled="!props.allowComment"
         :show-login-button="!isLoggedIn"
@@ -400,23 +347,23 @@ watch(() => props.postSlug, async () => {
       />
     </div>
 
-    <div class="mt-8">
+    <div class="mt-6">
       <div v-if="isLoading" class="space-y-4">
         <USkeleton
           v-for="index in 3"
           :key="index"
-          class="h-32 rounded-[24px]"
+          class="h-28 rounded-[18px]"
         />
       </div>
 
-      <div v-else-if="comments.length" class="space-y-4">
+      <div v-else-if="comments.length" class="divide-y divide-slate-200/60 dark:divide-white/8">
         <article
           v-for="comment in comments"
           :key="comment.id"
-          class="rounded-[28px] border border-slate-200/80 bg-white/88 p-4 shadow-[0_20px_54px_-42px_rgba(15,23,42,0.16)] dark:border-white/10 dark:bg-slate-900/72 sm:p-5"
+          class="py-5 first:pt-0 last:pb-0"
         >
           <div class="flex items-start gap-3">
-            <div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#38bdf8,#fb923c)] text-sm font-semibold text-white shadow-[0_16px_30px_-18px_rgba(14,165,233,0.42)]">
+            <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-slate-100/80 text-sm font-semibold text-slate-500 dark:bg-white/6 dark:text-slate-200">
               {{ getAvatarFallback(comment.author.userName) }}
             </div>
 
@@ -426,18 +373,18 @@ watch(() => props.postSlug, async () => {
                 <p class="text-xs text-slate-400 dark:text-slate-500">{{ formatCommentTime(comment.createdTime) }}</p>
               </div>
 
-              <p class="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-600 dark:text-slate-300">
-                {{ comment.content }}
-              </p>
+              <CommentRichContent
+                :content="comment.content"
+                class="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300"
+              />
 
               <div class="mt-3 flex items-center gap-3">
                 <button
                   v-if="props.allowComment"
                   type="button"
-                  class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-sky-600 transition hover:bg-sky-50 hover:text-sky-700 dark:text-sky-300 dark:hover:bg-sky-400/10 dark:hover:text-sky-200"
+                  class="text-xs font-medium text-slate-500 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
                   @click="startReply(comment)"
                 >
-                  <UIcon name="i-lucide-reply" class="size-3.5" />
                   回复
                 </button>
               </div>
@@ -450,10 +397,8 @@ watch(() => props.postSlug, async () => {
               :title="`回复 @${comment.author.userName}`"
               :placeholder="replyCommentPlaceholder"
               submit-label="发送回复"
-              :helper-text="replyHelperText"
               :loading="isReplySubmitting"
               :disabled="!props.allowComment"
-              compact
               show-cancel
               :show-login-button="!isLoggedIn"
               @submit="handleReplySubmit"
@@ -462,54 +407,53 @@ watch(() => props.postSlug, async () => {
             />
           </div>
 
-          <div v-if="comment.replies.length" class="mt-5 space-y-3 border-t border-slate-200/75 pt-4 dark:border-white/10">
+          <div v-if="comment.replies.length" class="mt-4 ml-4 border-l border-slate-200/55 pl-6 dark:border-white/8">
             <article
               v-for="reply in comment.replies"
               :key="reply.id"
-              class="rounded-[22px] border border-slate-200/75 bg-slate-50/88 p-4 dark:border-slate-800 dark:bg-slate-950/68"
+              class="py-3 first:pt-0 last:pb-0"
             >
               <div class="flex items-start gap-3">
-                <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[linear-gradient(135deg,#0ea5e9,#14b8a6)] text-xs font-semibold text-white">
+                <div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-100/75 text-xs font-semibold text-slate-500 dark:bg-white/6 dark:text-slate-200">
                   {{ getAvatarFallback(reply.author.userName) }}
                 </div>
 
                 <div class="min-w-0 flex-1">
                   <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">{{ reply.author.userName }}</p>
-                    <p v-if="reply.replyToUserName" class="text-xs text-sky-600 dark:text-sky-300">
+                    <p v-if="reply.replyToUserName" class="text-xs text-slate-400 dark:text-slate-500">
                       回复 @{{ reply.replyToUserName }}
                     </p>
                     <p class="text-xs text-slate-400 dark:text-slate-500">{{ formatCommentTime(reply.createdTime) }}</p>
                   </div>
 
-                  <p class="mt-2 whitespace-pre-wrap text-sm leading-7 text-slate-600 dark:text-slate-300">
-                    {{ reply.content }}
-                  </p>
+                  <CommentRichContent
+                    :content="reply.content"
+                    class="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300"
+                    emoji-size="sm"
+                  />
 
                   <div class="mt-3">
                     <button
                       v-if="props.allowComment"
                       type="button"
-                      class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-sky-600 transition hover:bg-sky-50 hover:text-sky-700 dark:text-sky-300 dark:hover:bg-sky-400/10 dark:hover:text-sky-200"
+                      class="text-xs font-medium text-slate-500 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
                       @click="startReply(reply)"
                     >
-                      <UIcon name="i-lucide-reply" class="size-3.5" />
                       回复
                     </button>
                   </div>
                 </div>
               </div>
 
-              <div v-if="replyTarget?.id === reply.id" class="mt-4 pl-12">
+              <div v-if="replyTarget?.id === reply.id" class="mt-3 pl-11">
                 <CommentComposer
                   v-model="replyContent"
                   :title="`回复 @${reply.author.userName}`"
                   :placeholder="replyCommentPlaceholder"
                   submit-label="发送回复"
-                  :helper-text="replyHelperText"
                   :loading="isReplySubmitting"
                   :disabled="!props.allowComment"
-                  compact
                   show-cancel
                   :show-login-button="!isLoggedIn"
                   @submit="handleReplySubmit"
@@ -530,15 +474,12 @@ watch(() => props.postSlug, async () => {
 
       <div
         v-else
-        class="rounded-[28px] border border-dashed border-slate-200/85 bg-slate-50/72 px-6 py-10 text-center dark:border-white/10 dark:bg-slate-900/52"
+        class="px-2 py-8 text-center"
       >
-        <div class="mx-auto flex size-14 items-center justify-center rounded-[18px] bg-white text-sky-600 shadow-[0_18px_32px_-24px_rgba(14,165,233,0.35)] dark:bg-white/6 dark:text-sky-300">
+        <div class="mx-auto flex size-12 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-white/8 dark:text-slate-500">
           <UIcon name="i-lucide-messages-square" class="size-6" />
         </div>
-        <p class="mt-4 text-base font-semibold text-slate-900 dark:text-slate-50">还没有公开评论</p>
-        <p class="mt-2 text-sm leading-7 text-slate-500 dark:text-slate-400">
-          {{ props.allowComment ? '如果你刚提交了评论，它可能正在等待审核。' : '这篇文章当前未开放评论互动。' }}
-        </p>
+        <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">还没有评论</p>
       </div>
     </div>
   </section>

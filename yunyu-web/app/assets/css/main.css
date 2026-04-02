@@ -11,6 +11,9 @@
   --ui-radius: 0.75rem;
   --ui-container: 80rem;
   --ui-primary: var(--ui-color-sky-500);
+  --front-atlas-shell-border: rgb(255 255 255 / 0.72);
+  --front-atlas-shell-shadow: 0 26px 60px -42px rgba(148, 163, 184, 0.34);
+  --front-atlas-card-shadow: 0 24px 52px -44px rgba(148, 163, 184, 0.32);
   color-scheme: light;
 }
 
@@ -109,6 +112,115 @@ body {
 .dark .admin-toolbar {
   border-bottom-color: rgb(30 41 59 / 0.96);
   background: rgb(15 23 42 / 0.72);
+}
+
+.front-atlas-shell {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--front-atlas-shell-border);
+  border-radius: 2rem;
+  background:
+    radial-gradient(circle at 12% 16%, rgba(186, 230, 253, 0.2), transparent 22rem),
+    radial-gradient(circle at 88% 14%, rgba(253, 186, 116, 0.18), transparent 16rem),
+    linear-gradient(180deg, rgba(252, 249, 243, 0.96) 0%, rgba(246, 239, 229, 0.96) 100%);
+  box-shadow: var(--front-atlas-shell-shadow);
+}
+
+.front-atlas-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.28;
+  background:
+    radial-gradient(circle at 0 0, rgba(255, 255, 255, 0.7), transparent 24rem),
+    radial-gradient(circle at 100% 20%, rgba(255, 255, 255, 0.45), transparent 20rem);
+}
+
+.front-atlas-note-card {
+  position: relative;
+  border: 1px solid rgb(255 255 255 / 0.78);
+  border-radius: 2rem;
+  background: rgb(255 255 255 / 0.72);
+  box-shadow: var(--front-atlas-card-shadow);
+  backdrop-filter: blur(12px);
+}
+
+.front-atlas-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgb(226 232 240 / 0.74);
+  border-radius: 2rem;
+  box-shadow: var(--front-atlas-card-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.front-atlas-card--sky {
+  background: linear-gradient(180deg, rgba(225, 239, 252, 0.92) 0%, rgba(247, 250, 253, 0.92) 100%);
+}
+
+.front-atlas-card--orange {
+  background: linear-gradient(180deg, rgba(255, 242, 220, 0.9) 0%, rgba(251, 247, 240, 0.94) 100%);
+}
+
+.front-atlas-card--rose {
+  background: linear-gradient(180deg, rgba(252, 232, 236, 0.9) 0%, rgba(252, 245, 246, 0.94) 100%);
+}
+
+.front-atlas-card--slate {
+  background: linear-gradient(180deg, rgba(241, 245, 249, 0.92) 0%, rgba(249, 250, 251, 0.94) 100%);
+}
+
+.front-atlas-topic-item {
+  border: 1px solid rgb(255 255 255 / 0.68);
+  border-radius: 1.5rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 40px -36px rgba(148, 163, 184, 0.32);
+}
+
+.dark .front-atlas-shell {
+  border-color: rgb(255 255 255 / 0.1);
+  background:
+    radial-gradient(circle at 12% 16%, rgba(56, 189, 248, 0.14), transparent 22rem),
+    radial-gradient(circle at 88% 14%, rgba(251, 146, 60, 0.12), transparent 16rem),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.82) 0%, rgba(2, 6, 23, 0.88) 100%);
+  box-shadow: 0 26px 60px -42px rgba(0, 0, 0, 0.45);
+}
+
+.dark .front-atlas-shell::before {
+  opacity: 0.14;
+}
+
+.dark .front-atlas-note-card {
+  border-color: rgb(255 255 255 / 0.1);
+  background: rgb(15 23 42 / 0.74);
+  box-shadow: 0 24px 52px -42px rgba(0, 0, 0, 0.4);
+}
+
+.dark .front-atlas-card {
+  border-color: rgb(255 255 255 / 0.08);
+  box-shadow: 0 22px 48px -42px rgba(0, 0, 0, 0.4);
+}
+
+.dark .front-atlas-card--sky {
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.88) 0%, rgba(15, 23, 42, 0.84) 100%);
+}
+
+.dark .front-atlas-card--orange {
+  background: linear-gradient(180deg, rgba(67, 34, 17, 0.68) 0%, rgba(30, 41, 59, 0.86) 100%);
+}
+
+.dark .front-atlas-card--rose {
+  background: linear-gradient(180deg, rgba(76, 29, 49, 0.52) 0%, rgba(30, 41, 59, 0.86) 100%);
+}
+
+.dark .front-atlas-card--slate {
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.88) 0%, rgba(15, 23, 42, 0.86) 100%);
+}
+
+.dark .front-atlas-topic-item {
+  border-color: rgb(255 255 255 / 0.08);
+  box-shadow: 0 18px 40px -36px rgba(0, 0, 0, 0.36);
 }
 
 @media (prefers-reduced-motion: reduce) {

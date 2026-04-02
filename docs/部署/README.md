@@ -8,3 +8,5 @@
 - `02-部署执行步骤.md`
 - `03-Cloudflare Pages 手动部署流程.md`
 - `04-Linux 服务器部署说明.md`
+- `05-Linux 升级最新镜像说明.md`
+- `06-Linux 常用运维命令速查.md`

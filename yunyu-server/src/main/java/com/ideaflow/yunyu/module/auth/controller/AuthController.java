@@ -2,6 +2,7 @@ package com.ideaflow.yunyu.module.auth.controller;
 
 import com.ideaflow.yunyu.common.response.ApiResponse;
 import com.ideaflow.yunyu.module.auth.dto.LoginRequest;
+import com.ideaflow.yunyu.module.auth.dto.RegisterRequest;
 import com.ideaflow.yunyu.module.auth.service.AuthService;
 import com.ideaflow.yunyu.module.auth.vo.CurrentUserResponse;
 import com.ideaflow.yunyu.module.auth.vo.LoginResponse;
@@ -46,6 +47,19 @@ public class AuthController {
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpServletRequest) {
         return ApiResponse.success(authService.login(request, resolveClientIp(httpServletRequest)));
+    }
+
+    /**
+     * 执行邮箱密码注册。
+     *
+     * @param request 注册请求
+     * @param httpServletRequest 当前请求
+     * @return 注册响应
+     */
+    @Operation(summary = "邮箱密码注册")
+    @PostMapping("/register")
+    public ApiResponse<LoginResponse> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpServletRequest) {
+        return ApiResponse.success(authService.register(request, resolveClientIp(httpServletRequest)));
     }
 
     /**

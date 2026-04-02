@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Yunyu 首页视觉原型</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'PingFang SC', 'Microsoft YaHei', 'sans-serif'],
+            display: ['"Playfair Display"', '"Times New Roman"', 'PingFang SC', 'serif']
+          },
+          colors: {
+            ink: '#101828',
+            mist: '#F6F1E8',
+            ocean: '#0B1D36',
+            glow: '#7DD3FC',
+            peach: '#F7A76C'
+          },
+          boxShadow: {
+            halo: '0 30px 80px -40px rgba(11, 29, 54, 0.35)',
+            soft: '0 16px 40px -24px rgba(15, 23, 42, 0.18)'
+          },
+          backgroundImage: {
+            'hero-mesh': 'radial-gradient(circle at 15% 18%, rgba(125,211,252,0.25), transparent 25%), radial-gradient(circle at 80% 16%, rgba(247,167,108,0.2), transparent 20%), linear-gradient(135deg, #081120 0%, #11284A 40%, #0E1C2F 100%)',
+            'paper-glow': 'radial-gradient(circle at top left, rgba(125,211,252,0.12), transparent 26rem), radial-gradient(circle at 80% 20%, rgba(247,167,108,0.16), transparent 18rem), linear-gradient(180deg, #FBF8F2 0%, #F4EFE7 100%)'
+          },
+          keyframes: {
+            floatSlow: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-10px)' }
+            },
+            glowPulse: {
+              '0%, 100%': { opacity: '0.45', transform: 'scale(1)' },
+              '50%': { opacity: '0.7', transform: 'scale(1.04)' }
+            },
+            fadeUp: {
+              '0%': { opacity: '0', transform: 'translateY(24px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' }
+            }
+          },
+          animation: {
+            'float-slow': 'floatSlow 8s ease-in-out infinite',
+            'glow-pulse': 'glowPulse 7s ease-in-out infinite',
+            'fade-up': 'fadeUp 900ms ease-out both'
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      background:
+        radial-gradient(circle at 10% 0%, rgba(125, 211, 252, 0.08), transparent 24rem),
+        radial-gradient(circle at 90% 6%, rgba(247, 167, 108, 0.08), transparent 20rem),
+        linear-gradient(180deg, #fbf8f2 0%, #f5efe7 100%);
+    }
+
+    .noise::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0.06;
+      pointer-events: none;
+      background-image:
+        radial-gradient(rgba(255, 255, 255, 0.9) 0.5px, transparent 0.5px),
+        radial-gradient(rgba(16, 24, 40, 0.5) 0.35px, transparent 0.35px);
+      background-size: 18px 18px, 22px 22px;
+      background-position: 0 0, 11px 13px;
+      mix-blend-mode: soft-light;
+    }
+
+    .aurora-mask {
+      mask-image: radial-gradient(circle at center, black 56%, transparent 100%);
+      -webkit-mask-image: radial-gradient(circle at center, black 56%, transparent 100%);
+    }
+
+    .section-divider {
+      background:
+        linear-gradient(90deg, transparent 0%, rgba(148, 163, 184, 0.22) 20%, rgba(148, 163, 184, 0.22) 80%, transparent 100%);
+      height: 1px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen text-ink">
+  <div class="relative isolate overflow-hidden">
+    <div class="pointer-events-none absolute inset-x-0 top-0 h-[52rem] bg-hero-mesh"></div>
+    <div class="pointer-events-none absolute left-[-6rem] top-24 h-72 w-72 rounded-full bg-sky-300/30 blur-3xl animate-glow-pulse"></div>
+    <div class="pointer-events-none absolute right-[-3rem] top-32 h-64 w-64 rounded-full bg-orange-300/20 blur-3xl animate-float-slow"></div>
+    <div class="pointer-events-none absolute inset-x-0 top-0 h-[52rem] aurora-mask opacity-60">
+      <div class="h-full w-full bg-[radial-gradient(circle_at_50%_25%,rgba(255,255,255,0.22),transparent_28%),radial-gradient(circle_at_24%_35%,rgba(125,211,252,0.2),transparent_26%),radial-gradient(circle_at_78%_30%,rgba(247,167,108,0.18),transparent_22%)]"></div>
+    </div>
+
+    <header class="sticky top-0 z-50 px-4 pt-4 sm:px-6 lg:px-10">
+      <div class="mx-auto flex max-w-7xl items-center justify-between rounded-full border border-white/20 bg-white/10 px-4 py-3 text-sm text-white shadow-soft backdrop-blur-xl">
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-lg font-semibold text-white">屿</div>
+          <div>
+            <p class="font-display text-lg leading-none tracking-[0.08em]">Yunyu</p>
+            <p class="text-[11px] uppercase tracking-[0.34em] text-white/70">Editorial Island</p>
+          </div>
+        </div>
+        <nav class="hidden items-center gap-6 text-white/80 md:flex">
+          <a href="#hero" class="transition hover:text-white">首页</a>
+          <a href="#curated" class="transition hover:text-white">精选</a>
+          <a href="#atlas" class="transition hover:text-white">阅读地图</a>
+          <a href="#stream" class="transition hover:text-white">内容流</a>
+        </nav>
+        <a href="#final-cta" class="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-white transition hover:bg-white/20">开始逛逛</a>
+      </div>
+    </header>
+
+    <main>
+      <section id="hero" class="relative">
+        <div class="noise relative mx-auto grid min-h-[calc(100svh-5rem)] max-w-7xl items-end gap-10 px-4 pb-12 pt-10 sm:px-6 lg:grid-cols-[1.08fr_0.92fr] lg:px-10 lg:pb-20 lg:pt-16">
+          <div class="relative z-10 max-w-3xl text-white">
+            <p class="animate-fade-up text-xs font-semibold uppercase tracking-[0.46em] text-white/70">Yunyu / 云屿</p>
+            <h1 class="animate-fade-up font-display text-[clamp(3.2rem,6vw,6.4rem)] leading-[0.94] tracking-[-0.05em] [animation-delay:120ms]">
+              把热爱、情绪与阅读节奏，
+              <br />
+              做成一座可以慢慢逛的内容岛。
+            </h1>
+            <p class="mt-6 max-w-xl animate-fade-up text-base leading-8 text-white/78 [animation-delay:220ms] sm:text-lg">
+              这不是模板博客，而是一张可进入的阅读封面。你会先看到主打内容，再沿着专题、分类、手记和最新内容，慢慢走进站点的情绪与结构里。
+            </p>
+
+            <div class="mt-8 flex flex-wrap gap-3 animate-fade-up [animation-delay:320ms]">
+              <a href="#curated" class="rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100">进入主打内容</a>
+              <a href="#atlas" class="rounded-full border border-white/20 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/18">按阅读路径浏览</a>
+            </div>
+
+            <div id="hero-stats" class="mt-10 grid max-w-2xl grid-cols-3 gap-3 animate-fade-up [animation-delay:420ms]"></div>
+          </div>
+
+          <div class="relative z-10">
+            <div class="relative overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 shadow-halo backdrop-blur-sm">
+              <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0))]"></div>
+              <img
+                src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80"
+                alt="首页主视觉示意图"
+                class="h-[24rem] w-full object-cover opacity-90 sm:h-[28rem]"
+              />
+              <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,16,28,0.08),rgba(10,16,28,0.78))]"></div>
+              <div class="absolute inset-x-0 bottom-0 p-6 sm:p-8">
+                <p class="text-xs font-semibold uppercase tracking-[0.34em] text-sky-200">Cover Story</p>
+                <h2 class="mt-3 max-w-lg font-display text-3xl leading-tight tracking-[-0.03em] text-white sm:text-4xl">
+                  从“文章列表”升级成“阅读封面”，首页应该先打动人，再承接内容。
+                </h2>
+                <p class="mt-4 max-w-lg text-sm leading-7 text-white/76">
+                  这里模拟的是首页主打文章卡。重点不是堆信息，而是给用户一个愿意点进去的理由。
+                </p>
+                <div class="mt-5 flex flex-wrap gap-2 text-xs text-white/82">
+                  <span class="rounded-full border border-white/18 bg-white/10 px-3 py-2 backdrop-blur-sm">首页设计</span>
+                  <span class="rounded-full border border-white/18 bg-white/10 px-3 py-2 backdrop-blur-sm">内容策展</span>
+                  <span class="rounded-full border border-white/18 bg-white/10 px-3 py-2 backdrop-blur-sm">视觉升级</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="relative z-10 -mt-10 ml-auto mr-4 max-w-sm rounded-[1.75rem] border border-white/60 bg-white/85 p-5 text-slate-800 shadow-soft backdrop-blur-xl">
+              <p class="text-xs font-semibold uppercase tracking-[0.3em] text-sky-700">为什么这版更有感觉</p>
+              <ul class="mt-4 space-y-3 text-sm leading-7 text-slate-600">
+                <li>不是先看到很多卡片，而是先看到品牌封面。</li>
+                <li>背景有气氛，但不靠夸张 3D 抢戏。</li>
+                <li>首页每一屏都在回答“下一步去哪逛”。</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="curated" class="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-10">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.36em] text-sky-700">Curated Picks</p>
+            <h2 class="mt-3 font-display text-4xl leading-tight tracking-[-0.04em] text-slate-900">首页不是列表，是经过选择的第一眼。</h2>
+          </div>
+          <p class="max-w-xl text-sm leading-7 text-slate-600">
+            这里用不对称栅格表达“编辑精选”，比三张一模一样的白卡更像被认真策划过的内容首页。
+          </p>
+        </div>
+
+        <div id="curated-grid" class="mt-10 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]"></div>
+      </section>
+
+      <section class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
+        <div class="section-divider"></div>
+      </section>
+
+      <section id="atlas" class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-10">
+        <div class="grid gap-8 lg:grid-cols-[0.92fr_1.08fr]">
+          <div class="rounded-[2rem] bg-paper-glow p-8 shadow-soft">
+            <p class="text-xs font-semibold uppercase tracking-[0.34em] text-orange-600">Reading Atlas</p>
+            <h2 class="mt-4 font-display text-4xl leading-tight tracking-[-0.04em] text-slate-900">
+              先按兴趣进入，
+              <br />
+              再按情绪停留。
+            </h2>
+            <p class="mt-5 max-w-xl text-sm leading-8 text-slate-600">
+              真正耐看的首页，一定会告诉用户“从哪里开始逛”。分类负责理解边界，专题负责进入连续阅读，站长手记负责让网站有人的温度。
+            </p>
+
+            <div class="mt-8 rounded-[1.5rem] border border-slate-200/70 bg-white/70 p-5">
+              <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">建议保留的首页节奏</p>
+              <ol class="mt-4 space-y-3 text-sm leading-7 text-slate-700">
+                <li>1. 品牌封面 Hero</li>
+                <li>2. 编辑精选</li>
+                <li>3. 阅读地图</li>
+                <li>4. 站长手记</li>
+                <li>5. 最新内容流</li>
+              </ol>
+            </div>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2" id="atlas-grid"></div>
+        </div>
+      </section>
+
+      <section class="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-10">
+        <div class="grid gap-6 lg:grid-cols-[1.02fr_0.98fr]">
+          <div class="relative overflow-hidden rounded-[2rem] bg-slate-950 px-8 py-9 text-white shadow-halo">
+            <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_20%,rgba(125,211,252,0.22),transparent_24%),radial-gradient(circle_at_90%_0%,rgba(247,167,108,0.16),transparent_18%),linear-gradient(135deg,#091120_0%,#0d1a2e_50%,#0f2237_100%)]"></div>
+            <div class="relative z-10">
+              <p class="text-xs font-semibold uppercase tracking-[0.34em] text-sky-200">Editor's Note</p>
+              <h2 class="mt-4 font-display text-4xl leading-tight tracking-[-0.04em]">
+                博客真正迷人的地方，
+                <br />
+                是你能感觉到写字的人在场。
+              </h2>
+              <p class="mt-5 max-w-2xl text-sm leading-8 text-white/76">
+                这一块是我特别建议你加上的模块。它不用很长，一段 80 到 140 字的站长手记，就能让首页不再只是导流页，而变成一个有温度的内容入口。
+              </p>
+              <div class="mt-6 flex items-center gap-4">
+                <img
+                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80"
+                  alt="站长头像示意图"
+                  class="h-14 w-14 rounded-full object-cover ring-2 ring-white/20"
+                />
+                <div>
+                  <p class="text-sm font-semibold">站长手记 / 模拟示意</p>
+                  <p class="text-xs tracking-[0.18em] text-white/56 uppercase">Personal Editorial Voice</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-[2rem] border border-slate-200/80 bg-white/78 p-8 shadow-soft backdrop-blur-sm">
+            <p class="text-xs font-semibold uppercase tracking-[0.34em] text-slate-500">Tech Card</p>
+            <h2 class="mt-4 font-display text-4xl leading-tight tracking-[-0.04em] text-slate-900">技术信息可以出现，但不要抢首页主角。</h2>
+            <p class="mt-5 text-sm leading-8 text-slate-600">
+              如果你是技术内容站，可以加一块很克制的“本站情报卡”。它更像幕后小档案，而不是后台报表。
+            </p>
+            <div id="tech-grid" class="mt-6 grid grid-cols-2 gap-3"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="stream" class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-10">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.36em] text-sky-700">Latest Stream</p>
+            <h2 class="mt-3 font-display text-4xl leading-tight tracking-[-0.04em] text-slate-900">把内容做成一条会继续流动的阅读河道。</h2>
+          </div>
+          <p class="max-w-xl text-sm leading-7 text-slate-600">
+            这里故意不做整齐卡片墙，而是做成更像杂志尾段的内容流。这样首页会更轻，也更适合用户继续往下读。
+          </p>
+        </div>
+
+        <div class="mt-10 grid gap-8 lg:grid-cols-[1fr_340px]">
+          <div id="stream-list" class="space-y-6"></div>
+          <aside class="space-y-4">
+            <div class="rounded-[1.75rem] bg-slate-950 p-6 text-white shadow-halo">
+              <p class="text-xs font-semibold uppercase tracking-[0.34em] text-sky-200">Design Choice</p>
+              <p class="mt-4 text-2xl font-semibold leading-tight">
+                这版首页的重点不是加很多功能，而是让用户第一眼就想继续往下看。
+              </p>
+            </div>
+            <div class="rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-6 shadow-soft">
+              <p class="text-xs font-semibold uppercase tracking-[0.34em] text-slate-500">要不要 3D</p>
+              <p class="mt-4 text-sm leading-8 text-slate-600">
+                我的建议是不做重型 3D，而是用背景分层、光影、柔和叠层和轻透视图片制造空间感。这样更高级，也更适合内容站长期使用。
+              </p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="final-cta" class="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-10">
+        <div class="overflow-hidden rounded-[2.25rem] bg-slate-950 px-8 py-12 text-white shadow-halo">
+          <div class="grid gap-8 lg:grid-cols-[1.08fr_0.92fr] lg:items-end">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.38em] text-sky-200">Final CTA</p>
+              <h2 class="mt-4 font-display text-5xl leading-none tracking-[-0.05em]">
+                如果你喜欢，
+                <br />
+                下一步我就把它做进项目。
+              </h2>
+              <p class="mt-5 max-w-2xl text-sm leading-8 text-white/76">
+                这只是静态原型页，用来帮你确认方向。如果你觉得这版感觉对，我下一步就可以按这个视觉方向，开始改你项目里的真实首页。
+              </p>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <div class="rounded-[1.5rem] border border-white/12 bg-white/8 p-5 backdrop-blur-sm">
+                <p class="text-xs uppercase tracking-[0.28em] text-white/54">建议保留</p>
+                <p class="mt-3 text-lg font-semibold">品牌封面感 + 阅读地图 + 站长手记</p>
+              </div>
+              <div class="rounded-[1.5rem] border border-white/12 bg-white/8 p-5 backdrop-blur-sm">
+                <p class="text-xs uppercase tracking-[0.28em] text-white/54">建议克制</p>
+                <p class="mt-3 text-lg font-semibold">重型 3D + 大量炫技动画 + 后台式统计面板</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    /**
+     * 首页模拟数据。
+     * 作用：为视觉原型页提供完整的首页内容，让页面在不依赖真实接口的情况下展示最终气质。
+     */
+    const mockData = {
+      heroStats: [
+        { label: '主打栏目', value: '06', note: '已形成主阅读路径' },
+        { label: '专题路线', value: '12', note: '按主题连续阅读' },
+        { label: '站点气质', value: 'A+', note: '视觉先于卡片堆积' }
+      ],
+      curatedPosts: [
+        {
+          title: '首页应该像一本数字杂志的封面，而不是文章仓库',
+          category: '首页设计',
+          summary: '用封面感、留白、图片与节奏去组织第一屏，才会让内容网站更有记忆点。',
+          image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=900&q=80',
+          tone: 'sky'
+        },
+        {
+          title: '为什么阅读地图比更多卡片更重要',
+          category: '内容策展',
+          summary: '首页的价值不是展示一切，而是帮用户决定从哪里开始进入你的世界。',
+          image: 'https://images.unsplash.com/photo-1516979187457-637abb4f9353?auto=format&fit=crop&w=900&q=80',
+          tone: 'orange'
+        },
+        {
+          title: '站长手记，是让博客变得有人味的关键一屏',
+          category: '博客叙事',
+          summary: '一句短短的站长自述，往往比更多功能模块更能建立信任和个性。',
+          image: 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=900&q=80',
+          tone: 'slate'
+        }
+      ],
+      readingAtlas: [
+        {
+          name: '分类地图',
+          count: '08 个方向',
+          summary: '适合先理解内容边界，再决定走哪条线逛。',
+          accent: 'from-sky-100 to-white'
+        },
+        {
+          name: '专题路线',
+          count: '12 条路线',
+          summary: '把离散文章串成连续阅读体验，更适合沉浸式进入。',
+          accent: 'from-orange-100 to-white'
+        },
+        {
+          name: '情绪入口',
+          count: '4 种氛围',
+          summary: '可以按“松弛、观察、热爱、设计感”这些气质进入。',
+          accent: 'from-rose-100 to-white'
+        },
+        {
+          name: '长期归档',
+          count: '可持续扩展',
+          summary: '后续可以延展成归档页、策展页、关于页的内容闭环。',
+          accent: 'from-slate-100 to-white'
+        }
+      ],
+      techCards: [
+        { label: 'Frontend', value: 'Nuxt 4' },
+        { label: 'Backend', value: 'Spring Boot' },
+        { label: 'Database', value: 'MySQL' },
+        { label: 'Rendering', value: 'Markdown' }
+      ],
+      latestPosts: [
+        {
+          title: '一个真正耐看的博客首页，为什么不能先从组件开始想',
+          category: '视觉系统',
+          meta: '8 分钟阅读 · 2 小时前',
+          summary: '好的首页先有视觉命题，再有模块和组件。先想构图、气质和阅读顺序，后想按钮、卡片和交互。',
+          image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=900&q=80'
+        },
+        {
+          title: '背景要有特点，但不能变成抢戏的大屏特效',
+          category: '背景策略',
+          meta: '5 分钟阅读 · 昨天',
+          summary: '推荐用纸感渐变、云雾纹理、柔和星点和局部光斑去做氛围，不建议直接上高频粒子和视频背景。',
+          image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80'
+        },
+        {
+          title: 'MySQL 技术卡可以放，但它更适合做成幕后档案',
+          category: '技术表达',
+          meta: '6 分钟阅读 · 2 天前',
+          summary: '首页可以出现少量站点技术信息，但建议轻描淡写，真正详细的系统设计更适合放在专题页或关于页。',
+          image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80'
+        },
+        {
+          title: '站长手记模块：最省成本，却最能拉开模板感差距的一屏',
+          category: '个人表达',
+          meta: '4 分钟阅读 · 3 天前',
+          summary: '只要这一块写得真诚，整个网站都会从“内容容器”变成“有人在表达的地方”。',
+          image: 'https://images.unsplash.com/photo-1493612276216-ee3925520721?auto=format&fit=crop&w=900&q=80'
+        }
+      ]
+    }
+
+    /**
+     * 渲染首页首屏统计信息。
+     * 作用：让用户快速感受到这版首页强调的是“阅读结构”和“品牌气质”，而不是普通数据看板。
+     */
+    function renderHeroStats() {
+      const container = document.getElementById('hero-stats')
+      container.innerHTML = mockData.heroStats.map((item) => `
+        <article class="rounded-[1.5rem] border border-white/16 bg-white/10 p-4 backdrop-blur-md">
+          <p class="text-[0.7rem] uppercase tracking-[0.24em] text-white/54">${item.label}</p>
+          <p class="mt-3 text-3xl font-semibold text-white">${item.value}</p>
+          <p class="mt-2 text-sm leading-6 text-white/66">${item.note}</p>
+        </article>
+      `).join('')
+    }
+
+    /**
+     * 渲染首页编辑精选区域。
+     * 作用：用不对称排版模拟“杂志感首页”，帮助你判断这种视觉路线是否适合项目。
+     */
+    function renderCuratedPosts() {
+      const [lead, ...rest] = mockData.curatedPosts
+      const container = document.getElementById('curated-grid')
+
+      container.innerHTML = `
+        <article class="group overflow-hidden rounded-[2rem] bg-slate-950 text-white shadow-halo">
+          <div class="relative h-full min-h-[28rem]">
+            <img src="${lead.image}" alt="${lead.title}" class="absolute inset-0 h-full w-full object-cover opacity-80 transition duration-500 group-hover:scale-[1.03]" />
+            <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.08),rgba(15,23,42,0.9))]"></div>
+            <div class="relative flex h-full flex-col justify-end p-8">
+              <p class="text-xs font-semibold uppercase tracking-[0.34em] text-sky-200">${lead.category}</p>
+              <h3 class="mt-4 font-display text-4xl leading-tight tracking-[-0.04em]">${lead.title}</h3>
+              <p class="mt-4 max-w-xl text-sm leading-8 text-white/74">${lead.summary}</p>
+            </div>
+          </div>
+        </article>
+        <div class="grid gap-5">
+          ${rest.map((item) => `
+            <article class="group grid overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 shadow-soft backdrop-blur-sm sm:grid-cols-[0.95fr_1.05fr]">
+              <div class="relative min-h-[14rem] overflow-hidden">
+                <img src="${item.image}" alt="${item.title}" class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" />
+              </div>
+              <div class="flex flex-col justify-center p-6">
+                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-${item.tone}-700">${item.category}</p>
+                <h3 class="mt-3 font-display text-3xl leading-tight tracking-[-0.03em] text-slate-900">${item.title}</h3>
+                <p class="mt-3 text-sm leading-7 text-slate-600">${item.summary}</p>
+              </div>
+            </article>
+          `).join('')}
+        </div>
+      `
+    }
+
+    /**
+     * 渲染阅读地图模块。
+     * 作用：直观模拟“分类、专题、情绪入口、归档”如何作为首页导览存在，而不是普通入口列表。
+     */
+    function renderReadingAtlas() {
+      const container = document.getElementById('atlas-grid')
+      container.innerHTML = mockData.readingAtlas.map((item) => `
+        <article class="rounded-[1.75rem] border border-slate-200/80 bg-gradient-to-br ${item.accent} p-6 shadow-soft">
+          <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">${item.count}</p>
+          <h3 class="mt-3 font-display text-3xl leading-tight tracking-[-0.03em] text-slate-900">${item.name}</h3>
+          <p class="mt-3 text-sm leading-7 text-slate-600">${item.summary}</p>
+        </article>
+      `).join('')
+    }
+
+    /**
+     * 渲染技术情报卡。
+     * 作用：把 `MySQL` 等技术信息控制在克制的小模块内，帮助你判断这种表达是否适合站点首页。
+     */
+    function renderTechCards() {
+      const container = document.getElementById('tech-grid')
+      container.innerHTML = mockData.techCards.map((item) => `
+        <article class="rounded-[1.25rem] border border-slate-200/80 bg-slate-50 px-4 py-4">
+          <p class="text-xs uppercase tracking-[0.26em] text-slate-500">${item.label}</p>
+          <p class="mt-3 text-lg font-semibold text-slate-900">${item.value}</p>
+        </article>
+      `).join('')
+    }
+
+    /**
+     * 渲染最新内容流。
+     * 作用：模拟首页后段的“内容河道”形式，帮助你感受这种排版是否比卡片墙更适合当前项目。
+     */
+    function renderLatestStream() {
+      const container = document.getElementById('stream-list')
+      container.innerHTML = mockData.latestPosts.map((item, index) => `
+        <article class="group grid gap-5 border-b border-slate-200/70 pb-6 ${index === 0 ? 'lg:grid-cols-[1.05fr_0.95fr]' : 'sm:grid-cols-[240px_1fr]'}">
+          <div class="order-2 ${index === 0 ? 'lg:order-1' : 'sm:order-1'}">
+            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">${item.category}</p>
+            <h3 class="mt-3 font-display text-${index === 0 ? '4xl' : '3xl'} leading-tight tracking-[-0.04em] text-slate-900">
+              ${item.title}
+            </h3>
+            <p class="mt-3 text-sm leading-8 text-slate-600">${item.summary}</p>
+            <p class="mt-4 text-xs uppercase tracking-[0.22em] text-slate-400">${item.meta}</p>
+          </div>
+          <div class="order-1 overflow-hidden rounded-[1.75rem] ${index === 0 ? 'lg:order-2' : 'sm:order-2'}">
+            <img src="${item.image}" alt="${item.title}" class="h-${index === 0 ? '[20rem]' : '52'} w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
+          </div>
+        </article>
+      `).join('')
+    }
+
+    /**
+     * 初始化原型页面。
+     * 作用：统一执行所有模块的渲染逻辑，让 HTML 文件打开后即可看到完整首页效果。
+     */
+    function initPreview() {
+      renderHeroStats()
+      renderCuratedPosts()
+      renderReadingAtlas()
+      renderTechCards()
+      renderLatestStream()
+    }
+
+    initPreview()
+  </script>
+</body>
+</html>

@@ -397,7 +397,7 @@ await Promise.all([
             <template #header>
               <p>ID</p>
               <p>封面</p>
-              <p>文章</p>
+              <p>标题</p>
               <p>状态</p>
               <p>内容归属</p>
               <p>最近更新</p>
@@ -431,7 +431,14 @@ await Promise.all([
               </div>
 
               <div class="min-w-0">
-                <p class="truncate text-[15px] font-semibold text-highlighted">{{ post.title }}</p>
+                <a
+                  :href="`/posts/${post.slug}`"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="block truncate text-[15px] font-semibold text-highlighted transition-colors duration-200 hover:text-sky-600 dark:hover:text-sky-300"
+                >
+                  {{ post.title }}
+                </a>
                 <div class="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-muted">
                   <span>{{ post.slug }}</span>
                   <span class="text-border">·</span>

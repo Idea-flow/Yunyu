@@ -43,7 +43,6 @@ git clone https://github.com/Idea-flow/Yunyu.git
 cd Yunyu
 ```
 
-### 步骤 3：复制部署环境变量文件
 ### 步骤 3：直接使用默认值启动
 
 当前 `docker-compose.yml` 已经带了默认值，默认镜像地址也是可用的：
@@ -65,7 +64,6 @@ mkdir -p ./yunyu_mysql_data
 然后执行：
 
 ```bash
-docker compose pull
 docker compose up -d
 ```
 
@@ -159,16 +157,3 @@ http://服务器IP:20000/swagger-ui.html
 - 不要误删当前目录下的 `./yunyu_mysql_data`
 - `MYSQL_PASSWORD`、`MYSQL_ROOT_PASSWORD` 和 `YUNYU_JWT_SECRET` 上线前必须替换
 - 第一版可以不创建 `.env` 直接启动，但正式上线前建议补上自己的密码和密钥
-
-
-
-
-
-
-
-curl -L -o docker-compose.yml https://raw.githubusercontent.com/Idea-flow/Yunyu/main/docker-compose.yml
-
-docker compose up -d
-
-
-docker compose pull && docker compose up -d

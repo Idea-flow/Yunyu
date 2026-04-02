@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { CommentEmojiItem } from '../../constants/commentEmoji'
+import CommentEmojiPicker from './CommentEmojiPicker.vue'
+
 /**
  * 通用评论输入组件。
  * 作用：统一承载主评论和楼层回复的输入、提交、取消与登录引导交互，便于多个内容场景复用。
@@ -37,6 +40,8 @@ const emit = defineEmits<{
   login: []
 }>()
 
+const textareaWrapperRef = ref<HTMLElement | null>(null)
+
 /**
  * 同步输入内容。
  * 作用：将内部输入变化透传给父组件，由父级统一持有评论草稿状态。
@@ -70,14 +75,55 @@ function handleCancel() {
 function handleLogin() {
   emit('login')
 }
+
+/**
+ * 查找真实文本域元素。
+ * 作用：为表情插入和光标恢复提供底层 textarea 引用。
+ *
+ * @returns 文本域元素
+ */
+function resolveTextareaElement() {
+  return textareaWrapperRef.value?.querySelector('textarea') || null
+}
+
+/**
+ * 处理表情插入。
+ * 作用：将自定义表情编码插入到当前光标位置，避免只能追加到输入框末尾。
+ *
+ * @param emoji 当前选中的表情项
+ */
+function handleEmojiSelect(emoji: CommentEmojiItem) {
+  const textareaElement = resolveTextareaElement()
+  const currentValue = props.modelValue || ''
+
+  if (!textareaElement) {
+    emit('update:modelValue', `${currentValue}${emoji.code}`)
+    return
+  }
+
+  const selectionStart = textareaElement.selectionStart ?? currentValue.length
+  const selectionEnd = textareaElement.selectionEnd ?? currentValue.length
+  const nextValue = `${currentValue.slice(0, selectionStart)}${emoji.code}${currentValue.slice(selectionEnd)}`
+  const nextCursorPosition = selectionStart + emoji.code.length
+
+  emit('update:modelValue', nextValue)
+
+  nextTick(() => {
+    const latestTextareaElement = resolveTextareaElement()
+
+    if (!latestTextareaElement) {
+      return
+    }
+
+    latestTextareaElement.focus()
+    latestTextareaElement.setSelectionRange(nextCursorPosition, nextCursorPosition)
+  })
+}
 </script>
 
 <template>
   <div
-    class="rounded-[26px] border shadow-[0_20px_54px_-42px_rgba(15,23,42,0.18)]"
-    :class="props.compact
-      ? 'border-slate-200/75 bg-slate-50/90 p-4 dark:border-slate-800 dark:bg-slate-950/64'
-      : 'border-slate-200/80 bg-[linear-gradient(180deg,rgba(248,250,252,0.92),rgba(255,255,255,0.88))] p-4 dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.74),rgba(2,6,23,0.82))] sm:p-5'"
+    class="rounded-[20px] border border-slate-200/60 bg-white/58 p-4 dark:border-white/8 dark:bg-slate-950/34 sm:p-5"
   >
     <div v-if="props.title" class="mb-3">
       <p
@@ -88,63 +134,68 @@ function handleLogin() {
       </p>
     </div>
 
-    <UTextarea
-      :model-value="props.modelValue"
-      :rows="props.compact ? 4 : 5"
-      :placeholder="props.placeholder"
-      :disabled="props.disabled"
-      class="w-full"
-      :ui="{
-        base: props.compact
-          ? 'w-full rounded-[20px] border border-slate-200/85 bg-white/95 px-4 py-3 text-sm leading-7 text-slate-700 shadow-none focus:border-sky-300 focus:ring-2 focus:ring-sky-200/70 dark:border-slate-700 dark:bg-slate-950/88 dark:text-slate-100 dark:focus:border-sky-600 dark:focus:ring-sky-500/20'
-          : 'w-full rounded-[24px] border border-slate-200/85 bg-white/95 px-4 py-3 text-sm leading-7 text-slate-700 shadow-none focus:border-sky-300 focus:ring-2 focus:ring-sky-200/70 dark:border-slate-700 dark:bg-slate-950/88 dark:text-slate-100 dark:focus:border-sky-600 dark:focus:ring-sky-500/20'
-      }"
-      @update:model-value="handleValueChange"
-    />
+    <div ref="textareaWrapperRef">
+      <UTextarea
+        :model-value="props.modelValue"
+        :rows="props.compact ? 4 : 5"
+        :placeholder="props.placeholder"
+        :disabled="props.disabled"
+        class="w-full"
+        :ui="{
+          base: props.compact
+            ? 'w-full resize-none rounded-[16px] border border-slate-200/65 bg-white/84 px-4 py-3 text-sm leading-7 text-slate-700 shadow-none focus:border-sky-300 focus:ring-2 focus:ring-sky-200/50 dark:border-slate-700/80 dark:bg-slate-950/62 dark:text-slate-100 dark:focus:border-sky-600 dark:focus:ring-sky-500/16'
+            : 'w-full resize-none rounded-[18px] border border-slate-200/65 bg-white/84 px-4 py-3 text-sm leading-7 text-slate-700 shadow-none focus:border-sky-300 focus:ring-2 focus:ring-sky-200/50 dark:border-slate-700/80 dark:bg-slate-950/62 dark:text-slate-100 dark:focus:border-sky-600 dark:focus:ring-sky-500/16'
+        }"
+        @update:model-value="handleValueChange"
+      />
+    </div>
 
     <div
-      class="mt-4 flex flex-col gap-3"
-      :class="props.compact ? 'sm:flex-row sm:items-center sm:justify-between' : 'sm:flex-row sm:items-center sm:justify-between'"
+      class="mt-4 flex flex-col gap-3 border-t border-slate-200/60 pt-3 dark:border-white/8 sm:flex-row sm:items-center sm:justify-between"
     >
-      <p
-        v-if="props.helperText"
-        class="leading-6 text-slate-500 dark:text-slate-400"
-        :class="props.compact ? 'text-xs' : 'text-xs'"
-      >
-        {{ props.helperText }}
-      </p>
-      <div v-else />
+      <div class="flex min-h-9 flex-wrap items-center gap-2 text-slate-400 dark:text-slate-500">
+        <CommentEmojiPicker
+          :disabled="props.disabled"
+          @select="handleEmojiSelect"
+        />
+
+        <slot name="toolbar" />
+
+        <p
+          v-if="props.helperText"
+          class="text-xs leading-6 text-slate-500 dark:text-slate-400"
+        >
+          {{ props.helperText }}
+        </p>
+      </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <UButton
+        <button
           v-if="props.showCancel"
-          color="neutral"
-          variant="ghost"
-          class="rounded-full"
+          type="button"
+          class="inline-flex min-h-10 items-center justify-center rounded-full px-4 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/8 dark:hover:text-slate-100"
           @click="handleCancel"
         >
           {{ props.cancelLabel }}
-        </UButton>
+        </button>
 
-        <UButton
+        <button
           v-if="props.showLoginButton"
-          color="neutral"
-          variant="ghost"
-          class="rounded-full"
+          type="button"
+          class="inline-flex min-h-10 items-center justify-center rounded-full px-4 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/8 dark:hover:text-slate-100"
           @click="handleLogin"
         >
           {{ props.loginLabel }}
-        </UButton>
+        </button>
 
-        <UButton
-          color="primary"
-          class="rounded-full px-5"
-          :loading="props.loading"
-          :disabled="props.disabled"
+        <button
+          type="button"
+          class="inline-flex min-h-10 items-center justify-center rounded-full bg-sky-500 px-5 text-sm font-medium text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
+          :disabled="props.disabled || props.loading"
           @click="handleSubmit"
         >
-          {{ props.submitLabel }}
-        </UButton>
+          {{ props.loading ? '提交中...' : props.submitLabel }}
+        </button>
       </div>
     </div>
   </div>

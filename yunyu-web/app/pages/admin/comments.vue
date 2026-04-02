@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AdminCommentItem, AdminCommentStatus } from '../../types/comment'
+import CommentRichContent from '../../components/content/CommentRichContent.vue'
 
 /**
  * 后台评论管理页。
@@ -20,6 +21,7 @@ const actionCommentId = ref<number | null>(null)
 const deletingComment = ref<AdminCommentItem | null>(null)
 const isDeleteModalOpen = ref(false)
 const searchKeyword = ref('')
+const searchPostId = ref('')
 const activeStatus = ref<CommentStatusFilter>('ALL')
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -35,6 +37,28 @@ const statusOptions = [
 ] as const
 
 /**
+ * 判断当前是否启用了筛选条件。
+ * 作用：为重置按钮和筛选提示提供统一状态来源，避免页面出现多处重复判断。
+ */
+const hasActiveFilters = computed(() => {
+  return Boolean(searchKeyword.value.trim() || searchPostId.value || activeStatus.value !== 'ALL')
+})
+
+/**
+ * 解析文章 ID 筛选值。
+ * 作用：把后台筛选栏中的文章 ID 输入统一转换为接口可识别的数字参数。
+ *
+ * @returns 文章 ID 筛选值
+ */
+function resolveSearchPostId() {
+  if (!searchPostId.value) {
+    return undefined
+  }
+
+  return Number(searchPostId.value)
+}
+
+/**
  * 拉取评论列表。
  * 作用：根据当前关键词、状态和分页参数刷新评论管理页数据。
  */
@@ -44,6 +68,7 @@ async function loadComments() {
   try {
     const response = await adminComments.listComments({
       keyword: searchKeyword.value || undefined,
+      postId: resolveSearchPostId(),
       status: activeStatus.value === 'ALL' ? undefined : activeStatus.value,
       pageNo: currentPage.value,
       pageSize: pageSize.value
@@ -133,10 +158,32 @@ async function confirmDelete() {
 }
 
 /**
+ * 处理文章 ID 输入。
+ * 作用：将文章 ID 搜索框限制为纯数字输入，避免传入无效查询参数。
+ *
+ * @param value 当前输入值
+ */
+function handlePostIdInput(value: string | number | null) {
+  searchPostId.value = String(value ?? '').replace(/[^\d]/g, '')
+}
+
+/**
  * 处理列表搜索。
  * 作用：在切换搜索条件后回到第一页，避免旧页码导致结果为空。
  */
 async function handleSearch() {
+  currentPage.value = 1
+  await loadComments()
+}
+
+/**
+ * 重置评论筛选条件。
+ * 作用：一键清空关键词、文章 ID 与状态筛选，并回到第一页重新加载列表。
+ */
+async function resetFilters() {
+  searchKeyword.value = ''
+  searchPostId.value = ''
+  activeStatus.value = 'ALL'
   currentPage.value = 1
   await loadComments()
 }
@@ -229,29 +276,58 @@ await loadComments()
 
     <AdminListFilterBar>
       <template #search>
-        <UInput
-          v-model="searchKeyword"
-          icon="i-lucide-search"
-          placeholder="搜索评论内容、文章标题、文章 Slug、用户名或邮箱"
-          class="w-full"
-          :ui="{
-            base: 'w-full rounded-[12px]'
-          }"
-          @keydown.enter.prevent="handleSearch"
-        />
+        <div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_180px]">
+          <div>
+            <AdminInput
+              v-model="searchKeyword"
+              icon="i-lucide-search"
+              placeholder="搜索评论内容、文章标题、文章 Slug、用户名或邮箱"
+              @keydown.enter.prevent="handleSearch"
+            />
+          </div>
+
+          <div>
+            <AdminInput
+              :model-value="searchPostId"
+              icon="i-lucide-hash"
+              placeholder="输入文章 ID"
+              @update:model-value="handlePostIdInput"
+              @keydown.enter.prevent="handleSearch"
+            />
+          </div>
+        </div>
       </template>
 
       <template #filters>
-        <AdminSelect
-          :model-value="activeStatus"
-          :items="statusOptions"
-          placeholder="评论状态"
-          class="min-w-36"
-          @update:model-value="handleStatusChange"
-        />
+        <div>
+          <AdminSelect
+            :model-value="activeStatus"
+            :items="statusOptions"
+            placeholder="评论状态"
+            class="min-w-36"
+            @update:model-value="handleStatusChange"
+          />
+        </div>
       </template>
 
       <template #actions>
+        <AdminPrimaryButton
+          label="查询评论"
+          icon="i-lucide-search"
+          :loading="isLoading"
+          loading-label="查询中..."
+          @click="handleSearch"
+        />
+
+        <button
+          type="button"
+          class="inline-flex min-h-9 min-w-20 items-center justify-center rounded-[10px] border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-55 dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:border-white/15 dark:hover:bg-slate-900/80 dark:hover:text-slate-100"
+          :disabled="!hasActiveFilters || isLoading"
+          @click="resetFilters"
+        >
+          重置
+        </button>
+
         <AdminPrimaryButton
           label="刷新列表"
           icon="i-lucide-refresh-cw"
@@ -266,12 +342,13 @@ await loadComments()
       <AdminDataTable
         :is-loading="isLoading"
         :has-data="comments.length > 0"
-        min-width="1320px"
-        header-class="grid-cols-[220px_180px_minmax(320px,1fr)_120px_150px_160px_170px]"
+        min-width="1440px"
+        header-class="grid-cols-[110px_220px_180px_minmax(320px,1fr)_120px_150px_160px_170px]"
         empty-title="当前筛选条件下暂无评论"
         empty-icon="i-lucide-message-square-off"
       >
         <template #header>
+          <span>评论 ID</span>
           <span>文章</span>
           <span>评论作者</span>
           <span>评论内容</span>
@@ -284,8 +361,15 @@ await loadComments()
         <div
           v-for="comment in comments"
           :key="comment.id"
-          class="grid grid-cols-[220px_180px_minmax(320px,1fr)_120px_150px_160px_170px] gap-4 px-4 py-4 text-sm text-slate-600 dark:text-slate-300"
+          class="grid grid-cols-[110px_220px_180px_minmax(320px,1fr)_120px_150px_160px_170px] gap-4 px-4 py-4 text-sm text-slate-600 dark:text-slate-300"
         >
+          <div class="min-w-0">
+            <p class="font-semibold text-slate-900 dark:text-slate-50">#{{ comment.id }}</p>
+            <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
+              {{ comment.replyCommentId ? '回复评论' : '主评论' }}
+            </p>
+          </div>
+
           <div class="min-w-0">
             <NuxtLink
               :to="`/posts/${comment.postSlug}`"
@@ -303,7 +387,11 @@ await loadComments()
           </div>
 
           <div class="min-w-0">
-            <p class="whitespace-pre-wrap leading-7 text-slate-600 dark:text-slate-300">{{ comment.content }}</p>
+            <CommentRichContent
+              :content="comment.content"
+              emoji-size="sm"
+              class="leading-7 text-slate-600 dark:text-slate-300"
+            />
             <p v-if="comment.ip" class="mt-2 text-xs text-slate-400 dark:text-slate-500">IP：{{ comment.ip }}</p>
           </div>
 
@@ -314,7 +402,6 @@ await loadComments()
           </div>
 
           <div class="min-w-0 text-xs leading-6 text-slate-500 dark:text-slate-400">
-            <p>评论 ID：{{ comment.id }}</p>
             <p v-if="comment.replyCommentId">回复 ID：{{ comment.replyCommentId }}</p>
             <p v-if="comment.replyToUserName">回复对象：{{ comment.replyToUserName }}</p>
             <p v-if="comment.rootId">楼层根 ID：{{ comment.rootId }}</p>

@@ -12,6 +12,24 @@ export interface AuthCurrentUser {
 }
 
 /**
+ * 登录请求类型。
+ * 作用：统一描述登录接口提交的账号密码参数。
+ */
+export interface AuthLoginPayload {
+  account: string
+  password: string
+}
+
+/**
+ * 注册请求类型。
+ * 作用：统一描述注册接口提交的邮箱密码参数。
+ */
+export interface AuthRegisterPayload {
+  email: string
+  password: string
+}
+
+/**
  * 登录响应类型。
  * 作用：承接后端登录接口返回的访问令牌与用户基础信息，
  * 用于服务端设置 Cookie 和前端完成登录后续逻辑。

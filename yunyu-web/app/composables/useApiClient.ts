@@ -1,6 +1,7 @@
 import type { ApiResponse } from '../types/auth'
 
 const SUCCESS_CODE = 0
+const ACCESS_TOKEN_STORAGE_KEY = 'yunyu_access_token'
 
 /**
  * 前端接口客户端。
@@ -14,6 +15,46 @@ export function useApiClient() {
   })
 
   /**
+   * 从浏览器缓存恢复访问令牌。
+   * 作用：在前台页面刷新后优先恢复本地保存的登录凭证，避免仅依赖 Cookie 导致前台登录态丢失。
+   */
+  function hydratePersistedAccessToken() {
+    if (!import.meta.client || accessToken.value) {
+      return accessToken.value
+    }
+
+    const storedToken = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)
+
+    if (!storedToken) {
+      return null
+    }
+
+    accessToken.value = storedToken
+    return storedToken
+  }
+
+  /**
+   * 同步设置访问令牌。
+   * 作用：统一把访问令牌同时写入 Cookie 与 localStorage，兼顾后台鉴权和前台刷新后的登录态恢复。
+   *
+   * @param token 访问令牌
+   */
+  function setAccessToken(token: string | null) {
+    accessToken.value = token
+
+    if (!import.meta.client) {
+      return
+    }
+
+    if (token) {
+      localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, token)
+      return
+    }
+
+    localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY)
+  }
+
+  /**
    * 构建请求头。
    * 作用：统一合并外部传入请求头并补充当前登录态的 Bearer Token，
    * 避免业务接口与 Actuator 接口重复处理认证逻辑。
@@ -22,6 +63,8 @@ export function useApiClient() {
    * @returns 最终请求头对象
    */
   function buildHeaders(headersInit?: HeadersInit) {
+    hydratePersistedAccessToken()
+
     const headers = new Headers(headersInit || {})
 
     if (accessToken.value) {
@@ -105,6 +148,8 @@ export function useApiClient() {
 
   return {
     accessToken,
+    hydratePersistedAccessToken,
+    setAccessToken,
     request,
     rawRequest
   }

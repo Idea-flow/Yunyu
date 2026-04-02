@@ -4,6 +4,7 @@ import com.ideaflow.yunyu.common.constant.ResultCode;
 import com.ideaflow.yunyu.common.response.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.BindException;
@@ -68,6 +69,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     public ApiResponse<Void> handleNoResourceFoundException(NoResourceFoundException exception, HttpServletRequest request) {
         return ApiResponse.fail(ResultCode.NOT_FOUND, "资源不存在：" + request.getRequestURI());
+    }
+
+    /**
+     * 处理数据库唯一索引冲突异常。
+     *
+     * @param exception 唯一索引冲突异常
+     * @return 统一失败响应
+     */
+    @ExceptionHandler(DuplicateKeyException.class)
+    public ApiResponse<Void> handleDuplicateKeyException(DuplicateKeyException exception) {
+        return ApiResponse.fail(ResultCode.BAD_REQUEST, "数据已存在，请勿重复提交");
     }
 
     /**

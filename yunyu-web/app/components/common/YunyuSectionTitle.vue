@@ -10,6 +10,7 @@ interface YunyuSectionTitleProps {
   description?: string
   align?: 'start' | 'center'
   tone?: 'sky' | 'orange' | 'slate'
+  size?: 'default' | 'compact'
   linkLabel?: string
   linkTo?: string
 }
@@ -19,6 +20,7 @@ const props = withDefaults(defineProps<YunyuSectionTitleProps>(), {
   description: '',
   align: 'start',
   tone: 'sky',
+  size: 'default',
   linkLabel: '',
   linkTo: ''
 })
@@ -46,6 +48,30 @@ const eyebrowClassName = computed(() => {
 
   return toneClassMap[props.tone]
 })
+
+/**
+ * 计算标题文字样式。
+ * 作用：支持默认版和紧凑版标题尺寸，便于首页等需要更克制版式的场景复用。
+ */
+const titleClassName = computed(() => {
+  if (props.size === 'compact') {
+    return 'mt-3 text-[clamp(1.7rem,1.4rem+0.9vw,2.3rem)] font-semibold leading-[1.08] tracking-[-0.035em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 dark:text-slate-50'
+  }
+
+  return 'mt-3 text-[clamp(1.95rem,1.5rem+1.15vw,2.7rem)] font-semibold leading-[1.04] tracking-[-0.04em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 dark:text-slate-50'
+})
+
+/**
+ * 计算描述文字样式。
+ * 作用：支持默认版和紧凑版说明文案密度，避免首页说明文字过大影响阅读节奏。
+ */
+const descriptionClassName = computed(() => {
+  if (props.size === 'compact') {
+    return 'mt-3 max-w-[40rem] text-[0.96rem] leading-[1.85] tracking-[-0.01em] text-slate-600 dark:text-slate-300'
+  }
+
+  return 'mt-3 max-w-[44rem] text-[clamp(1rem,0.95rem+0.16vw,1.08rem)] leading-[1.95] tracking-[-0.01em] text-slate-600 dark:text-slate-300'
+})
 </script>
 
 <template>
@@ -58,12 +84,12 @@ const eyebrowClassName = computed(() => {
       >
         {{ eyebrow }}
       </p>
-      <h2 class="mt-3 text-[clamp(1.95rem,1.5rem+1.15vw,2.7rem)] font-semibold leading-[1.04] tracking-[-0.04em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 dark:text-slate-50">
+      <h2 :class="titleClassName">
         {{ title }}
       </h2>
       <p
         v-if="description"
-        class="mt-3 max-w-[44rem] text-[clamp(1rem,0.95rem+0.16vw,1.08rem)] leading-[1.95] tracking-[-0.01em] text-slate-600 dark:text-slate-300"
+        :class="descriptionClassName"
       >
         {{ description }}
       </p>

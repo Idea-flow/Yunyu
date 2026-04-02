@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import YunyuDropdownMenu from '~/components/common/YunyuDropdownMenu.vue'
 
 /**
  * 前台默认布局。
  * 作用：统一承接前台页面的顶部导航、主题切换和底部品牌信息，减少首页与列表页重复结构。
  */
 const route = useRoute()
+const auth = useAuth()
 const navigationItems = [
   { label: '首页', to: '/' },
   { label: '文章', to: '/posts' },
@@ -16,6 +18,12 @@ const navigationItems = [
 
 const isScrolled = ref(false)
 const isPostDetailPage = computed(() => route.path.startsWith('/posts/'))
+const isLoggedIn = computed(() => Boolean(auth.currentUser.value))
+const canAccessAdmin = computed(() => auth.currentUser.value?.role === 'SUPER_ADMIN')
+const currentUserDisplayName = computed(() => {
+  return auth.currentUser.value?.userName || auth.currentUser.value?.email || '已登录用户'
+})
+const currentUserInitial = computed(() => currentUserDisplayName.value.slice(0, 1).toUpperCase())
 
 /**
  * 判断当前页面是否需要导航栏覆盖首屏区域。
@@ -128,6 +136,62 @@ const navPanelLayoutClassName = computed(() => {
 })
 
 /**
+ * 计算前台认证按钮样式。
+ * 作用：统一登录按钮与退出按钮在覆盖态和普通态下的视觉反馈。
+ */
+const authActionClassName = computed(() => {
+  return !isSolidNav.value
+    ? 'inline-flex h-10 items-center justify-center rounded-full border border-white/16 bg-white/10 px-4 text-sm font-medium text-white transition hover:bg-white/16'
+    : 'inline-flex h-10 items-center justify-center rounded-full border border-slate-200/80 bg-white/72 px-4 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-950 dark:border-white/10 dark:bg-white/6 dark:text-slate-100 dark:hover:bg-white/10'
+})
+
+/**
+ * 计算用户下拉触发器样式。
+ * 作用：让当前用户入口既能作为身份展示，也能作为下拉菜单的统一触发器。
+ */
+const userDropdownTriggerClassName = computed(() => {
+  return !isSolidNav.value
+    ? 'inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/14 bg-white/10 text-white transition hover:bg-white/16'
+    : 'inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200/80 bg-white/72 text-slate-800 transition hover:border-slate-300 hover:bg-white/82 dark:border-white/10 dark:bg-white/6 dark:text-slate-100 dark:hover:bg-white/10'
+})
+
+/**
+ * 计算用户菜单项。
+ * 作用：统一组织个人中心、后台入口和退出登录动作，避免模板内分散维护交互逻辑。
+ */
+const userMenuItems = computed(() => {
+  const primaryItems = [
+    {
+      key: 'profile',
+      label: '个人中心',
+      icon: 'i-lucide-user-round',
+      description: '查看当前登录账户信息',
+      to: '/profile'
+    }
+  ]
+
+  if (canAccessAdmin.value) {
+    primaryItems.push({
+      key: 'admin',
+      label: '后台入口',
+      icon: 'i-lucide-layout-dashboard',
+      description: '进入云屿后台管理系统',
+      to: '/admin'
+    })
+  }
+
+  return [primaryItems, [
+    {
+      key: 'logout',
+      label: '退出登录',
+      icon: 'i-lucide-log-out',
+      description: '清理当前登录状态并返回首页',
+      tone: 'danger' as const
+    }
+  ]]
+})
+
+/**
  * 同步页面滚动状态。
  * 作用：根据滚动距离切换导航栏是否进入实底玻璃态。
  */
@@ -144,6 +208,8 @@ onMounted(() => {
     return
   }
 
+  auth.hydratePersistedUser()
+  void auth.fetchCurrentUser()
   syncScrollState()
   window.addEventListener('scroll', syncScrollState, { passive: true })
 })
@@ -159,6 +225,35 @@ onBeforeUnmount(() => {
 
   window.removeEventListener('scroll', syncScrollState)
 })
+
+/**
+ * 跳转到登录页。
+ * 作用：保留当前前台页面地址作为回跳目标，登录成功后可以回到原页面继续浏览。
+ */
+async function goToLogin() {
+  await navigateTo(`/login?redirect=${encodeURIComponent(route.fullPath)}`)
+}
+
+/**
+ * 退出当前登录态。
+ * 作用：清理前台登录信息后返回首页，并让导航栏立即恢复未登录状态。
+ */
+async function handleLogout() {
+  await auth.logout()
+  await navigateTo('/')
+}
+
+/**
+ * 处理用户菜单项选择。
+ * 作用：将通用下拉菜单组件的选择事件映射为当前布局所需的跳转和退出行为。
+ *
+ * @param item 菜单项
+ */
+async function handleUserMenuSelect(item: { key: string }) {
+  if (item.key === 'logout') {
+    await handleLogout()
+  }
+}
 </script>
 
 <template>
@@ -200,6 +295,36 @@ onBeforeUnmount(() => {
 
           <div class="flex shrink-0 items-center gap-2">
             <ThemeModeSwitch />
+
+            <YunyuDropdownMenu
+              v-if="isLoggedIn"
+              :items="userMenuItems"
+              :variant="isSolidNav ? 'solid' : 'overlay'"
+              align="end"
+              @select="handleUserMenuSelect"
+            >
+              <template #trigger="{ triggerProps }">
+                <button
+                  v-bind="triggerProps"
+                  :class="userDropdownTriggerClassName"
+                  :aria-label="`${currentUserDisplayName} 的用户菜单`"
+                  :title="currentUserDisplayName"
+                >
+                  <div class="flex h-9 w-9 items-center justify-center rounded-full bg-[linear-gradient(135deg,#38bdf8,#fb923c)] text-sm font-semibold text-white shadow-[0_10px_24px_-14px_rgba(56,189,248,0.68)]">
+                    {{ currentUserInitial }}
+                  </div>
+                </button>
+              </template>
+            </YunyuDropdownMenu>
+
+            <button
+              v-else
+              type="button"
+              :class="authActionClassName"
+              @click="goToLogin"
+            >
+              登录
+            </button>
           </div>
         </div>
       </div>
