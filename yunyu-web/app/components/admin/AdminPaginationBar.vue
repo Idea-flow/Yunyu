@@ -25,8 +25,7 @@ const emit = defineEmits<{
   'update:page': [page: number]
   'update:pageSize': [pageSize: number]
 }>()
-
-const jumpPageCount = 5
+const pageJumpValue = ref('')
 
 /**
  * 处理页码切换。
@@ -36,22 +35,6 @@ const jumpPageCount = 5
  */
 function handlePageChange(page: number) {
   emit('update:page', page)
-}
-
-/**
- * 向前跳转固定页数。
- * 作用：替代首尾页图标，提供更自然的快速翻页能力。
- */
-function handleJumpBackward() {
-  handlePageChange(Math.max(1, props.page - jumpPageCount))
-}
-
-/**
- * 向后跳转固定页数。
- * 作用：替代首尾页图标，提供更自然的快速翻页能力。
- */
-function handleJumpForward() {
-  handlePageChange(Math.min(props.totalPages, props.page + jumpPageCount))
 }
 
 /**
@@ -68,6 +51,32 @@ function handlePageSizeChange(value: string | number | null) {
   }
 
   emit('update:pageSize', nextPageSize)
+}
+
+/**
+ * 跳转到指定页码。
+ * 作用：读取输入框中的页码值，并在有效范围内执行跳转。
+ */
+function handlePageJump() {
+  const nextPage = Number(pageJumpValue.value)
+
+  if (!Number.isFinite(nextPage)) {
+    pageJumpValue.value = ''
+    return
+  }
+
+  handlePageChange(Math.min(props.totalPages, Math.max(1, Math.trunc(nextPage))))
+  pageJumpValue.value = ''
+}
+
+/**
+ * 同步跳页输入值。
+ * 作用：只保留手动输入的数字字符，避免出现浏览器数字输入控件。
+ *
+ * @param value 当前输入值
+ */
+function handlePageJumpInput(value: string | number | null) {
+  pageJumpValue.value = String(value ?? '').replace(/\D/g, '')
 }
 </script>
 
@@ -94,11 +103,33 @@ function handlePageSizeChange(value: string | number | null) {
         />
       </div>
 
+      <div class="inline-flex items-center gap-1.5">
+        <span class="text-[11px] font-medium text-slate-400 dark:text-slate-500">跳至</span>
+        <UInput
+          :model-value="pageJumpValue"
+          type="text"
+          inputmode="numeric"
+          placeholder="页码"
+          size="lg"
+          color="neutral"
+          variant="outline"
+          class="w-18"
+          :ui="{
+            base: 'h-8 rounded-[10px] border border-white/70 bg-white/62 px-2.5 text-center text-sm font-medium text-slate-700 shadow-[0_12px_28px_-26px_rgba(15,23,42,0.24)] backdrop-blur-xl transition-[border-color,box-shadow,background-color,color] duration-200 placeholder:text-slate-400 hover:border-slate-200/90 hover:bg-white/72 focus-visible:border-slate-300 focus-visible:ring-2 focus-visible:ring-slate-200/60 dark:border-white/10 dark:bg-white/[0.045] dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:bg-white/[0.06] dark:focus-visible:border-white/15 dark:focus-visible:ring-white/10'
+          }"
+          @update:model-value="handlePageJumpInput"
+          @keyup.enter="handlePageJump"
+          @blur="handlePageJump"
+        />
+      </div>
+
       <UPagination
         :key="`${props.pageSize}-${props.total}`"
         :page="props.page"
         :total="props.total"
         :items-per-page="props.pageSize"
+        :show-controls="false"
+        :show-edges="false"
         active-color="neutral"
         active-variant="soft"
         :ui="{
@@ -131,28 +162,6 @@ function handlePageSizeChange(value: string | number | null) {
             variant="ghost"
             icon="i-lucide-chevron-right"
             class="min-h-9 min-w-9 rounded-[12px] border-0 text-slate-400 transition-colors duration-200 hover:bg-white/78 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/8 dark:hover:text-slate-100"
-          />
-        </template>
-        <template #first>
-          <UButton
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-chevrons-left"
-            :disabled="props.page <= 1"
-            :title="`向前跳 ${jumpPageCount} 页`"
-            class="min-h-9 min-w-9 rounded-[12px] border-0 text-slate-400 transition-colors duration-200 hover:bg-white/78 hover:text-slate-700 disabled:opacity-35 dark:text-slate-400 dark:hover:bg-white/8 dark:hover:text-slate-100"
-            @click="handleJumpBackward"
-          />
-        </template>
-        <template #last>
-          <UButton
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-chevrons-right"
-            :disabled="props.page >= props.totalPages"
-            :title="`向后跳 ${jumpPageCount} 页`"
-            class="min-h-9 min-w-9 rounded-[12px] border-0 text-slate-400 transition-colors duration-200 hover:bg-white/78 hover:text-slate-700 disabled:opacity-35 dark:text-slate-400 dark:hover:bg-white/8 dark:hover:text-slate-100"
-            @click="handleJumpForward"
           />
         </template>
       </UPagination>

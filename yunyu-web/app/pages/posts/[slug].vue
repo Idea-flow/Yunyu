@@ -44,6 +44,25 @@ const relatedLeadPost = computed(() => post.value?.relatedPosts?.[0] || null)
 const relatedStreamPosts = computed(() => post.value?.relatedPosts?.slice(1) || [])
 
 /**
+ * 计算文章发布时间展示文本。
+ * 作用：把后端返回的时间字符串转成更适合前台阅读的展示格式，
+ * 避免原始 ISO 时间直接暴露在界面上影响内容气质。
+ */
+const postPublishedAtLabel = computed(() => {
+  const publishedAt = post.value?.publishedAt || ''
+
+  if (!publishedAt) {
+    return ''
+  }
+
+  if (publishedAt.includes('T')) {
+    return publishedAt.replace('T', ' ')
+  }
+
+  return publishedAt
+})
+
+/**
  * 解析目录 JSON。
  * 作用：把后端返回的目录 JSON 文本安全转换为目录树组件可用的结构。
  */
@@ -250,7 +269,7 @@ onBeforeUnmount(() => {
     </div>
 
     <section v-if="post" class="relative overflow-hidden">
-      <div class="relative h-[39svh] min-h-[320px] w-full sm:h-[44svh] lg:h-[49svh]">
+      <div class="relative h-[42svh] min-h-[360px] w-full sm:h-[48svh] lg:h-[54svh]">
         <div class="absolute inset-0">
           <YunyuImage
             :src="post.coverUrl"
@@ -259,11 +278,11 @@ onBeforeUnmount(() => {
             image-class="h-full w-full"
             rounded-class="rounded-none"
           />
-          <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.16)_0%,rgba(15,23,42,0.12)_18%,rgba(15,23,42,0.18)_40%,rgba(15,23,42,0.52)_100%)] dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.08)_0%,rgba(2,6,23,0.14)_18%,rgba(2,6,23,0.22)_40%,rgba(2,6,23,0.62)_100%)]" />
+          <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.18)_0%,rgba(15,23,42,0.18)_18%,rgba(15,23,42,0.22)_42%,rgba(15,23,42,0.62)_100%)] dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.1)_0%,rgba(2,6,23,0.14)_20%,rgba(2,6,23,0.26)_44%,rgba(2,6,23,0.72)_100%)]" />
         </div>
         <div class="absolute inset-x-0 bottom-0 z-10">
-          <div class="mx-auto max-w-[1440px] px-5 pb-8 sm:px-8 sm:pb-10 lg:px-10 lg:pb-12">
-            <div class="max-w-[56rem]">
+          <div class="mx-auto max-w-[1440px] px-5 pb-10 sm:px-8 sm:pb-12 lg:px-10 lg:pb-14">
+            <div class="max-w-[44rem]">
               <div class="flex flex-wrap gap-2">
                 <NuxtLink :to="`/categories/${post.categorySlug}`">
                   <UBadge color="neutral" variant="soft" size="lg" class="backdrop-blur-md">
@@ -281,38 +300,10 @@ onBeforeUnmount(() => {
                 </NuxtLink>
               </div>
 
-              <h1 class="mt-4 max-w-[48rem] text-[clamp(1.72rem,1.44rem+1.35vw,2.95rem)] font-semibold leading-[1.06] tracking-[-0.04em] [font-family:var(--font-display)] [text-wrap:balance] text-white drop-shadow-[0_16px_40px_rgba(15,23,42,0.32)]">
+              <h1 class="mt-5 max-w-[40rem] text-[clamp(1.82rem,1.48rem+1.55vw,3.15rem)] font-semibold leading-[1.02] tracking-[-0.045em] [font-family:var(--font-display)] [text-wrap:balance] text-white drop-shadow-[0_18px_42px_rgba(15,23,42,0.34)]">
                 {{ post.title }}
               </h1>
 
-              <p class="mt-3 max-w-[38rem] text-[0.92rem] leading-7 tracking-[-0.01em] text-white/84 drop-shadow-[0_10px_28px_rgba(15,23,42,0.24)]">
-                {{ post.summary }}
-              </p>
-
-              <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-[0.82rem] text-white/82">
-                <span class="inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/12 px-3 py-1.5 backdrop-blur-sm">
-                  <svg class="size-4 text-rose-300" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  <span class="text-white/70">作者</span>
-                  <span class="font-medium text-white">{{ post.authorName }}</span>
-                </span>
-                <span class="inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/12 px-3 py-1.5 backdrop-blur-sm">
-                  <UIcon name="i-lucide-clock-3" class="size-4 text-sky-300" />
-                  <span class="text-white/70">发布</span>
-                  <span class="font-medium text-white">{{ post.publishedAt }}</span>
-                </span>
-                <span class="inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/12 px-3 py-1.5 backdrop-blur-sm">
-                  <UIcon name="i-lucide-book-open" class="size-4 text-orange-300" />
-                  <span class="text-white/70">阅读</span>
-                  <span class="font-medium text-white">{{ post.readingMinutes }} 分钟</span>
-                </span>
-                <span class="inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/12 px-3 py-1.5 backdrop-blur-sm">
-                  <UIcon name="i-lucide-eye" class="size-4 text-emerald-300" />
-                  <span class="text-white/70">热度</span>
-                  <span class="font-medium text-white">{{ post.viewCount }} 次浏览</span>
-                </span>
-              </div>
             </div>
           </div>
         </div>
@@ -320,9 +311,32 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <section v-if="post" class="relative z-10 mx-auto -mt-10 max-w-[1440px] px-5 pb-16 sm:-mt-12 sm:px-8 lg:-mt-16 lg:px-10 lg:pb-24">
+    <section v-if="post" class="relative z-10 mx-auto -mt-6 max-w-[1440px] px-5 pb-16 sm:-mt-8 sm:px-8 lg:-mt-10 lg:px-10 lg:pb-24">
       <div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div ref="articleContentRef" class="space-y-8">
+          <section class="px-1 pt-2 text-[0.78rem] text-slate-500 dark:text-slate-400">
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-2 sm:gap-x-4">
+              <span class="font-medium text-slate-700 dark:text-slate-200">作者 {{ post.authorName }}</span>
+              <span class="h-1 w-1 rounded-full bg-slate-300/90 dark:bg-slate-600" />
+              <span>发布 {{ postPublishedAtLabel }}</span>
+              <span class="h-1 w-1 rounded-full bg-slate-300/90 dark:bg-slate-600" />
+              <span>阅读 {{ post.readingMinutes }} 分钟</span>
+              <span class="h-1 w-1 rounded-full bg-slate-300/90 dark:bg-slate-600" />
+              <span>热度 {{ post.viewCount }} 次浏览</span>
+            </div>
+
+            <div v-if="heroTags.length" class="mt-3 flex flex-wrap gap-2">
+              <NuxtLink
+                v-for="tag in heroTags"
+                :key="`${post.slug}-${tag.slug}`"
+                :to="`/tags/${tag.slug}`"
+                class="rounded-full border border-slate-200/80 bg-white/80 px-2.5 py-1 text-[0.72rem] font-medium tracking-[0.01em] text-slate-500 transition hover:border-sky-200 hover:bg-sky-50/70 hover:text-sky-700 dark:border-slate-700/90 dark:bg-slate-900/72 dark:text-slate-400 dark:hover:border-sky-800 dark:hover:bg-slate-900 dark:hover:text-sky-200"
+              >
+                #{{ tag.name }}
+              </NuxtLink>
+            </div>
+          </section>
+
           <ArticleContentRenderer
             :html="post.contentHtml"
             content-theme="editorial"
