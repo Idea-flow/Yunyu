@@ -1,0 +1,17 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M36.1 74.5C29.9 69.6 28.8 60.5 33.7 54.3L46.1 38.5C51 32.3 60.1 31.2 66.3 36.1C72.5 41 73.6 50.1 68.7 56.3L56.3 72.1C51.4 78.3 42.3 79.4 36.1 74.5Z" fill="url(#pray-left)"/>
+  <path d="M59.9 74.5C66.1 69.6 67.2 60.5 62.3 54.3L49.9 38.5C45 32.3 35.9 31.2 29.7 36.1C23.5 41 22.4 50.1 27.3 56.3L39.7 72.1C44.6 78.3 53.7 79.4 59.9 74.5Z" fill="url(#pray-right)"/>
+  <path d="M48 18L50.8 10.5" stroke="#FBBF24" stroke-width="5" stroke-linecap="round"/>
+  <path d="M37.5 24L31.5 17.8" stroke="#FBBF24" stroke-width="5" stroke-linecap="round"/>
+  <path d="M58.5 24L64.5 17.8" stroke="#FBBF24" stroke-width="5" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="pray-left" x1="38" y1="34" x2="58" y2="76" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE1B2"/>
+      <stop offset="1" stop-color="#EAB57C"/>
+    </linearGradient>
+    <linearGradient id="pray-right" x1="58" y1="34" x2="38" y2="76" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFD4A1"/>
+      <stop offset="1" stop-color="#E6A86A"/>
+    </linearGradient>
+  </defs>
+</svg>

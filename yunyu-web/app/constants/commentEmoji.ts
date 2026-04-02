@@ -49,6 +49,53 @@ export const COMMENT_EMOJI_PACK: CommentEmojiItem[] = [
     name: '比心',
     code: '[比心]',
     src: '/emojis/comments/heart.svg'
+  },
+  {
+    id: 'wink',
+    name: '眨眼',
+    code: '[眨眼]',
+    src: '/emojis/comments/wink.svg'
+  },
+  {
+    id: 'angry',
+    name: '生气',
+    code: '[生气]',
+    src: '/emojis/comments/angry.svg'
+  },
+  {
+    id: 'tears',
+    name: '流泪',
+    code: '[流泪]',
+    src: '/emojis/comments/tears.svg'
+  },
+  {
+    id: 'blank',
+    name: '发呆',
+    code: '[发呆]',
+    src: '/emojis/comments/blank.svg'
+  },
+  {
+    id: 'sly',
+    name: '偷笑',
+    code: '[偷笑]',
+    src: '/emojis/comments/sly.svg'
+  },
+  {
+    id: 'cheer',
+    name: '点赞',
+    code: '[点赞]',
+    src: '/emojis/comments/cheer.svg'
+  },
+  {
+    id: 'pray',
+    name: '拜托',
+    code: '[拜托]',
+    src: '/emojis/comments/pray.svg'
+  },
+  {
+    id: 'dizzy',
+    name: '晕乎',
+    code: '[晕乎]',
+    src: '/emojis/comments/dizzy.svg'
   }
 ]
-

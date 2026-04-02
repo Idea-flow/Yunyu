@@ -1,6 +1,12 @@
 <svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M48 79C32 64.8 19 54.2 19 39C19 29.1 26.8 21 36.4 21C41.9 21 46.9 23.7 50 28C53.1 23.7 58.1 21 63.6 21C73.2 21 81 29.1 81 39C81 54.2 68 64.8 52 79L50.7 80.1C49.1 81.5 46.9 81.5 45.3 80.1L48 79Z" fill="#FB7185"/>
-  <path d="M34 50C38.6 42.6 45.7 40 50.9 40C56.8 40 63.2 43.2 66.9 49.8" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
-  <circle cx="35" cy="36" r="5" fill="#FFE4E6"/>
-  <circle cx="62" cy="36" r="5" fill="#FFE4E6"/>
+  <path d="M48 80.5C31.8 66 18.5 55.2 18.5 39.3C18.5 29 26.7 20.5 36.8 20.5C42.5 20.5 47.4 23 50.6 27.4C53.8 23 58.7 20.5 64.4 20.5C74.5 20.5 82.7 29 82.7 39.3C82.7 55.2 69.4 66 53.2 80.5L50.9 82.5C49.2 84 46.8 84 45.1 82.5L48 80.5Z" fill="url(#heart-bg)"/>
+  <path d="M34 49.5C38.4 42.4 44.9 39.6 50.1 39.6C56 39.6 62.1 42.7 66.2 48.5" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".92"/>
+  <circle cx="35.2" cy="35.5" r="5.2" fill="#FFE6EC"/>
+  <circle cx="61.8" cy="35.5" r="5.2" fill="#FFE6EC"/>
+  <defs>
+    <linearGradient id="heart-bg" x1="26" y1="20" x2="71" y2="81" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF8EA1"/>
+      <stop offset="1" stop-color="#F43F5E"/>
+    </linearGradient>
+  </defs>
 </svg>

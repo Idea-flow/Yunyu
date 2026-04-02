@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { CommentEmojiItem } from '../../constants/commentEmoji'
 import CommentEmojiPicker from './CommentEmojiPicker.vue'
+import CommentRichEditor from './CommentRichEditor.vue'
 
 /**
  * 通用评论输入组件。
@@ -40,7 +41,7 @@ const emit = defineEmits<{
   login: []
 }>()
 
-const textareaWrapperRef = ref<HTMLElement | null>(null)
+const richEditorRef = ref<InstanceType<typeof CommentRichEditor> | null>(null)
 
 /**
  * 同步输入内容。
@@ -77,47 +78,13 @@ function handleLogin() {
 }
 
 /**
- * 查找真实文本域元素。
- * 作用：为表情插入和光标恢复提供底层 textarea 引用。
- *
- * @returns 文本域元素
- */
-function resolveTextareaElement() {
-  return textareaWrapperRef.value?.querySelector('textarea') || null
-}
-
-/**
  * 处理表情插入。
- * 作用：将自定义表情编码插入到当前光标位置，避免只能追加到输入框末尾。
+ * 作用：调用富表情编辑器在当前光标位置插入表情 token，并同步原始编码。
  *
  * @param emoji 当前选中的表情项
  */
 function handleEmojiSelect(emoji: CommentEmojiItem) {
-  const textareaElement = resolveTextareaElement()
-  const currentValue = props.modelValue || ''
-
-  if (!textareaElement) {
-    emit('update:modelValue', `${currentValue}${emoji.code}`)
-    return
-  }
-
-  const selectionStart = textareaElement.selectionStart ?? currentValue.length
-  const selectionEnd = textareaElement.selectionEnd ?? currentValue.length
-  const nextValue = `${currentValue.slice(0, selectionStart)}${emoji.code}${currentValue.slice(selectionEnd)}`
-  const nextCursorPosition = selectionStart + emoji.code.length
-
-  emit('update:modelValue', nextValue)
-
-  nextTick(() => {
-    const latestTextareaElement = resolveTextareaElement()
-
-    if (!latestTextareaElement) {
-      return
-    }
-
-    latestTextareaElement.focus()
-    latestTextareaElement.setSelectionRange(nextCursorPosition, nextCursorPosition)
-  })
+  richEditorRef.value?.insertEmoji(emoji)
 }
 </script>
 
@@ -134,18 +101,13 @@ function handleEmojiSelect(emoji: CommentEmojiItem) {
       </p>
     </div>
 
-    <div ref="textareaWrapperRef">
-      <UTextarea
+    <div>
+      <CommentRichEditor
+        ref="richEditorRef"
         :model-value="props.modelValue"
-        :rows="props.compact ? 4 : 5"
         :placeholder="props.placeholder"
         :disabled="props.disabled"
-        class="w-full"
-        :ui="{
-          base: props.compact
-            ? 'w-full resize-none rounded-[16px] border border-slate-200/65 bg-white/84 px-4 py-3 text-sm leading-7 text-slate-700 shadow-none focus:border-sky-300 focus:ring-2 focus:ring-sky-200/50 dark:border-slate-700/80 dark:bg-slate-950/62 dark:text-slate-100 dark:focus:border-sky-600 dark:focus:ring-sky-500/16'
-            : 'w-full resize-none rounded-[18px] border border-slate-200/65 bg-white/84 px-4 py-3 text-sm leading-7 text-slate-700 shadow-none focus:border-sky-300 focus:ring-2 focus:ring-sky-200/50 dark:border-slate-700/80 dark:bg-slate-950/62 dark:text-slate-100 dark:focus:border-sky-600 dark:focus:ring-sky-500/16'
-        }"
+        :compact="props.compact"
         @update:model-value="handleValueChange"
       />
     </div>

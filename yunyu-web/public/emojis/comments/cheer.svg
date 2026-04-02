@@ -1,0 +1,17 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M31.4 55.4C29.2 51.1 30.9 45.7 35.2 43.5L52 34.8C56.3 32.6 61.6 34.3 63.9 38.6L72.6 55.4C74.8 59.7 73.1 65 68.8 67.3L52 75.9C47.7 78.2 42.4 76.5 40.1 72.2L31.4 55.4Z" fill="url(#thumb-main)"/>
+  <path d="M24.4 46.2C21.7 41.3 23.6 35.1 28.5 32.5L36.1 28.4C41 25.8 47.1 27.7 49.8 32.6L53 38.6L34.8 48.3L24.4 46.2Z" fill="url(#thumb-side)"/>
+  <path d="M67.6 24.5L72 15.5" stroke="#F59E0B" stroke-width="4.8" stroke-linecap="round"/>
+  <path d="M77.2 32.5L86 29.2" stroke="#F59E0B" stroke-width="4.8" stroke-linecap="round"/>
+  <path d="M79 44.8H88" stroke="#F59E0B" stroke-width="4.8" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="thumb-main" x1="39" y1="35" x2="68" y2="76" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE6BA"/>
+      <stop offset="1" stop-color="#E9BD84"/>
+    </linearGradient>
+    <linearGradient id="thumb-side" x1="26" y1="28" x2="48" y2="47" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFD7A5"/>
+      <stop offset="1" stop-color="#E2A96B"/>
+    </linearGradient>
+  </defs>
+</svg>

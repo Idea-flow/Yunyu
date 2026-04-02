@@ -1,11 +1,16 @@
 <svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="48" cy="48" r="40" fill="#FFD36E"/>
-  <circle cx="34" cy="40" r="6" fill="#3A2E2A"/>
-  <circle cx="62" cy="40" r="6" fill="#3A2E2A"/>
-  <path d="M26 30L39 34" stroke="#3A2E2A" stroke-width="5" stroke-linecap="round"/>
-  <path d="M70 30L57 34" stroke="#3A2E2A" stroke-width="5" stroke-linecap="round"/>
-  <ellipse cx="48" cy="61" rx="9" ry="11" fill="#3A2E2A"/>
-  <circle cx="21" cy="55" r="4.5" fill="#FFB4A2" fill-opacity=".65"/>
-  <circle cx="75" cy="55" r="4.5" fill="#FFB4A2" fill-opacity=".65"/>
+  <circle cx="48" cy="48" r="40" fill="url(#wow-bg)"/>
+  <path d="M27.5 29.5L39 33.8" stroke="#39251D" stroke-width="5" stroke-linecap="round"/>
+  <path d="M68.5 29.5L57 33.8" stroke="#39251D" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="35" cy="40.5" r="6.2" fill="#39251D"/>
+  <circle cx="61" cy="40.5" r="6.2" fill="#39251D"/>
+  <ellipse cx="48" cy="61" rx="9.6" ry="12" fill="#39251D"/>
+  <ellipse cx="23.5" cy="54.5" rx="5.5" ry="4.2" fill="#FFB1A2" fill-opacity=".62"/>
+  <ellipse cx="72.5" cy="54.5" rx="5.5" ry="4.2" fill="#FFB1A2" fill-opacity=".62"/>
+  <defs>
+    <linearGradient id="wow-bg" x1="18" y1="15" x2="74" y2="83" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFD886"/>
+      <stop offset="1" stop-color="#FFB247"/>
+    </linearGradient>
+  </defs>
 </svg>
-

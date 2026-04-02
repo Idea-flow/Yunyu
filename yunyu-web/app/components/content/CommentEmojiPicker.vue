@@ -75,29 +75,28 @@ onBeforeUnmount(() => {
 
     <div
       v-if="isOpen"
-      class="absolute left-0 top-full z-20 mt-2 w-[280px] rounded-[18px] border border-slate-200/80 bg-white/96 p-3 shadow-[0_20px_50px_-36px_rgba(15,23,42,0.28)] backdrop-blur dark:border-white/10 dark:bg-slate-950/92"
+      class="absolute left-0 top-full z-20 mt-2 w-[356px] rounded-[20px] border border-slate-200/80 bg-white/96 p-3.5 shadow-[0_24px_60px_-38px_rgba(15,23,42,0.3)] backdrop-blur dark:border-white/10 dark:bg-slate-950/92"
     >
-      <p class="mb-2 px-1 text-xs font-medium text-slate-400 dark:text-slate-500">
+      <p class="mb-3 px-1 text-xs font-medium text-slate-400 dark:text-slate-500">
         自定义表情
       </p>
 
-      <div class="grid grid-cols-3 gap-2">
+      <div class="grid grid-cols-4 gap-2">
         <button
           v-for="emoji in COMMENT_EMOJI_PACK"
           :key="emoji.id"
           type="button"
-          class="flex flex-col items-center gap-1 rounded-[14px] border border-transparent px-3 py-2 text-xs text-slate-500 transition hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:border-white/10 dark:hover:bg-white/6 dark:hover:text-slate-100"
+          class="flex flex-col items-center gap-1.5 rounded-[16px] border border-transparent px-2.5 py-2.5 text-[11px] text-slate-500 transition hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:border-white/10 dark:hover:bg-white/6 dark:hover:text-slate-100"
           @click="selectEmoji(emoji)"
         >
           <img
             :src="emoji.src"
             :alt="emoji.name"
-            class="size-10 object-contain"
+            class="size-11 object-contain"
           >
-          <span>{{ emoji.name }}</span>
+          <span class="leading-none">{{ emoji.name }}</span>
         </button>
       </div>
     </div>
   </div>
 </template>
-

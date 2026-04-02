@@ -1,11 +1,17 @@
 <svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="48" cy="48" r="40" fill="#FFD88C"/>
-  <path d="M30 40C33.5 37 37 35.5 40.5 35.5" stroke="#3A2E2A" stroke-width="5.5" stroke-linecap="round"/>
-  <path d="M55.5 35.5C59 35.5 62.5 37 66 40" stroke="#3A2E2A" stroke-width="5.5" stroke-linecap="round"/>
-  <circle cx="36" cy="45" r="4.5" fill="#3A2E2A"/>
-  <circle cx="60" cy="45" r="4.5" fill="#3A2E2A"/>
-  <path d="M40 60C42 57.5 45 56 48 56C51 56 54 57.5 56 60" stroke="#3A2E2A" stroke-width="5.5" stroke-linecap="round"/>
-  <ellipse cx="26" cy="57" rx="6.5" ry="4.5" fill="#F9A8D4" fill-opacity=".75"/>
-  <ellipse cx="70" cy="57" rx="6.5" ry="4.5" fill="#F9A8D4" fill-opacity=".75"/>
+  <circle cx="48" cy="48" r="40" fill="url(#shy-bg)"/>
+  <path d="M31 39C33.9 36.4 37.2 35 40.5 35" stroke="#3A2720" stroke-width="5.2" stroke-linecap="round"/>
+  <path d="M55.5 35C58.8 35 62.1 36.4 65 39" stroke="#3A2720" stroke-width="5.2" stroke-linecap="round"/>
+  <circle cx="36.5" cy="45.5" r="4.6" fill="#3A2720"/>
+  <circle cx="59.5" cy="45.5" r="4.6" fill="#3A2720"/>
+  <path d="M40 60.5C42.2 57.8 45 56.4 48 56.4C51 56.4 53.8 57.8 56 60.5" stroke="#3A2720" stroke-width="5.2" stroke-linecap="round"/>
+  <ellipse cx="26.5" cy="57.5" rx="7" ry="4.8" fill="#FFA6C9" fill-opacity=".72"/>
+  <ellipse cx="69.5" cy="57.5" rx="7" ry="4.8" fill="#FFA6C9" fill-opacity=".72"/>
+  <path d="M22 28C30.6 18.9 40.2 14.6 50.8 15.2C61.3 15.8 70.1 20.8 77.2 30.1C67.5 23.7 57.7 21 47.8 22C37.9 23 29.3 25 22 28Z" fill="#FFF5C4" fill-opacity=".58"/>
+  <defs>
+    <linearGradient id="shy-bg" x1="19" y1="17" x2="75" y2="81" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFDFA0"/>
+      <stop offset="1" stop-color="#FFBD6B"/>
+    </linearGradient>
+  </defs>
 </svg>
-
