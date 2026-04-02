@@ -89,9 +89,9 @@ function handlePageSizeChange(value: string | number | null) {
             :color="page === item.value ? 'info' : 'neutral'"
             :variant="page === item.value ? 'solid' : 'ghost'"
             :label="String(item.value)"
-            class="min-w-10 rounded-full border-0"
+            class="min-w-10 rounded-[10px] border-0"
             :class="page === item.value
-              ? 'shadow-[0_8px_20px_-16px_rgba(2,132,199,0.78)]'
+              ? ''
               : 'text-slate-500 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:bg-slate-800/80'"
           />
         </template>
@@ -100,7 +100,7 @@ function handlePageSizeChange(value: string | number | null) {
             color="neutral"
             variant="ghost"
             icon="i-lucide-chevron-left"
-            class="rounded-full border-0 text-slate-500 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:bg-slate-800/80"
+            class="rounded-[10px] border-0 text-slate-500 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:bg-slate-800/80"
           />
         </template>
         <template #next>
@@ -108,7 +108,7 @@ function handlePageSizeChange(value: string | number | null) {
             color="neutral"
             variant="ghost"
             icon="i-lucide-chevron-right"
-            class="rounded-full border-0 text-slate-500 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:bg-slate-800/80"
+            class="rounded-[10px] border-0 text-slate-500 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:bg-slate-800/80"
           />
         </template>
       </UPagination>

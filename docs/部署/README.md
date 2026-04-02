@@ -8,3 +8,4 @@
 - `02-部署执行步骤.md`
 - `03-Cloudflare Pages 手动部署流程.md`
 - `04-Linux 服务器部署说明.md`
+- `05-Native-Image 部署方案.md`

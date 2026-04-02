@@ -32,24 +32,10 @@ public class SystemInitService {
             return SystemInitStatus.UNINITIALIZED;
         }
 
-        if (!databaseBootstrapService.databaseExists(initProperties)) {
-            return SystemInitStatus.UNINITIALIZED;
-        }
-
-        boolean coreTablesReady = databaseBootstrapService.tableExists(initProperties, "user")
-                && databaseBootstrapService.tableExists(initProperties, "post")
-                && databaseBootstrapService.tableExists(initProperties, "post_content")
-                && databaseBootstrapService.tableExists(initProperties, "site_config");
-        if (!coreTablesReady) {
-            return SystemInitStatus.UNINITIALIZED;
-        }
-
-        boolean siteInitReady = databaseBootstrapService.hasSystemInitFlag(initProperties);
-        boolean adminReady = databaseBootstrapService.hasSuperAdmin(initProperties);
-        if (siteInitReady && adminReady) {
+        if (databaseBootstrapService.databaseExists(initProperties)) {
             return SystemInitStatus.READY;
         }
 
-        return SystemInitStatus.PARTIALLY_INITIALIZED;
+        return SystemInitStatus.UNINITIALIZED;
     }
 }

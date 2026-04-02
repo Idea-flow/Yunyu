@@ -368,31 +368,23 @@ await loadItems()
           </div>
         </AdminFilterPanel>
 
-        <UCard class="rounded-[30px] border border-slate-200/80 bg-white/85 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-[0_22px_48px_-30px_rgba(0,0,0,0.55)]">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">操作</p>
-              <p class="mt-1 text-base font-semibold text-slate-900 dark:text-slate-50">{{ props.config.operationTitle }}</p>
-              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ props.config.operationDescription }}</p>
-            </div>
-
-            <AdminPrimaryButton label="增加" icon="i-lucide-plus" @click="openCreateModal" />
-          </div>
-        </UCard>
-
         <AdminTableCard
           :title="props.config.tableTitle"
-          description="支持分类、标签、专题的真实数据查询与维护，可直接用于后台内容体系管理。"
+          :description="props.config.operationDescription || '支持分类、标签、专题的真实数据查询与维护，可直接用于后台内容体系管理。'"
           :total="total"
         >
+          <template #actions>
+            <AdminPrimaryButton :label="`新增${props.config.itemLabel}`" icon="i-lucide-plus" @click="openCreateModal" />
+          </template>
+
           <div v-if="isLoading" class="space-y-3">
             <USkeleton class="h-[4.5rem] rounded-2xl" />
             <USkeleton class="h-[4.5rem] rounded-2xl" />
             <USkeleton class="h-[4.5rem] rounded-2xl" />
           </div>
 
-          <div v-else class="overflow-hidden rounded-[1.55rem] border border-slate-200/80 bg-white/85 dark:border-slate-800 dark:bg-slate-950/60">
-            <div class="hidden grid-cols-[minmax(0,1.45fr)_0.7fr_0.8fr_0.9fr_0.85fr] gap-4 border-b border-slate-200/80 bg-slate-50/85 px-5 py-4 text-xs font-semibold tracking-[0.14em] text-slate-400 uppercase dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-500 lg:grid">
+          <div v-else class="admin-table-shell overflow-hidden">
+            <div class="admin-toolbar hidden grid-cols-[minmax(0,1.45fr)_0.7fr_0.8fr_0.9fr_0.85fr] gap-4 px-5 py-4 text-xs font-semibold tracking-[0.14em] text-slate-400 uppercase dark:text-slate-500 lg:grid">
               <p>{{ props.config.itemLabel }}</p>
               <p>状态</p>
               <p>排序/文章</p>
@@ -458,7 +450,7 @@ await loadItems()
               </article>
 
               <div v-if="!items.length" class="flex flex-col items-center justify-center gap-3 px-6 py-12 text-center">
-                <div class="inline-flex size-14 items-center justify-center rounded-[1.2rem] bg-sky-50 text-sky-600 dark:bg-sky-400/12 dark:text-sky-300">
+                <div class="inline-flex size-14 items-center justify-center rounded-[12px] bg-sky-50 text-sky-600 dark:bg-sky-400/12 dark:text-sky-300">
                   <UIcon name="i-lucide-search-x" class="size-5" />
                 </div>
                 <p class="text-base font-medium text-slate-900 dark:text-slate-50">没有找到匹配的{{ props.config.itemLabel }}</p>

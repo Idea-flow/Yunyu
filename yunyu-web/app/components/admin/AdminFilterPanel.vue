@@ -7,7 +7,7 @@
 </script>
 
 <template>
-  <UCard class="rounded-[30px] border border-slate-200/80 bg-white/85 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-[0_22px_48px_-30px_rgba(0,0,0,0.55)]">
+  <section class="admin-surface-soft px-4 py-4 md:px-5">
     <div class="space-y-4">
       <div>
         <slot name="search" />
@@ -17,5 +17,5 @@
         <slot />
       </div>
     </div>
-  </UCard>
+  </section>
 </template>

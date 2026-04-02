@@ -35,6 +35,75 @@ body {
   color: rgb(203 213 225);
 }
 
+.admin-workspace {
+  background:
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.1), transparent 24rem),
+    linear-gradient(180deg, rgba(248, 250, 252, 0.98) 0%, rgba(241, 245, 249, 0.98) 100%);
+}
+
+.dark .admin-workspace {
+  background:
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.08), transparent 24rem),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%);
+}
+
+.admin-shell {
+  border: 1px solid rgb(226 232 240 / 0.88);
+  background: rgb(255 255 255 / 0.9);
+  box-shadow: 0 18px 40px -32px rgba(15, 23, 42, 0.22);
+  backdrop-filter: blur(12px);
+  border-radius: 14px;
+}
+
+.dark .admin-shell {
+  border-color: rgb(30 41 59 / 0.96);
+  background: rgb(2 6 23 / 0.84);
+  box-shadow: 0 22px 44px -34px rgba(0, 0, 0, 0.55);
+}
+
+.admin-surface {
+  border: 1px solid rgb(226 232 240 / 0.9);
+  background: rgb(255 255 255 / 0.94);
+  border-radius: 14px;
+}
+
+.dark .admin-surface {
+  border-color: rgb(30 41 59 / 0.96);
+  background: rgb(15 23 42 / 0.84);
+}
+
+.admin-surface-soft {
+  border: 1px solid rgb(226 232 240 / 0.7);
+  background: rgb(248 250 252 / 0.84);
+  border-radius: 12px;
+}
+
+.dark .admin-surface-soft {
+  border-color: rgb(51 65 85 / 0.8);
+  background: rgb(15 23 42 / 0.65);
+}
+
+.admin-table-shell {
+  border: 1px solid rgb(226 232 240 / 0.88);
+  background: rgb(255 255 255 / 0.92);
+  border-radius: 12px;
+}
+
+.dark .admin-table-shell {
+  border-color: rgb(30 41 59 / 0.96);
+  background: rgb(2 6 23 / 0.72);
+}
+
+.admin-toolbar {
+  border-bottom: 1px solid rgb(226 232 240 / 0.88);
+  background: rgb(248 250 252 / 0.82);
+}
+
+.dark .admin-toolbar {
+  border-bottom-color: rgb(30 41 59 / 0.96);
+  background: rgb(15 23 42 / 0.72);
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     scroll-behavior: auto;

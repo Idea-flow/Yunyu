@@ -142,12 +142,13 @@ public class DatabaseBootstrapService {
 
         boolean databaseExists = databaseExists(properties);
         log.info("目标数据库 `{}` 是否已存在：{}", properties.getDatabaseName(), databaseExists ? "是" : "否");
-        if (!databaseExists) {
-            createDatabaseIfNotExists(properties);
-            log.info("已自动创建数据库 `{}`", properties.getDatabaseName());
-        } else {
-            log.info("跳过数据库创建，数据库 `{}` 已存在", properties.getDatabaseName());
+        if (databaseExists) {
+            log.info("检测到数据库 `{}` 已存在，直接视为已初始化，跳过后续建表、初始化标记和默认管理员检查", properties.getDatabaseName());
+            return;
         }
+
+        createDatabaseIfNotExists(properties);
+        log.info("已自动创建数据库 `{}`", properties.getDatabaseName());
 
         boolean coreTablesReady = hasCoreTables(properties);
         log.info("核心表是否已存在：{}", coreTablesReady ? "是" : "否");

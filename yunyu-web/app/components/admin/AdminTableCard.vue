@@ -12,8 +12,8 @@ defineProps<{
 </script>
 
 <template>
-  <UCard class="rounded-[30px] border border-slate-200/80 bg-white/85 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-[0_22px_48px_-30px_rgba(0,0,0,0.55)]">
-    <template #header>
+  <section class="admin-surface overflow-hidden">
+    <div class="admin-toolbar px-5 py-4">
       <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">数据列表</p>
@@ -21,7 +21,7 @@ defineProps<{
           <p v-if="description" class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ description }}</p>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-3 md:justify-end">
           <slot name="actions" />
           <UBadge
             v-if="typeof total === 'number'"
@@ -33,12 +33,14 @@ defineProps<{
           </UBadge>
         </div>
       </div>
-    </template>
+    </div>
 
-    <slot />
+    <div class="px-5 py-5">
+      <slot />
+    </div>
 
-    <template v-if="$slots.footer" #footer>
+    <div v-if="$slots.footer" class="border-t border-slate-200/80 px-5 py-4 dark:border-slate-800">
       <slot name="footer" />
-    </template>
-  </UCard>
+    </div>
+  </section>
 </template>
