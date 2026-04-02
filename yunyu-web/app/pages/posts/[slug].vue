@@ -256,10 +256,6 @@ onBeforeUnmount(() => {
       min-height-class="min-h-[60svh] sm:min-h-[66svh] lg:min-h-[72svh]"
       content-padding-class="px-5 pb-14 sm:px-8 sm:pb-16 lg:px-10 lg:pb-20"
     >
-      <p class="text-[0.72rem] font-semibold uppercase tracking-[0.34em] text-white/72 drop-shadow-md">
-        Editorial Story
-      </p>
-
       <div class="flex flex-wrap gap-2">
         <NuxtLink :to="`/categories/${post.categorySlug}`">
           <UBadge color="neutral" variant="soft" size="lg" class="backdrop-blur-md">
@@ -345,13 +341,6 @@ onBeforeUnmount(() => {
           #{{ tag.name }}
         </NuxtLink>
       </div>
-
-      <div class="mt-9 flex items-center gap-4 text-white/68">
-        <span class="h-px w-16 bg-gradient-to-r from-white/70 to-white/0" />
-        <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-white/64">
-          Scroll To Read
-        </p>
-      </div>
     </YunyuHero>
 
     <section v-if="post" class="relative z-10 mx-auto -mt-8 max-w-[1440px] px-5 pb-16 sm:-mt-10 sm:px-8 lg:-mt-14 lg:px-10 lg:pb-24">
@@ -360,22 +349,9 @@ onBeforeUnmount(() => {
           <section class="overflow-hidden rounded-[34px] border border-white/60 bg-white/80 px-6 py-6 shadow-[0_34px_94px_-56px_rgba(15,23,42,0.32)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/68 sm:px-8">
             <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-end">
               <div>
-                <p class="text-[0.72rem] font-semibold uppercase tracking-[0.34em] text-sky-600 dark:text-sky-300">
-                  Reading Note
-                </p>
                 <p class="mt-4 text-[clamp(1.6rem,1.35rem+0.65vw,2.05rem)] font-semibold leading-[1.08] tracking-[-0.035em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 dark:text-slate-50">
                   这篇文章适合以更慢一点的节奏阅读，把重点留给正文本身。
                 </p>
-                <p class="mt-4 max-w-3xl text-[0.98rem] leading-8 text-slate-600 dark:text-slate-300">
-                  目录、标签和延伸阅读只承担导览作用。真正的主角应该是段落、章节与内容之间的推进关系。
-                </p>
-
-                <div class="mt-6 flex items-center gap-4 text-slate-400 dark:text-slate-500">
-                  <span class="h-px w-14 bg-gradient-to-r from-sky-500/70 to-sky-500/0 dark:from-sky-300/70 dark:to-sky-300/0" />
-                  <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em]">
-                    Begin The Article
-                  </p>
-                </div>
               </div>
 
               <div class="grid grid-cols-2 gap-3 lg:grid-cols-1">
@@ -472,9 +448,6 @@ onBeforeUnmount(() => {
                   目录
                 </p>
                 <h2 class="mt-2 text-[1.12rem] font-semibold tracking-[-0.03em] [font-family:var(--font-display)] text-slate-950 dark:text-slate-50">阅读导航</h2>
-                <p class="mt-2 text-[0.82rem] leading-6 text-slate-500 dark:text-slate-400">
-                  {{ tocItems.length }} 个章节，跟着当前阅读位置一起移动。
-                </p>
               </div>
               <div class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200/75 bg-white/80 text-sky-600 shadow-[0_14px_30px_-24px_rgba(14,165,233,0.35)] dark:border-white/10 dark:bg-white/5 dark:text-sky-200">
                 <UIcon name="i-lucide-book-marked" class="size-5" />
@@ -482,11 +455,6 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="mt-4 rounded-[1.4rem] bg-slate-50/74 px-2 py-2 dark:bg-slate-900/50">
-              <div class="mb-3 flex items-center gap-2 px-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                <span class="inline-flex h-2 w-2 rounded-full bg-sky-500/80 dark:bg-sky-300/80" />
-                当前章节会高亮
-              </div>
-
               <div ref="tocScrollContainerRef" class="max-h-[32rem] overflow-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.3)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/60 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/60">
               <ArticleTocTree :items="tocItems" :active-id="activeTocId" @select="handleTocSelect" />
               </div>
@@ -500,9 +468,6 @@ onBeforeUnmount(() => {
                   标签
                 </p>
                 <h2 class="mt-2 text-[1.12rem] font-semibold tracking-[-0.03em] [font-family:var(--font-display)] text-slate-950 dark:text-slate-50">内容线索</h2>
-                <p class="mt-2 text-[0.82rem] leading-6 text-slate-500 dark:text-slate-400">
-                  {{ postTagItems.length }} 个标签，顺着相近语境继续读下去。
-                </p>
               </div>
               <div class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200/75 bg-white/80 text-sky-600 shadow-[0_14px_30px_-24px_rgba(14,165,233,0.3)] dark:border-white/10 dark:bg-white/5 dark:text-sky-200">
                 <UIcon name="i-lucide-hash" class="size-5" />
@@ -510,11 +475,6 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="mt-4 rounded-[1.4rem] bg-slate-50/74 px-3 py-3 dark:bg-slate-900/50">
-              <div class="mb-3 flex items-center gap-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                <span class="inline-flex h-2 w-2 rounded-full bg-sky-500/80 dark:bg-sky-300/80" />
-                标签用于延展阅读
-              </div>
-
               <div class="flex flex-wrap gap-2">
                 <NuxtLink
                   v-for="tag in postTagItems"

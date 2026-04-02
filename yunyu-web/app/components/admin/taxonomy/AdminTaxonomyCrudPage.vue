@@ -442,6 +442,8 @@ await loadItems()
                 <div class="min-w-0">
                   <p class="truncate text-[15px] font-semibold text-highlighted">{{ item.name }}</p>
                   <div class="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-muted">
+                    <span>ID {{ item.id }}</span>
+                    <span class="text-border">·</span>
                     <span>{{ item.slug }}</span>
                     <template v-if="item.description">
                       <span class="text-border">·</span>
