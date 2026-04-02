@@ -24,7 +24,6 @@ public class YunyuServerApplication {
 	 * @param args 启动参数
 	 */
 	public static void main(String[] args) throws UnknownHostException {
-
         ConfigurableApplicationContext application = SpringApplication.run(YunyuServerApplication.class, args);
 
         Environment env = application.getEnvironment();

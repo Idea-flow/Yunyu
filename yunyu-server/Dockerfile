@@ -15,4 +15,4 @@ COPY --from=builder /build/target/yunyu-server-0.0.1-SNAPSHOT.jar /app/yunyu-ser
 
 EXPOSE 20000
 
-ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "/app/yunyu-server.jar"]
+ENTRYPOINT ["java", "-Xms128m", "-Xmx1g", "-Dspring.profiles.active=prod", "-jar", "/app/yunyu-server.jar"]

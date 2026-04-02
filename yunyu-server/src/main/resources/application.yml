@@ -2,7 +2,7 @@ spring:
   application:
     name: yunyu-server
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
+    default: dev
   threads:
     virtual:
       enabled: true

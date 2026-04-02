@@ -31,7 +31,6 @@
 		<jjwt.version>0.13.0</jjwt.version>
 		<mybatis.plus.version>3.5.15</mybatis.plus.version>
 		<springdoc.version>3.0.0</springdoc.version>
-		<native.maven.plugin.version>0.10.6</native.maven.plugin.version>
 	</properties>
 	<dependencies>
 		<!-- 提供健康检查、监控指标与运行状态暴露，用于项目运维与可观测性。 -->
@@ -184,41 +183,5 @@
 			</plugin>
 		</plugins>
 	</build>
-
-	<profiles>
-		<!-- Native Image 构建配置。
-		     作用：在不影响当前 JVM 打包流程的前提下，额外提供 GraalVM 原生可执行文件与原生镜像构建能力。 -->
-		<profile>
-			<id>native</id>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.graalvm.buildtools</groupId>
-						<artifactId>native-maven-plugin</artifactId>
-						<version>${native.maven.plugin.version}</version>
-						<extensions>true</extensions>
-						<configuration>
-							<imageName>yunyu-server</imageName>
-							<buildArgs>
-								<buildArg>--no-fallback</buildArg>
-							</buildArgs>
-						</configuration>
-					</plugin>
-					<plugin>
-						<groupId>org.springframework.boot</groupId>
-						<artifactId>spring-boot-maven-plugin</artifactId>
-						<configuration>
-							<image>
-								<builder>paketobuildpacks/builder-noble-java-tiny</builder>
-								<env>
-									<BP_NATIVE_IMAGE>true</BP_NATIVE_IMAGE>
-								</env>
-							</image>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
 
 </project>

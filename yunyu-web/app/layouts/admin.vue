@@ -99,7 +99,7 @@ async function handleLogout() {
     storage-key="yunyu-admin-dashboard"
     class="admin-workspace relative min-h-screen"
   >
-    <UDashboardSidebar collapsible resizable class="border-none bg-transparent p-4">
+    <UDashboardSidebar collapsible resizable class="min-w-[272px] border-none bg-transparent p-3 lg:p-4">
       <template #header="{ collapsed }">
         <div class="admin-shell overflow-hidden p-3">
           <div class="flex items-center gap-3 px-1 py-1">
@@ -135,7 +135,7 @@ async function handleLogout() {
               :key="item.to"
               :to="item.to"
               :class="[
-                'relative flex min-h-12 items-center gap-3.5 rounded-[12px] border px-4 py-3 text-slate-600 transition duration-200 dark:text-slate-300',
+                'relative flex min-h-12 items-center gap-3 rounded-[12px] border px-3.5 py-3 text-slate-600 transition duration-200 dark:text-slate-300',
                 isActiveItem(item)
                   ? 'border-sky-200 bg-sky-50 text-slate-900 before:absolute before:start-2 before:top-1/2 before:h-6 before:w-1 before:-translate-y-1/2 before:rounded-full before:bg-sky-500 dark:border-sky-400/25 dark:bg-sky-400/10 dark:text-slate-50'
                   : 'border-transparent hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900 dark:hover:border-slate-700 dark:hover:bg-white/5 dark:hover:text-slate-50'
@@ -146,9 +146,9 @@ async function handleLogout() {
                 <UIcon :name="item.icon" class="size-[18px]" />
               </div>
 
-              <div v-if="!collapsed" class="min-w-0">
-                <p class="truncate text-sm font-semibold">{{ item.label }}</p>
-                <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ item.description }}</p>
+              <div v-if="!collapsed" class="min-w-0 flex-1">
+                <p class="text-sm font-semibold leading-5 text-slate-900 dark:text-slate-50">{{ item.label }}</p>
+                <p class="hidden truncate text-xs text-slate-500 dark:text-slate-400 xl:block">{{ item.description }}</p>
               </div>
             </NuxtLink>
           </nav>
