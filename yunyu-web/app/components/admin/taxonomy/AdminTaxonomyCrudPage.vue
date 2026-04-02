@@ -368,137 +368,120 @@ await loadItems()
 
 <template>
   <div class="space-y-4">
-    <section class="overflow-hidden rounded-[18px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.6))] shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.76),rgba(15,23,42,0.66))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)]">
-      <div class="flex flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
-        <div class="min-w-0">
-          <h1 class="truncate text-base font-semibold text-slate-900 dark:text-slate-50">{{ props.config.pageTitle }}</h1>
-          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">共 {{ total }} 个{{ props.config.itemLabel }}</p>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <AdminPrimaryButton :label="`新增${props.config.itemLabel}`" icon="i-lucide-plus" @click="openCreateModal" />
-        </div>
-      </div>
-    </section>
+    <AdminListPageHeader :title="props.config.pageTitle">
+      <template #actions>
+        <AdminPrimaryButton :label="`新增${props.config.itemLabel}`" icon="i-lucide-plus" @click="openCreateModal" />
+      </template>
+    </AdminListPageHeader>
 
     <div class="space-y-4">
-      <AdminFilterPanel>
+      <AdminListFilterBar>
         <template #search>
-          <AdminInput
-            v-model="searchKeyword"
-            icon="i-lucide-search"
-            class="w-full"
-            :placeholder="props.config.searchPlaceholder"
-          />
+            <AdminInput
+              v-model="searchKeyword"
+              icon="i-lucide-search"
+              class="w-full"
+              :placeholder="props.config.searchPlaceholder"
+            />
         </template>
 
-        <div class="min-w-[11rem] flex-1 sm:max-w-[calc(50%-0.375rem)] lg:max-w-[12rem]">
-          <AdminSelect
-            v-model="activeStatus"
-            :items="statusOptions"
-            class="w-full"
-            placeholder="状态"
-          />
-        </div>
+        <template #filters>
+            <div class="min-w-[9.5rem] flex-1 sm:max-w-[calc(50%-0.375rem)] lg:w-[10rem] lg:flex-none">
+              <AdminSelect
+                v-model="activeStatus"
+                :items="statusOptions"
+                class="w-full"
+                placeholder="状态"
+              />
+            </div>
+        </template>
 
-        <div class="flex w-full flex-wrap items-center gap-3 pt-1 sm:ml-auto sm:w-auto sm:pt-0">
+        <template #actions>
           <UButton
             label="重置"
             color="neutral"
-            variant="outline"
+            variant="ghost"
             class="cursor-pointer rounded-[10px]"
             @click="handleResetFilters"
           />
           <AdminPrimaryButton label="搜索" icon="i-lucide-search" @click="handleSearch" />
-        </div>
-      </AdminFilterPanel>
+        </template>
+      </AdminListFilterBar>
 
-      <AdminTableCard
-        :title="props.config.tableTitle"
-        :total="total"
-      >
-        <div v-if="isLoading" class="space-y-3">
-          <USkeleton class="h-[4.5rem] rounded-[10px]" />
-          <USkeleton class="h-[4.5rem] rounded-[10px]" />
-          <USkeleton class="h-[4.5rem] rounded-[10px]" />
-        </div>
-
-        <div v-else class="overflow-hidden rounded-[16px] border border-white/60 bg-white/64 dark:border-white/10 dark:bg-white/4">
-          <div class="hidden grid-cols-[minmax(0,1.45fr)_0.7fr_0.8fr_0.9fr_0.85fr] gap-4 border-b border-white/60 px-5 py-4 text-xs font-semibold tracking-[0.14em] text-slate-400 uppercase dark:border-white/10 dark:text-slate-500 lg:grid">
+      <AdminTableCard :title="props.config.tableTitle">
+        <AdminDataTable
+          :is-loading="isLoading"
+          :has-data="items.length > 0"
+          min-width="980px"
+          header-class="grid-cols-[minmax(0,1.45fr)_0.7fr_0.8fr_0.9fr_0.85fr]"
+          :empty-title="`没有找到匹配的${props.config.itemLabel}`"
+        >
+          <template #header>
             <p>{{ props.config.itemLabel }}</p>
             <p>状态</p>
             <p>排序/文章</p>
             <p>更新时间</p>
             <p class="text-right">操作</p>
-          </div>
+          </template>
 
-          <div class="divide-y divide-white/60 dark:divide-white/10">
-            <article
-              v-for="item in items"
-              :key="item.id"
-              class="grid gap-4 px-5 py-5 transition duration-200 hover:bg-white/60 dark:hover:bg-white/5 lg:grid-cols-[minmax(0,1.45fr)_0.7fr_0.8fr_0.9fr_0.85fr] lg:items-center"
-            >
-              <div class="min-w-0">
-                <div class="flex items-center gap-3">
-                  <div
-                    v-if="props.config.hasCoverField && item.coverUrl"
-                    class="size-12 shrink-0 overflow-hidden rounded-[8px] border border-white/60 dark:border-white/10"
-                  >
-                    <img :src="item.coverUrl" :alt="item.name" class="h-full w-full object-cover">
-                  </div>
+          <article
+            v-for="item in items"
+            :key="item.id"
+            class="grid items-center gap-4 px-4 py-3.5 transition duration-200 hover:bg-white/60 dark:hover:bg-white/5"
+            :class="'grid-cols-[minmax(0,1.45fr)_0.7fr_0.8fr_0.9fr_0.85fr]'"
+          >
+            <div class="min-w-0">
+              <div class="flex items-center gap-3">
+                <div
+                  v-if="props.config.hasCoverField && item.coverUrl"
+                  class="size-12 shrink-0 overflow-hidden rounded-[8px] border border-white/60 dark:border-white/10"
+                >
+                  <img :src="item.coverUrl" :alt="item.name" class="h-full w-full object-cover">
+                </div>
 
-                  <div class="min-w-0">
-                    <p class="truncate text-base font-semibold text-highlighted">{{ item.name }}</p>
-                    <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
-                      <span>{{ item.slug }}</span>
-                      <template v-if="item.description">
-                        <span class="text-border">·</span>
-                        <span>{{ item.description }}</span>
-                      </template>
-                    </div>
+                <div class="min-w-0">
+                  <p class="truncate text-[15px] font-semibold text-highlighted">{{ item.name }}</p>
+                  <div class="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-muted">
+                    <span>{{ item.slug }}</span>
+                    <template v-if="item.description">
+                      <span class="text-border">·</span>
+                      <span>{{ item.description }}</span>
+                    </template>
                   </div>
                 </div>
               </div>
-
-              <div>
-                <UBadge :color="resolveStatusColor(item.status)" variant="soft">
-                  {{ resolveStatusLabel(item.status) }}
-                </UBadge>
-              </div>
-
-              <div class="space-y-1 text-sm text-toned">
-                <p v-if="props.config.hasSortField">排序 {{ item.sortOrder }}</p>
-                <p>文章 {{ item.relatedPostCount }} 篇</p>
-              </div>
-
-              <div class="space-y-1 text-sm text-toned">
-                <p>{{ item.updatedTime }}</p>
-                <p class="text-xs text-muted">创建于 {{ item.createdTime }}</p>
-              </div>
-
-              <div class="flex items-center justify-start gap-2 lg:justify-end">
-                <AdminActionIconButton
-                  icon="i-lucide-pencil-line"
-                  :label="`编辑${props.config.itemLabel}`"
-                  @click="startEdit(item)"
-                />
-                <AdminActionIconButton
-                  icon="i-lucide-trash-2"
-                  :label="`删除${props.config.itemLabel}`"
-                  tone="danger"
-                  @click="openDeleteModal(item)"
-                />
-              </div>
-            </article>
-
-            <div v-if="!items.length" class="flex flex-col items-center justify-center gap-3 px-6 py-12 text-center">
-              <div class="inline-flex size-14 items-center justify-center rounded-[12px] bg-sky-50 text-sky-600 dark:bg-sky-400/12 dark:text-sky-300">
-                <UIcon name="i-lucide-search-x" class="size-5" />
-              </div>
-              <p class="text-base font-medium text-slate-900 dark:text-slate-50">没有找到匹配的{{ props.config.itemLabel }}</p>
             </div>
-          </div>
-        </div>
+
+            <div>
+              <UBadge :color="resolveStatusColor(item.status)" variant="soft">
+                {{ resolveStatusLabel(item.status) }}
+              </UBadge>
+            </div>
+
+            <div class="space-y-1 text-sm text-toned">
+              <p v-if="props.config.hasSortField">排序 {{ item.sortOrder }}</p>
+              <p>文章 {{ item.relatedPostCount }} 篇</p>
+            </div>
+
+            <div class="text-sm text-toned">
+              <p>{{ item.updatedTime }}</p>
+            </div>
+
+            <div class="flex items-center justify-end gap-2">
+              <AdminActionIconButton
+                icon="i-lucide-pencil-line"
+                :label="`编辑${props.config.itemLabel}`"
+                @click="startEdit(item)"
+              />
+              <AdminActionIconButton
+                icon="i-lucide-trash-2"
+                :label="`删除${props.config.itemLabel}`"
+                tone="danger"
+                @click="openDeleteModal(item)"
+              />
+            </div>
+          </article>
+        </AdminDataTable>
 
         <template #footer>
           <AdminPaginationBar

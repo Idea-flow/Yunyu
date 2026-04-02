@@ -315,193 +315,161 @@ await Promise.all([
 
 <template>
   <div class="space-y-4">
-    <section class="overflow-hidden rounded-[18px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.6))] shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.76),rgba(15,23,42,0.66))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)]">
-      <div class="flex flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
-        <div class="min-w-0">
-          <h1 class="truncate text-base font-semibold text-slate-900 dark:text-slate-50">文章管理</h1>
-          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">共 {{ total }} 篇文章</p>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <AdminPrimaryButton label="新增文章" icon="i-lucide-file-plus-2" @click="goToCreatePage" />
-        </div>
-      </div>
-    </section>
+    <AdminListPageHeader title="文章管理">
+      <template #actions>
+        <AdminPrimaryButton label="新增文章" icon="i-lucide-file-plus-2" @click="goToCreatePage" />
+      </template>
+    </AdminListPageHeader>
 
     <div class="space-y-4">
-        <AdminFilterPanel>
-          <template #search>
+      <AdminListFilterBar>
+        <template #search>
             <AdminInput
               v-model="searchKeyword"
               icon="i-lucide-search"
-              class="w-full"
+              class="w-full lg:flex-1"
               placeholder="搜索标题或 Slug"
             />
-          </template>
+        </template>
 
-          <div class="min-w-[11rem] flex-1 sm:max-w-[calc(50%-0.375rem)] lg:max-w-[12rem]">
-            <AdminSelect
-              v-model="activeStatus"
-              :items="statusOptions"
-              class="w-full"
-              placeholder="状态"
-            />
-          </div>
+        <template #filters>
+            <div class="min-w-[9.5rem] flex-1 sm:max-w-[calc(50%-0.375rem)] lg:w-[10rem] lg:flex-none">
+              <AdminSelect
+                v-model="activeStatus"
+                :items="statusOptions"
+                class="w-full"
+                placeholder="状态"
+              />
+            </div>
 
-          <div class="min-w-[11rem] flex-1 sm:max-w-[calc(50%-0.375rem)] lg:max-w-[12rem]">
-            <AdminSelect
-              v-model="activeCategoryId"
-              :items="categoryOptions"
-              class="w-full"
-              :disabled="isLoadingFilters"
-              placeholder="分类"
-            />
-          </div>
+            <div class="min-w-[9.5rem] flex-1 sm:max-w-[calc(50%-0.375rem)] lg:w-[10rem] lg:flex-none">
+              <AdminSelect
+                v-model="activeCategoryId"
+                :items="categoryOptions"
+                class="w-full"
+                :disabled="isLoadingFilters"
+                placeholder="分类"
+              />
+            </div>
 
-          <div class="min-w-[11rem] flex-1 sm:max-w-[calc(50%-0.375rem)] lg:max-w-[12rem]">
-            <AdminSelect
-              v-model="activeTagId"
-              :items="tagOptions"
-              class="w-full"
-              :disabled="isLoadingFilters"
-              placeholder="标签"
-            />
-          </div>
+            <div class="min-w-[9.5rem] flex-1 sm:max-w-[calc(50%-0.375rem)] lg:w-[10rem] lg:flex-none">
+              <AdminSelect
+                v-model="activeTagId"
+                :items="tagOptions"
+                class="w-full"
+                :disabled="isLoadingFilters"
+                placeholder="标签"
+              />
+            </div>
 
-          <div class="min-w-[11rem] flex-1 sm:max-w-[calc(50%-0.375rem)] lg:max-w-[12rem]">
-            <AdminSelect
-              v-model="activeTopicId"
-              :items="topicOptions"
-              class="w-full"
-              :disabled="isLoadingFilters"
-              placeholder="专题"
-            />
-          </div>
+            <div class="min-w-[9.5rem] flex-1 sm:max-w-[calc(50%-0.375rem)] lg:w-[10rem] lg:flex-none">
+              <AdminSelect
+                v-model="activeTopicId"
+                :items="topicOptions"
+                class="w-full"
+                :disabled="isLoadingFilters"
+                placeholder="专题"
+              />
+            </div>
+        </template>
 
-          <div class="flex w-full flex-wrap items-center gap-3 pt-1 sm:ml-auto sm:w-auto sm:pt-0">
-            <UButton
-              label="重置"
-              color="neutral"
-              variant="outline"
-              class="cursor-pointer rounded-[10px]"
-              @click="handleResetFilters"
-            />
-            <AdminPrimaryButton label="搜索" icon="i-lucide-search" @click="handleSearch" />
-          </div>
-        </AdminFilterPanel>
+        <template #actions>
+          <UButton
+            label="重置"
+            color="neutral"
+            variant="ghost"
+            class="cursor-pointer rounded-[10px]"
+            @click="handleResetFilters"
+          />
+          <AdminPrimaryButton label="搜索" icon="i-lucide-search" @click="handleSearch" />
+        </template>
+      </AdminListFilterBar>
 
-        <AdminTableCard
-          title="文章列表"
-          :total="total"
-        >
-          <div v-if="isLoading" class="space-y-3">
-            <USkeleton class="h-[4.5rem] rounded-[10px]" />
-            <USkeleton class="h-[4.5rem] rounded-[10px]" />
-            <USkeleton class="h-[4.5rem] rounded-[10px]" />
-          </div>
-
-          <div v-else class="overflow-hidden rounded-[16px] border border-white/60 bg-white/64 dark:border-white/10 dark:bg-white/4">
-            <div class="hidden grid-cols-[minmax(0,1.65fr)_0.75fr_1.05fr_0.8fr_0.8fr] gap-4 border-b border-white/60 px-5 py-4 text-xs font-semibold tracking-[0.14em] text-slate-400 uppercase dark:border-white/10 dark:text-slate-500 lg:grid">
+        <AdminTableCard title="文章列表">
+          <AdminDataTable
+            :is-loading="isLoading"
+            :has-data="posts.length > 0"
+            min-width="1080px"
+            header-class="grid-cols-[6rem_5rem_minmax(0,1.5fr)_0.7fr_1fr_0.8fr_0.7fr]"
+            empty-title="没有找到匹配的文章"
+            empty-icon="i-lucide-file-search"
+          >
+            <template #header>
+              <p>ID</p>
+              <p>封面</p>
               <p>文章</p>
               <p>状态</p>
               <p>内容归属</p>
               <p>最近更新</p>
               <p class="text-right">操作</p>
-            </div>
+            </template>
 
-            <div class="divide-y divide-white/60 dark:divide-white/10">
-              <article
-                v-for="post in posts"
-                :key="post.id"
-                class="grid gap-4 px-5 py-5 transition duration-200 hover:bg-white/60 dark:hover:bg-white/5 lg:grid-cols-[minmax(0,1.65fr)_0.75fr_1.05fr_0.8fr_0.8fr] lg:items-center"
-              >
-                <div class="min-w-0">
-                  <p class="truncate text-base font-semibold text-highlighted">{{ post.title }}</p>
-                  <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
-                    <span>{{ post.slug }}</span>
-                    <span class="text-border">·</span>
-                    <span>{{ post.wordCount }} 字</span>
-                    <span class="text-border">·</span>
-                    <span>{{ post.readingMinutes }} 分钟阅读</span>
-                  </div>
-                </div>
-
-                <div>
-                  <UBadge :color="resolveStatusColor(post.status)" variant="soft">
-                    {{ resolveStatusLabel(post.status) }}
-                  </UBadge>
-                </div>
-
-                <div class="min-w-0 space-y-2">
-                  <p class="truncate text-sm text-toned">
-                    {{ resolvePostMetaSummary(post) }}
-                  </p>
-                  <div class="flex flex-wrap gap-2">
-                    <UBadge
-                      v-if="post.categoryName"
-                      color="info"
-                      variant="subtle"
-                    >
-                      分类 {{ post.categoryName }}
-                    </UBadge>
-                    <UBadge
-                      v-for="tagName in (post.tagNames || []).slice(0, 2)"
-                      :key="`${post.id}-tag-${tagName}`"
-                      color="neutral"
-                      variant="subtle"
-                    >
-                      #{{ tagName }}
-                    </UBadge>
-                    <UBadge
-                      v-for="topicName in (post.topicNames || []).slice(0, 2)"
-                      :key="`${post.id}-topic-${topicName}`"
-                      color="success"
-                      variant="subtle"
-                    >
-                      专题 {{ topicName }}
-                    </UBadge>
-                  </div>
-                </div>
-
-                <div class="space-y-1 text-sm text-toned">
-                  <p>{{ post.updatedAt }}</p>
-                  <p v-if="post.publishedAt" class="text-xs text-muted">
-                    发布于 {{ post.publishedAt }}
-                  </p>
-                </div>
-
-                <div class="flex items-center justify-start gap-2 lg:justify-end">
-                  <AdminActionIconButton
-                    icon="i-lucide-pencil-line"
-                    label="编辑文章"
-                    @click="goToEditPage(post)"
-                  />
-                  <AdminActionIconButton
-                    icon="i-lucide-trash-2"
-                    label="删除文章"
-                    tone="danger"
-                    @click="openDeleteModal(post)"
-                  />
-                </div>
-
-                <div class="flex flex-wrap items-center gap-2 lg:col-span-5">
-                  <UBadge :color="post.coverReady ? 'success' : 'warning'" variant="subtle">
-                    {{ post.coverReady ? '封面已准备' : '缺少封面' }}
-                  </UBadge>
-                  <UBadge :color="post.summaryReady ? 'success' : 'warning'" variant="subtle">
-                    {{ post.summaryReady ? '摘要完整' : '缺少摘要' }}
-                  </UBadge>
-                </div>
-              </article>
-
-              <div v-if="!posts.length" class="flex flex-col items-center justify-center gap-3 px-6 py-12 text-center">
-                <div class="inline-flex size-14 items-center justify-center rounded-[12px] bg-sky-50 text-sky-600 dark:bg-sky-400/12 dark:text-sky-300">
-                  <UIcon name="i-lucide-file-search" class="size-5" />
-                </div>
-                <p class="text-base font-medium text-slate-900 dark:text-slate-50">没有找到匹配的文章</p>
+            <article
+              v-for="post in posts"
+              :key="post.id"
+              class="grid items-center gap-4 px-4 py-3.5 transition duration-200 hover:bg-white/60 dark:hover:bg-white/5"
+              :class="'grid-cols-[6rem_5rem_minmax(0,1.5fr)_0.7fr_1fr_0.8fr_0.7fr]'"
+            >
+              <div class="min-w-0">
+                <p class="truncate text-sm font-medium text-toned">#{{ post.id }}</p>
               </div>
-            </div>
-          </div>
+
+              <div class="flex items-center">
+                <div class="flex h-12 w-18 items-center justify-center overflow-hidden rounded-[12px] border border-white/55 bg-slate-100/80 dark:border-white/10 dark:bg-slate-900/70">
+                  <img
+                    v-if="post.coverUrl"
+                    :src="post.coverUrl"
+                    :alt="post.title"
+                    class="h-full w-full object-cover"
+                  >
+                  <UIcon
+                    v-else
+                    name="i-lucide-image"
+                    class="size-4 text-slate-400 dark:text-slate-500"
+                  />
+                </div>
+              </div>
+
+              <div class="min-w-0">
+                <p class="truncate text-[15px] font-semibold text-highlighted">{{ post.title }}</p>
+                <div class="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-muted">
+                  <span>{{ post.slug }}</span>
+                  <span class="text-border">·</span>
+                  <span>{{ post.wordCount }} 字</span>
+                </div>
+              </div>
+
+              <div>
+                <UBadge :color="resolveStatusColor(post.status)" variant="soft">
+                  {{ resolveStatusLabel(post.status) }}
+                </UBadge>
+              </div>
+
+              <div class="min-w-0">
+                <p class="truncate text-sm text-toned">
+                  {{ resolvePostMetaSummary(post) }}
+                </p>
+              </div>
+
+              <div class="text-sm text-toned">
+                <p>{{ post.updatedAt }}</p>
+              </div>
+
+              <div class="flex items-center justify-end gap-2">
+                <AdminActionIconButton
+                  icon="i-lucide-pencil-line"
+                  label="编辑文章"
+                  @click="goToEditPage(post)"
+                />
+                <AdminActionIconButton
+                  icon="i-lucide-trash-2"
+                  label="删除文章"
+                  tone="danger"
+                  @click="openDeleteModal(post)"
+                />
+              </div>
+            </article>
+          </AdminDataTable>
 
           <template #footer>
             <AdminPaginationBar

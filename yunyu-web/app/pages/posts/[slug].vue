@@ -17,6 +17,7 @@ const colorMode = useColorMode()
 const activeTocId = ref('')
 const readingProgress = ref(0)
 const articleContentRef = ref<HTMLElement | null>(null)
+const tocScrollContainerRef = ref<HTMLElement | null>(null)
 let tocObserver: IntersectionObserver | null = null
 
 const { data, error } = await useAsyncData(`site-post-${route.params.slug}`, async () => {
@@ -36,6 +37,7 @@ const post = computed(() => data.value)
  * 计算文章详情首屏展示标签。
  * 作用：控制文章头部标签数量，避免首屏信息区过于拥挤。
  */
+const postTagItems = computed(() => post.value?.tagItems || [])
 const heroTags = computed(() => post.value?.tagItems?.slice(0, 4) || [])
 const articleCodeTheme = computed(() => colorMode.value === 'dark' ? 'github-dark' : 'github-light')
 const relatedLeadPost = computed(() => post.value?.relatedPosts?.[0] || null)
@@ -63,6 +65,15 @@ const tocItems = computed<ArticleTocItem[]>(() => {
 watch(tocItems, value => {
   activeTocId.value = value[0]?.id || ''
 }, { immediate: true })
+
+watch(activeTocId, async () => {
+  if (!import.meta.client) {
+    return
+  }
+
+  await nextTick()
+  syncActiveTocIntoView()
+})
 
 watch(
   () => [post.value?.slug, tocItems.value.length],
@@ -114,6 +125,40 @@ function handleTocSelect(item: ArticleTocItem) {
 function cleanupTocObserver() {
   tocObserver?.disconnect()
   tocObserver = null
+}
+
+/**
+ * 同步目录当前项到可视区域。
+ * 作用：当正文滚动导致当前章节变化时，让目录容器自动平滑跟随，
+ * 避免激活项跑出目录可视范围后用户失去定位。
+ */
+function syncActiveTocIntoView() {
+  if (!import.meta.client || !tocScrollContainerRef.value || !activeTocId.value) {
+    return
+  }
+
+  const activeElement = tocScrollContainerRef.value.querySelector<HTMLElement>(`[data-toc-id="${CSS.escape(activeTocId.value)}"]`)
+
+  if (!activeElement) {
+    return
+  }
+
+  const containerRect = tocScrollContainerRef.value.getBoundingClientRect()
+  const activeRect = activeElement.getBoundingClientRect()
+  const padding = 20
+  const isAboveViewport = activeRect.top < containerRect.top + padding
+  const isBelowViewport = activeRect.bottom > containerRect.bottom - padding
+
+  if (!isAboveViewport && !isBelowViewport) {
+    return
+  }
+
+  const targetScrollTop = activeElement.offsetTop - tocScrollContainerRef.value.clientHeight / 2 + activeElement.clientHeight / 2
+
+  tocScrollContainerRef.value.scrollTo({
+    top: Math.max(targetScrollTop, 0),
+    behavior: 'smooth'
+  })
 }
 
 /**
@@ -420,40 +465,66 @@ onBeforeUnmount(() => {
         </div>
 
         <aside class="space-y-5 xl:sticky xl:top-28 xl:self-start">
-          <div class="rounded-[30px] border border-white/55 bg-white/82 p-5 shadow-[0_24px_76px_-50px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/68">
-            <div class="flex items-center justify-between gap-3 border-b border-slate-200/60 pb-4 dark:border-white/10">
+          <div class="overflow-hidden rounded-[30px] border border-white/55 bg-white/82 p-5 shadow-[0_24px_76px_-50px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/68">
+            <div class="flex items-start justify-between gap-3 border-b border-slate-200/60 pb-4 dark:border-white/10">
               <div>
-                <p class="text-[0.72rem] font-semibold uppercase tracking-[0.34em] text-orange-500 dark:text-orange-300">
+                <p class="text-[0.68rem] font-semibold uppercase tracking-[0.3em] text-orange-500 dark:text-orange-300">
                   目录
                 </p>
-                <h2 class="mt-2 text-[1.2rem] font-semibold tracking-[-0.03em] [font-family:var(--font-display)] text-slate-950 dark:text-slate-50">文章结构</h2>
+                <h2 class="mt-2 text-[1.12rem] font-semibold tracking-[-0.03em] [font-family:var(--font-display)] text-slate-950 dark:text-slate-50">阅读导航</h2>
+                <p class="mt-2 text-[0.82rem] leading-6 text-slate-500 dark:text-slate-400">
+                  {{ tocItems.length }} 个章节，跟着当前阅读位置一起移动。
+                </p>
               </div>
-              <div class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200/75 bg-white/80 text-sky-600 dark:border-white/10 dark:bg-white/5 dark:text-sky-200">
+              <div class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200/75 bg-white/80 text-sky-600 shadow-[0_14px_30px_-24px_rgba(14,165,233,0.35)] dark:border-white/10 dark:bg-white/5 dark:text-sky-200">
                 <UIcon name="i-lucide-book-marked" class="size-5" />
               </div>
             </div>
 
-            <div class="mt-4 max-h-[32rem] overflow-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.3)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/60 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/60">
+            <div class="mt-4 rounded-[1.4rem] bg-slate-50/74 px-2 py-2 dark:bg-slate-900/50">
+              <div class="mb-3 flex items-center gap-2 px-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                <span class="inline-flex h-2 w-2 rounded-full bg-sky-500/80 dark:bg-sky-300/80" />
+                当前章节会高亮
+              </div>
+
+              <div ref="tocScrollContainerRef" class="max-h-[32rem] overflow-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.3)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/60 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/60">
               <ArticleTocTree :items="tocItems" :active-id="activeTocId" @select="handleTocSelect" />
+              </div>
             </div>
           </div>
 
-          <div class="rounded-[30px] border border-white/55 bg-white/82 p-5 shadow-[0_24px_76px_-50px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/68">
-            <p class="text-xs font-semibold uppercase tracking-[0.34em] text-sky-600 dark:text-sky-300">
-              内容标签
-            </p>
-            <p class="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
-              从标签继续走，可以更快回到相近主题与相近语境的内容里。
-            </p>
-            <div class="mt-4 flex flex-wrap gap-2">
-              <NuxtLink
-                v-for="tag in post.tagItems"
-                :key="`${post.slug}-${tag.slug}`"
-                :to="`/tags/${tag.slug}`"
-                class="rounded-full border border-slate-200/80 bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-sky-200 hover:bg-sky-50/70 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:border-sky-800 dark:hover:bg-slate-900 dark:hover:text-sky-200"
-              >
-                #{{ tag.name }}
-              </NuxtLink>
+          <div class="overflow-hidden rounded-[30px] border border-white/55 bg-white/82 p-5 shadow-[0_24px_76px_-50px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/68">
+            <div class="flex items-start justify-between gap-3 border-b border-slate-200/60 pb-4 dark:border-white/10">
+              <div>
+                <p class="text-[0.68rem] font-semibold uppercase tracking-[0.3em] text-sky-600 dark:text-sky-300">
+                  标签
+                </p>
+                <h2 class="mt-2 text-[1.12rem] font-semibold tracking-[-0.03em] [font-family:var(--font-display)] text-slate-950 dark:text-slate-50">内容线索</h2>
+                <p class="mt-2 text-[0.82rem] leading-6 text-slate-500 dark:text-slate-400">
+                  {{ postTagItems.length }} 个标签，顺着相近语境继续读下去。
+                </p>
+              </div>
+              <div class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200/75 bg-white/80 text-sky-600 shadow-[0_14px_30px_-24px_rgba(14,165,233,0.3)] dark:border-white/10 dark:bg-white/5 dark:text-sky-200">
+                <UIcon name="i-lucide-hash" class="size-5" />
+              </div>
+            </div>
+
+            <div class="mt-4 rounded-[1.4rem] bg-slate-50/74 px-3 py-3 dark:bg-slate-900/50">
+              <div class="mb-3 flex items-center gap-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                <span class="inline-flex h-2 w-2 rounded-full bg-sky-500/80 dark:bg-sky-300/80" />
+                标签用于延展阅读
+              </div>
+
+              <div class="flex flex-wrap gap-2">
+                <NuxtLink
+                  v-for="tag in postTagItems"
+                  :key="`${post.slug}-${tag.slug}`"
+                  :to="`/tags/${tag.slug}`"
+                  class="rounded-full border border-slate-200/85 bg-white/92 px-3 py-1.5 text-[0.76rem] font-medium tracking-[0.01em] text-slate-600 transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/70 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900/84 dark:text-slate-300 dark:hover:border-sky-800 dark:hover:bg-slate-900 dark:hover:text-sky-200"
+                >
+                  #{{ tag.name }}
+                </NuxtLink>
+              </div>
             </div>
           </div>
         </aside>

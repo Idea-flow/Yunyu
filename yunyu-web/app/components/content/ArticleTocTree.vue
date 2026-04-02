@@ -27,7 +27,7 @@ const emit = defineEmits<{
  */
 function getIndentStyle(level: number) {
   return {
-    paddingLeft: `${Math.max(0, level - 1) * 1.2}rem`
+    paddingLeft: `${Math.max(0, level - 1) * 0.95}rem`
   }
 }
 
@@ -40,8 +40,8 @@ function getIndentStyle(level: number) {
  */
 function getItemClass(item: ArticleTocItem) {
   return props.activeId === item.id
-    ? 'bg-[linear-gradient(90deg,rgba(14,165,233,0.12),rgba(255,255,255,0.92))] text-sky-800 ring-1 ring-sky-200/80 shadow-[0_18px_40px_-32px_rgba(14,165,233,0.45)] dark:bg-[linear-gradient(90deg,rgba(56,189,248,0.16),rgba(15,23,42,0.28))] dark:text-sky-100 dark:ring-sky-400/20'
-    : 'text-slate-600 hover:bg-slate-50/88 hover:text-slate-900 hover:translate-x-0.5 dark:text-slate-300 dark:hover:bg-slate-900/50 dark:hover:text-slate-50'
+    ? 'bg-[linear-gradient(90deg,rgba(14,165,233,0.08),rgba(255,255,255,0.96))] text-slate-950 ring-1 ring-sky-200/75 shadow-[0_18px_36px_-30px_rgba(14,165,233,0.32)] dark:bg-[linear-gradient(90deg,rgba(56,189,248,0.12),rgba(15,23,42,0.2))] dark:text-sky-50 dark:ring-sky-400/20'
+    : 'text-slate-500 hover:bg-slate-50/92 hover:text-slate-900 hover:translate-x-0.5 dark:text-slate-400 dark:hover:bg-slate-900/45 dark:hover:text-slate-50'
 }
 
 /**
@@ -57,10 +57,10 @@ function getDotClass(item: ArticleTocItem) {
   }
 
   if (item.level <= 2) {
-    return 'bg-slate-400 dark:bg-slate-500'
+    return 'bg-slate-300 dark:bg-slate-600'
   }
 
-  return 'bg-slate-300 dark:bg-slate-600'
+  return 'bg-slate-200 dark:bg-slate-700'
 }
 
 /**
@@ -72,8 +72,8 @@ function getDotClass(item: ArticleTocItem) {
  */
 function getTextClass(item: ArticleTocItem) {
   return item.level <= 2
-    ? 'text-[0.92rem] font-semibold leading-6 tracking-[-0.02em]'
-    : 'text-[0.84rem] font-medium leading-6 text-slate-500 dark:text-slate-400'
+    ? 'text-[0.9rem] font-semibold leading-6 tracking-[-0.02em]'
+    : 'text-[0.82rem] font-medium leading-[1.7] text-slate-400 dark:text-slate-500'
 }
 
 /**
@@ -88,25 +88,26 @@ function handleSelect(item: ArticleTocItem) {
 </script>
 
 <template>
-  <div class="space-y-1">
+  <div class="relative space-y-1 before:absolute before:bottom-2 before:left-[0.34rem] before:top-2 before:w-px before:bg-gradient-to-b before:from-slate-200 before:via-slate-200/80 before:to-transparent dark:before:from-slate-700 dark:before:via-slate-700/80">
     <button
       v-for="item in props.items"
       :key="item.id"
       type="button"
-      class="group relative flex w-full items-start gap-3 overflow-hidden rounded-[1.15rem] px-3 py-2.5 text-left transition duration-300 ease-out"
+      :data-toc-id="item.id"
+      class="group relative flex w-full items-start gap-3 overflow-hidden rounded-[1.05rem] px-3 py-2 text-left transition duration-300 ease-out"
       :class="getItemClass(item)"
       :style="getIndentStyle(item.level)"
       @click="handleSelect(item)"
     >
       <span
-        class="absolute left-0 top-1/2 h-0 w-px -translate-y-1/2 rounded-full bg-sky-500/55 transition-all duration-300 group-hover:h-8"
-        :class="props.activeId === item.id ? 'h-9 bg-[linear-gradient(180deg,rgba(14,165,233,0.18),rgba(14,165,233,0.78),rgba(249,115,22,0.42))] dark:bg-[linear-gradient(180deg,rgba(125,211,252,0.18),rgba(125,211,252,0.8),rgba(251,146,60,0.38))]' : 'dark:bg-sky-400/35'"
+        class="absolute left-0 top-1/2 h-0 w-[2px] -translate-y-1/2 rounded-full bg-sky-500/55 transition-all duration-300 group-hover:h-7"
+        :class="props.activeId === item.id ? 'h-8 bg-[linear-gradient(180deg,rgba(14,165,233,0.18),rgba(14,165,233,0.82),rgba(249,115,22,0.34))] dark:bg-[linear-gradient(180deg,rgba(125,211,252,0.18),rgba(125,211,252,0.84),rgba(251,146,60,0.24))]' : 'dark:bg-sky-400/35'"
       />
       <span
-        class="mt-1.5 inline-flex h-2.5 w-2.5 shrink-0 rounded-full transition duration-300"
+        class="relative z-10 mt-1.5 inline-flex h-2 w-2 shrink-0 rounded-full transition duration-300"
         :class="getDotClass(item)"
       />
-      <span class="min-w-0 transition duration-300 group-hover:translate-x-0.5" :class="[getTextClass(item), props.activeId === item.id ? 'translate-x-0.5' : '']">
+      <span class="min-w-0 pr-2 transition duration-300 group-hover:translate-x-0.5" :class="[getTextClass(item), props.activeId === item.id ? 'translate-x-0.5' : '']">
         {{ item.text }}
       </span>
     </button>

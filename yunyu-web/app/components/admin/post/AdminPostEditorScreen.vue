@@ -60,23 +60,19 @@ const isEditing = computed(() => props.mode === 'edit')
  * 计算页面标题。
  * 让新增和编辑场景在视觉层面有明确区分。
  */
-const pageTitle = computed(() => isEditing.value ? '修改文章' : '新增文章')
+const pageTitle = computed(() => isEditing.value ? '编辑文章' : '新增文章')
 
 /**
- * 计算状态提示文案。
- * 用于在页面右侧摘要卡片展示当前内容的编辑状态。
+ * 计算草稿按钮文案。
+ * 作用：在新增与编辑场景下统一顶部次操作的命名节奏。
  */
-const statusHint = computed(() => {
-  if (formState.status === 'PUBLISHED') {
-    return '当前将以已发布状态保存'
-  }
+const draftActionLabel = computed(() => isEditing.value ? '保存草稿' : '存为草稿')
 
-  if (formState.status === 'OFFLINE') {
-    return '当前将以下线状态保存'
-  }
-
-  return '当前会保存为草稿'
-})
+/**
+ * 计算主按钮文案。
+ * 作用：让顶部主操作在编辑模式下更聚焦于保存当前内容，而不是额外强调状态提示。
+ */
+const primaryActionLabel = computed(() => isEditing.value ? '保存更新' : '发布文章')
 
 /**
  * 计算正文字符数。
@@ -348,35 +344,19 @@ await Promise.all([
 
         <div class="flex flex-wrap items-center gap-2">
           <UButton
-            label="返回列表"
-            color="neutral"
-            variant="ghost"
-            class="cursor-pointer rounded-[10px]"
-            @click="goBackToList"
-          />
-          <UButton
-            label="保存草稿"
+            :label="draftActionLabel"
             color="neutral"
             variant="outline"
             class="cursor-pointer rounded-[10px]"
             :loading="isSubmitting && formState.status === 'DRAFT'"
             @click="handleSubmitWithStatus('DRAFT')"
           />
-          <UButton
-            v-if="isEditing"
-            label="下线保存"
-            color="warning"
-            variant="soft"
-            class="cursor-pointer rounded-[10px]"
-            :loading="isSubmitting && formState.status === 'OFFLINE'"
-            @click="handleSubmitWithStatus('OFFLINE')"
-          />
           <AdminPrimaryButton
-            :label="formState.status === 'PUBLISHED' ? '更新已发布内容' : '发布文章'"
+            :label="primaryActionLabel"
             loading-label="保存中..."
             :loading="isSubmitting"
             icon="i-lucide-send"
-            @click="handleSubmitWithStatus('PUBLISHED')"
+            @click="handleSubmit"
           />
         </div>
       </div>
