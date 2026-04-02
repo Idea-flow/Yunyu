@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { CSSProperties } from 'vue'
 import type {
   AdminTaxonomyForm,
   AdminTaxonomyItem,
@@ -20,6 +21,7 @@ interface AdminTaxonomyPageConfig {
   descriptionLabel: string
   hasCoverField: boolean
   hasSortField: boolean
+  tableMinWidth?: string
 }
 
 /**
@@ -108,6 +110,67 @@ const formModalIcon = computed(() => {
  * 作用：让弹窗内部表单区和后台其他编辑工作区保持同一套轻悬浮面板节奏。
  */
 const modalSurfaceClass = 'rounded-[12px] border border-white/60 bg-white/58 p-4 shadow-[0_12px_22px_-22px_rgba(15,23,42,0.14)] backdrop-blur-md dark:border-white/10 dark:bg-white/[0.04]'
+
+/**
+ * 判断当前列表是否需要展示封面列。
+ * 作用：让分类、专题可以展示独立封面列，标签则维持更纯的纯文本列表。
+ */
+const showCoverColumn = computed(() => props.config.hasCoverField)
+
+/**
+ * 判断当前列表是否需要展示排序列。
+ * 作用：为支持排序的内容编排模块单独展示排序列，避免和文章数量挤在同一列。
+ */
+const showSortColumn = computed(() => props.config.hasSortField)
+
+/**
+ * 计算内容编排列表栅格模板。
+ * 作用：根据是否展示封面列与排序列，生成稳定的表头与数据行列宽结构，
+ * 避免动态 Tailwind 类名在构建时被裁剪后导致列表错位。
+ */
+const tableGridTemplate = computed(() => {
+  if (showCoverColumn.value) {
+    return showSortColumn.value
+      ? '6rem 5rem minmax(0,1.25fr) 0.7fr 0.7fr 0.7fr 0.9fr 5.5rem'
+      : '6rem 5rem minmax(0,1.45fr) 0.7fr 0.8fr 0.9fr 5.5rem'
+  }
+
+  return showSortColumn.value
+    ? '6rem minmax(0,1.45fr) 0.7fr 0.7fr 0.7fr 0.9fr 5.5rem'
+    : '6rem minmax(0,1.6fr) 0.8fr 0.8fr 0.9fr 5.5rem'
+})
+
+/**
+ * 计算内容编排列表头部样式。
+ * 作用：让表头与数据行共享同一套列宽模板。
+ */
+const tableHeaderStyle = computed<CSSProperties>(() => ({
+  gridTemplateColumns: tableGridTemplate.value
+}))
+
+/**
+ * 计算内容编排列表行样式。
+ * 作用：与表头保持一致，确保不同模块的列结构和数据对齐完全统一。
+ */
+const tableRowStyle = computed<CSSProperties>(() => ({
+  gridTemplateColumns: tableGridTemplate.value
+}))
+
+/**
+ * 计算内容编排列表的最小宽度。
+ * 作用：当列数较多时开启横向滑动，避免内容被强行压缩。
+ */
+const tableMinWidth = computed(() => {
+  if (props.config.tableMinWidth) {
+    return props.config.tableMinWidth
+  }
+
+  if (showCoverColumn.value) {
+    return showSortColumn.value ? '1160px' : '1080px'
+  }
+
+  return showSortColumn.value ? '1100px' : '980px'
+})
 
 /**
  * 加载当前模块列表。
@@ -412,14 +475,18 @@ await loadItems()
         <AdminDataTable
           :is-loading="isLoading"
           :has-data="items.length > 0"
-          min-width="980px"
-          header-class="grid-cols-[minmax(0,1.45fr)_0.7fr_0.8fr_0.9fr_0.85fr]"
+          :min-width="tableMinWidth"
+          header-class=""
+          :header-style="tableHeaderStyle"
           :empty-title="`没有找到匹配的${props.config.itemLabel}`"
         >
           <template #header>
+            <p>ID</p>
+            <p v-if="showCoverColumn">封面</p>
             <p>{{ props.config.itemLabel }}</p>
             <p>状态</p>
-            <p>排序/文章</p>
+            <p v-if="showSortColumn">排序</p>
+            <p>文章</p>
             <p>更新时间</p>
             <p class="text-right">操作</p>
           </template>
@@ -428,28 +495,37 @@ await loadItems()
             v-for="item in items"
             :key="item.id"
             class="grid items-center gap-4 px-4 py-3.5 transition duration-200 hover:bg-white/60 dark:hover:bg-white/5"
-            :class="'grid-cols-[minmax(0,1.45fr)_0.7fr_0.8fr_0.9fr_0.85fr]'"
+            :style="tableRowStyle"
           >
             <div class="min-w-0">
-              <div class="flex items-center gap-3">
-                <div
-                  v-if="props.config.hasCoverField && item.coverUrl"
-                  class="size-12 shrink-0 overflow-hidden rounded-[8px] border border-white/60 dark:border-white/10"
-                >
-                  <img :src="item.coverUrl" :alt="item.name" class="h-full w-full object-cover">
-                </div>
+              <p class="truncate text-sm font-medium text-toned">{{ item.id }}</p>
+            </div>
 
-                <div class="min-w-0">
-                  <p class="truncate text-[15px] font-semibold text-highlighted">{{ item.name }}</p>
-                  <div class="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-muted">
-                    <span>ID {{ item.id }}</span>
+            <div v-if="showCoverColumn" class="flex items-center">
+              <div class="flex h-12 w-18 items-center justify-center overflow-hidden rounded-[12px] border border-white/55 bg-slate-100/80 dark:border-white/10 dark:bg-slate-900/70">
+                <img
+                  v-if="item.coverUrl"
+                  :src="item.coverUrl"
+                  :alt="item.name"
+                  class="h-full w-full object-cover"
+                >
+                <UIcon
+                  v-else
+                  name="i-lucide-image"
+                  class="size-4 text-slate-400 dark:text-slate-500"
+                />
+              </div>
+            </div>
+
+            <div class="min-w-0">
+              <div class="min-w-0">
+                <p class="truncate text-[15px] font-semibold text-highlighted">{{ item.name }}</p>
+                <div class="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-muted">
+                  <span>{{ item.slug }}</span>
+                  <template v-if="item.description">
                     <span class="text-border">·</span>
-                    <span>{{ item.slug }}</span>
-                    <template v-if="item.description">
-                      <span class="text-border">·</span>
-                      <span>{{ item.description }}</span>
-                    </template>
-                  </div>
+                    <span>{{ item.description }}</span>
+                  </template>
                 </div>
               </div>
             </div>
@@ -460,9 +536,12 @@ await loadItems()
               </UBadge>
             </div>
 
-            <div class="space-y-1 text-sm text-toned">
-              <p v-if="props.config.hasSortField">排序 {{ item.sortOrder }}</p>
-              <p>文章 {{ item.relatedPostCount }} 篇</p>
+            <div v-if="showSortColumn" class="text-sm text-toned">
+              <p>{{ item.sortOrder }}</p>
+            </div>
+
+            <div class="text-sm text-toned">
+              <p>{{ item.relatedPostCount }} 篇</p>
             </div>
 
             <div class="text-sm text-toned">

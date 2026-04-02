@@ -404,15 +404,15 @@ await Promise.all([
               <p class="text-right">操作</p>
             </template>
 
-            <article
-              v-for="post in posts"
-              :key="post.id"
-              class="grid items-center gap-4 px-4 py-3.5 transition duration-200 hover:bg-white/60 dark:hover:bg-white/5"
-              :class="'grid-cols-[6rem_5rem_minmax(0,1.5fr)_0.7fr_1fr_0.8fr_0.7fr]'"
-            >
-              <div class="min-w-0">
-                <p class="truncate text-sm font-medium text-toned">#{{ post.id }}</p>
-              </div>
+          <article
+            v-for="post in posts"
+            :key="post.id"
+            class="grid items-center gap-4 px-4 py-3.5 transition duration-200 hover:bg-white/60 dark:hover:bg-white/5"
+            :class="'grid-cols-[6rem_5rem_minmax(0,1.5fr)_0.7fr_1fr_0.8fr_0.7fr]'"
+          >
+            <div class="min-w-0">
+                <p class="truncate text-sm font-medium text-toned">{{ post.id }}</p>
+            </div>
 
               <div class="flex items-center">
                 <div class="flex h-12 w-18 items-center justify-center overflow-hidden rounded-[12px] border border-white/55 bg-slate-100/80 dark:border-white/10 dark:bg-slate-900/70">

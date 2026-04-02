@@ -4,6 +4,7 @@ import com.ideaflow.yunyu.security.jwt.JsonAccessDeniedHandler;
 import com.ideaflow.yunyu.security.jwt.JsonAuthenticationEntryPoint;
 import com.ideaflow.yunyu.security.jwt.JwtAuthenticationFilter;
 import com.ideaflow.yunyu.security.jwt.JwtProperties;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -73,6 +74,7 @@ public class SecurityConfiguration {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/site/posts/*/comments").authenticated()
                         .requestMatchers("/api/auth/me").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("SUPER_ADMIN")
                         .anyRequest().permitAll())

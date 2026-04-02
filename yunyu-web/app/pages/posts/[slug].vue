@@ -3,7 +3,6 @@ import { nextTick, onBeforeUnmount, onMounted } from 'vue'
 import type { ArticleTocItem } from '../../types/post'
 import ArticleContentRenderer from '../../components/content/ArticleContentRenderer.vue'
 import ArticleTocTree from '../../components/content/ArticleTocTree.vue'
-import YunyuHero from '~/components/common/YunyuHero.vue'
 import YunyuImage from '~/components/common/YunyuImage.vue'
 import YunyuSectionTitle from '~/components/common/YunyuSectionTitle.vue'
 
@@ -249,121 +248,81 @@ onBeforeUnmount(() => {
       />
     </div>
 
-    <YunyuHero
-      v-if="post"
-      :src="post.coverUrl"
-      :alt="post.title"
-      min-height-class="min-h-[60svh] sm:min-h-[66svh] lg:min-h-[72svh]"
-      content-padding-class="px-5 pb-14 sm:px-8 sm:pb-16 lg:px-10 lg:pb-20"
-    >
-      <div class="flex flex-wrap gap-2">
-        <NuxtLink :to="`/categories/${post.categorySlug}`">
-          <UBadge color="neutral" variant="soft" size="lg" class="backdrop-blur-md">
-            {{ post.categoryName }}
-          </UBadge>
-        </NuxtLink>
-        <NuxtLink
-          v-for="topic in post.topicItems"
-          :key="`${post.slug}-${topic.slug}`"
-          :to="`/topics/${topic.slug}`"
-        >
-          <UBadge color="primary" variant="soft" size="lg" class="backdrop-blur-md">
-            {{ topic.name }}
-          </UBadge>
-        </NuxtLink>
+    <section v-if="post" class="relative overflow-hidden">
+      <div class="relative h-[34svh] min-h-[280px] w-full sm:h-[38svh] lg:h-[42svh]">
+        <div class="absolute inset-0">
+          <YunyuImage
+            :src="post.coverUrl"
+            :alt="post.title"
+            wrapper-class="absolute inset-0 h-full w-full"
+            image-class="h-full w-full"
+            rounded-class="rounded-none"
+          />
+          <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.16)_0%,rgba(15,23,42,0.12)_18%,rgba(15,23,42,0.18)_40%,rgba(15,23,42,0.52)_100%)] dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.08)_0%,rgba(2,6,23,0.14)_18%,rgba(2,6,23,0.22)_40%,rgba(2,6,23,0.62)_100%)]" />
+        </div>
+        <div class="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(244,248,255,0.9)_100%)] dark:bg-[linear-gradient(180deg,rgba(2,6,23,0)_0%,rgba(2,6,23,0.96)_100%)]" />
       </div>
+    </section>
 
-      <h1 class="mt-5 line-clamp-2 text-[clamp(2.55rem,1.85rem+2.5vw,4.8rem)] font-semibold leading-[0.98] tracking-[-0.045em] [font-family:var(--font-display)] [text-wrap:balance] text-white drop-shadow-lg">
-        {{ post.title }}
-      </h1>
-
-      <p class="mt-5 max-w-[42rem] text-[1.02rem] leading-8 tracking-[-0.01em] text-white/86 drop-shadow-md sm:text-[1.08rem] sm:leading-9">
-        {{ post.summary }}
-      </p>
-
-      <div class="mt-7 inline-flex max-w-full flex-wrap items-center gap-x-5 gap-y-3 rounded-[1.75rem] border border-white/14 bg-black/15 px-5 py-4 text-white/90 backdrop-blur-md">
-        <div class="flex items-center gap-2.5">
-          <span class="inline-flex size-5 items-center justify-center">
-            <svg class="size-5" fill="url(#yunyuAuthorGradient)" viewBox="0 0 24 24" aria-hidden="true">
-              <defs>
-                <linearGradient id="yunyuAuthorGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" style="stop-color:#fb7185" />
-                  <stop offset="100%" style="stop-color:#fb923c" />
-                </linearGradient>
-              </defs>
-              <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </span>
-          <div>
-            <p class="text-[0.68rem] uppercase tracking-[0.18em] text-white/55">作者</p>
-            <span class="text-sm drop-shadow-md">{{ post.authorName }}</span>
-          </div>
-        </div>
-
-        <div class="hidden h-8 w-px bg-white/12 sm:block" />
-
-        <div class="flex items-center gap-2.5">
-          <UIcon name="i-lucide-clock-3" class="size-5 text-sky-300" />
-          <div>
-            <p class="text-[0.68rem] uppercase tracking-[0.18em] text-white/55">发布</p>
-            <span class="text-sm drop-shadow-md">{{ post.publishedAt }}</span>
-          </div>
-        </div>
-
-        <div class="hidden h-8 w-px bg-white/12 sm:block" />
-
-        <div class="flex items-center gap-2.5">
-          <UIcon name="i-lucide-book-open" class="size-5 text-orange-300" />
-          <div>
-            <p class="text-[0.68rem] uppercase tracking-[0.18em] text-white/55">阅读</p>
-            <span class="text-sm drop-shadow-md">{{ post.readingMinutes }} 分钟阅读</span>
-          </div>
-        </div>
-
-        <div class="hidden h-8 w-px bg-white/12 sm:block" />
-
-        <div class="flex items-center gap-2.5">
-          <UIcon name="i-lucide-eye" class="size-5 text-emerald-300" />
-          <div>
-            <p class="text-[0.68rem] uppercase tracking-[0.18em] text-white/55">热度</p>
-            <span class="text-sm drop-shadow-md">{{ post.viewCount }} 次浏览</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="mt-5 flex flex-wrap gap-2">
-        <NuxtLink
-          v-for="tag in heroTags"
-          :key="`${post.slug}-${tag.slug}`"
-          :to="`/tags/${tag.slug}`"
-          class="rounded-full border border-white/16 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/88 backdrop-blur-sm transition hover:bg-white/18"
-        >
-          #{{ tag.name }}
-        </NuxtLink>
-      </div>
-    </YunyuHero>
-
-    <section v-if="post" class="relative z-10 mx-auto -mt-8 max-w-[1440px] px-5 pb-16 sm:-mt-10 sm:px-8 lg:-mt-14 lg:px-10 lg:pb-24">
+    <section v-if="post" class="relative z-10 mx-auto -mt-10 max-w-[1440px] px-5 pb-16 sm:-mt-12 sm:px-8 lg:-mt-16 lg:px-10 lg:pb-24">
       <div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div ref="articleContentRef" class="space-y-8">
-          <section class="overflow-hidden rounded-[34px] border border-white/60 bg-white/80 px-6 py-6 shadow-[0_34px_94px_-56px_rgba(15,23,42,0.32)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/68 sm:px-8">
-            <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-end">
-              <div>
-                <p class="mt-4 text-[clamp(1.6rem,1.35rem+0.65vw,2.05rem)] font-semibold leading-[1.08] tracking-[-0.035em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 dark:text-slate-50">
-                  这篇文章适合以更慢一点的节奏阅读，把重点留给正文本身。
-                </p>
-              </div>
+          <section class="overflow-hidden rounded-[34px] border border-white/60 bg-white/88 px-6 py-6 shadow-[0_34px_94px_-56px_rgba(15,23,42,0.32)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/76 sm:px-8 sm:py-7">
+            <div class="flex flex-wrap gap-2">
+              <NuxtLink :to="`/categories/${post.categorySlug}`">
+                <UBadge color="neutral" variant="soft" size="lg">
+                  {{ post.categoryName }}
+                </UBadge>
+              </NuxtLink>
+              <NuxtLink
+                v-for="topic in post.topicItems"
+                :key="`${post.slug}-${topic.slug}`"
+                :to="`/topics/${topic.slug}`"
+              >
+                <UBadge color="primary" variant="soft" size="lg">
+                  {{ topic.name }}
+                </UBadge>
+              </NuxtLink>
+            </div>
 
-              <div class="grid grid-cols-2 gap-3 lg:grid-cols-1">
-                <div class="rounded-[24px] border border-slate-200/75 bg-white/72 px-4 py-4 dark:border-white/10 dark:bg-slate-900/72">
-                  <p class="text-[0.68rem] uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">段落节奏</p>
-                  <p class="mt-2 text-sm font-medium text-slate-700 dark:text-slate-200">Editorial</p>
-                </div>
-                <div class="rounded-[24px] border border-slate-200/75 bg-white/72 px-4 py-4 dark:border-white/10 dark:bg-slate-900/72">
-                  <p class="text-[0.68rem] uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">正文主题</p>
-                  <p class="mt-2 text-sm font-medium text-slate-700 dark:text-slate-200">Long-form Reading</p>
-                </div>
-              </div>
+            <h1 class="mt-4 max-w-[54rem] text-[clamp(2rem,1.6rem+1.8vw,3.6rem)] font-semibold leading-[1.02] tracking-[-0.045em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 dark:text-slate-50">
+              {{ post.title }}
+            </h1>
+
+            <p class="mt-4 max-w-[42rem] text-[0.98rem] leading-8 tracking-[-0.01em] text-slate-600 dark:text-slate-300">
+              {{ post.summary }}
+            </p>
+
+            <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-sm text-slate-500 dark:text-slate-400">
+              <span class="inline-flex items-center gap-2">
+                <svg class="size-4 text-rose-400" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                {{ post.authorName }}
+              </span>
+              <span class="inline-flex items-center gap-2">
+                <UIcon name="i-lucide-clock-3" class="size-4 text-sky-500 dark:text-sky-300" />
+                {{ post.publishedAt }}
+              </span>
+              <span class="inline-flex items-center gap-2">
+                <UIcon name="i-lucide-book-open" class="size-4 text-orange-500 dark:text-orange-300" />
+                {{ post.readingMinutes }} 分钟阅读
+              </span>
+              <span class="inline-flex items-center gap-2">
+                <UIcon name="i-lucide-eye" class="size-4 text-emerald-500 dark:text-emerald-300" />
+                {{ post.viewCount }} 次浏览
+              </span>
+            </div>
+
+            <div class="mt-5 flex flex-wrap gap-2">
+              <NuxtLink
+                v-for="tag in heroTags"
+                :key="`${post.slug}-${tag.slug}`"
+                :to="`/tags/${tag.slug}`"
+                class="rounded-full border border-slate-200/85 bg-slate-50/90 px-3 py-1.5 text-[0.74rem] font-medium text-slate-600 transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900/82 dark:text-slate-300 dark:hover:border-sky-800 dark:hover:bg-slate-900 dark:hover:text-sky-200"
+              >
+                #{{ tag.name }}
+              </NuxtLink>
             </div>
           </section>
 
@@ -392,9 +351,7 @@ onBeforeUnmount(() => {
                 class="group grid gap-6 border-b border-slate-200/75 pb-6 dark:border-white/10 lg:grid-cols-[minmax(0,1fr)_280px]"
               >
                 <div class="min-w-0">
-                  <p class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-sky-600 dark:text-sky-300">
-                    Editor's Pick
-                  </p>
+                  <p class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-sky-600 dark:text-sky-300">延伸阅读</p>
                   <h3 class="mt-4 text-[clamp(1.7rem,1.4rem+0.8vw,2.3rem)] font-semibold leading-[1.08] tracking-[-0.035em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 transition group-hover:text-sky-700 dark:text-slate-50 dark:group-hover:text-sky-200">
                     {{ relatedLeadPost.title }}
                   </h3>
@@ -423,7 +380,7 @@ onBeforeUnmount(() => {
                   :to="`/posts/${item.slug}`"
                   class="group rounded-[26px] border border-slate-200/75 bg-white/88 p-4 transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-[0_24px_54px_-40px_rgba(14,165,233,0.34)] dark:border-slate-800 dark:bg-slate-900/82 dark:hover:border-sky-900"
                 >
-                  <p class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">From {{ item.categoryName }}</p>
+                  <p class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">{{ item.categoryName }}</p>
                   <h3 class="mt-3 text-[clamp(1.12rem,1.02rem+0.32vw,1.35rem)] font-semibold leading-7 tracking-[-0.03em] [font-family:var(--font-display)] text-slate-950 transition group-hover:text-sky-700 dark:text-slate-50 dark:group-hover:text-sky-200">
                     {{ item.title }}
                   </h3>

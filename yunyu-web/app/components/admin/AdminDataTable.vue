@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { CSSProperties } from 'vue'
+
 /**
  * 后台数据表格组件。
  * 作用：为后台各类列表页提供统一的横向滚动、表头、骨架屏和空状态容器，
@@ -9,6 +11,7 @@ withDefaults(defineProps<{
   hasData: boolean
   minWidth?: string
   headerClass: string
+  headerStyle?: CSSProperties
   emptyTitle: string
   emptyIcon?: string
   skeletonCount?: number
@@ -35,6 +38,7 @@ withDefaults(defineProps<{
         <div
           class="grid gap-4 border-b border-white/60 px-4 py-3 text-[0.68rem] font-semibold tracking-[0.14em] text-slate-400 uppercase dark:border-white/10 dark:text-slate-500"
           :class="headerClass"
+          :style="headerStyle"
         >
           <slot name="header" />
         </div>

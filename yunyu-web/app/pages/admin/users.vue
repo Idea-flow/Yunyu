@@ -414,11 +414,13 @@ await loadUsers()
         <AdminDataTable
           :is-loading="isLoading"
           :has-data="users.length > 0"
-          min-width="980px"
-          header-class="grid-cols-[minmax(0,1.45fr)_0.72fr_0.72fr_0.9fr_0.8fr]"
+          min-width="1140px"
+          header-class="grid-cols-[6rem_5rem_minmax(0,1.35fr)_0.72fr_0.72fr_0.9fr_0.8fr]"
           empty-title="没有找到匹配的用户"
         >
           <template #header>
+            <p>ID</p>
+            <p>头像</p>
             <p>用户</p>
             <p>角色</p>
             <p>状态</p>
@@ -430,14 +432,32 @@ await loadUsers()
             v-for="user in users"
             :key="user.id"
             class="grid items-center gap-4 px-4 py-3.5 transition duration-200 hover:bg-white/60 dark:hover:bg-white/5"
-            :class="'grid-cols-[minmax(0,1.45fr)_0.72fr_0.72fr_0.9fr_0.8fr]'"
+            :class="'grid-cols-[6rem_5rem_minmax(0,1.35fr)_0.72fr_0.72fr_0.9fr_0.8fr]'"
           >
+            <div class="min-w-0">
+              <p class="truncate text-sm font-medium text-toned">{{ user.id }}</p>
+            </div>
+
+            <div class="flex items-center">
+              <div class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-white/55 bg-slate-100/80 dark:border-white/10 dark:bg-slate-900/70">
+                <img
+                  v-if="user.avatarUrl"
+                  :src="user.avatarUrl"
+                  :alt="user.userName"
+                  class="h-full w-full object-cover"
+                >
+                <UIcon
+                  v-else
+                  name="i-lucide-user"
+                  class="size-4 text-slate-400 dark:text-slate-500"
+                />
+              </div>
+            </div>
+
             <div class="min-w-0">
               <p class="truncate text-[15px] font-semibold text-highlighted">{{ user.userName }}</p>
               <div class="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-muted">
                 <span>{{ user.email }}</span>
-                <span class="text-border">·</span>
-                <span>#{{ user.id }}</span>
               </div>
             </div>
 

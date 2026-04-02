@@ -20,7 +20,8 @@ const tagPageConfig = {
   itemLabel: '标签',
   descriptionLabel: '标签描述',
   hasCoverField: false,
-  hasSortField: false
+  hasSortField: false,
+  tableMinWidth: '1080px'
 }
 </script>
 

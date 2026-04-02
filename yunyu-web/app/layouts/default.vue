@@ -15,6 +15,7 @@ const navigationItems = [
 ]
 
 const isScrolled = ref(false)
+const isPostDetailPage = computed(() => route.path.startsWith('/posts/'))
 
 /**
  * 判断当前页面是否需要导航栏覆盖首屏区域。
@@ -50,6 +51,10 @@ const headerClassName = computed(() => {
  */
 const navPanelClassName = computed(() => {
   if (!isSolidNav.value) {
+    if (isPostDetailPage.value) {
+      return 'border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.18)_0%,rgba(15,23,42,0.08)_100%)] shadow-[0_12px_34px_-28px_rgba(15,23,42,0.2)] backdrop-blur-[10px]'
+    }
+
     return 'border-white/12 bg-[linear-gradient(180deg,rgba(15,23,42,0.14)_0%,rgba(15,23,42,0.1)_100%)] shadow-none backdrop-blur-[14px]'
   }
 
@@ -97,6 +102,32 @@ const navLinkActiveClassName = computed(() => {
 })
 
 /**
+ * 计算导航外层留白。
+ * 作用：文章详情页首屏改为全宽顶图后，导航需要更贴近浏览器顶部，
+ * 避免顶部留白破坏整张封面的连续感。
+ */
+const headerInnerClassName = computed(() => {
+  if (isOverlayPage.value && isPostDetailPage.value) {
+    return 'mx-auto max-w-[1360px] px-5 pt-2 pb-3 sm:px-8 sm:pt-3 lg:px-10'
+  }
+
+  return 'mx-auto max-w-[1360px] px-5 py-4 sm:px-8 lg:px-10'
+})
+
+/**
+ * 计算导航面板尺寸节奏。
+ * 作用：文章详情页在首屏阶段使用更轻更薄的导航条，
+ * 让导航像浮在封面上的一层细玻璃，而不是独立的大块容器。
+ */
+const navPanelLayoutClassName = computed(() => {
+  if (isOverlayPage.value && isPostDetailPage.value && !isSolidNav.value) {
+    return 'rounded-[24px] px-4 py-2.5 sm:px-5'
+  }
+
+  return 'rounded-[28px] px-4 py-3 sm:px-5'
+})
+
+/**
  * 同步页面滚动状态。
  * 作用：根据滚动距离切换导航栏是否进入实底玻璃态。
  */
@@ -133,10 +164,10 @@ onBeforeUnmount(() => {
 <template>
   <div class="min-h-screen">
     <header :class="headerClassName">
-      <div class="mx-auto max-w-[1360px] px-5 py-4 sm:px-8 lg:px-10">
+      <div :class="headerInnerClassName">
         <div
-          class="flex items-center justify-between gap-4 rounded-[28px] px-4 py-3 transition-all duration-300 sm:px-5"
-          :class="navPanelClassName"
+          class="flex items-center justify-between gap-4 transition-all duration-300"
+          :class="[navPanelClassName, navPanelLayoutClassName]"
         >
           <div class="flex min-w-0 items-center gap-3 sm:gap-4">
             <NuxtLink to="/" class="flex shrink-0 items-center gap-3">
