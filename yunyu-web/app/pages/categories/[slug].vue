@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import YunyuImage from '~/components/common/YunyuImage.vue'
+import YunyuHero from '~/components/common/YunyuHero.vue'
 import FrontPaginationBar from '../../components/content/FrontPaginationBar.vue'
 import FrontPostCard from '../../components/content/FrontPostCard.vue'
 
@@ -59,23 +59,26 @@ async function changePage(nextPage: number) {
 
 <template>
   <main v-if="data" class="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] dark:bg-[linear-gradient(180deg,#020617_0%,#081120_100%)]">
-    <section class="mx-auto max-w-[1360px] px-5 py-8 sm:px-8 lg:px-10">
-      <div class="overflow-hidden rounded-[32px] border border-white/60 bg-white/82 shadow-[0_26px_70px_-46px_rgba(15,23,42,0.35)] dark:border-white/10 dark:bg-slate-950/72 md:grid md:grid-cols-[minmax(0,1fr)_360px]">
-        <div class="p-6 sm:p-8">
-          <p class="text-xs font-semibold uppercase tracking-[0.34em] text-orange-500 dark:text-orange-300">分类页</p>
-          <h1 class="mt-3 text-3xl font-semibold">{{ data.category.name }}</h1>
-          <p class="mt-4 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">{{ data.category.description }}</p>
-          <p class="mt-5 text-sm text-slate-500 dark:text-slate-400">当前共有 {{ data.category.articleCount }} 篇文章</p>
-        </div>
-        <YunyuImage
-          :src="data.category.coverUrl"
-          :alt="data.category.name"
-          wrapper-class="h-full w-full"
-          image-class="h-full w-full"
-          rounded-class="rounded-none"
-        />
+    <YunyuHero
+      :src="data.category.coverUrl"
+      :alt="data.category.name"
+      min-height-class="min-h-[42svh] sm:min-h-[48svh] lg:min-h-[54svh]"
+      content-padding-class="px-5 pb-8 sm:px-8 sm:pb-10 lg:px-10 lg:pb-12"
+      content-width-class="max-w-5xl"
+    >
+      <p class="text-xs font-semibold uppercase tracking-[0.34em] text-orange-200">分类页</p>
+      <h1 class="mt-4 text-3xl font-bold text-white drop-shadow-lg sm:text-4xl lg:text-5xl">
+        {{ data.category.name }}
+      </h1>
+      <p class="mt-4 max-w-3xl text-sm leading-7 text-white/86 drop-shadow-md sm:text-base sm:leading-8">
+        {{ data.category.description }}
+      </p>
+      <div class="mt-6 inline-flex items-center rounded-full border border-white/18 bg-white/10 px-4 py-2 text-sm font-medium text-white/90 backdrop-blur-sm">
+        当前共有 {{ data.category.articleCount }} 篇文章
       </div>
+    </YunyuHero>
 
+    <section class="mx-auto max-w-[1360px] px-5 py-8 sm:px-8 lg:px-10">
       <div class="mt-6 space-y-4">
         <FrontPostCard
           v-for="post in data.posts.list"

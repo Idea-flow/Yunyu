@@ -56,10 +56,16 @@ const navigationItems: AdminNavigationItem[] = [
     description: '账号与权限维护'
   },
   {
+    label: '系统监控',
+    icon: 'i-lucide-activity',
+    to: '/admin/system',
+    description: 'JVM 与运行状态查看'
+  },
+  {
     label: '站点设置',
     icon: 'i-lucide-settings-2',
-    to: '/admin',
-    description: '配置入口预留'
+    to: '/admin/site',
+    description: '品牌、SEO 与主题配置'
   }
 ]
 

@@ -62,10 +62,15 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
                                 "/actuator/health",
+                                "/api/auth/login"
+                        ).permitAll()
+                        .requestMatchers(
+                                "/actuator/**"
+                        ).hasRole("SUPER_ADMIN")
+                        .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/api/auth/login"
+                                "/swagger-ui.html"
                         ).permitAll()
                         .requestMatchers("/api/auth/me").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("SUPER_ADMIN")

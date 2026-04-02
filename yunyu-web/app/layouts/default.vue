@@ -21,7 +21,11 @@ const isScrolled = ref(false)
  * 作用：让首页与文章详情页的导航栏直接叠在首屏大图之上，避免导航区和首屏内容被硬切开。
  */
 const isOverlayPage = computed(() => {
-  return route.path === '/' || route.path.startsWith('/posts/')
+  return route.path === '/'
+    || route.path === '/topics'
+    || route.path.startsWith('/posts/')
+    || route.path.startsWith('/topics/')
+    || route.path.startsWith('/categories/')
 })
 
 /**
