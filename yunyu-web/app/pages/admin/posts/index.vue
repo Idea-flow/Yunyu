@@ -314,13 +314,21 @@ await Promise.all([
 </script>
 
 <template>
-  <UDashboardPanel>
-    <template #header>
-      <UDashboardNavbar title="文章管理" />
-    </template>
+  <div class="space-y-4">
+    <section class="overflow-hidden rounded-[18px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.6))] shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.76),rgba(15,23,42,0.66))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)]">
+      <div class="flex flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="min-w-0">
+          <h1 class="truncate text-base font-semibold text-slate-900 dark:text-slate-50">文章管理</h1>
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">共 {{ total }} 篇文章</p>
+        </div>
 
-    <template #body>
-      <div class="space-y-6 p-4 lg:p-6">
+        <div class="flex items-center gap-2">
+          <AdminPrimaryButton label="新增文章" icon="i-lucide-file-plus-2" @click="goToCreatePage" />
+        </div>
+      </div>
+    </section>
+
+    <div class="space-y-4">
         <AdminFilterPanel>
           <template #search>
             <AdminInput
@@ -375,7 +383,7 @@ await Promise.all([
               label="重置"
               color="neutral"
               variant="outline"
-              class="cursor-pointer rounded-[8px]"
+              class="cursor-pointer rounded-[10px]"
               @click="handleResetFilters"
             />
             <AdminPrimaryButton label="搜索" icon="i-lucide-search" @click="handleSearch" />
@@ -386,18 +394,14 @@ await Promise.all([
           title="文章列表"
           :total="total"
         >
-          <template #actions>
-            <AdminPrimaryButton label="新增文章" icon="i-lucide-file-plus-2" @click="goToCreatePage" />
-          </template>
-
           <div v-if="isLoading" class="space-y-3">
             <USkeleton class="h-[4.5rem] rounded-[10px]" />
             <USkeleton class="h-[4.5rem] rounded-[10px]" />
             <USkeleton class="h-[4.5rem] rounded-[10px]" />
           </div>
 
-          <div v-else class="admin-table-shell overflow-hidden">
-            <div class="admin-toolbar hidden grid-cols-[minmax(0,1.65fr)_0.75fr_1.05fr_0.8fr_0.8fr] gap-4 px-5 py-4 text-xs font-semibold tracking-[0.14em] text-slate-400 uppercase dark:text-slate-500 lg:grid">
+          <div v-else class="overflow-hidden rounded-[16px] border border-white/60 bg-white/64 dark:border-white/10 dark:bg-white/4">
+            <div class="hidden grid-cols-[minmax(0,1.65fr)_0.75fr_1.05fr_0.8fr_0.8fr] gap-4 border-b border-white/60 px-5 py-4 text-xs font-semibold tracking-[0.14em] text-slate-400 uppercase dark:border-white/10 dark:text-slate-500 lg:grid">
               <p>文章</p>
               <p>状态</p>
               <p>内容归属</p>
@@ -405,11 +409,11 @@ await Promise.all([
               <p class="text-right">操作</p>
             </div>
 
-            <div class="divide-y divide-default/70">
+            <div class="divide-y divide-white/60 dark:divide-white/10">
               <article
                 v-for="post in posts"
                 :key="post.id"
-                class="grid gap-4 px-5 py-5 transition duration-200 hover:bg-sky-50/80 dark:hover:bg-sky-400/8 lg:grid-cols-[minmax(0,1.65fr)_0.75fr_1.05fr_0.8fr_0.8fr] lg:items-center"
+                class="grid gap-4 px-5 py-5 transition duration-200 hover:bg-white/60 dark:hover:bg-white/5 lg:grid-cols-[minmax(0,1.65fr)_0.75fr_1.05fr_0.8fr_0.8fr] lg:items-center"
               >
                 <div class="min-w-0">
                   <p class="truncate text-base font-semibold text-highlighted">{{ post.title }}</p>
@@ -512,14 +516,13 @@ await Promise.all([
         </AdminTableCard>
       </div>
 
-      <AdminConfirmModal
-        v-model:open="isDeleteModalOpen"
-        title="确认删除文章"
-        :description="deletingPost ? `删除后将无法在后台列表中继续管理“${deletingPost.title}”。` : '请确认是否继续删除当前文章。'"
-        confirm-label="确认删除"
-        :loading="isDeleteSubmitting"
-        @confirm="confirmDelete"
-      />
-    </template>
-  </UDashboardPanel>
+        <AdminConfirmModal
+          v-model:open="isDeleteModalOpen"
+          title="确认删除文章"
+          :description="deletingPost ? `删除后将无法在后台列表中继续管理“${deletingPost.title}”。` : '请确认是否继续删除当前文章。'"
+          confirm-label="确认删除"
+          :loading="isDeleteSubmitting"
+          @confirm="confirmDelete"
+        />
+  </div>
 </template>

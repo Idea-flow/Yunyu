@@ -80,7 +80,7 @@ function handlePageSizeChange(value: string | number | null) {
         active-color="info"
         active-variant="solid"
         :ui="{
-          list: 'flex items-center gap-1 px-0.5 py-0.5'
+          list: 'flex items-center gap-1 rounded-[12px] border border-white/60 bg-white/44 px-1 py-1 backdrop-blur-md dark:border-white/10 dark:bg-white/[0.03]'
         }"
         @update:page="handlePageChange"
       >
@@ -89,10 +89,10 @@ function handlePageSizeChange(value: string | number | null) {
             :color="page === item.value ? 'info' : 'neutral'"
             :variant="page === item.value ? 'solid' : 'ghost'"
             :label="String(item.value)"
-            class="min-w-9 rounded-[8px] border-0"
+            class="min-w-9 rounded-[10px] border-0"
             :class="page === item.value
-              ? ''
-              : 'text-slate-500 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:bg-slate-800/80'"
+              ? 'shadow-[0_10px_18px_-14px_rgba(14,165,233,0.7)]'
+              : 'text-slate-500 hover:bg-white/80 dark:text-slate-300 dark:hover:bg-white/8'"
           />
         </template>
         <template #prev>
@@ -100,7 +100,7 @@ function handlePageSizeChange(value: string | number | null) {
             color="neutral"
             variant="ghost"
             icon="i-lucide-chevron-left"
-            class="rounded-[8px] border-0 text-slate-500 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:bg-slate-800/80"
+            class="rounded-[10px] border-0 text-slate-500 hover:bg-white/80 dark:text-slate-300 dark:hover:bg-white/8"
           />
         </template>
         <template #next>
@@ -108,7 +108,7 @@ function handlePageSizeChange(value: string | number | null) {
             color="neutral"
             variant="ghost"
             icon="i-lucide-chevron-right"
-            class="rounded-[8px] border-0 text-slate-500 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:bg-slate-800/80"
+            class="rounded-[10px] border-0 text-slate-500 hover:bg-white/80 dark:text-slate-300 dark:hover:bg-white/8"
           />
         </template>
       </UPagination>

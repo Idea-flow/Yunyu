@@ -51,12 +51,12 @@ function handleOpenChange(value: boolean) {
     :open="props.open"
     scrollable
     :ui="{
-      overlay: 'bg-slate-950/35 backdrop-blur-[6px] dark:bg-slate-950/55',
-      content: ['w-[calc(100vw-2rem)] overflow-hidden rounded-[12px] border border-slate-200/80 bg-white/95 shadow-[0_30px_60px_-36px_rgba(15,23,42,0.32)] backdrop-blur-xl dark:border-slate-700 dark:bg-slate-950/92 dark:shadow-[0_32px_62px_-38px_rgba(0,0,0,0.62)]', contentWidthClass],
-      header: 'border-b border-slate-200 px-6 pt-6 pb-4 dark:border-slate-800',
-      body: 'bg-white/50 px-6 py-5 dark:bg-slate-950/40',
-      footer: 'border-t border-slate-200 bg-slate-50/80 px-6 pt-4 pb-6 dark:border-slate-800 dark:bg-slate-900/65',
-      close: 'top-5 end-5',
+      overlay: 'bg-slate-950/36 backdrop-blur-[10px] dark:bg-slate-950/60',
+      content: ['w-[calc(100vw-2rem)] overflow-hidden rounded-[16px] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,255,255,0.82))] shadow-[0_24px_48px_-34px_rgba(15,23,42,0.24)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.92),rgba(15,23,42,0.88))] dark:shadow-[0_28px_54px_-36px_rgba(0,0,0,0.56)]', contentWidthClass],
+      header: 'border-b border-white/60 px-6 pt-6 pb-4 dark:border-white/10',
+      body: 'bg-transparent px-6 py-5',
+      footer: 'border-t border-white/60 bg-white/36 px-6 pt-4 pb-6 dark:border-white/10 dark:bg-white/[0.03]',
+      close: 'top-5 end-5 rounded-[10px] border border-white/60 bg-white/72 text-slate-500 backdrop-blur-md transition duration-200 hover:text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-slate-50',
       title: 'hidden',
       description: 'hidden'
     }"
@@ -64,7 +64,7 @@ function handleOpenChange(value: boolean) {
   >
     <template #header>
       <div class="flex items-start gap-4">
-        <div class="inline-flex size-11 shrink-0 items-center justify-center rounded-[10px] border border-sky-200 bg-sky-50 text-sky-600 shadow-[0_12px_24px_-24px_rgba(14,165,233,0.55)] dark:border-sky-400/25 dark:bg-sky-400/10 dark:text-sky-300">
+        <div class="inline-flex size-10 shrink-0 items-center justify-center rounded-[10px] border border-sky-200/80 bg-[linear-gradient(135deg,rgba(240,249,255,0.98),rgba(255,247,237,0.82))] text-sky-600 shadow-[0_10px_20px_-20px_rgba(14,165,233,0.52)] dark:border-sky-400/20 dark:bg-[linear-gradient(135deg,rgba(56,189,248,0.14),rgba(251,146,60,0.08))] dark:text-sky-300">
           <UIcon :name="props.icon" class="size-5" />
         </div>
 

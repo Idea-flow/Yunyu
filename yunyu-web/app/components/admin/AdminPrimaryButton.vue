@@ -23,7 +23,7 @@ withDefaults(defineProps<{
   <button
     :type="type"
     :disabled="disabled || loading"
-    class="group inline-flex min-h-10 min-w-24 cursor-pointer items-center justify-center gap-2 rounded-[8px] border border-sky-500/20 bg-sky-500 px-4 text-sm font-semibold whitespace-nowrap text-white transition duration-200 hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-70 dark:border-sky-300/20 dark:bg-sky-400 dark:text-slate-950 dark:hover:bg-sky-300 dark:focus:ring-sky-300 dark:focus:ring-offset-slate-950"
+    class="group inline-flex min-h-9 min-w-24 cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-sky-400/20 bg-[linear-gradient(135deg,#38bdf8,#0ea5e9)] px-4 py-2 text-sm font-semibold whitespace-nowrap text-white shadow-[0_12px_24px_-20px_rgba(14,165,233,0.56)] transition duration-200 hover:border-sky-400/25 hover:bg-[linear-gradient(135deg,#22c3ee,#0284c7)] hover:shadow-[0_16px_26px_-20px_rgba(14,165,233,0.62)] focus:outline-none focus:ring-2 focus:ring-sky-400/30 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-70 dark:border-sky-300/15 dark:bg-[linear-gradient(135deg,#38bdf8,#7dd3fc)] dark:text-slate-950 dark:hover:bg-[linear-gradient(135deg,#67e8f9,#38bdf8)] dark:focus:ring-sky-300/30 dark:focus:ring-offset-slate-950"
   >
     <UIcon
       v-if="icon && !loading"

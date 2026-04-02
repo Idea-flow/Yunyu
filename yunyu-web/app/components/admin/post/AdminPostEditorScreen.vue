@@ -2,7 +2,6 @@
 import type { AdminPostForm } from '../../../types/post'
 import type { AdminTaxonomyItem } from '../../../types/taxonomy'
 import AdminMarkdownWorkbench from './AdminMarkdownWorkbench.vue'
-import ArticleTocPanel from './ArticleTocPanel.vue'
 
 /**
  * 后台文章编辑页组件。
@@ -64,12 +63,6 @@ const isEditing = computed(() => props.mode === 'edit')
 const pageTitle = computed(() => isEditing.value ? '修改文章' : '新增文章')
 
 /**
- * 计算主按钮文案。
- * 根据当前模式动态反馈提交动作。
- */
-const submitLabel = computed(() => isEditing.value ? '保存修改' : '创建文章')
-
-/**
  * 计算状态提示文案。
  * 用于在页面右侧摘要卡片展示当前内容的编辑状态。
  */
@@ -98,30 +91,22 @@ const {
 } = useMarkdownRenderer(toRef(formState, 'contentMarkdown'))
 
 const contentLength = computed(() => renderedPlainText.value.length)
-const seoTitleLength = computed(() => formState.seoTitle.trim().length)
-const seoDescriptionLength = computed(() => formState.seoDescription.trim().length)
 const estimatedReadingMinutes = computed(() => renderedReadingMinutes.value)
 const selectedCategoryLabel = computed(() =>
   categoryOptions.value.find(option => option.value === formState.categoryId)?.label || '暂不设置分类'
-)
-const selectedTagItems = computed(() =>
-  tagOptions.value.filter(item => formState.tagIds.includes(item.id))
-)
-const selectedTopicItems = computed(() =>
-  topicOptions.value.filter(item => formState.topicIds.includes(item.id))
 )
 
 /**
  * 统一工作台卡片样式。
  * 作用：让文章编辑页的各个功能区共享同一套外层卡片视觉语言。
  */
-const workspaceCardClass = 'rounded-[12px] border border-slate-200/80 bg-white/92 shadow-[0_16px_34px_-30px_rgba(15,23,42,0.16)] backdrop-blur-lg dark:border-slate-800 dark:bg-slate-950/72 dark:shadow-[0_18px_36px_-28px_rgba(0,0,0,0.48)]'
+const workspaceCardClass = 'overflow-hidden rounded-[16px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(255,255,255,0.66))] shadow-[0_18px_34px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.82),rgba(15,23,42,0.68))] dark:shadow-[0_20px_38px_-32px_rgba(0,0,0,0.42)]'
 
 /**
  * 统一工作区内层面板样式。
  * 作用：为基础信息、SEO、内容编排和侧栏摘要提供一致的内层承载容器。
  */
-const workspaceSurfaceClass = 'rounded-[10px] border border-slate-200/80 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-900/70'
+const workspaceSurfaceClass = 'rounded-[12px] border border-white/60 bg-white/62 p-4 shadow-[0_12px_24px_-24px_rgba(15,23,42,0.14)] backdrop-blur-md dark:border-white/10 dark:bg-white/[0.04]'
 
 /**
  * 校验文章表单。
@@ -340,351 +325,219 @@ await Promise.all([
 </script>
 
 <template>
-  <UDashboardPanel>
-    <template #header>
-      <UDashboardNavbar :title="pageTitle">
-        <template #leading>
+  <div class="space-y-4">
+    <section :class="workspaceCardClass">
+      <div class="flex flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="inline-flex size-9 items-center justify-center rounded-[10px] border border-white/65 bg-white/70 text-slate-600 shadow-[0_10px_18px_-18px_rgba(15,23,42,0.14)] backdrop-blur-md transition duration-200 hover:text-slate-900 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-300 dark:hover:text-slate-50"
+              title="返回列表"
+              aria-label="返回列表"
+              @click="goBackToList"
+            >
+              <UIcon name="i-lucide-arrow-left" class="size-4" />
+            </button>
+
+            <h1 class="truncate text-base font-semibold text-slate-900 dark:text-slate-50">
+              {{ pageTitle }}
+            </h1>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
           <UButton
-            icon="i-lucide-arrow-left"
+            label="返回列表"
             color="neutral"
             variant="ghost"
-            class="rounded-[8px]"
+            class="cursor-pointer rounded-[10px]"
             @click="goBackToList"
           />
-        </template>
-      </UDashboardNavbar>
-    </template>
+          <UButton
+            label="保存草稿"
+            color="neutral"
+            variant="outline"
+            class="cursor-pointer rounded-[10px]"
+            :loading="isSubmitting && formState.status === 'DRAFT'"
+            @click="handleSubmitWithStatus('DRAFT')"
+          />
+          <UButton
+            v-if="isEditing"
+            label="下线保存"
+            color="warning"
+            variant="soft"
+            class="cursor-pointer rounded-[10px]"
+            :loading="isSubmitting && formState.status === 'OFFLINE'"
+            @click="handleSubmitWithStatus('OFFLINE')"
+          />
+          <AdminPrimaryButton
+            :label="formState.status === 'PUBLISHED' ? '更新已发布内容' : '发布文章'"
+            loading-label="保存中..."
+            :loading="isSubmitting"
+            icon="i-lucide-send"
+            @click="handleSubmitWithStatus('PUBLISHED')"
+          />
+        </div>
+      </div>
+    </section>
 
-    <template #body>
-      <div class="space-y-6 p-4 lg:p-6">
-        <div class="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_22rem]">
-          <section class="space-y-6">
-            <UCard class="overflow-hidden rounded-[12px] border border-slate-200/80 bg-white/92 shadow-[0_16px_34px_-30px_rgba(15,23,42,0.16)] backdrop-blur-lg dark:border-slate-800 dark:bg-slate-950/72 dark:shadow-[0_18px_36px_-28px_rgba(0,0,0,0.48)]">
-              <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                <h1 class="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50 lg:text-[2rem]">
-                  {{ pageTitle }}
-                </h1>
+    <div class="space-y-4">
+      <section :class="workspaceCardClass">
+        <div class="border-b border-white/60 px-5 py-4 dark:border-white/10">
+          <p class="text-base font-semibold text-slate-900 dark:text-slate-50">内容信息</p>
+        </div>
 
-                <div class="flex flex-wrap items-center gap-3">
-                  <UButton
-                    label="返回列表"
-                    color="neutral"
-                    variant="outline"
-                    class="cursor-pointer rounded-[8px]"
-                    @click="goBackToList"
+        <div v-if="isLoadingDetail" class="space-y-4 px-5 py-5">
+          <USkeleton class="h-16 rounded-[10px]" />
+          <USkeleton class="h-16 rounded-[10px]" />
+          <USkeleton class="h-28 rounded-[10px]" />
+        </div>
+
+        <form v-else class="space-y-5 px-5 py-5" @submit.prevent="handleSubmit">
+          <div class="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+            <div :class="workspaceSurfaceClass">
+              <p class="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-50">主信息</p>
+
+              <div class="space-y-5">
+                <UFormField name="title" label="标题" required>
+                  <AdminInput
+                    v-model="formState.title"
+                    placeholder="请输入文章标题"
                   />
-                  <UButton
-                    label="保存草稿"
-                    color="neutral"
-                    variant="outline"
-                    class="cursor-pointer rounded-[8px]"
-                    :loading="isSubmitting && formState.status === 'DRAFT'"
-                    @click="handleSubmitWithStatus('DRAFT')"
+                </UFormField>
+
+                <UFormField name="slug" label="Slug" required>
+                  <AdminInput
+                    v-model="formState.slug"
+                    placeholder="请输入唯一标识"
                   />
-                  <UButton
-                    v-if="isEditing"
-                    label="下线保存"
-                    color="warning"
-                    variant="soft"
-                    class="cursor-pointer rounded-[8px]"
-                    :loading="isSubmitting && formState.status === 'OFFLINE'"
-                    @click="handleSubmitWithStatus('OFFLINE')"
+                </UFormField>
+
+                <UFormField name="summary" label="摘要">
+                  <AdminTextarea
+                    v-model="formState.summary"
+                    :rows="4"
+                    autoresize
+                    placeholder="请输入摘要"
                   />
-                  <AdminPrimaryButton
-                    :label="formState.status === 'PUBLISHED' ? '更新已发布内容' : '发布文章'"
-                    loading-label="保存中..."
-                    :loading="isSubmitting"
-                    icon="i-lucide-send"
-                    @click="handleSubmitWithStatus('PUBLISHED')"
+                </UFormField>
+
+                <UFormField name="coverUrl" label="封面地址">
+                  <AdminInput
+                    v-model="formState.coverUrl"
+                    placeholder="请输入封面图片 URL"
                   />
-                </div>
+                </UFormField>
               </div>
-            </UCard>
+            </div>
 
-            <UCard :class="workspaceCardClass">
-              <template #header>
-                <p class="text-base font-semibold text-slate-900 dark:text-slate-50">文章基础信息</p>
-              </template>
+            <div class="space-y-5">
+              <div :class="workspaceSurfaceClass">
+                <p class="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-50">归属</p>
 
-              <div v-if="isLoadingDetail" class="space-y-4">
-                <USkeleton class="h-16 rounded-[10px]" />
-                <USkeleton class="h-16 rounded-[10px]" />
-                <USkeleton class="h-28 rounded-[10px]" />
-              </div>
-
-              <form v-else class="space-y-5" @submit.prevent="handleSubmit">
-                <div :class="workspaceSurfaceClass">
-                  <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">主信息</p>
-                    <UBadge color="neutral" variant="soft">标题 {{ formState.title.trim().length }} 字</UBadge>
-                  </div>
-
-                  <div class="grid gap-5 lg:grid-cols-2">
-                    <UFormField name="title" label="标题" required>
-                      <AdminInput
-                        v-model="formState.title"
-                        placeholder="请输入文章标题"
-                      />
-                    </UFormField>
-
-                    <UFormField name="slug" label="Slug" required>
-                      <AdminInput
-                        v-model="formState.slug"
-                        placeholder="请输入唯一标识"
-                      />
-                    </UFormField>
-                  </div>
-                </div>
-
-                <div :class="workspaceSurfaceClass">
-                  <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">摘要与状态</p>
-                    <UBadge color="info" variant="soft">{{ statusHint }}</UBadge>
-                  </div>
-
-                  <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_13rem]">
-                    <UFormField name="summary" label="摘要">
-                      <AdminTextarea
-                        v-model="formState.summary"
-                        :rows="4"
-                        autoresize
-                        placeholder="用于列表与详情摘要展示，可选"
-                      />
-                    </UFormField>
-
-                    <UFormField name="status" label="状态">
-                      <AdminSelect
-                        v-model="formState.status"
-                        :items="statusOptions"
-                      />
-                    </UFormField>
-                  </div>
-                </div>
-
-                <div :class="workspaceSurfaceClass">
-                  <p class="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-50">封面资源</p>
-
-                  <UFormField name="coverUrl" label="封面地址">
-                    <AdminInput
-                      v-model="formState.coverUrl"
-                      placeholder="请输入封面图片 URL，可选"
-                    />
-                  </UFormField>
-                </div>
-              </form>
-            </UCard>
-
-            <UCard :class="workspaceCardClass">
-              <template #header>
-                <p class="text-base font-semibold text-slate-900 dark:text-slate-50">搜索展示信息</p>
-              </template>
-
-              <div v-if="isLoadingDetail" class="space-y-4">
-                <USkeleton class="h-16 rounded-[10px]" />
-                <USkeleton class="h-28 rounded-[10px]" />
-              </div>
-
-                  <div v-else class="space-y-5">
-                <div :class="workspaceSurfaceClass">
-                  <div class="mb-4 flex flex-wrap items-center gap-3">
-                    <UBadge color="neutral" variant="soft">SEO 标题 {{ seoTitleLength }} 字</UBadge>
-                    <UBadge color="neutral" variant="soft">SEO 描述 {{ seoDescriptionLength }} 字</UBadge>
-                  </div>
-
-                  <div class="grid gap-5 lg:grid-cols-2">
-                    <UFormField name="seoTitle" label="SEO 标题">
-                      <AdminInput
-                        v-model="formState.seoTitle"
-                        placeholder="用于搜索结果标题展示，可选"
-                      />
-                    </UFormField>
-
-                    <UFormField name="seoDescription" label="SEO 描述">
-                      <AdminTextarea
-                        v-model="formState.seoDescription"
-                        :rows="4"
-                        autoresize
-                        placeholder="用于搜索摘要展示，可选"
-                      />
-                    </UFormField>
-                  </div>
-                </div>
-
-              </div>
-            </UCard>
-
-            <UCard :class="workspaceCardClass">
-              <template #header>
-                <p class="text-base font-semibold text-slate-900 dark:text-slate-50">分类 / 标签 / 专题</p>
-              </template>
-
-              <div v-if="isLoadingTaxonomy" class="grid gap-5 lg:grid-cols-3">
-                <USkeleton class="h-36 rounded-[10px]" />
-                <USkeleton class="h-36 rounded-[10px]" />
-                <USkeleton class="h-36 rounded-[10px]" />
-              </div>
-
-              <div v-else class="grid gap-5 lg:grid-cols-3">
-                <div :class="workspaceSurfaceClass">
-                  <div class="flex items-center justify-between gap-3">
-                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">分类</p>
-                    <UBadge color="info" variant="soft">{{ selectedCategoryLabel }}</UBadge>
-                  </div>
-                  <div class="mt-4 space-y-3">
+                <div class="space-y-5">
+                  <UFormField name="categoryId" label="分类">
                     <AdminSelect
                       v-model="formState.categoryId"
                       :items="categoryOptions"
                       placeholder="请选择分类"
                     />
-                  </div>
-                </div>
+                  </UFormField>
 
-                <div :class="workspaceSurfaceClass">
-                  <div class="flex items-center justify-between gap-3">
-                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">标签</p>
-                    <UBadge color="info" variant="soft">已选 {{ formState.tagIds.length }}</UBadge>
+                  <div>
+                    <p class="mb-3 text-sm font-medium text-slate-700 dark:text-slate-200">标签</p>
+                    <div v-if="tagOptions.length" class="flex flex-wrap gap-2">
+                      <button
+                        v-for="tag in tagOptions"
+                        :key="tag.id"
+                        type="button"
+                        class="cursor-pointer rounded-[10px] border px-3 py-2 text-sm font-medium transition duration-200"
+                        :class="formState.tagIds.includes(tag.id)
+                          ? 'border-sky-300/90 bg-sky-50/92 text-sky-700 shadow-[0_10px_20px_-22px_rgba(14,165,233,0.4)] dark:border-sky-400/40 dark:bg-sky-400/12 dark:text-sky-200'
+                          : 'border-white/65 bg-white/72 text-slate-600 hover:border-slate-200 hover:text-slate-900 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300 dark:hover:border-white/15 dark:hover:text-slate-50'"
+                        @click="toggleTag(tag.id)"
+                      >
+                        {{ tag.name }}
+                      </button>
+                    </div>
                   </div>
-                  <div v-if="tagOptions.length" class="mt-4 flex flex-wrap gap-2">
-                    <button
-                      v-for="tag in tagOptions"
-                      :key="tag.id"
-                      type="button"
-                      class="cursor-pointer rounded-[8px] border px-3 py-2 text-sm font-medium transition duration-200"
-                      :class="formState.tagIds.includes(tag.id)
-                        ? 'border-sky-300 bg-sky-50 text-sky-700 shadow-[0_10px_24px_-20px_rgba(14,165,233,0.45)] dark:border-sky-400/40 dark:bg-sky-400/12 dark:text-sky-200'
-                        : 'border-slate-200/90 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-50'"
-                      @click="toggleTag(tag.id)"
-                    >
-                      {{ tag.name }}
-                    </button>
-                  </div>
-                  <div v-else class="mt-4 text-sm text-slate-500 dark:text-slate-400">暂无标签</div>
-                </div>
 
-                <div :class="workspaceSurfaceClass">
-                  <div class="flex items-center justify-between gap-3">
-                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">专题</p>
-                    <UBadge color="info" variant="soft">已选 {{ formState.topicIds.length }}</UBadge>
+                  <div>
+                    <p class="mb-3 text-sm font-medium text-slate-700 dark:text-slate-200">专题</p>
+                    <div v-if="topicOptions.length" class="flex flex-wrap gap-2">
+                      <button
+                        v-for="topic in topicOptions"
+                        :key="topic.id"
+                        type="button"
+                        class="cursor-pointer rounded-[10px] border px-3 py-2 text-sm font-medium transition duration-200"
+                        :class="formState.topicIds.includes(topic.id)
+                          ? 'border-emerald-300/90 bg-emerald-50/92 text-emerald-700 shadow-[0_10px_20px_-22px_rgba(16,185,129,0.4)] dark:border-emerald-400/40 dark:bg-emerald-400/12 dark:text-emerald-200'
+                          : 'border-white/65 bg-white/72 text-slate-600 hover:border-slate-200 hover:text-slate-900 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300 dark:hover:border-white/15 dark:hover:text-slate-50'"
+                        @click="toggleTopic(topic.id)"
+                      >
+                        {{ topic.name }}
+                      </button>
+                    </div>
                   </div>
-                  <div v-if="topicOptions.length" class="mt-4 flex flex-wrap gap-2">
-                    <button
-                      v-for="topic in topicOptions"
-                      :key="topic.id"
-                      type="button"
-                      class="cursor-pointer rounded-[8px] border px-3 py-2 text-sm font-medium transition duration-200"
-                      :class="formState.topicIds.includes(topic.id)
-                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700 shadow-[0_10px_24px_-20px_rgba(16,185,129,0.42)] dark:border-emerald-400/40 dark:bg-emerald-400/12 dark:text-emerald-200'
-                        : 'border-slate-200/90 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-50'"
-                      @click="toggleTopic(topic.id)"
-                    >
-                      {{ topic.name }}
-                    </button>
-                  </div>
-                  <div v-else class="mt-4 text-sm text-slate-500 dark:text-slate-400">暂无专题</div>
                 </div>
               </div>
-            </UCard>
 
-          </section>
+              <div :class="workspaceSurfaceClass">
+                <p class="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-50">SEO</p>
 
-          <aside class="space-y-6">
-            <UCard :class="workspaceCardClass">
-              <template #header>
-                <p class="text-base font-semibold text-slate-900 dark:text-slate-50">编辑摘要</p>
-              </template>
+                <div class="space-y-5">
+                  <UFormField name="seoTitle" label="SEO 标题">
+                    <AdminInput
+                      v-model="formState.seoTitle"
+                      placeholder="请输入 SEO 标题"
+                    />
+                  </UFormField>
 
-              <div class="space-y-4">
-                <div :class="workspaceSurfaceClass">
-                  <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">当前状态</p>
-                  <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">{{ statusHint }}</p>
-                </div>
+                  <UFormField name="seoDescription" label="SEO 描述">
+                    <AdminTextarea
+                      v-model="formState.seoDescription"
+                      :rows="4"
+                      autoresize
+                      placeholder="请输入 SEO 描述"
+                    />
+                  </UFormField>
 
-                <div :class="workspaceSurfaceClass">
-                  <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">内容归属</p>
-                  <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">{{ selectedCategoryLabel }}</p>
-                  <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                    标签 {{ selectedTagItems.length }} 个，专题 {{ selectedTopicItems.length }} 个
-                  </p>
-                </div>
-
-                <div :class="workspaceSurfaceClass">
-                  <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">正文目录</p>
-                  <div class="mt-3">
-                    <ArticleTocPanel :items="renderedContentToc" />
-                  </div>
-                </div>
-
-                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                  <div :class="workspaceSurfaceClass">
-                    <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">标题长度</p>
-                    <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-50">{{ formState.title.trim().length }}</p>
-                  </div>
-
-                  <div :class="workspaceSurfaceClass">
-                    <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">正文字符数</p>
-                    <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-50">{{ contentLength }}</p>
-                  </div>
-                </div>
-
-                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                  <div :class="workspaceSurfaceClass">
-                    <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">SEO 标题长度</p>
-                    <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-50">{{ seoTitleLength }}</p>
-                  </div>
-
-                  <div :class="workspaceSurfaceClass">
-                    <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">预估阅读</p>
-                    <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-50">{{ estimatedReadingMinutes }} 分钟</p>
-                  </div>
-                </div>
-
-                <div
-                  v-if="formState.coverUrl.trim()"
-                  class="overflow-hidden rounded-[10px] border border-slate-200/80 bg-slate-50/80 dark:border-slate-700 dark:bg-slate-900/70"
-                >
-                  <div class="flex items-center justify-between px-4 pt-4">
-                    <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">封面预览</p>
-                    <UBadge color="success" variant="soft">已填写</UBadge>
-                  </div>
-                  <img
-                    :src="formState.coverUrl"
-                    alt="文章封面预览"
-                    class="mt-4 h-44 w-full object-cover"
-                  >
-                </div>
-
-                <div :class="workspaceSurfaceClass">
-                  <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">编辑建议</p>
-                  <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">{{ submitLabel }}</p>
+                  <UFormField name="status" label="状态">
+                    <AdminSelect
+                      v-model="formState.status"
+                      :items="statusOptions"
+                    />
+                  </UFormField>
                 </div>
               </div>
-            </UCard>
-          </aside>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <section :class="workspaceCardClass">
+        <div class="border-b border-white/60 px-5 py-4 dark:border-white/10">
+          <p class="text-base font-semibold text-slate-900 dark:text-slate-50">正文</p>
         </div>
 
-        <UCard :class="workspaceCardClass">
-          <template #header>
-            <p class="text-base font-semibold text-slate-900 dark:text-slate-50">正文</p>
-          </template>
-
-          <div v-if="isLoadingDetail" class="space-y-4">
+        <div v-if="isLoadingDetail" class="space-y-4 px-5 py-5">
             <USkeleton class="h-[42rem] rounded-[12px]" />
-          </div>
+        </div>
 
-          <div v-else class="space-y-5">
-            <AdminMarkdownWorkbench
-              v-model="formState.contentMarkdown"
-              :html="renderedContentHtml"
-              :toc="renderedContentToc"
-              :plain-text="renderedPlainText"
-              :is-loading="isRenderingMarkdown"
-              :content-length="contentLength"
-              :reading-minutes="estimatedReadingMinutes"
-              :toc-count="renderedContentToc.length"
-            />
-          </div>
-        </UCard>
-      </div>
-    </template>
-  </UDashboardPanel>
+        <div v-else class="px-5 py-5">
+          <AdminMarkdownWorkbench
+            v-model="formState.contentMarkdown"
+            :html="renderedContentHtml"
+            :toc="renderedContentToc"
+            :plain-text="renderedPlainText"
+            :is-loading="isRenderingMarkdown"
+            :content-length="contentLength"
+            :reading-minutes="estimatedReadingMinutes"
+            :toc-count="renderedContentToc.length"
+          />
+        </div>
+      </section>
+    </div>
+  </div>
 </template>

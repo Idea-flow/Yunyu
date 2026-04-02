@@ -189,6 +189,31 @@ function syncToggleButtonState(button: HTMLButtonElement, isExpanded: boolean) {
 }
 
 /**
+ * 确保代码块工具条具备窗口控制点。
+ * 作用：兼容历史文章已存储的旧版 HTML，在前台渲染时自动补齐 macOS 风格的三色圆点。
+ *
+ * @param block 代码块外层容器
+ */
+function ensureWindowControls(block: HTMLElement) {
+  const toolbarMeta = block.querySelector<HTMLElement>('.yy-md-code-toolbar-meta')
+
+  if (!toolbarMeta || toolbarMeta.querySelector('.yy-md-code-window-controls')) {
+    return
+  }
+
+  const controls = document.createElement('span')
+  controls.className = 'yy-md-code-window-controls'
+  controls.setAttribute('aria-hidden', 'true')
+  controls.innerHTML = `
+    <span class="yy-md-code-window-dot yy-md-code-window-dot-close"></span>
+    <span class="yy-md-code-window-dot yy-md-code-window-dot-minimize"></span>
+    <span class="yy-md-code-window-dot yy-md-code-window-dot-expand"></span>
+  `.trim()
+
+  toolbarMeta.insertBefore(controls, toolbarMeta.firstChild)
+}
+
+/**
  * 增强代码块交互。
  * 作用：为通过 `v-html` 注入的代码块补充复制按钮、折叠能力和运行时状态。
  */
@@ -202,6 +227,8 @@ function enhanceCodeBlocks() {
   const codeBlocks = containerRef.value.querySelectorAll<HTMLElement>('.yy-md-code-block')
 
   for (const block of codeBlocks) {
+    ensureWindowControls(block)
+
     const codeBody = block.querySelector<HTMLElement>('.yy-md-code-body')
     const shikiCode = block.querySelector<HTMLElement>('.shiki code')
     const copyButton = block.querySelector<HTMLButtonElement>('[data-code-copy]')

@@ -209,7 +209,7 @@ onBeforeUnmount(() => {
       :src="post.coverUrl"
       :alt="post.title"
       min-height-class="min-h-[60svh] sm:min-h-[66svh] lg:min-h-[72svh]"
-      content-padding-class="px-5 pb-8 sm:px-8 sm:pb-10 lg:px-10 lg:pb-12"
+      content-padding-class="px-5 pb-14 sm:px-8 sm:pb-16 lg:px-10 lg:pb-20"
     >
       <p class="text-[0.72rem] font-semibold uppercase tracking-[0.34em] text-white/72 drop-shadow-md">
         Editorial Story
@@ -300,13 +300,20 @@ onBeforeUnmount(() => {
           #{{ tag.name }}
         </NuxtLink>
       </div>
+
+      <div class="mt-9 flex items-center gap-4 text-white/68">
+        <span class="h-px w-16 bg-gradient-to-r from-white/70 to-white/0" />
+        <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-white/64">
+          Scroll To Read
+        </p>
+      </div>
     </YunyuHero>
 
-    <section v-if="post" class="mx-auto max-w-[1440px] px-5 pb-16 sm:px-8 lg:px-10 lg:pb-24">
+    <section v-if="post" class="relative z-10 mx-auto -mt-8 max-w-[1440px] px-5 pb-16 sm:-mt-10 sm:px-8 lg:-mt-14 lg:px-10 lg:pb-24">
       <div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div ref="articleContentRef" class="space-y-8">
-          <section class="rounded-[34px] border border-white/55 bg-white/78 px-6 py-6 shadow-[0_30px_90px_-56px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/62 sm:px-8">
-            <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-end">
+          <section class="overflow-hidden rounded-[34px] border border-white/60 bg-white/80 px-6 py-6 shadow-[0_34px_94px_-56px_rgba(15,23,42,0.32)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/68 sm:px-8">
+            <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-end">
               <div>
                 <p class="text-[0.72rem] font-semibold uppercase tracking-[0.34em] text-sky-600 dark:text-sky-300">
                   Reading Note
@@ -317,6 +324,13 @@ onBeforeUnmount(() => {
                 <p class="mt-4 max-w-3xl text-[0.98rem] leading-8 text-slate-600 dark:text-slate-300">
                   目录、标签和延伸阅读只承担导览作用。真正的主角应该是段落、章节与内容之间的推进关系。
                 </p>
+
+                <div class="mt-6 flex items-center gap-4 text-slate-400 dark:text-slate-500">
+                  <span class="h-px w-14 bg-gradient-to-r from-sky-500/70 to-sky-500/0 dark:from-sky-300/70 dark:to-sky-300/0" />
+                  <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em]">
+                    Begin The Article
+                  </p>
+                </div>
               </div>
 
               <div class="grid grid-cols-2 gap-3 lg:grid-cols-1">
@@ -337,7 +351,7 @@ onBeforeUnmount(() => {
             content-theme="editorial"
             :code-theme="articleCodeTheme"
             :code-default-expanded="false"
-            container-class="rounded-[38px] border border-white/55 bg-white/84 px-2 py-4 shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/70"
+            container-class="relative overflow-hidden rounded-[38px] border border-white/55 bg-white/84 px-2 py-5 shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)] backdrop-blur-xl before:pointer-events-none before:absolute before:inset-x-10 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-sky-200/90 before:to-transparent dark:border-white/10 dark:bg-slate-950/70 dark:before:via-sky-400/30"
             body-class="px-4 sm:px-6 lg:px-12"
           />
 

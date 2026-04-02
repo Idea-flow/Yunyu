@@ -12,8 +12,8 @@ defineProps<{
 </script>
 
 <template>
-  <section class="admin-surface overflow-hidden">
-    <div class="admin-toolbar px-5 py-4">
+  <section class="overflow-hidden rounded-[18px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.6))] shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.76),rgba(15,23,42,0.66))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)]">
+    <div class="border-b border-white/60 px-5 py-4 dark:border-white/10">
       <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <p class="text-base font-semibold text-slate-900 dark:text-slate-50">{{ title }}</p>
@@ -25,7 +25,7 @@ defineProps<{
             v-if="typeof total === 'number'"
             color="neutral"
             variant="soft"
-            class="rounded-full border border-default/70 px-3 py-1"
+            class="rounded-[8px] border border-white/60 px-3 py-1 dark:border-white/10"
           >
             共 {{ total }} 条
           </UBadge>
@@ -37,7 +37,7 @@ defineProps<{
       <slot />
     </div>
 
-    <div v-if="$slots.footer" class="border-t border-slate-200/80 px-5 py-4 dark:border-slate-800">
+    <div v-if="$slots.footer" class="border-t border-white/60 px-5 py-4 dark:border-white/10">
       <slot name="footer" />
     </div>
   </section>

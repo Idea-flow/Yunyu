@@ -7,7 +7,7 @@
 </script>
 
 <template>
-  <section class="admin-surface-soft px-4 py-3">
+  <section class="rounded-[18px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.76),rgba(255,255,255,0.58))] px-4 py-3 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.74),rgba(15,23,42,0.64))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)]">
     <div class="space-y-3">
       <div>
         <slot name="search" />

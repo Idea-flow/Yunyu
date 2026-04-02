@@ -45,17 +45,17 @@ function handleConfirm() {
     :title="props.title"
     :description="props.description"
     :ui="{
-      overlay: 'bg-slate-950/35 backdrop-blur-[6px] dark:bg-slate-950/55',
-      content: 'w-[calc(100vw-2rem)] max-w-lg rounded-[12px] border border-slate-200/80 bg-white/95 shadow-[0_30px_60px_-36px_rgba(15,23,42,0.32)] backdrop-blur-xl dark:border-slate-700 dark:bg-slate-950/92 dark:shadow-[0_32px_62px_-38px_rgba(0,0,0,0.62)]',
+      overlay: 'bg-slate-950/36 backdrop-blur-[10px] dark:bg-slate-950/60',
+      content: 'w-[calc(100vw-2rem)] max-w-lg rounded-[16px] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,255,255,0.82))] shadow-[0_24px_48px_-34px_rgba(15,23,42,0.24)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.92),rgba(15,23,42,0.88))] dark:shadow-[0_28px_54px_-36px_rgba(0,0,0,0.56)]',
       header: 'hidden',
       body: 'px-6 pt-6 pb-5',
-      footer: 'border-t border-slate-200 bg-slate-50/80 px-6 pt-4 pb-6 dark:border-slate-800 dark:bg-slate-900/65'
+      footer: 'border-t border-white/60 bg-white/36 px-6 pt-4 pb-6 dark:border-white/10 dark:bg-white/[0.03]'
     }"
     @update:open="handleOpenChange"
   >
     <template #body>
-      <div class="flex items-start gap-4 rounded-[10px] border border-slate-200/80 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-900/70">
-        <div class="flex size-10 shrink-0 items-center justify-center rounded-[8px] bg-rose-500/12 text-rose-500 dark:bg-rose-400/14 dark:text-rose-300">
+      <div class="flex items-start gap-4 rounded-[12px] border border-white/60 bg-white/52 p-4 backdrop-blur-md dark:border-white/10 dark:bg-white/[0.04]">
+        <div class="flex size-10 shrink-0 items-center justify-center rounded-[10px] border border-rose-200/80 bg-rose-500/10 text-rose-500 dark:border-rose-400/18 dark:bg-rose-400/14 dark:text-rose-300">
           <UIcon name="i-lucide-shield-alert" class="size-5" />
         </div>
         <div class="space-y-1">
@@ -71,6 +71,7 @@ function handleConfirm() {
           :label="props.cancelLabel"
           color="neutral"
           variant="ghost"
+          class="rounded-[10px]"
           @click="handleOpenChange(false)"
         />
         <AdminPrimaryButton
