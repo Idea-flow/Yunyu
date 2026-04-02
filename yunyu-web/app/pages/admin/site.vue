@@ -3,19 +3,35 @@ import type { AdminSiteConfigForm } from '../../types/admin-site-config'
 
 /**
  * 后台站点设置页。
- * 作用：为站长提供站点基础信息、SEO 配置和主题配置的统一编辑入口，作为站点运营配置工作台。
+ * 作用：提供简洁的站点配置编辑入口，通过横向标签分组承载基础信息、SEO 与视觉风格配置。
  */
 definePageMeta({
   layout: 'admin',
   middleware: 'admin'
 })
 
+/**
+ * 站点设置标签项类型。
+ * 作用：统一描述配置页标签栏的分组键值和显示信息。
+ */
+interface SiteConfigTabItem {
+  key: 'basic' | 'seo' | 'theme'
+  label: string
+  icon: string
+}
+
 const toast = useToast()
 const adminSiteConfig = useAdminSiteConfig()
 
 const isLoading = ref(false)
 const isSubmitting = ref(false)
+const activeTab = ref<SiteConfigTabItem['key']>('basic')
+const lastSavedSnapshot = ref('')
 
+/**
+ * 站点设置表单状态。
+ * 作用：承载当前页面全部站点配置字段，并与后台接口保持一致。
+ */
 const formState = reactive<AdminSiteConfigForm>({
   siteName: '',
   siteSubTitle: '',
@@ -36,32 +52,21 @@ const homeStyleOptions = [
   { label: 'Minimal 风格', value: 'minimal' }
 ] as const
 
+const tabItems: SiteConfigTabItem[] = [
+  { key: 'basic', label: '基础信息', icon: 'i-lucide-badge-info' },
+  { key: 'seo', label: 'SEO 配置', icon: 'i-lucide-search-check' },
+  { key: 'theme', label: '视觉风格', icon: 'i-lucide-palette' }
+]
+
 /**
- * 站点预览卡片数据。
- * 作用：将当前表单内容实时映射成更容易扫描的页面预览摘要，帮助站长保存前做快速确认。
+ * 未保存修改状态。
+ * 作用：比较当前表单与最近一次保存快照，提示页面是否存在待保存内容。
  */
-const previewItems = computed(() => [
-  {
-    label: '站点名称',
-    value: formState.siteName || '云屿'
-  },
-  {
-    label: '默认标题',
-    value: formState.defaultTitle || formState.siteName || '云屿'
-  },
-  {
-    label: '首页风格',
-    value: formState.homeStyle || 'default'
-  },
-  {
-    label: '主色 / 辅助色',
-    value: `${formState.primaryColor} / ${formState.secondaryColor}`
-  }
-])
+const hasUnsavedChanges = computed(() => serializeFormState(formState) !== lastSavedSnapshot.value)
 
 /**
  * 读取站点配置。
- * 页面进入时调用，用于回填数据库已保存的站点设置。
+ * 页面进入时调用，用于回填数据库中已保存的站点设置。
  */
 async function loadSiteConfig() {
   isLoading.value = true
@@ -69,6 +74,7 @@ async function loadSiteConfig() {
   try {
     const response = await adminSiteConfig.getSiteConfig()
     assignFormState(response)
+    lastSavedSnapshot.value = serializeFormState(response)
   } catch (error: any) {
     toast.add({
       title: '加载站点配置失败',
@@ -100,36 +106,75 @@ function assignFormState(data: AdminSiteConfigForm) {
 }
 
 /**
+ * 序列化表单状态。
+ * 作用：将表单转换为稳定字符串，用于比较未保存修改状态。
+ *
+ * @param data 站点配置数据
+ * @returns 稳定序列化后的字符串
+ */
+function serializeFormState(data: AdminSiteConfigForm) {
+  return JSON.stringify({
+    siteName: data.siteName.trim(),
+    siteSubTitle: data.siteSubTitle.trim(),
+    footerText: data.footerText.trim(),
+    logoUrl: data.logoUrl.trim(),
+    faviconUrl: data.faviconUrl.trim(),
+    defaultTitle: data.defaultTitle.trim(),
+    defaultDescription: data.defaultDescription.trim(),
+    defaultShareImage: data.defaultShareImage.trim(),
+    primaryColor: data.primaryColor.trim(),
+    secondaryColor: data.secondaryColor.trim(),
+    homeStyle: data.homeStyle.trim()
+  })
+}
+
+/**
+ * 切换配置标签。
+ * 作用：在不同站点配置分组之间切换当前编辑视图。
+ *
+ * @param key 标签键值
+ */
+function switchTab(key: SiteConfigTabItem['key']) {
+  activeTab.value = key
+}
+
+/**
  * 校验表单。
- * 用于在发起保存前给出最基本反馈，避免无效请求进入后端。
+ * 作用：在保存前进行必要字段和颜色格式校验。
  */
 function validateForm() {
   if (!formState.siteName.trim()) {
+    activeTab.value = 'basic'
     toast.add({ title: '请输入站点名称', color: 'warning' })
     return false
   }
 
   if (!formState.siteSubTitle.trim()) {
+    activeTab.value = 'basic'
     toast.add({ title: '请输入站点副标题', color: 'warning' })
     return false
   }
 
   if (!formState.defaultTitle.trim()) {
+    activeTab.value = 'seo'
     toast.add({ title: '请输入默认标题', color: 'warning' })
     return false
   }
 
   if (!formState.defaultDescription.trim()) {
+    activeTab.value = 'seo'
     toast.add({ title: '请输入默认描述', color: 'warning' })
     return false
   }
 
   if (!/^#([A-Fa-f0-9]{6})$/.test(formState.primaryColor.trim())) {
+    activeTab.value = 'theme'
     toast.add({ title: '主色需为 #RRGGBB 格式', color: 'warning' })
     return false
   }
 
   if (!/^#([A-Fa-f0-9]{6})$/.test(formState.secondaryColor.trim())) {
+    activeTab.value = 'theme'
     toast.add({ title: '辅助色需为 #RRGGBB 格式', color: 'warning' })
     return false
   }
@@ -139,7 +184,7 @@ function validateForm() {
 
 /**
  * 保存站点配置。
- * 会将当前表单提交到后台接口，并在成功后回填最新数据。
+ * 作用：将当前表单提交到后台接口，并在成功后回填最新保存结果。
  */
 async function handleSubmit() {
   if (!validateForm()) {
@@ -164,6 +209,7 @@ async function handleSubmit() {
     })
 
     assignFormState(response)
+    lastSavedSnapshot.value = serializeFormState(response)
     toast.add({
       title: '站点配置已保存',
       color: 'success'
@@ -190,20 +236,27 @@ onMounted(async () => {
       <UDashboardNavbar title="站点设置">
         <template #right>
           <div class="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap sm:gap-3">
+            <UBadge
+              :color="hasUnsavedChanges ? 'warning' : 'success'"
+              variant="soft"
+              class="rounded-[8px] px-3 py-1"
+            >
+              {{ hasUnsavedChanges ? '待保存' : '已保存' }}
+            </UBadge>
             <UButton
               :loading="isLoading"
               icon="i-lucide-refresh-cw"
-              label="重新加载"
+              label="刷新"
               color="neutral"
               variant="outline"
               size="sm"
-              class="shrink-0 rounded-[10px]"
+              class="rounded-[8px]"
               @click="loadSiteConfig"
             />
             <AdminPrimaryButton
               :loading="isSubmitting"
               icon="i-lucide-save"
-              label="保存配置"
+              label="保存"
               loading-label="保存中..."
               @click="handleSubmit"
             />
@@ -213,153 +266,104 @@ onMounted(async () => {
     </template>
 
     <template #body>
-      <div class="space-y-6 p-4 lg:p-6">
-        <section class="sticky top-3 z-20 lg:hidden">
-          <div class="admin-surface flex items-center justify-between gap-3 p-3">
-            <div class="min-w-0">
-              <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">站点设置</p>
-              <p class="truncate text-xs text-slate-500 dark:text-slate-400">配置修改后记得及时保存，避免刷新丢失。</p>
-            </div>
-
-            <div class="flex shrink-0 items-center gap-2">
-              <UButton
-                :loading="isLoading"
-                icon="i-lucide-refresh-cw"
-                color="neutral"
-                variant="outline"
-                size="sm"
-                class="rounded-[10px]"
-                @click="loadSiteConfig"
-              />
-              <AdminPrimaryButton
-                :loading="isSubmitting"
-                icon="i-lucide-save"
-                label="保存配置"
-                loading-label="保存中..."
-                @click="handleSubmit"
-              />
+      <div class="space-y-4 p-4 lg:p-6">
+        <section class="admin-surface p-2">
+          <div class="overflow-x-auto [scrollbar-width:thin]">
+            <div class="flex min-w-max items-center gap-2">
+              <button
+                v-for="item in tabItems"
+                :key="item.key"
+                type="button"
+                :class="[
+                  'flex min-w-[168px] items-center gap-3 rounded-[10px] px-4 py-3 text-left transition duration-200',
+                  activeTab === item.key
+                    ? 'bg-sky-50 text-slate-900 dark:bg-sky-400/10 dark:text-slate-50'
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-50'
+                ]"
+                @click="switchTab(item.key)"
+              >
+                <div class="flex size-8 shrink-0 items-center justify-center rounded-[8px] bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                  <UIcon :name="item.icon" class="size-4" />
+                </div>
+                <span class="whitespace-nowrap text-sm font-medium">{{ item.label }}</span>
+              </button>
             </div>
           </div>
         </section>
 
-        <section class="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-          <div class="space-y-4">
-            <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">Site Configuration Workspace</p>
-            <h1 class="max-w-2xl text-3xl font-semibold tracking-tight text-slate-900 lg:text-[2.15rem] dark:text-slate-50">
-              把站点品牌、SEO 与首页风格放进同一块后台配置面板。
-            </h1>
-            <p class="max-w-2xl text-sm leading-8 text-slate-600 dark:text-slate-300">
-              这里保存后的配置会直接影响前台首页标题、描述、页脚以及主题色。首次进入没有数据库数据时，系统会自动用默认值回填，不需要手动补初始化 SQL。
-            </p>
+        <section class="admin-surface p-4 lg:p-5">
+          <div v-if="activeTab === 'basic'" class="grid gap-4 md:grid-cols-2">
+            <div class="space-y-2">
+              <p class="text-sm font-medium text-slate-700 dark:text-slate-300">站点名称</p>
+              <AdminInput v-model="formState.siteName" placeholder="站点名称" />
+            </div>
+
+            <div class="space-y-2">
+              <p class="text-sm font-medium text-slate-700 dark:text-slate-300">页脚文案</p>
+              <AdminInput v-model="formState.footerText" placeholder="页脚文案" />
+            </div>
+
+            <div class="space-y-2 md:col-span-2">
+              <p class="text-sm font-medium text-slate-700 dark:text-slate-300">站点副标题</p>
+              <AdminTextarea v-model="formState.siteSubTitle" :rows="4" placeholder="站点副标题" />
+            </div>
+
+            <div class="space-y-2">
+              <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Logo 地址</p>
+              <AdminInput v-model="formState.logoUrl" placeholder="Logo 地址" />
+            </div>
+
+            <div class="space-y-2">
+              <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Favicon 地址</p>
+              <AdminInput v-model="formState.faviconUrl" placeholder="Favicon 地址" />
+            </div>
           </div>
 
-          <section class="admin-surface-soft p-5">
-            <div class="space-y-4">
-              <div class="flex items-center gap-3">
-                <div class="flex size-11 items-center justify-center rounded-[10px] text-sm font-semibold text-white shadow-[0_14px_26px_-22px_rgba(14,165,233,0.55)]" :style="{ background: `linear-gradient(135deg, ${formState.primaryColor}, ${formState.secondaryColor})` }">
-                  Y
-                </div>
-                <div>
-                  <p class="text-base font-semibold text-slate-900 dark:text-slate-50">{{ formState.siteName || '云屿' }}</p>
-                  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ formState.siteSubTitle || '在二次元场景与情绪里漫游的内容站' }}</p>
-                </div>
-              </div>
-
-              <div class="grid gap-3 sm:grid-cols-2">
-                <div
-                  v-for="item in previewItems"
-                  :key="item.label"
-                  class="admin-surface p-4"
-                >
-                  <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">{{ item.label }}</p>
-                  <p class="mt-2 text-sm font-medium text-slate-900 dark:text-slate-50">{{ item.value }}</p>
-                </div>
-              </div>
-            </div>
-          </section>
-        </section>
-
-        <div class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-          <section class="admin-surface p-5">
-            <div>
-              <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">Brand Layer</p>
-              <p class="mt-1 text-base font-semibold text-slate-900 dark:text-slate-50">基础信息</p>
-              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">维护站点名称、品牌文案、页脚和图标资源。</p>
+          <div v-else-if="activeTab === 'seo'" class="grid gap-4">
+            <div class="space-y-2">
+              <p class="text-sm font-medium text-slate-700 dark:text-slate-300">默认标题</p>
+              <AdminInput v-model="formState.defaultTitle" placeholder="默认标题" />
             </div>
 
-            <div class="grid gap-5 md:grid-cols-2">
-              <div class="space-y-2">
-                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">站点名称</p>
-                <AdminInput v-model="formState.siteName" placeholder="例如：云屿 Yunyu" />
-              </div>
-              <div class="space-y-2">
-                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">页脚文案</p>
-                <AdminInput v-model="formState.footerText" placeholder="例如：云屿 Yunyu" />
-              </div>
-              <div class="space-y-2 md:col-span-2">
-                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">站点副标题</p>
-                <AdminTextarea v-model="formState.siteSubTitle" :rows="3" placeholder="输入前台首页首屏展示的站点副标题" />
-              </div>
-              <div class="space-y-2">
-                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Logo 地址</p>
-                <AdminInput v-model="formState.logoUrl" placeholder="https://example.com/logo.png" />
-              </div>
-              <div class="space-y-2">
-                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Favicon 地址</p>
-                <AdminInput v-model="formState.faviconUrl" placeholder="https://example.com/favicon.ico" />
-              </div>
-            </div>
-          </section>
-
-          <section class="admin-surface p-5">
-            <div>
-              <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">SEO Layer</p>
-              <p class="mt-1 text-base font-semibold text-slate-900 dark:text-slate-50">SEO 配置</p>
-              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">维护默认标题、描述和分享图，供首页与详情页兜底使用。</p>
+            <div class="space-y-2">
+              <p class="text-sm font-medium text-slate-700 dark:text-slate-300">默认描述</p>
+              <AdminTextarea v-model="formState.defaultDescription" :rows="5" placeholder="默认描述" />
             </div>
 
-            <div class="mt-5 space-y-5">
-              <div class="space-y-2">
-                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">默认标题</p>
-                <AdminInput v-model="formState.defaultTitle" placeholder="例如：云屿 Yunyu" />
-              </div>
-              <div class="space-y-2">
-                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">默认描述</p>
-                <AdminTextarea v-model="formState.defaultDescription" :rows="4" placeholder="输入站点默认 SEO 描述" />
-              </div>
-              <div class="space-y-2">
-                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">默认分享图地址</p>
-                <AdminInput v-model="formState.defaultShareImage" placeholder="https://example.com/share-cover.png" />
-              </div>
+            <div class="space-y-2">
+              <p class="text-sm font-medium text-slate-700 dark:text-slate-300">默认分享图地址</p>
+              <AdminInput v-model="formState.defaultShareImage" placeholder="默认分享图地址" />
             </div>
-          </section>
-        </div>
-
-        <section class="admin-surface p-5">
-          <div>
-            <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">Theme Layer</p>
-            <p class="mt-1 text-base font-semibold text-slate-900 dark:text-slate-50">主题与首页风格</p>
-            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">配置前台色彩基调与首页展示风格，便于后续多模板切换。</p>
           </div>
 
-          <div class="grid gap-5 md:grid-cols-3">
+          <div v-else class="grid gap-4 md:grid-cols-2">
             <div class="space-y-2">
               <p class="text-sm font-medium text-slate-700 dark:text-slate-300">主色</p>
               <div class="flex items-center gap-3">
-                <input v-model="formState.primaryColor" type="color" class="h-12 w-16 cursor-pointer rounded-[10px] border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-950" />
+                <input
+                  v-model="formState.primaryColor"
+                  type="color"
+                  class="h-12 w-16 cursor-pointer rounded-[10px] border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-950"
+                />
                 <AdminInput v-model="formState.primaryColor" placeholder="#38BDF8" />
               </div>
             </div>
+
             <div class="space-y-2">
               <p class="text-sm font-medium text-slate-700 dark:text-slate-300">辅助色</p>
               <div class="flex items-center gap-3">
-                <input v-model="formState.secondaryColor" type="color" class="h-12 w-16 cursor-pointer rounded-[10px] border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-950" />
+                <input
+                  v-model="formState.secondaryColor"
+                  type="color"
+                  class="h-12 w-16 cursor-pointer rounded-[10px] border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-950"
+                />
                 <AdminInput v-model="formState.secondaryColor" placeholder="#FB923C" />
               </div>
             </div>
-            <div class="space-y-2">
+
+            <div class="space-y-2 md:col-span-2">
               <p class="text-sm font-medium text-slate-700 dark:text-slate-300">首页风格</p>
-              <AdminSelect v-model="formState.homeStyle" :items="homeStyleOptions" placeholder="选择首页风格" />
+              <AdminSelect v-model="formState.homeStyle" :items="homeStyleOptions" placeholder="首页风格" />
             </div>
           </div>
         </section>

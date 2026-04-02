@@ -66,8 +66,8 @@ async function changePage(nextPage: number) {
       content-padding-class="px-5 pb-8 sm:px-8 sm:pb-10 lg:px-10 lg:pb-12"
       content-width-class="max-w-5xl"
     >
-      <p class="text-xs font-semibold uppercase tracking-[0.34em] text-orange-200">分类页</p>
-      <h1 class="mt-4 text-3xl font-bold text-white drop-shadow-lg sm:text-4xl lg:text-5xl">
+      <p class="text-[0.72rem] font-semibold uppercase tracking-[0.34em] text-orange-200">分类页</p>
+      <h1 class="mt-4 text-[clamp(2.55rem,1.85rem+2.5vw,4.8rem)] font-semibold leading-[0.98] tracking-[-0.045em] [font-family:var(--font-display)] [text-wrap:balance] text-white drop-shadow-lg">
         {{ data.category.name }}
       </h1>
       <p class="mt-4 max-w-3xl text-sm leading-7 text-white/86 drop-shadow-md sm:text-base sm:leading-8">

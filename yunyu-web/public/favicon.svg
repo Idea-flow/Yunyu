@@ -1,0 +1,51 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="64"
+  height="64"
+  viewBox="0 0 64 64"
+  fill="none"
+>
+  <defs>
+    <linearGradient id="bg" x1="10" y1="8" x2="52" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#74B6F3" />
+      <stop offset="0.5" stop-color="#C7E5FF" />
+      <stop offset="1" stop-color="#F6FBFF" />
+    </linearGradient>
+    <linearGradient id="cloudMain" x1="18" y1="24" x2="45" y2="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" />
+      <stop offset="1" stop-color="#F2F7FC" />
+    </linearGradient>
+    <linearGradient id="cloudShade" x1="24" y1="33" x2="43" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#DDECF8" stop-opacity="0" />
+      <stop offset="1" stop-color="#C8DDF1" stop-opacity="0.66" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="url(#bg)" />
+  <path
+    d="M16.5 41.0726C18.7369 39.6502 20.9382 38.9389 23.1038 38.9389C24.8654 38.9389 26.6186 39.3043 28.3633 40.0351C30.6898 41.0095 32.9381 41.4967 35.1082 41.4967C37.4716 41.4967 39.7039 40.9756 41.8052 39.9334C43.4718 39.1067 45.1748 38.6934 46.9144 38.6934C47.5012 38.6934 48.0964 38.7406 48.7 38.835C47.2451 42.1265 43.9577 44.25 40.2287 44.25H23.4362C20.644 44.25 18.3042 43.1909 16.5 41.0726Z"
+    fill="#A6D2F2"
+    fill-opacity="0.22"
+  />
+  <path
+    d="M17.7 34.6493C17.7 30.2291 21.1843 26.6445 25.4976 26.6445C27.8791 26.6445 30.0397 27.7804 31.4737 29.5831C32.5135 27.6176 34.6329 26.291 37.0854 26.291C40.5662 26.291 43.4264 28.9546 43.7185 32.3814C46.2231 32.7318 48.15 34.8821 48.15 37.4704C48.15 40.3362 45.8257 42.6602 42.9587 42.6602H24.0241C20.5359 42.6602 17.7 39.8368 17.7 36.3631V34.6493Z"
+    fill="url(#cloudMain)"
+  />
+  <path
+    d="M30.9 40.5214C33.8422 40.5214 36.1546 40.0385 37.8372 39.0727C39.5198 38.107 40.3611 36.7728 40.3611 35.0701C40.3611 33.8965 39.9137 32.8988 39.019 32.0771"
+    fill="url(#cloudShade)"
+  />
+  <path
+    d="M24.8 30.9502C26.7702 30.9502 28.5655 31.6521 30.1862 33.0559"
+    stroke="#F7FBFF"
+    stroke-width="1.45"
+    stroke-linecap="round"
+  />
+  <path
+    d="M18.95 34.7849C19.4396 31.4794 22.0082 28.7928 25.3684 28.1056C28.0064 27.5662 30.5675 28.2564 32.325 29.7461"
+    stroke="#8CB9DC"
+    stroke-width="1.05"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    opacity="0.42"
+  />
+</svg>

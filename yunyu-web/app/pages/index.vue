@@ -17,6 +17,8 @@ const homeData = computed(() => data.value)
 const featuredPost = computed(() => homeData.value?.featuredPosts?.[0] || null)
 const recommendedPosts = computed(() => homeData.value?.featuredPosts?.slice(1, 4) || [])
 const latestPosts = computed(() => homeData.value?.latestPosts || [])
+const leadLatestPost = computed(() => latestPosts.value[0] || null)
+const latestStreamPosts = computed(() => latestPosts.value.slice(1))
 const categories = computed(() => homeData.value?.categories || [])
 const topics = computed(() => homeData.value?.topics || [])
 const siteInfo = computed(() => homeData.value?.siteInfo)
@@ -72,11 +74,11 @@ useSeoMeta({
               {{ siteInfo?.siteName || 'Yunyu / 云屿' }}
             </p>
 
-            <h1 class="mt-5 text-[2.9rem] font-semibold leading-[1.04] tracking-[-0.04em] text-white drop-shadow-lg sm:text-[4rem] lg:text-[4.8rem]">
+            <h1 class="mt-5 text-[clamp(3rem,1.9rem+4.3vw,5.7rem)] font-semibold leading-[0.95] tracking-[-0.05em] [font-family:var(--font-display)] [text-wrap:balance] text-white drop-shadow-lg">
               把热爱、情绪与阅读节奏，做成一座可以慢慢逛的个人内容站。
             </h1>
 
-            <p class="mt-5 max-w-[36rem] text-base leading-8 text-white/84 drop-shadow-md">
+            <p class="mt-5 max-w-[36rem] text-base leading-8 text-white/84 drop-shadow-md sm:text-[1.05rem]">
               {{ siteInfo?.siteSubTitle || '在二次元场景与情绪里漫游的内容站' }}。这里不只展示文章，更把专题、分类与主打内容整理成一条更有沉浸感的阅读路径。
             </p>
 
@@ -147,10 +149,10 @@ useSeoMeta({
               <p class="text-xs font-semibold uppercase tracking-[0.34em] text-slate-500 dark:text-slate-400">
                 Reading Note
               </p>
-              <p class="mt-5 text-[1.8rem] font-semibold leading-tight text-slate-950 dark:text-slate-50">
+              <p class="mt-5 text-[clamp(1.75rem,1.45rem+0.9vw,2.35rem)] font-semibold leading-[1.08] tracking-[-0.035em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 dark:text-slate-50">
                 云屿不是内容仓库，而是一条有顺序、有情绪、有节奏的阅读路径。
               </p>
-              <p class="mt-5 text-sm leading-8 text-slate-600 dark:text-slate-300">
+              <p class="mt-5 text-[clamp(1rem,0.95rem+0.16vw,1.08rem)] leading-[1.95] tracking-[-0.01em] text-slate-600 dark:text-slate-300">
                 {{ siteInfo?.defaultDescription || '聚焦新番观察、场景美学与专题化阅读体验。' }}
                 首页后续会持续把“主打推荐、推荐阅读、分类地图、专题路线、最新内容”整理成可连续进入的内容流。
               </p>
@@ -171,7 +173,7 @@ useSeoMeta({
                 />
                 <div class="p-5">
                   <div class="flex items-center justify-between gap-3">
-                    <p class="text-base font-semibold text-slate-950 dark:text-slate-50">{{ topic.name }}</p>
+                    <p class="text-[clamp(1.16rem,1.05rem+0.4vw,1.45rem)] font-semibold leading-[1.16] tracking-[-0.03em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 dark:text-slate-50">{{ topic.name }}</p>
                     <span class="text-[11px] font-medium text-slate-400 dark:text-slate-500">{{ topic.articleCount }} 篇</span>
                   </div>
                   <p class="mt-3 line-clamp-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
@@ -240,7 +242,7 @@ useSeoMeta({
             />
             <div class="px-1 pb-1">
               <div class="flex items-center justify-between gap-3">
-                <h3 class="text-xl font-semibold text-slate-950 dark:text-slate-50">{{ category.name }}</h3>
+                <h3 class="text-[clamp(1.16rem,1.05rem+0.4vw,1.45rem)] font-semibold leading-[1.16] tracking-[-0.03em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 dark:text-slate-50 sm:text-[1.35rem]">{{ category.name }}</h3>
                 <span class="text-xs text-slate-500 dark:text-slate-400">{{ category.articleCount }} 篇</span>
               </div>
               <p class="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
@@ -298,17 +300,62 @@ useSeoMeta({
         link-to="/topics"
       />
 
-      <div class="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div class="space-y-4">
-          <FrontPostCard
-            v-for="post in latestPosts"
-            :key="post.slug"
-            :post="post"
-            :topic-limit="1"
-            :show-tags="true"
-            image-height-class="h-52"
-            root-class="sm:grid-cols-[240px_minmax(0,1fr)]"
-          />
+      <div class="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div class="space-y-8">
+          <NuxtLink
+            v-if="leadLatestPost"
+            :to="`/posts/${leadLatestPost.slug}`"
+            class="group grid gap-6 border-b border-slate-200/75 pb-8 dark:border-white/10 lg:grid-cols-[minmax(0,1.05fr)_300px]"
+          >
+            <div class="min-w-0">
+              <p class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-sky-600 dark:text-sky-300">
+                Latest Feature
+              </p>
+              <h3 class="mt-4 text-[clamp(2rem,1.6rem+1.2vw,2.9rem)] font-semibold leading-[1.04] tracking-[-0.04em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 transition group-hover:text-sky-700 dark:text-slate-50 dark:group-hover:text-sky-200">
+                {{ leadLatestPost.title }}
+              </h3>
+              <p class="mt-4 max-w-3xl text-[1rem] leading-8 text-slate-600 dark:text-slate-300">
+                {{ leadLatestPost.summary }}
+              </p>
+              <div class="mt-5 flex flex-wrap gap-2">
+                <UBadge color="neutral" variant="soft">{{ leadLatestPost.categoryName }}</UBadge>
+                <NuxtLink
+                  v-for="topic in leadLatestPost.topicItems.slice(0, 2)"
+                  :key="`${leadLatestPost.slug}-${topic.slug}`"
+                  :to="`/topics/${topic.slug}`"
+                  class="relative z-10"
+                  @click.stop
+                >
+                  <UBadge color="primary" variant="soft">{{ topic.name }}</UBadge>
+                </NuxtLink>
+              </div>
+              <div class="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[0.72rem] uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+                <span>{{ leadLatestPost.authorName }}</span>
+                <span>{{ leadLatestPost.publishedAt }}</span>
+                <span>{{ leadLatestPost.readingMinutes }} 分钟阅读</span>
+                <span>{{ leadLatestPost.viewCount }} 浏览</span>
+              </div>
+            </div>
+
+            <YunyuImage
+              :src="leadLatestPost.coverUrl"
+              :alt="leadLatestPost.title"
+              image-class="h-72 w-full object-cover transition duration-500 group-hover:scale-[1.02] lg:h-full"
+              rounded-class="rounded-[28px]"
+            />
+          </NuxtLink>
+
+          <div class="space-y-6">
+            <FrontPostCard
+              v-for="post in latestStreamPosts"
+              :key="post.slug"
+              :post="post"
+              :topic-limit="1"
+              :show-tags="true"
+              image-height-class="h-52"
+              root-class="sm:grid-cols-[240px_minmax(0,1fr)]"
+            />
+          </div>
         </div>
 
         <aside class="space-y-4">
@@ -327,7 +374,7 @@ useSeoMeta({
           <div
             v-for="topic in spotlightTopics"
             :key="topic.slug"
-            class="overflow-hidden rounded-[30px] border border-white/60 bg-white/76 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.34)] dark:border-white/10 dark:bg-slate-950/62"
+            class="overflow-hidden rounded-[30px] border border-white/60 bg-white/76 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.34)] transition hover:-translate-y-0.5 hover:border-sky-200 dark:border-white/10 dark:bg-slate-950/62 dark:hover:border-sky-900"
           >
             <YunyuImage
               :src="topic.coverUrl"
@@ -337,7 +384,7 @@ useSeoMeta({
             />
             <div class="p-5">
               <div class="flex items-center justify-between gap-3">
-                <NuxtLink :to="`/topics/${topic.slug}`" class="text-lg font-semibold text-slate-950 transition hover:text-sky-700 dark:text-slate-50 dark:hover:text-sky-200">{{ topic.name }}</NuxtLink>
+                <NuxtLink :to="`/topics/${topic.slug}`" class="text-[clamp(1.16rem,1.05rem+0.4vw,1.45rem)] font-semibold leading-[1.16] tracking-[-0.03em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 transition hover:text-sky-700 dark:text-slate-50 dark:hover:text-sky-200">{{ topic.name }}</NuxtLink>
                 <span class="text-xs text-slate-500 dark:text-slate-400">{{ topic.articleCount }} 篇</span>
               </div>
               <p class="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">

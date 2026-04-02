@@ -3,11 +3,12 @@
 @import "./md/index.css";
 
 @theme static {
-  --font-sans: "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-sans: "Inter", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-display: "Playfair Display", "Times New Roman", "PingFang SC", serif;
 }
 
 :root {
-  --ui-radius: 1rem;
+  --ui-radius: 0.75rem;
   --ui-container: 80rem;
   --ui-primary: var(--ui-color-sky-500);
   color-scheme: light;
@@ -16,6 +17,12 @@
 .dark {
   --ui-primary: var(--ui-color-sky-400);
   color-scheme: dark;
+}
+
+html {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
@@ -50,21 +57,21 @@ body {
 .admin-shell {
   border: 1px solid rgb(226 232 240 / 0.88);
   background: rgb(255 255 255 / 0.9);
-  box-shadow: 0 18px 40px -32px rgba(15, 23, 42, 0.22);
-  backdrop-filter: blur(12px);
-  border-radius: 14px;
+  box-shadow: 0 16px 36px -30px rgba(15, 23, 42, 0.18);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
 }
 
 .dark .admin-shell {
   border-color: rgb(30 41 59 / 0.96);
   background: rgb(2 6 23 / 0.84);
-  box-shadow: 0 22px 44px -34px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 18px 40px -32px rgba(0, 0, 0, 0.5);
 }
 
 .admin-surface {
   border: 1px solid rgb(226 232 240 / 0.9);
   background: rgb(255 255 255 / 0.94);
-  border-radius: 14px;
+  border-radius: 12px;
 }
 
 .dark .admin-surface {
@@ -75,7 +82,7 @@ body {
 .admin-surface-soft {
   border: 1px solid rgb(226 232 240 / 0.7);
   background: rgb(248 250 252 / 0.84);
-  border-radius: 12px;
+  border-radius: 10px;
 }
 
 .dark .admin-surface-soft {
@@ -86,7 +93,7 @@ body {
 .admin-table-shell {
   border: 1px solid rgb(226 232 240 / 0.88);
   background: rgb(255 255 255 / 0.92);
-  border-radius: 12px;
+  border-radius: 10px;
 }
 
 .dark .admin-table-shell {

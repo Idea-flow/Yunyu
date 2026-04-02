@@ -17,8 +17,8 @@
   --yy-md-hr: rgba(148, 163, 184, 0.28);
   --yy-md-image-border: rgba(226, 232, 240, 0.92);
   color: var(--yy-md-text);
-  font-size: 1rem;
-  line-height: 2;
+  font-size: 1.02rem;
+  line-height: 2.05;
   word-break: break-word;
 }
 
@@ -41,30 +41,36 @@
 .yy-md h5,
 .yy-md h6 {
   color: var(--yy-md-heading);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.35;
-  margin-top: 1.75em;
-  margin-bottom: 0.75em;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.16;
+  margin-top: 2em;
+  margin-bottom: 0.85em;
   scroll-margin-top: 6rem;
 }
 
 .yy-md h1 {
-  font-size: clamp(2rem, 2.8vw, 2.7rem);
+  font-size: clamp(2.15rem, 3vw, 2.95rem);
+  margin-top: 0;
+  margin-bottom: 0.9em;
 }
 
 .yy-md h2 {
-  font-size: clamp(1.5rem, 2.1vw, 2rem);
+  font-size: clamp(1.7rem, 2.15vw, 2.15rem);
+  margin-top: 2.35em;
 }
 
 .yy-md h3 {
-  font-size: clamp(1.2rem, 1.6vw, 1.45rem);
+  font-size: clamp(1.3rem, 1.7vw, 1.58rem);
+  margin-top: 2em;
 }
 
 .yy-md h4,
 .yy-md h5,
 .yy-md h6 {
-  font-size: 1.05rem;
+  font-size: 1.08rem;
+  margin-top: 1.7em;
 }
 
 .yy-md p,
@@ -75,7 +81,7 @@
 .yy-md pre,
 .yy-md figure {
   margin-top: 0;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.45rem;
 }
 
 .yy-md p,
@@ -125,7 +131,7 @@
 }
 
 .yy-md li + li {
-  margin-top: 0.45rem;
+  margin-top: 0.6rem;
 }
 
 .yy-md li > ul,
@@ -136,10 +142,10 @@
 
 .yy-md blockquote {
   border-left: 4px solid var(--yy-md-quote-border);
-  border-radius: 1rem;
+  border-radius: 1.15rem;
   background: var(--yy-md-quote-bg);
   color: var(--yy-md-quote-text);
-  padding: 1rem 1.1rem;
+  padding: 1.15rem 1.25rem;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
@@ -150,7 +156,7 @@
 .yy-md hr {
   border: 0;
   height: 1px;
-  margin: 2rem 0;
+  margin: 2.5rem 0;
   background: linear-gradient(90deg, transparent 0%, var(--yy-md-hr) 18%, var(--yy-md-hr) 82%, transparent 100%);
 }
 
@@ -175,7 +181,20 @@
   max-width: 100%;
   height: auto;
   border: 1px solid var(--yy-md-image-border);
-  border-radius: 1.25rem;
+  border-radius: 1.4rem;
+  margin: 1.9rem auto;
+}
+
+.yy-md figure {
+  margin: 1.9rem 0;
+}
+
+.yy-md figcaption {
+  margin-top: -0.35rem;
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: var(--yy-md-muted);
 }
 
 .yy-md table {
@@ -220,8 +239,8 @@
 
 @media (max-width: 1024px) {
   .yy-md {
-    font-size: 0.98rem;
-    line-height: 1.9;
+    font-size: 0.99rem;
+    line-height: 1.95;
   }
 
   .yy-md h1 {

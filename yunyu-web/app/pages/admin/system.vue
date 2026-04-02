@@ -3,8 +3,7 @@ import type { ActuatorThreadDumpResponse, AdminSystemMonitorOverview } from '../
 
 /**
  * 后台系统监控页。
- * 作用：为站长提供 JVM、线程、CPU 与 Actuator 指标的可视化查看入口，
- * 作为后台运维排查与运行时观测的管理页面。
+ * 作用：提供 JVM、线程与指标查看入口，用于后台运行状态检查。
  */
 definePageMeta({
   layout: 'admin',
@@ -22,51 +21,37 @@ const threadDump = ref<ActuatorThreadDumpResponse | null>(null)
 const threadDumpOpen = ref(false)
 
 /**
- * 仪表卡片数据。
- * 作用：将监控概览映射为页面首屏可扫描的数值摘要，帮助站长快速判断服务状态。
+ * 监控卡片数据。
+ * 作用：将关键指标整理为首屏可直接查看的卡片。
  */
 const insightCards = computed(() => [
   {
-    title: 'Heap 已用内存',
-    value: formatBytes(overview.value?.heapUsedBytes),
-    description: overview.value?.heapMaxBytes
-      ? `最大堆 ${formatBytes(overview.value.heapMaxBytes)}`
-      : '尚未读取到堆上限',
-    icon: 'i-lucide-hard-drive-download',
-    tone: 'sky'
+    title: 'Heap',
+    value: formatBytes(overview.value?.heapUsedBytes)
   },
   {
-    title: 'Non-Heap 已用内存',
-    value: formatBytes(overview.value?.nonHeapUsedBytes),
-    description: '包含类元数据、JIT 与框架基线开销',
-    icon: 'i-lucide-layers-3',
-    tone: 'amber'
+    title: 'Non-Heap',
+    value: formatBytes(overview.value?.nonHeapUsedBytes)
   },
   {
-    title: '活动线程数',
-    value: typeof overview.value?.liveThreads === 'number' ? String(Math.round(overview.value.liveThreads)) : '--',
-    description: '用于观察线程是否持续攀升',
-    icon: 'i-lucide-git-branch-plus',
-    tone: 'emerald'
+    title: '线程',
+    value: typeof overview.value?.liveThreads === 'number' ? String(Math.round(overview.value.liveThreads)) : '--'
   },
   {
-    title: '系统 CPU 使用率',
-    value: formatRatioAsPercent(overview.value?.cpuUsageRatio),
-    description: '结合内存与线程指标判断运行压力',
-    icon: 'i-lucide-cpu',
-    tone: 'violet'
+    title: 'CPU',
+    value: formatRatioAsPercent(overview.value?.cpuUsageRatio)
   }
 ])
 
 /**
  * 线程摘要列表。
- * 作用：从线程栈响应中提取最关键的前几条线程快照，避免页面首次展示信息过量。
+ * 作用：展示前几条线程快照，便于快速查看。
  */
 const topThreads = computed(() => threadDump.value?.threads?.slice(0, 8) || [])
 
 /**
  * 计算堆内存使用比例。
- * 用于页面中的进度展示和风险感知。
+ * 作用：用于展示当前 Heap 使用率。
  */
 const heapUsagePercent = computed(() => {
   if (!overview.value?.heapUsedBytes || !overview.value?.heapMaxBytes) {
@@ -78,7 +63,7 @@ const heapUsagePercent = computed(() => {
 
 /**
  * 读取系统监控总览。
- * 会在进入页面和手动刷新时执行，并同步更新时间展示。
+ * 作用：刷新概览数据并记录最近刷新时间。
  */
 async function loadOverview() {
   isLoading.value = true
@@ -89,7 +74,7 @@ async function loadOverview() {
   } catch (error: any) {
     toast.add({
       title: '系统监控加载失败',
-      description: error?.message || '暂时无法获取 JVM 监控信息。',
+      description: error?.message || '暂时无法获取监控信息。',
       color: 'error'
     })
   } finally {
@@ -98,8 +83,8 @@ async function loadOverview() {
 }
 
 /**
- * 打开线程栈面板。
- * 仅在用户主动查看时请求线程快照，降低首屏负担。
+ * 打开线程快照弹窗。
+ * 作用：在首次打开时加载线程数据。
  */
 async function openThreadDump() {
   threadDumpOpen.value = true
@@ -112,8 +97,8 @@ async function openThreadDump() {
 }
 
 /**
- * 刷新线程栈数据。
- * 适用于排查接口卡顿、线程阻塞与活动线程数异常增长场景。
+ * 刷新线程快照数据。
+ * 作用：重新读取当前线程信息。
  */
 async function refreshThreadDump() {
   isRefreshingThreadDump.value = true
@@ -123,7 +108,7 @@ async function refreshThreadDump() {
   } catch (error: any) {
     toast.add({
       title: '线程快照加载失败',
-      description: error?.message || '暂时无法读取线程栈信息。',
+      description: error?.message || '暂时无法读取线程快照。',
       color: 'error'
     })
   } finally {
@@ -133,10 +118,10 @@ async function refreshThreadDump() {
 
 /**
  * 格式化字节数。
- * 用于统一展示 JVM 内存相关指标。
+ * 作用：统一展示内存相关指标。
  *
  * @param value 字节值
- * @returns 友好的容量文本
+ * @returns 容量文本
  */
 function formatBytes(value?: number | null) {
   if (typeof value !== 'number' || Number.isNaN(value)) {
@@ -155,8 +140,8 @@ function formatBytes(value?: number | null) {
 }
 
 /**
- * 格式化比例值为百分比。
- * 适用于 CPU 使用率等 0 到 1 之间的监控指标。
+ * 格式化比例值。
+ * 作用：将监控比例统一转换为百分比文本。
  *
  * @param value 比例值
  * @returns 百分比文本
@@ -171,10 +156,10 @@ function formatRatioAsPercent(value?: number | null) {
 
 /**
  * 格式化时间戳。
- * 用于展示页面最近一次刷新时间和 JVM 启动时间。
+ * 作用：统一展示时间信息。
  *
  * @param value 时间戳
- * @returns 本地时间文本
+ * @returns 时间文本
  */
 function formatDateTime(value?: number | null) {
   if (!value) {
@@ -189,10 +174,10 @@ function formatDateTime(value?: number | null) {
 
 /**
  * 格式化运行时长。
- * 用于将 JVM 运行毫秒数转为更适合人工扫描的表达。
+ * 作用：将毫秒转换为更容易查看的文本。
  *
  * @param value 毫秒值
- * @returns 运行时长文本
+ * @returns 时长文本
  */
 function formatDuration(value?: number | null) {
   if (typeof value !== 'number' || Number.isNaN(value)) {
@@ -225,25 +210,25 @@ onMounted(async () => {
     <template #header>
       <UDashboardNavbar title="系统监控">
         <template #right>
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2">
             <UBadge color="neutral" variant="soft" class="rounded-[8px] px-3 py-1">
-              最近刷新：{{ formatDateTime(lastUpdatedAt) }}
+              {{ formatDateTime(lastUpdatedAt) }}
             </UBadge>
-<UButton
-  icon="i-lucide-activity"
-  label="线程快照"
-  color="neutral"
-  variant="outline"
-  class="rounded-[10px]"
-  @click="openThreadDump"
-/>
-<UButton
-  :loading="isLoading"
-  icon="i-lucide-refresh-cw"
-  label="刷新监控"
-  class="rounded-[10px]"
-  @click="loadOverview"
-/>
+            <UButton
+              icon="i-lucide-activity"
+              label="线程快照"
+              color="neutral"
+              variant="outline"
+              class="rounded-[8px]"
+              @click="openThreadDump"
+            />
+            <UButton
+              :loading="isLoading"
+              icon="i-lucide-refresh-cw"
+              label="刷新"
+              class="rounded-[8px]"
+              @click="loadOverview"
+            />
           </div>
         </template>
       </UDashboardNavbar>
@@ -251,136 +236,96 @@ onMounted(async () => {
 
     <template #body>
       <div class="space-y-6 p-4 lg:p-6">
-        <section class="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-          <div class="space-y-5">
-            <div class="space-y-3">
-              <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">Runtime Observatory</p>
-              <h1 class="max-w-2xl text-3xl font-semibold tracking-tight text-slate-900 lg:text-[2.15rem] dark:text-slate-50">
-                把 JVM、线程与运行参数放到同一张后台工作面板里。
-              </h1>
-              <p class="max-w-2xl text-sm leading-8 text-slate-600 dark:text-slate-300">
-                这里聚合了 Actuator 的 `info`、`metrics` 与 `threaddump` 能力，方便你在不进服务器的情况下先判断当前服务是堆高、线程高，还是只是框架基线偏大。
-              </p>
-            </div>
-
-            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <div
-                v-for="card in insightCards"
-                :key="card.title"
-                class="admin-surface p-4"
-              >
-                <div class="flex items-center justify-between gap-3">
-                  <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ card.title }}</p>
-                  <div class="flex size-10 items-center justify-center rounded-[10px] bg-slate-100 text-slate-900 dark:bg-white/8 dark:text-slate-50">
-                    <UIcon :name="card.icon" class="size-[18px]" />
-                  </div>
-                </div>
-                <p class="mt-4 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">{{ card.value }}</p>
-                <p class="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">{{ card.description }}</p>
-              </div>
-            </div>
+        <section class="grid gap-4 md:grid-cols-4">
+          <div
+            v-for="card in insightCards"
+            :key="card.title"
+            class="admin-surface p-5"
+          >
+            <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ card.title }}</p>
+            <p class="mt-4 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">{{ card.value }}</p>
           </div>
+        </section>
 
-          <section class="admin-surface-soft p-5">
-            <div class="space-y-5">
-              <div>
-                <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">Heap Pressure</p>
-                <div class="mt-3 flex items-end justify-between gap-4">
-                  <div>
-                    <p class="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">{{ heapUsagePercent }}%</p>
-                    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                      已用 {{ formatBytes(overview?.heapUsedBytes) }} / {{ formatBytes(overview?.heapMaxBytes) }}
-                    </p>
-                  </div>
-                  <UBadge color="primary" variant="soft" class="rounded-[8px] px-3 py-1">
-                    {{ overview?.jvm?.availableProcessors || '--' }} vCPU
-                  </UBadge>
-                </div>
+        <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <section class="admin-surface p-5">
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div class="admin-surface-soft p-4">
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Heap 使用率</p>
+                <p class="mt-3 text-2xl font-semibold text-slate-900 dark:text-slate-50">{{ heapUsagePercent }}%</p>
+                <UProgress :value="heapUsagePercent" color="primary" class="mt-4" />
               </div>
 
-              <UProgress :value="heapUsagePercent" color="primary" class="h-2.5" />
+              <div class="admin-surface-soft p-4">
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">运行时长</p>
+                <p class="mt-3 text-lg font-semibold text-slate-900 dark:text-slate-50">{{ formatDuration(overview?.jvm?.uptimeMs) }}</p>
+              </div>
 
-              <div class="grid gap-3 sm:grid-cols-2">
-                <div class="admin-surface p-4">
-                  <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">JVM 运行时长</p>
-                  <p class="mt-2 text-sm font-medium text-slate-900 dark:text-slate-50">{{ formatDuration(overview?.jvm?.uptimeMs) }}</p>
-                </div>
-                <div class="admin-surface p-4">
-                  <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">默认时区</p>
-                  <p class="mt-2 text-sm font-medium text-slate-900 dark:text-slate-50">{{ overview?.jvm?.defaultTimeZone || '--' }}</p>
-                </div>
+              <div class="admin-surface-soft p-4">
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">时区</p>
+                <p class="mt-3 text-lg font-semibold text-slate-900 dark:text-slate-50">{{ overview?.jvm?.defaultTimeZone || '--' }}</p>
+              </div>
+
+              <div class="admin-surface-soft p-4">
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">处理器</p>
+                <p class="mt-3 text-lg font-semibold text-slate-900 dark:text-slate-50">{{ overview?.jvm?.availableProcessors || '--' }}</p>
               </div>
             </div>
           </section>
-        </section>
 
-        <div class="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
           <section class="admin-surface p-5">
-            <div>
-              <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">JVM Profile</p>
-              <p class="mt-1 text-base font-semibold text-slate-900 dark:text-slate-50">运行时画像</p>
-              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">确认版本、启动时刻、内存基线与厂商信息。</p>
+            <div class="space-y-3">
+              <div class="admin-surface-soft p-4">
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Java</p>
+                <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">{{ overview?.jvm?.javaVersion || '--' }}</p>
+              </div>
+              <div class="admin-surface-soft p-4">
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">VM</p>
+                <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">{{ overview?.jvm?.vmName || '--' }}</p>
+              </div>
+              <div class="admin-surface-soft p-4">
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Vendor</p>
+                <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">{{ overview?.jvm?.javaVendor || '--' }}</p>
+              </div>
+              <div class="admin-surface-soft p-4">
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">启动时间</p>
+                <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">{{ formatDateTime(overview?.jvm?.startTime) }}</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <section class="admin-surface p-5">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="text-base font-semibold text-slate-900 dark:text-slate-50">启动参数</h2>
+              <UBadge color="neutral" variant="soft" class="rounded-[8px] px-3 py-1">
+                {{ overview?.jvm?.inputArguments?.length || 0 }}
+              </UBadge>
             </div>
 
-            <div class="mt-5 space-y-3">
-              <div class="grid gap-3 sm:grid-cols-2">
-                <div class="admin-surface-soft p-4">
-                  <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">Java Version</p>
-                  <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">{{ overview?.jvm?.javaVersion || '--' }}</p>
-                </div>
-                <div class="admin-surface-soft p-4">
-                  <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">VM Name</p>
-                  <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">{{ overview?.jvm?.vmName || '--' }}</p>
-                </div>
-                <div class="admin-surface-soft p-4">
-                  <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">Java Vendor</p>
-                  <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">{{ overview?.jvm?.javaVendor || '--' }}</p>
-                </div>
-                <div class="admin-surface-soft p-4">
-                  <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">JVM Start Time</p>
-                  <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">{{ formatDateTime(overview?.jvm?.startTime) }}</p>
-                </div>
-              </div>
-
-              <div class="admin-surface-soft p-5">
-                <div class="flex items-start justify-between gap-4">
-                  <div>
-                    <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">Startup Arguments</p>
-                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">这里可以直接确认容器识别、GC 日志和本地内存跟踪参数是否已生效。</p>
-                  </div>
-                  <UBadge color="info" variant="soft" class="rounded-[8px] px-3 py-1">
-                    {{ overview?.jvm?.inputArguments?.length || 0 }} 条
-                  </UBadge>
-                </div>
-
-                <div class="mt-4 flex flex-wrap gap-2">
-                  <UBadge
-                    v-for="argument in overview?.jvm?.inputArguments || []"
-                    :key="argument"
-                    color="neutral"
-                    variant="soft"
-                    class="max-w-full rounded-[8px] px-3 py-1 text-left"
-                  >
-                    <span class="truncate">{{ argument }}</span>
-                  </UBadge>
-                </div>
-              </div>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <UBadge
+                v-for="argument in overview?.jvm?.inputArguments || []"
+                :key="argument"
+                color="neutral"
+                variant="soft"
+                class="max-w-full rounded-[8px] px-3 py-1 text-left"
+              >
+                <span class="truncate">{{ argument }}</span>
+              </UBadge>
             </div>
           </section>
 
           <section class="admin-surface p-5">
             <div class="flex items-center justify-between gap-3">
-              <div>
-                <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">Metric Index</p>
-                <p class="mt-1 text-base font-semibold text-slate-900 dark:text-slate-50">可用指标导航</p>
-                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">用于确认当前服务暴露了哪些 JVM 与系统指标。</p>
-              </div>
+              <h2 class="text-base font-semibold text-slate-900 dark:text-slate-50">指标</h2>
               <UBadge color="neutral" variant="soft" class="rounded-[8px] px-3 py-1">
-                {{ overview?.metricsNames?.length || 0 }} 项
+                {{ overview?.metricsNames?.length || 0 }}
               </UBadge>
             </div>
 
-            <div class="mt-5 grid gap-3 sm:grid-cols-2">
+            <div class="mt-4 grid gap-3 sm:grid-cols-2">
               <div
                 v-for="metricName in overview?.metricsNames?.slice(0, 12) || []"
                 :key="metricName"
@@ -388,70 +333,27 @@ onMounted(async () => {
               >
                 {{ metricName }}
               </div>
-
-              <div
-                v-if="!(overview?.metricsNames?.length)"
-                class="col-span-full rounded-[10px] border border-dashed border-slate-300/80 bg-slate-50/50 px-4 py-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400"
-              >
-                当前还没有读取到指标列表，请确认后端已启用 Actuator `metrics` 端点。
-              </div>
             </div>
           </section>
         </div>
-
-        <section class="admin-surface p-5">
-          <div>
-            <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">Operator Notes</p>
-            <p class="mt-1 text-base font-semibold text-slate-900 dark:text-slate-50">排查提示</p>
-            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">先看哪一项，能更快判断当前 300MB 内存是否属于正常框架基线。</p>
-          </div>
-
-          <div class="grid gap-4 lg:grid-cols-3">
-            <div class="admin-surface-soft p-5">
-              <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">先看 Heap</p>
-              <p class="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                如果 `Heap 已用内存` 不高，但容器总体占用仍然高，通常说明大头不在业务对象，而在框架、类元数据、线程栈或本地内存。
-              </p>
-            </div>
-            <div class="admin-surface-soft p-5">
-              <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">再看线程</p>
-              <p class="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                活动线程数如果持续走高，再结合线程快照查看阻塞线程，可以快速排除线程泄漏或数据库等待问题。
-              </p>
-            </div>
-            <div class="admin-surface-soft p-5">
-              <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">最后看参数</p>
-              <p class="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                通过启动参数列表确认 `GC` 日志、容器识别和 `NativeMemoryTracking` 是否已打开，这样后续再进容器排查才不会走回头路。
-              </p>
-            </div>
-          </div>
-        </section>
       </div>
     </template>
   </UDashboardPanel>
 
   <UModal v-model:open="threadDumpOpen" :ui="{ content: 'sm:max-w-5xl rounded-[14px]' }">
     <template #content>
-      <div class="rounded-[14px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_28px_60px_-36px_rgba(15,23,42,0.35)] dark:border-slate-800 dark:bg-slate-950/95">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">Thread Snapshot</p>
-            <p class="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-50">线程快照</p>
-            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              首屏只展示前 8 条线程摘要；需要更深排查时，再结合后端文档中的 `jcmd` 继续看完整线程栈。
-            </p>
-          </div>
-
-          <div class="flex items-center gap-3">
+      <div class="rounded-[14px] border border-slate-200/80 bg-white/95 p-6 dark:border-slate-800 dark:bg-slate-950/95">
+        <div class="flex items-center justify-between gap-3">
+          <p class="text-xl font-semibold text-slate-900 dark:text-slate-50">线程快照</p>
+          <div class="flex items-center gap-2">
             <UBadge color="neutral" variant="soft" class="rounded-[8px] px-3 py-1">
-              {{ threadDump?.threads?.length || 0 }} 条线程
+              {{ threadDump?.threads?.length || 0 }}
             </UBadge>
             <UButton
               :loading="isRefreshingThreadDump"
               icon="i-lucide-refresh-cw"
-              label="刷新快照"
-              class="rounded-[10px]"
+              label="刷新"
+              class="rounded-[8px]"
               @click="refreshThreadDump"
             />
           </div>
@@ -467,7 +369,7 @@ onMounted(async () => {
               <div>
                 <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">{{ thread.threadName }}</p>
                 <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  线程 ID: {{ thread.threadId }} · 状态: {{ thread.threadState }} · {{ thread.daemon ? 'Daemon' : 'User Thread' }}
+                  {{ thread.threadId }} · {{ thread.threadState }} · {{ thread.daemon ? 'Daemon' : 'User' }}
                 </p>
               </div>
               <UBadge color="neutral" variant="soft" class="rounded-[8px] px-3 py-1">
@@ -475,14 +377,7 @@ onMounted(async () => {
               </UBadge>
             </div>
 
-            <pre class="mt-4 max-h-56 overflow-auto rounded-[10px] bg-slate-950 px-4 py-3 text-xs leading-6 text-slate-100">{{ (thread.stackTrace || []).slice(0, 12).join('\n') || '当前线程未返回可展示的栈信息。' }}</pre>
-          </div>
-
-          <div
-            v-if="!topThreads.length && !isRefreshingThreadDump"
-            class="rounded-[10px] border border-dashed border-slate-300/80 bg-slate-50/50 px-4 py-8 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400"
-          >
-            当前没有读取到线程快照数据，请确认后端 `threaddump` 端点可访问。
+            <pre class="mt-4 max-h-56 overflow-auto rounded-[10px] bg-slate-950 px-4 py-3 text-xs leading-6 text-slate-100">{{ (thread.stackTrace || []).slice(0, 12).join('\n') || '--' }}</pre>
           </div>
         </div>
       </div>

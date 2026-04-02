@@ -263,12 +263,7 @@ async function jumpToTocItem(item: ArticleTocItem) {
 <template>
   <div class="space-y-5">
     <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-      <div class="space-y-1">
-        <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">Markdown 内容工作台</p>
-        <p class="text-sm text-slate-500 dark:text-slate-400">
-          左侧输入 Markdown，右侧实时预览 HTML，适合长文持续写作和排版检查。
-        </p>
-      </div>
+      <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">Markdown</p>
 
       <div class="flex flex-wrap items-center gap-2">
         <UBadge color="neutral" variant="soft">正文 {{ currentContentLength }} 字</UBadge>
@@ -277,10 +272,10 @@ async function jumpToTocItem(item: ArticleTocItem) {
       </div>
     </div>
 
-    <div class="rounded-[24px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(248,250,252,0.94),rgba(241,245,249,0.72))] p-3 shadow-[0_16px_36px_-28px_rgba(15,23,42,0.28)] dark:border-slate-700 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.82),rgba(15,23,42,0.58))]">
+    <div class="rounded-[10px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(248,250,252,0.94),rgba(241,245,249,0.72))] p-3 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.82),rgba(15,23,42,0.58))]">
       <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div class="flex flex-wrap items-center gap-2">
-          <div class="flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white/90 px-3 py-2 shadow-[0_10px_20px_-18px_rgba(15,23,42,0.28)] dark:border-slate-700 dark:bg-slate-950/80">
+          <div class="flex items-center gap-1.5 rounded-[8px] border border-slate-200/90 bg-white/90 px-3 py-2 shadow-[0_8px_18px_-18px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-slate-950/80">
             <span class="h-2.5 w-2.5 rounded-full bg-rose-400/90" />
             <span class="h-2.5 w-2.5 rounded-full bg-amber-400/90" />
             <span class="h-2.5 w-2.5 rounded-full bg-emerald-400/90" />
@@ -289,7 +284,7 @@ async function jumpToTocItem(item: ArticleTocItem) {
           <div
             v-for="tool in editorTools"
             :key="tool.label"
-            class="flex min-h-11 items-center gap-2 rounded-full border border-slate-200/90 bg-white/90 px-3 py-2 text-sm text-slate-600 shadow-[0_10px_20px_-18px_rgba(15,23,42,0.24)] dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-300"
+            class="flex min-h-10 items-center gap-2 rounded-[8px] border border-slate-200/90 bg-white/90 px-3 py-2 text-sm text-slate-600 shadow-[0_8px_18px_-18px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-300"
           >
             <span class="font-semibold text-slate-800 dark:text-slate-100">{{ tool.label }}</span>
             <span class="text-slate-400 dark:text-slate-500">{{ tool.hint }}</span>
@@ -297,17 +292,17 @@ async function jumpToTocItem(item: ArticleTocItem) {
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-          <span class="inline-flex min-h-11 items-center rounded-full border border-sky-200/80 bg-sky-50/90 px-4 py-2 text-sm font-medium text-sky-700 dark:border-sky-400/30 dark:bg-sky-400/10 dark:text-sky-200">
+          <span class="inline-flex min-h-10 items-center rounded-[8px] border border-sky-200/80 bg-sky-50/90 px-4 py-2 text-sm font-medium text-sky-700 dark:border-sky-400/30 dark:bg-sky-400/10 dark:text-sky-200">
             Markdown -> HTML 实时编排
           </span>
         </div>
       </div>
     </div>
 
-    <div class="inline-flex rounded-2xl border border-slate-200 bg-transparent p-1 xl:hidden dark:border-slate-700">
+    <div class="inline-flex rounded-[10px] border border-slate-200 bg-transparent p-1 xl:hidden dark:border-slate-700">
       <button
         type="button"
-        class="min-h-11 cursor-pointer rounded-xl px-4 text-sm font-medium transition duration-200"
+        class="min-h-10 cursor-pointer rounded-[8px] px-4 text-sm font-medium transition duration-200"
         :class="viewMode === 'edit'
           ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-slate-50'
           : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-50'"
@@ -317,7 +312,7 @@ async function jumpToTocItem(item: ArticleTocItem) {
       </button>
       <button
         type="button"
-        class="min-h-11 cursor-pointer rounded-xl px-4 text-sm font-medium transition duration-200"
+        class="min-h-10 cursor-pointer rounded-[8px] px-4 text-sm font-medium transition duration-200"
         :class="viewMode === 'preview'
           ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-slate-50'
           : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-50'"
@@ -329,24 +324,21 @@ async function jumpToTocItem(item: ArticleTocItem) {
 
     <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <section
-        class="flex h-[46rem] flex-col rounded-[28px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.86))] p-4 shadow-[0_22px_48px_-34px_rgba(15,23,42,0.32)] dark:border-slate-700 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(15,23,42,0.72))] dark:shadow-[0_24px_50px_-34px_rgba(0,0,0,0.55)] xl:h-[56rem]"
+        class="flex h-[46rem] flex-col rounded-[12px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.86))] p-4 shadow-[0_16px_34px_-30px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(15,23,42,0.72))] dark:shadow-[0_18px_36px_-28px_rgba(0,0,0,0.48)] xl:h-[56rem]"
         :class="viewMode === 'preview' ? 'hidden xl:block' : ''"
       >
-        <div class="mb-4 flex items-start justify-between gap-3 rounded-[22px] border border-slate-200/80 bg-white/78 px-4 py-3 shadow-[0_16px_32px_-28px_rgba(15,23,42,0.24)] dark:border-slate-700 dark:bg-slate-950/58">
-          <div class="min-w-0">
-            <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">Markdown 编辑器</p>
-            <p class="mt-1 text-sm leading-7 text-slate-500 dark:text-slate-400">支持长文输入、结构调整和持续写作，内容超出后在输入区内部滚动。</p>
-          </div>
+        <div class="mb-4 flex items-start justify-between gap-3 rounded-[10px] border border-slate-200/80 bg-white/78 px-4 py-3 shadow-[0_12px_24px_-22px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-slate-950/58">
+          <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">编辑器</p>
           <div class="flex items-center gap-2">
             <span class="rounded-full border border-slate-200/90 bg-slate-50 px-3 py-1.5 text-xs font-semibold tracking-[0.14em] text-slate-500 uppercase dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">Editor</span>
             <UBadge color="neutral" variant="soft">源内容</UBadge>
           </div>
         </div>
 
-        <div class="min-h-0 flex-1 overflow-hidden rounded-[1.8rem]">
+        <div class="min-h-0 flex-1 overflow-hidden rounded-[10px]">
           <textarea
             :value="contentModel"
-            class="h-full min-h-full w-full resize-none overflow-y-auto rounded-[1.8rem] border border-slate-200/80 bg-white/98 px-5 py-5 font-mono text-[1rem] leading-8 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_18px_36px_-30px_rgba(15,23,42,0.2)] outline-none transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100/90 dark:border-slate-700 dark:bg-slate-950/94 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-600 dark:focus:border-sky-300 dark:focus:bg-slate-950 dark:focus:ring-sky-400/20 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.5)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/80"
+            class="h-full min-h-full w-full resize-none overflow-y-auto rounded-[10px] border border-slate-200/80 bg-white/98 px-4 py-4 font-mono text-[1rem] leading-8 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_12px_24px_-22px_rgba(15,23,42,0.18)] outline-none transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100/90 dark:border-slate-700 dark:bg-slate-950/94 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-600 dark:focus:border-sky-300 dark:focus:bg-slate-950 dark:focus:ring-sky-400/20 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.5)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/80"
             placeholder="请输入 Markdown 正文内容"
             spellcheck="false"
             @input="handleUpdate(($event.target as HTMLTextAreaElement).value)"
@@ -355,14 +347,11 @@ async function jumpToTocItem(item: ArticleTocItem) {
       </section>
 
       <section
-        class="flex h-[46rem] min-w-0 overflow-hidden rounded-[28px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.86))] p-4 shadow-[0_22px_48px_-34px_rgba(15,23,42,0.32)] dark:border-slate-700 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(15,23,42,0.72))] dark:shadow-[0_24px_50px_-34px_rgba(0,0,0,0.55)] xl:h-[56rem]"
+        class="flex h-[46rem] min-w-0 overflow-hidden rounded-[12px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.86))] p-4 shadow-[0_16px_34px_-30px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(15,23,42,0.72))] dark:shadow-[0_18px_36px_-28px_rgba(0,0,0,0.48)] xl:h-[56rem]"
         :class="viewMode === 'edit' ? 'hidden xl:block' : ''"
       >
-        <div class="mb-4 flex items-start justify-between gap-3 rounded-[22px] border border-slate-200/80 bg-white/78 px-4 py-3 shadow-[0_16px_32px_-28px_rgba(15,23,42,0.24)] dark:border-slate-700 dark:bg-slate-950/58">
-          <div class="min-w-0">
-            <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">HTML 实时预览</p>
-            <p class="mt-1 text-sm leading-7 text-slate-500 dark:text-slate-400">渲染结果实时更新，方便检查标题层级、代码块、段落节奏和最终排版。</p>
-          </div>
+        <div class="mb-4 flex items-start justify-between gap-3 rounded-[10px] border border-slate-200/80 bg-white/78 px-4 py-3 shadow-[0_12px_24px_-22px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-slate-950/58">
+          <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">预览</p>
           <div class="flex items-center gap-2">
             <span class="rounded-full border border-slate-200/90 bg-slate-50 px-3 py-1.5 text-xs font-semibold tracking-[0.14em] text-slate-500 uppercase dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">Preview</span>
             <UBadge color="info" variant="soft">实时渲染</UBadge>
@@ -437,10 +426,9 @@ async function jumpToTocItem(item: ArticleTocItem) {
     <UModal
       v-model:open="isPreviewModalOpen"
       title="渲染结果预览"
-      description="查看文章正文当前生成的 HTML、目录、纯文本与统计信息。"
       :ui="{
         overlay: 'bg-slate-950/40 backdrop-blur-[6px] dark:bg-slate-950/60',
-        content: 'w-[calc(100vw-2rem)] max-w-5xl overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/95 shadow-[0_40px_80px_-42px_rgba(15,23,42,0.42)] backdrop-blur-2xl dark:border-slate-700 dark:bg-slate-950/92 dark:shadow-[0_42px_80px_-42px_rgba(0,0,0,0.72)]',
+        content: 'w-[calc(100vw-2rem)] max-w-5xl overflow-hidden rounded-[12px] border border-slate-200/80 bg-white/95 shadow-[0_30px_60px_-36px_rgba(15,23,42,0.32)] backdrop-blur-xl dark:border-slate-700 dark:bg-slate-950/92 dark:shadow-[0_32px_62px_-38px_rgba(0,0,0,0.62)]',
         header: 'border-b border-slate-200 px-6 pt-6 pb-4 dark:border-slate-800',
         body: 'bg-white/50 px-6 py-5 dark:bg-slate-950/40',
         footer: 'border-t border-slate-200 bg-slate-50/80 px-6 pt-4 pb-6 dark:border-slate-800 dark:bg-slate-900/65'
@@ -448,16 +436,12 @@ async function jumpToTocItem(item: ArticleTocItem) {
     >
       <template #header>
         <div class="flex items-start gap-4">
-          <div class="inline-flex size-12 shrink-0 items-center justify-center rounded-[1.1rem] border border-sky-200 bg-sky-50 text-sky-600 shadow-[0_14px_28px_-24px_rgba(14,165,233,0.55)] dark:border-sky-400/25 dark:bg-sky-400/10 dark:text-sky-300">
+          <div class="inline-flex size-11 shrink-0 items-center justify-center rounded-[10px] border border-sky-200 bg-sky-50 text-sky-600 shadow-[0_12px_24px_-22px_rgba(14,165,233,0.55)] dark:border-sky-400/25 dark:bg-sky-400/10 dark:text-sky-300">
             <UIcon name="i-lucide-file-code-2" class="size-5" />
           </div>
 
           <div class="min-w-0 space-y-1">
-            <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">Render Result</p>
             <p class="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">{{ currentPreviewPanelTitle }}</p>
-            <p class="max-w-3xl text-sm leading-7 text-slate-600 dark:text-slate-300">
-              {{ currentPreviewPanelDescription }}
-            </p>
           </div>
         </div>
       </template>
@@ -472,14 +456,14 @@ async function jumpToTocItem(item: ArticleTocItem) {
               :variant="previewPanelTab === tab.key ? 'solid' : 'soft'"
               :icon="tab.icon"
               :label="tab.label"
-              class="rounded-full"
+              class="rounded-[8px]"
               @click="switchPreviewPanelTab(tab.key)"
             />
           </div>
 
           <div
             v-if="previewPanelTab === 'finalPreview'"
-            class="rounded-[22px] border border-slate-200/80 bg-white/75 p-4 dark:border-slate-700 dark:bg-slate-950/58"
+            class="rounded-[10px] border border-slate-200/80 bg-white/75 p-4 dark:border-slate-700 dark:bg-slate-950/58"
           >
             <div class="grid gap-4 lg:grid-cols-2">
               <div class="space-y-3">
@@ -493,14 +477,11 @@ async function jumpToTocItem(item: ArticleTocItem) {
                     :key="theme.value"
                     color="neutral"
                     :variant="previewContentTheme === theme.value ? 'solid' : 'soft'"
-                    class="rounded-full"
+                    class="rounded-[8px]"
                     :label="theme.label"
                     @click="switchPreviewContentTheme(theme.value)"
                   />
                 </div>
-                <p class="text-sm text-slate-500 dark:text-slate-400">
-                  {{ contentThemeOptions.find(item => item.value === previewContentTheme)?.hint }}
-                </p>
               </div>
 
               <div class="space-y-3">
@@ -514,23 +495,20 @@ async function jumpToTocItem(item: ArticleTocItem) {
                     :key="theme.value"
                     color="neutral"
                     :variant="previewCodeTheme === theme.value ? 'solid' : 'soft'"
-                    class="rounded-full"
+                    class="rounded-[8px]"
                     :label="theme.label"
                     @click="switchPreviewCodeTheme(theme.value)"
                   />
                 </div>
-                <p class="text-sm text-slate-500 dark:text-slate-400">
-                  {{ codeThemeOptions.find(item => item.value === previewCodeTheme)?.hint }}
-                </p>
               </div>
             </div>
           </div>
 
-          <div class="rounded-[24px] border border-slate-200/80 bg-slate-50/85 p-4 dark:border-slate-700 dark:bg-slate-900/72">
+          <div class="rounded-[10px] border border-slate-200/80 bg-slate-50/85 p-4 dark:border-slate-700 dark:bg-slate-900/72">
             <div
               v-if="previewPanelTab === 'finalPreview'"
               ref="finalPreviewPanelRef"
-              class="overflow-hidden rounded-[20px] border border-slate-200/80 bg-white/92 dark:border-slate-700 dark:bg-slate-950/78"
+              class="overflow-hidden rounded-[10px] border border-slate-200/80 bg-white/92 dark:border-slate-700 dark:bg-slate-950/78"
             >
               <MarkdownPreview
                 :html="previewHtml"
@@ -545,13 +523,10 @@ async function jumpToTocItem(item: ArticleTocItem) {
 
             <div
               v-else-if="previewPanelTab === 'toc' && tocSource.length"
-              class="overflow-hidden rounded-[20px] border border-slate-200/80 bg-white/92 p-3 dark:border-slate-700 dark:bg-slate-950/78"
+              class="overflow-hidden rounded-[10px] border border-slate-200/80 bg-white/92 p-3 dark:border-slate-700 dark:bg-slate-950/78"
             >
               <div class="mb-3 flex items-center justify-between gap-3 rounded-[18px] border border-slate-200/80 bg-slate-50/85 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/72">
-                <div class="space-y-1">
-                  <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">目录树</p>
-                  <p class="text-sm text-slate-500 dark:text-slate-400">点击目录项可切到最终预览并跳转到对应标题。</p>
-                </div>
+                <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">目录树</p>
                 <UBadge color="info" variant="soft">{{ tocSource.length }} 项</UBadge>
               </div>
 
@@ -566,21 +541,16 @@ async function jumpToTocItem(item: ArticleTocItem) {
 
             <div
               v-else-if="currentPreviewPanelText.trim().length > 0"
-              class="overflow-hidden rounded-[20px] border border-slate-200/80 bg-slate-950 dark:border-slate-700"
+              class="overflow-hidden rounded-[10px] border border-slate-200/80 bg-slate-950 dark:border-slate-700"
             >
               <pre class="max-h-[32rem] overflow-auto px-5 py-4 text-sm leading-7 text-slate-100 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.5)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-600/80">{{ currentPreviewPanelText }}</pre>
             </div>
 
             <div
               v-else
-              class="flex min-h-48 items-center justify-center rounded-[20px] border border-dashed border-slate-300/80 bg-white/70 px-6 py-8 text-center dark:border-slate-700 dark:bg-slate-950/55"
+              class="flex min-h-48 items-center justify-center rounded-[10px] border border-dashed border-slate-300/80 bg-white/70 px-6 py-8 text-center dark:border-slate-700 dark:bg-slate-950/55"
             >
-              <div class="space-y-2">
-                <p class="text-base font-semibold text-slate-900 dark:text-slate-50">当前标签页还没有内容</p>
-                <p class="text-sm leading-7 text-slate-500 dark:text-slate-400">
-                  可以切换到其他标签页查看对应的原始渲染结果。
-                </p>
-              </div>
+              <p class="text-base font-semibold text-slate-900 dark:text-slate-50">暂无内容</p>
             </div>
           </div>
         </div>
@@ -592,7 +562,7 @@ async function jumpToTocItem(item: ArticleTocItem) {
             color="neutral"
             variant="soft"
             label="关闭"
-            class="rounded-full"
+            class="rounded-[8px]"
             @click="closePreviewModal"
           />
         </div>

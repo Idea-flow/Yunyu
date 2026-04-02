@@ -54,14 +54,14 @@ function handlePageSizeChange(value: string | number | null) {
 </script>
 
 <template>
-  <div class="flex flex-col gap-3 pt-1 lg:flex-row lg:items-center lg:justify-between">
+  <div class="flex flex-col gap-2 pt-1 lg:flex-row lg:items-center lg:justify-between">
     <p class="text-sm font-medium text-slate-500 dark:text-slate-400">
       {{ props.page }} / {{ props.totalPages }} 页
       <span class="ml-2 text-slate-400 dark:text-slate-500">每页 {{ props.pageSize }} 条</span>
     </p>
 
     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-      <div class="inline-flex items-center gap-2 px-1 py-1">
+      <div class="inline-flex items-center gap-2 px-1 py-0.5">
         <span class="text-xs font-medium text-slate-500 dark:text-slate-400">每页</span>
         <AdminSelect
           :model-value="props.pageSize"
@@ -89,7 +89,7 @@ function handlePageSizeChange(value: string | number | null) {
             :color="page === item.value ? 'info' : 'neutral'"
             :variant="page === item.value ? 'solid' : 'ghost'"
             :label="String(item.value)"
-            class="min-w-10 rounded-[10px] border-0"
+            class="min-w-9 rounded-[8px] border-0"
             :class="page === item.value
               ? ''
               : 'text-slate-500 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:bg-slate-800/80'"
@@ -100,7 +100,7 @@ function handlePageSizeChange(value: string | number | null) {
             color="neutral"
             variant="ghost"
             icon="i-lucide-chevron-left"
-            class="rounded-[10px] border-0 text-slate-500 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:bg-slate-800/80"
+            class="rounded-[8px] border-0 text-slate-500 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:bg-slate-800/80"
           />
         </template>
         <template #next>
@@ -108,7 +108,7 @@ function handlePageSizeChange(value: string | number | null) {
             color="neutral"
             variant="ghost"
             icon="i-lucide-chevron-right"
-            class="rounded-[10px] border-0 text-slate-500 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:bg-slate-800/80"
+            class="rounded-[8px] border-0 text-slate-500 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:bg-slate-800/80"
           />
         </template>
       </UPagination>

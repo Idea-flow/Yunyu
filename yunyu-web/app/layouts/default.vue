@@ -144,8 +144,8 @@ onBeforeUnmount(() => {
                 云
               </div>
               <div class="min-w-0">
-                <p class="text-sm font-semibold" :class="brandTitleClassName">云屿</p>
-                <p class="text-xs" :class="brandSubtitleClassName">Yunyu</p>
+                <p class="text-[clamp(1.25rem,1.05rem+0.75vw,1.7rem)] font-semibold leading-[0.96] tracking-[-0.05em] [font-family:var(--font-display)]" :class="brandTitleClassName">云屿</p>
+                <p class="mt-1 text-[0.66rem] uppercase tracking-[0.14em]" :class="brandSubtitleClassName">Yunyu</p>
               </div>
             </NuxtLink>
 

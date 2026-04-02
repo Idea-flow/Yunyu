@@ -40,8 +40,8 @@ function getIndentStyle(level: number) {
  */
 function getItemClass(item: ArticleTocItem) {
   return props.activeId === item.id
-    ? 'bg-sky-500/10 text-sky-700 shadow-[0_16px_34px_-26px_rgba(14,165,233,0.42)] ring-1 ring-sky-200/70 dark:bg-sky-400/14 dark:text-sky-200 dark:ring-sky-400/20'
-    : 'text-slate-600 hover:bg-white/72 hover:text-slate-900 hover:translate-x-1 dark:text-slate-300 dark:hover:bg-slate-900/56 dark:hover:text-slate-50'
+    ? 'bg-sky-500/8 text-sky-700 ring-1 ring-sky-200/70 dark:bg-sky-400/12 dark:text-sky-200 dark:ring-sky-400/20'
+    : 'text-slate-600 hover:bg-slate-50/85 hover:text-slate-900 hover:translate-x-0.5 dark:text-slate-300 dark:hover:bg-slate-900/50 dark:hover:text-slate-50'
 }
 
 /**
@@ -53,7 +53,7 @@ function getItemClass(item: ArticleTocItem) {
  */
 function getDotClass(item: ArticleTocItem) {
   if (props.activeId === item.id) {
-    return 'bg-sky-500 shadow-[0_0_0_5px_rgba(14,165,233,0.12)] dark:bg-sky-300'
+    return 'bg-sky-500 shadow-[0_0_0_4px_rgba(14,165,233,0.1)] dark:bg-sky-300'
   }
 
   if (item.level <= 2) {
@@ -72,7 +72,7 @@ function getDotClass(item: ArticleTocItem) {
  */
 function getTextClass(item: ArticleTocItem) {
   return item.level <= 2
-    ? 'text-[0.95rem] font-semibold leading-6'
+    ? 'text-[0.92rem] font-semibold leading-6 tracking-[-0.02em]'
     : 'text-sm font-medium leading-6'
 }
 
@@ -88,7 +88,7 @@ function handleSelect(item: ArticleTocItem) {
 </script>
 
 <template>
-  <div class="space-y-1.5">
+  <div class="space-y-1">
     <button
       v-for="item in props.items"
       :key="item.id"

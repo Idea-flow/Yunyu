@@ -64,16 +64,6 @@ const isEditing = computed(() => props.mode === 'edit')
 const pageTitle = computed(() => isEditing.value ? '修改文章' : '新增文章')
 
 /**
- * 计算页面说明文案。
- * 帮助用户快速理解当前页面的操作目标。
- */
-const pageDescription = computed(() =>
-  isEditing.value
-    ? '调整文章标题、摘要、发布状态与正文内容，完成后统一保存。'
-    : '从这里创建一篇新的文章内容，先整理基础信息，再填写正文。'
-)
-
-/**
  * 计算主按钮文案。
  * 根据当前模式动态反馈提交动作。
  */
@@ -125,13 +115,13 @@ const selectedTopicItems = computed(() =>
  * 统一工作台卡片样式。
  * 作用：让文章编辑页的各个功能区共享同一套外层卡片视觉语言。
  */
-const workspaceCardClass = 'rounded-[30px] border border-slate-200/80 bg-white/85 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-[0_22px_48px_-30px_rgba(0,0,0,0.55)]'
+const workspaceCardClass = 'rounded-[12px] border border-slate-200/80 bg-white/92 shadow-[0_16px_34px_-30px_rgba(15,23,42,0.16)] backdrop-blur-lg dark:border-slate-800 dark:bg-slate-950/72 dark:shadow-[0_18px_36px_-28px_rgba(0,0,0,0.48)]'
 
 /**
  * 统一工作区内层面板样式。
  * 作用：为基础信息、SEO、内容编排和侧栏摘要提供一致的内层承载容器。
  */
-const workspaceSurfaceClass = 'rounded-[24px] border border-slate-200/80 bg-slate-50/80 p-5 dark:border-slate-700 dark:bg-slate-900/70'
+const workspaceSurfaceClass = 'rounded-[10px] border border-slate-200/80 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-900/70'
 
 /**
  * 校验文章表单。
@@ -358,7 +348,7 @@ await Promise.all([
             icon="i-lucide-arrow-left"
             color="neutral"
             variant="ghost"
-            class="rounded-2xl"
+            class="rounded-[8px]"
             @click="goBackToList"
           />
         </template>
@@ -369,33 +359,25 @@ await Promise.all([
       <div class="space-y-6 p-4 lg:p-6">
         <div class="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_22rem]">
           <section class="space-y-6">
-            <UCard class="overflow-hidden rounded-[34px] border border-slate-200/80 bg-white/85 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-[0_22px_48px_-30px_rgba(0,0,0,0.55)]">
+            <UCard class="overflow-hidden rounded-[12px] border border-slate-200/80 bg-white/92 shadow-[0_16px_34px_-30px_rgba(15,23,42,0.16)] backdrop-blur-lg dark:border-slate-800 dark:bg-slate-950/72 dark:shadow-[0_18px_36px_-28px_rgba(0,0,0,0.48)]">
               <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                <div class="space-y-3">
-                  <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">Editorial Workspace</p>
-                  <div class="space-y-2">
-                    <h1 class="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50 lg:text-[2rem]">
-                      {{ pageTitle }}
-                    </h1>
-                    <p class="max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">
-                      {{ pageDescription }}
-                    </p>
-                  </div>
-                </div>
+                <h1 class="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50 lg:text-[2rem]">
+                  {{ pageTitle }}
+                </h1>
 
                 <div class="flex flex-wrap items-center gap-3">
                   <UButton
                     label="返回列表"
                     color="neutral"
                     variant="outline"
-                    class="cursor-pointer rounded-2xl"
+                    class="cursor-pointer rounded-[8px]"
                     @click="goBackToList"
                   />
                   <UButton
                     label="保存草稿"
                     color="neutral"
                     variant="outline"
-                    class="cursor-pointer rounded-2xl"
+                    class="cursor-pointer rounded-[8px]"
                     :loading="isSubmitting && formState.status === 'DRAFT'"
                     @click="handleSubmitWithStatus('DRAFT')"
                   />
@@ -404,7 +386,7 @@ await Promise.all([
                     label="下线保存"
                     color="warning"
                     variant="soft"
-                    class="cursor-pointer rounded-2xl"
+                    class="cursor-pointer rounded-[8px]"
                     :loading="isSubmitting && formState.status === 'OFFLINE'"
                     @click="handleSubmitWithStatus('OFFLINE')"
                   />
@@ -421,25 +403,19 @@ await Promise.all([
 
             <UCard :class="workspaceCardClass">
               <template #header>
-                <div class="space-y-1">
-                  <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">基础信息</p>
-                  <p class="text-base font-semibold text-slate-900 dark:text-slate-50">文章基础信息</p>
-                </div>
+                <p class="text-base font-semibold text-slate-900 dark:text-slate-50">文章基础信息</p>
               </template>
 
               <div v-if="isLoadingDetail" class="space-y-4">
-                <USkeleton class="h-16 rounded-2xl" />
-                <USkeleton class="h-16 rounded-2xl" />
-                <USkeleton class="h-28 rounded-2xl" />
+                <USkeleton class="h-16 rounded-[10px]" />
+                <USkeleton class="h-16 rounded-[10px]" />
+                <USkeleton class="h-28 rounded-[10px]" />
               </div>
 
               <form v-else class="space-y-5" @submit.prevent="handleSubmit">
                 <div :class="workspaceSurfaceClass">
                   <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-                    <div class="space-y-1">
-                      <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">主信息</p>
-                      <p class="text-sm text-slate-500 dark:text-slate-400">标题、Slug 与状态决定文章在后台与前台的基础识别方式。</p>
-                    </div>
+                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">主信息</p>
                     <UBadge color="neutral" variant="soft">标题 {{ formState.title.trim().length }} 字</UBadge>
                   </div>
 
@@ -462,10 +438,7 @@ await Promise.all([
 
                 <div :class="workspaceSurfaceClass">
                   <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-                    <div class="space-y-1">
-                      <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">摘要与状态</p>
-                      <p class="text-sm text-slate-500 dark:text-slate-400">摘要用于列表概览，状态决定这次保存将如何进入内容流程。</p>
-                    </div>
+                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">摘要与状态</p>
                     <UBadge color="info" variant="soft">{{ statusHint }}</UBadge>
                   </div>
 
@@ -489,10 +462,7 @@ await Promise.all([
                 </div>
 
                 <div :class="workspaceSurfaceClass">
-                  <div class="mb-4 space-y-1">
-                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">封面资源</p>
-                    <p class="text-sm text-slate-500 dark:text-slate-400">封面地址会影响列表首屏观感，建议优先使用稳定可访问的图片链接。</p>
-                  </div>
+                  <p class="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-50">封面资源</p>
 
                   <UFormField name="coverUrl" label="封面地址">
                     <AdminInput
@@ -506,15 +476,12 @@ await Promise.all([
 
             <UCard :class="workspaceCardClass">
               <template #header>
-                <div class="space-y-1">
-                  <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">SEO</p>
-                  <p class="text-base font-semibold text-slate-900 dark:text-slate-50">搜索展示信息</p>
-                </div>
+                <p class="text-base font-semibold text-slate-900 dark:text-slate-50">搜索展示信息</p>
               </template>
 
               <div v-if="isLoadingDetail" class="space-y-4">
-                <USkeleton class="h-16 rounded-2xl" />
-                <USkeleton class="h-28 rounded-2xl" />
+                <USkeleton class="h-16 rounded-[10px]" />
+                <USkeleton class="h-28 rounded-[10px]" />
               </div>
 
                   <div v-else class="space-y-5">
@@ -543,46 +510,24 @@ await Promise.all([
                   </div>
                 </div>
 
-                <div class="grid gap-3 lg:grid-cols-3">
-                  <div :class="workspaceSurfaceClass">
-                    <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">搜索建议</p>
-                    <p class="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">SEO 标题建议控制在 60 字以内，避免搜索结果里被截断。</p>
-                  </div>
-
-                  <div :class="workspaceSurfaceClass">
-                    <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">描述建议</p>
-                    <p class="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">SEO 描述尽量控制在 160 字以内，突出文章核心价值。</p>
-                  </div>
-
-                  <div :class="workspaceSurfaceClass">
-                    <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">摘要关系</p>
-                    <p class="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">如果没有单独 SEO 描述，可先从摘要中提炼一版再微调。</p>
-                  </div>
-                </div>
               </div>
             </UCard>
 
             <UCard :class="workspaceCardClass">
               <template #header>
-                <div class="space-y-1">
-                  <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">Structure</p>
-                  <p class="text-base font-semibold text-slate-900 dark:text-slate-50">分类 / 标签 / 专题</p>
-                </div>
+                <p class="text-base font-semibold text-slate-900 dark:text-slate-50">分类 / 标签 / 专题</p>
               </template>
 
               <div v-if="isLoadingTaxonomy" class="grid gap-5 lg:grid-cols-3">
-                <USkeleton class="h-36 rounded-[24px]" />
-                <USkeleton class="h-36 rounded-[24px]" />
-                <USkeleton class="h-36 rounded-[24px]" />
+                <USkeleton class="h-36 rounded-[10px]" />
+                <USkeleton class="h-36 rounded-[10px]" />
+                <USkeleton class="h-36 rounded-[10px]" />
               </div>
 
               <div v-else class="grid gap-5 lg:grid-cols-3">
                 <div :class="workspaceSurfaceClass">
                   <div class="flex items-center justify-between gap-3">
-                    <div class="space-y-1">
-                      <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">分类</p>
-                      <p class="text-sm text-slate-500 dark:text-slate-400">单选，确定文章主归档。</p>
-                    </div>
+                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">分类</p>
                     <UBadge color="info" variant="soft">{{ selectedCategoryLabel }}</UBadge>
                   </div>
                   <div class="mt-4 space-y-3">
@@ -591,18 +536,12 @@ await Promise.all([
                       :items="categoryOptions"
                       placeholder="请选择分类"
                     />
-                    <p class="text-sm leading-7 text-slate-600 dark:text-slate-300">
-                      分类主要用于文章主归档和列表组织。
-                    </p>
                   </div>
                 </div>
 
                 <div :class="workspaceSurfaceClass">
                   <div class="flex items-center justify-between gap-3">
-                    <div class="space-y-1">
-                      <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">标签</p>
-                      <p class="text-sm text-slate-500 dark:text-slate-400">多选，补充文章主题关键词。</p>
-                    </div>
+                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">标签</p>
                     <UBadge color="info" variant="soft">已选 {{ formState.tagIds.length }}</UBadge>
                   </div>
                   <div v-if="tagOptions.length" class="mt-4 flex flex-wrap gap-2">
@@ -610,7 +549,7 @@ await Promise.all([
                       v-for="tag in tagOptions"
                       :key="tag.id"
                       type="button"
-                      class="cursor-pointer rounded-full border px-3 py-2 text-sm font-medium transition duration-200"
+                      class="cursor-pointer rounded-[8px] border px-3 py-2 text-sm font-medium transition duration-200"
                       :class="formState.tagIds.includes(tag.id)
                         ? 'border-sky-300 bg-sky-50 text-sky-700 shadow-[0_10px_24px_-20px_rgba(14,165,233,0.45)] dark:border-sky-400/40 dark:bg-sky-400/12 dark:text-sky-200'
                         : 'border-slate-200/90 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-50'"
@@ -619,17 +558,12 @@ await Promise.all([
                       {{ tag.name }}
                     </button>
                   </div>
-                  <div v-else class="mt-4 text-sm leading-7 text-slate-500 dark:text-slate-400">
-                    当前没有可用标签，请先到标签管理页创建数据。
-                  </div>
+                  <div v-else class="mt-4 text-sm text-slate-500 dark:text-slate-400">暂无标签</div>
                 </div>
 
                 <div :class="workspaceSurfaceClass">
                   <div class="flex items-center justify-between gap-3">
-                    <div class="space-y-1">
-                      <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">专题</p>
-                      <p class="text-sm text-slate-500 dark:text-slate-400">多选，适合归入系列内容。</p>
-                    </div>
+                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">专题</p>
                     <UBadge color="info" variant="soft">已选 {{ formState.topicIds.length }}</UBadge>
                   </div>
                   <div v-if="topicOptions.length" class="mt-4 flex flex-wrap gap-2">
@@ -637,7 +571,7 @@ await Promise.all([
                       v-for="topic in topicOptions"
                       :key="topic.id"
                       type="button"
-                      class="cursor-pointer rounded-full border px-3 py-2 text-sm font-medium transition duration-200"
+                      class="cursor-pointer rounded-[8px] border px-3 py-2 text-sm font-medium transition duration-200"
                       :class="formState.topicIds.includes(topic.id)
                         ? 'border-emerald-300 bg-emerald-50 text-emerald-700 shadow-[0_10px_24px_-20px_rgba(16,185,129,0.42)] dark:border-emerald-400/40 dark:bg-emerald-400/12 dark:text-emerald-200'
                         : 'border-slate-200/90 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-50'"
@@ -646,9 +580,7 @@ await Promise.all([
                       {{ topic.name }}
                     </button>
                   </div>
-                  <div v-else class="mt-4 text-sm leading-7 text-slate-500 dark:text-slate-400">
-                    当前没有可用专题，请先到专题管理页创建数据。
-                  </div>
+                  <div v-else class="mt-4 text-sm text-slate-500 dark:text-slate-400">暂无专题</div>
                 </div>
               </div>
             </UCard>
@@ -658,10 +590,7 @@ await Promise.all([
           <aside class="space-y-6">
             <UCard :class="workspaceCardClass">
               <template #header>
-                <div class="space-y-1">
-                  <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">Overview</p>
-                  <p class="text-base font-semibold text-slate-900 dark:text-slate-50">编辑摘要</p>
-                </div>
+                <p class="text-base font-semibold text-slate-900 dark:text-slate-50">编辑摘要</p>
               </template>
 
               <div class="space-y-4">
@@ -711,7 +640,7 @@ await Promise.all([
 
                 <div
                   v-if="formState.coverUrl.trim()"
-                  class="overflow-hidden rounded-[24px] border border-slate-200/80 bg-slate-50/80 dark:border-slate-700 dark:bg-slate-900/70"
+                  class="overflow-hidden rounded-[10px] border border-slate-200/80 bg-slate-50/80 dark:border-slate-700 dark:bg-slate-900/70"
                 >
                   <div class="flex items-center justify-between px-4 pt-4">
                     <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">封面预览</p>
@@ -726,12 +655,7 @@ await Promise.all([
 
                 <div :class="workspaceSurfaceClass">
                   <p class="text-xs tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">编辑建议</p>
-                  <ul class="mt-3 space-y-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                    <li>标题尽量清晰直接，避免在列表里被截断。</li>
-                    <li>摘要建议控制在 60 到 120 字，方便列表概览。</li>
-                    <li>SEO 标题建议控制在 60 字以内，SEO 描述尽量控制在 160 字以内。</li>
-                    <li>正文较长时，优先在这个页面完成完整编辑，不再用弹窗承载。</li>
-                  </ul>
+                  <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">{{ submitLabel }}</p>
                 </div>
               </div>
             </UCard>
@@ -740,14 +664,11 @@ await Promise.all([
 
         <UCard :class="workspaceCardClass">
           <template #header>
-            <div class="space-y-1">
-              <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">Content</p>
-              <p class="text-base font-semibold text-slate-900 dark:text-slate-50">正文双栏工作台</p>
-            </div>
+            <p class="text-base font-semibold text-slate-900 dark:text-slate-50">正文</p>
           </template>
 
           <div v-if="isLoadingDetail" class="space-y-4">
-            <USkeleton class="h-[42rem] rounded-[28px]" />
+            <USkeleton class="h-[42rem] rounded-[12px]" />
           </div>
 
           <div v-else class="space-y-5">

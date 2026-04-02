@@ -34,8 +34,8 @@ const emit = defineEmits<{
 const textareaUi = computed(() => ({
   root: 'w-full',
   base: [
-    'min-h-32 w-full rounded-[1.1rem] border border-slate-200/80 bg-white/94 px-4 py-3 leading-7 text-[0.95rem] font-medium text-slate-800',
-    'shadow-[0_10px_24px_-22px_rgba(15,23,42,0.28)]',
+    'min-h-28 w-full rounded-[8px] border border-slate-200/80 bg-white/94 px-3.5 py-2.5 leading-7 text-[0.95rem] font-medium text-slate-800',
+    'shadow-[0_8px_18px_-18px_rgba(15,23,42,0.22)]',
     'transition-[border-color,box-shadow,background-color,color] duration-200',
     'placeholder:text-slate-400',
     'hover:border-slate-300 hover:bg-white',

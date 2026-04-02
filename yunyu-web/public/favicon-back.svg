@@ -1,0 +1,35 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="64"
+  height="64"
+  viewBox="0 0 64 64"
+  fill="none"
+>
+  <defs>
+    <linearGradient id="bg" x1="12" y1="10" x2="52" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9ED3FF" />
+      <stop offset="0.5" stop-color="#CFEAFF" />
+      <stop offset="1" stop-color="#F7FBFF" />
+    </linearGradient>
+    <linearGradient id="cloudMain" x1="20" y1="22" x2="43" y2="41" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" />
+      <stop offset="1" stop-color="#F5FAFF" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="url(#bg)" />
+  <path
+    d="M19 35.8243C19 31.7305 22.286 28.4121 26.3391 28.4121C28.6181 28.4121 30.6546 29.4616 31.9974 31.1057C33.0578 29.3226 34.9879 28.1309 37.1961 28.1309C40.3902 28.1309 43.0045 30.6434 43.1679 33.8081C45.5784 34.2118 47.4062 36.2868 47.4062 38.7774C47.4062 41.5564 45.1405 43.8086 42.3453 43.8086H25.0389C21.7029 43.8086 19 41.1096 19 37.7795V35.8243Z"
+    fill="#C9E7FF"
+    fill-opacity="0.42"
+  />
+  <path
+    d="M18 33.3868C18 29.1292 21.4287 25.6777 25.6597 25.6777C28.038 25.6777 30.1627 26.7699 31.5631 28.4807C32.6694 26.6257 34.6836 25.3853 36.9871 25.3853C40.32 25.3853 43.0477 28.0001 43.2183 31.2944C45.7332 31.7146 47.6406 33.8795 47.6406 36.4773C47.6406 39.3764 45.2766 41.7266 42.3606 41.7266H24.3075C20.8252 41.7266 18 38.906 18 35.4289V33.3868Z"
+    fill="url(#cloudMain)"
+  />
+  <path
+    d="M24.7549 30.2256C26.7057 30.2256 28.4983 30.9526 29.8938 32.1737"
+    stroke="#E5F3FF"
+    stroke-width="1.6"
+    stroke-linecap="round"
+  />
+</svg>

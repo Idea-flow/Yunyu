@@ -14,7 +14,7 @@ interface AdminTaxonomyPageConfig {
   pageTitle: string
   tableTitle: string
   operationTitle: string
-  operationDescription: string
+  operationDescription?: string
   searchPlaceholder: string
   itemLabel: string
   descriptionLabel: string
@@ -361,7 +361,7 @@ await loadItems()
               label="重置"
               color="neutral"
               variant="outline"
-              class="cursor-pointer rounded-2xl"
+              class="cursor-pointer rounded-[8px]"
               @click="handleResetFilters"
             />
             <AdminPrimaryButton label="搜索" icon="i-lucide-search" @click="handleSearch" />
@@ -370,7 +370,6 @@ await loadItems()
 
         <AdminTableCard
           :title="props.config.tableTitle"
-          :description="props.config.operationDescription || '支持分类、标签、专题的真实数据查询与维护，可直接用于后台内容体系管理。'"
           :total="total"
         >
           <template #actions>
@@ -378,9 +377,9 @@ await loadItems()
           </template>
 
           <div v-if="isLoading" class="space-y-3">
-            <USkeleton class="h-[4.5rem] rounded-2xl" />
-            <USkeleton class="h-[4.5rem] rounded-2xl" />
-            <USkeleton class="h-[4.5rem] rounded-2xl" />
+            <USkeleton class="h-[4.5rem] rounded-[10px]" />
+            <USkeleton class="h-[4.5rem] rounded-[10px]" />
+            <USkeleton class="h-[4.5rem] rounded-[10px]" />
           </div>
 
           <div v-else class="admin-table-shell overflow-hidden">
@@ -402,7 +401,7 @@ await loadItems()
                   <div class="flex items-center gap-3">
                     <div
                       v-if="props.config.hasCoverField && item.coverUrl"
-                      class="size-12 shrink-0 overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-700"
+                      class="size-12 shrink-0 overflow-hidden rounded-[8px] border border-slate-200/80 dark:border-slate-700"
                     >
                       <img :src="item.coverUrl" :alt="item.name" class="h-full w-full object-cover">
                     </div>
@@ -411,8 +410,10 @@ await loadItems()
                       <p class="truncate text-base font-semibold text-highlighted">{{ item.name }}</p>
                       <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
                         <span>{{ item.slug }}</span>
-                        <span class="text-border">·</span>
-                        <span>{{ item.description || '暂无说明' }}</span>
+                        <template v-if="item.description">
+                          <span class="text-border">·</span>
+                          <span>{{ item.description }}</span>
+                        </template>
                       </div>
                     </div>
                   </div>
@@ -454,7 +455,6 @@ await loadItems()
                   <UIcon name="i-lucide-search-x" class="size-5" />
                 </div>
                 <p class="text-base font-medium text-slate-900 dark:text-slate-50">没有找到匹配的{{ props.config.itemLabel }}</p>
-                <p class="max-w-md text-sm text-slate-500 dark:text-slate-400">可以尝试调整搜索关键词或状态筛选条件。</p>
               </div>
             </div>
           </div>
@@ -474,9 +474,7 @@ await loadItems()
 
       <AdminFormModal
         v-model:open="isFormModalOpen"
-        eyebrow="内容编排维护"
         :title="isEditing ? `修改${props.config.itemLabel}` : `增加${props.config.itemLabel}`"
-        :description="isEditing ? `修改${props.config.itemLabel}基础信息、状态和展示顺序。` : `创建新的${props.config.itemLabel}并整理其后台展示信息。`"
         icon="i-lucide-folders"
         width="wide"
       >

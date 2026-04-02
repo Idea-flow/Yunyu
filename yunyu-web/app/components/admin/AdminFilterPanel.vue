@@ -7,8 +7,8 @@
 </script>
 
 <template>
-  <section class="admin-surface-soft px-4 py-4 md:px-5">
-    <div class="space-y-4">
+  <section class="admin-surface-soft px-4 py-3">
+    <div class="space-y-3">
       <div>
         <slot name="search" />
       </div>

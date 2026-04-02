@@ -28,8 +28,8 @@ const emit = defineEmits<{
  */
 const selectUi = computed(() => ({
   base: [
-    'w-full min-h-12 rounded-[1.1rem] border border-slate-200/80 bg-white/94 px-4 py-3 text-slate-800',
-    'shadow-[0_10px_24px_-22px_rgba(15,23,42,0.28)]',
+    'w-full min-h-10 rounded-[8px] border border-slate-200/80 bg-white/94 px-3.5 py-2.5 text-slate-800',
+    'shadow-[0_8px_18px_-18px_rgba(15,23,42,0.22)]',
     'transition-[border-color,box-shadow,background-color,color] duration-200',
     'placeholder:text-slate-400',
     'hover:border-slate-300 hover:bg-white',
@@ -45,7 +45,7 @@ const selectUi = computed(() => ({
   placeholder: 'truncate pr-2 text-[0.95rem] font-medium text-slate-400 dark:text-slate-500',
   trailingIcon: 'text-slate-400 transition-transform duration-200 group-data-[state=open]:rotate-180 dark:text-slate-500',
   content: [
-    'min-w-[var(--reka-select-trigger-width)] max-w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-[1.2rem] border border-slate-200/90 bg-white/98 p-1.5',
+    'min-w-[var(--reka-select-trigger-width)] max-w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-[10px] border border-slate-200/90 bg-white/98 p-1.5',
     'shadow-[0_18px_42px_-24px_rgba(15,23,42,0.3)] backdrop-blur-xl',
     'dark:border-slate-700 dark:bg-slate-900/96 dark:shadow-[0_22px_46px_-26px_rgba(0,0,0,0.58)]'
   ].join(' '),
@@ -57,7 +57,7 @@ const selectUi = computed(() => ({
     'dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/80'
   ].join(' '),
   item: [
-    'min-h-10 cursor-pointer rounded-[0.95rem] px-3 py-2.5 text-slate-600',
+    'min-h-9 cursor-pointer rounded-[8px] px-3 py-2 text-slate-600',
     'transition-[background-color,color] duration-150',
     'data-highlighted:bg-slate-100 data-highlighted:text-slate-900',
     'data-[state=checked]:bg-sky-50 data-[state=checked]:text-sky-700',

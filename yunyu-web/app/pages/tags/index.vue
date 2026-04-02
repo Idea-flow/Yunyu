@@ -86,7 +86,7 @@ async function handleSearch() {
           class="min-w-[220px] rounded-[26px] border border-white/60 bg-white/82 px-5 py-4 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.36)] transition hover:border-sky-200 dark:border-white/10 dark:bg-slate-950/68 dark:hover:border-sky-900"
         >
           <div class="flex items-center justify-between gap-3">
-            <h2 class="text-base font-semibold">{{ tag.name }}</h2>
+            <h2 class="text-[clamp(1.16rem,1.05rem+0.4vw,1.45rem)] font-semibold leading-[1.16] tracking-[-0.03em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 dark:text-slate-50">{{ tag.name }}</h2>
             <span class="text-xs text-slate-500 dark:text-slate-400">{{ tag.articleCount }} 篇</span>
           </div>
           <p class="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">

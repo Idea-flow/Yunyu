@@ -3,6 +3,7 @@ package com.ideaflow.yunyu.module.site.controller;
 import com.ideaflow.yunyu.common.response.ApiResponse;
 import com.ideaflow.yunyu.module.site.dto.SitePostQueryRequest;
 import com.ideaflow.yunyu.module.site.service.SiteContentService;
+import com.ideaflow.yunyu.module.site.service.SiteVersionService;
 import com.ideaflow.yunyu.module.site.vo.SiteCategoryDetailResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteCategoryItemResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteHomeResponse;
@@ -12,6 +13,7 @@ import com.ideaflow.yunyu.module.site.vo.SiteTagDetailResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteTagItemResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteTopicDetailResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteTopicItemResponse;
+import com.ideaflow.yunyu.module.site.vo.SiteVersionResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -30,14 +32,29 @@ import org.springframework.web.bind.annotation.RestController;
 public class SiteContentController {
 
     private final SiteContentService siteContentService;
+    private final SiteVersionService siteVersionService;
 
     /**
      * 创建前台内容公开控制器。
      *
      * @param siteContentService 前台内容服务
+     * @param siteVersionService 公开版本信息服务
      */
-    public SiteContentController(SiteContentService siteContentService) {
+    public SiteContentController(SiteContentService siteContentService,
+                                 SiteVersionService siteVersionService) {
         this.siteContentService = siteContentService;
+        this.siteVersionService = siteVersionService;
+    }
+
+    /**
+     * 获取当前服务公开版本信息。
+     *
+     * @return 服务版本信息
+     */
+    @Operation(summary = "获取当前服务公开版本信息")
+    @GetMapping("/version")
+    public ApiResponse<SiteVersionResponse> getVersion() {
+        return ApiResponse.success(siteVersionService.getVersion());
     }
 
     /**

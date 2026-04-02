@@ -47,6 +47,8 @@ const resultText = computed(() => {
 
   return `关键词“${typeof route.query.keyword === 'string' ? route.query.keyword.trim() : ''}”命中 ${current} / ${total} 个专题。`
 })
+const featuredTopic = computed(() => filteredTopics.value[0] || null)
+const secondaryTopics = computed(() => filteredTopics.value.slice(1))
 
 /**
  * 计算专题页首屏统计信息。
@@ -100,7 +102,7 @@ async function handleSearch() {
         Topic Archive
       </div>
 
-      <h1 class="mt-5 text-3xl font-bold text-white drop-shadow-lg sm:text-4xl lg:text-5xl">
+      <h1 class="mt-5 text-[clamp(2.55rem,1.85rem+2.5vw,4.8rem)] font-semibold leading-[0.98] tracking-[-0.045em] [font-family:var(--font-display)] [text-wrap:balance] text-white drop-shadow-lg">
         专题不是标签堆叠，而是成组阅读入口
       </h1>
 
@@ -133,22 +135,51 @@ async function handleSearch() {
         @search="handleSearch"
       />
 
-      <div class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <NuxtLink
+        v-if="featuredTopic"
+        :to="`/topics/${featuredTopic.slug}`"
+        class="group mt-8 grid gap-6 border-b border-slate-200/75 pb-8 dark:border-white/10 lg:grid-cols-[minmax(0,1.08fr)_320px]"
+      >
+        <div class="min-w-0">
+          <p class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-sky-600 dark:text-sky-300">
+            Featured Topic
+          </p>
+          <h2 class="mt-4 text-[clamp(2rem,1.6rem+1.2vw,2.8rem)] font-semibold leading-[1.04] tracking-[-0.04em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 transition group-hover:text-sky-700 dark:text-slate-50 dark:group-hover:text-sky-200">
+            {{ featuredTopic.name }}
+          </h2>
+          <p class="mt-4 max-w-3xl text-[1rem] leading-8 text-slate-600 dark:text-slate-300">
+            {{ featuredTopic.summary }}
+          </p>
+          <div class="mt-6 flex items-center gap-3 text-[0.72rem] uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+            <span>{{ featuredTopic.articleCount }} 篇文章</span>
+            <span>连续主题阅读</span>
+          </div>
+        </div>
+
+        <YunyuImage
+          :src="featuredTopic.coverUrl"
+          :alt="featuredTopic.name"
+          image-class="h-72 w-full object-cover transition duration-500 group-hover:scale-[1.02] lg:h-full"
+          rounded-class="rounded-[28px]"
+        />
+      </NuxtLink>
+
+      <div class="mt-8 grid gap-x-8 gap-y-6 md:grid-cols-2">
         <NuxtLink
-          v-for="topic in filteredTopics"
+          v-for="topic in secondaryTopics"
           :key="topic.slug"
           :to="`/topics/${topic.slug}`"
-          class="overflow-hidden rounded-[28px] border border-white/60 bg-white/82 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.36)] transition hover:border-sky-200 dark:border-white/10 dark:bg-slate-950/68 dark:hover:border-sky-900"
+          class="group grid gap-4 border-b border-slate-200/75 pb-6 transition hover:border-sky-200 dark:border-white/10 dark:hover:border-sky-900 sm:grid-cols-[180px_minmax(0,1fr)]"
         >
           <YunyuImage
             :src="topic.coverUrl"
             :alt="topic.name"
-            image-class="h-52 w-full"
-            rounded-class="rounded-t-[28px] rounded-b-none"
+            image-class="h-44 w-full object-cover transition duration-500 group-hover:scale-[1.02] sm:h-full"
+            rounded-class="rounded-[24px]"
           />
-          <div class="p-5">
+          <div class="min-w-0 py-1">
             <div class="flex items-center justify-between gap-3">
-              <h2 class="text-lg font-semibold">{{ topic.name }}</h2>
+              <h2 class="text-[clamp(1.16rem,1.05rem+0.4vw,1.45rem)] font-semibold leading-[1.16] tracking-[-0.03em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 transition group-hover:text-sky-700 dark:text-slate-50 dark:group-hover:text-sky-200">{{ topic.name }}</h2>
               <span class="text-xs text-slate-500 dark:text-slate-400">{{ topic.articleCount }} 篇</span>
             </div>
             <p class="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">{{ topic.summary }}</p>

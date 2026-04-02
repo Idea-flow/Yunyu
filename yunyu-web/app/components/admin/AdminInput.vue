@@ -32,8 +32,8 @@ const emit = defineEmits<{
 const inputUi = computed(() => ({
   root: 'w-full',
   base: [
-    'w-full min-h-12 rounded-[1.1rem] border border-slate-200/80 bg-white/94 px-4 py-3 text-[0.95rem] font-medium text-slate-800',
-    'shadow-[0_10px_24px_-22px_rgba(15,23,42,0.28)]',
+    'w-full min-h-10 rounded-[8px] border border-slate-200/80 bg-white/94 px-3.5 py-2.5 text-[0.95rem] font-medium text-slate-800',
+    'shadow-[0_8px_18px_-18px_rgba(15,23,42,0.22)]',
     'transition-[border-color,box-shadow,background-color,color] duration-200',
     'placeholder:text-slate-400',
     'hover:border-slate-300 hover:bg-white',

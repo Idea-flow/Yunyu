@@ -16,9 +16,7 @@ defineProps<{
     <div class="admin-toolbar px-5 py-4">
       <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <p class="text-[0.72rem] font-semibold tracking-[0.18em] text-slate-400 uppercase dark:text-slate-500">数据列表</p>
-          <p class="mt-1 text-base font-semibold text-slate-900 dark:text-slate-50">{{ title }}</p>
-          <p v-if="description" class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ description }}</p>
+          <p class="text-base font-semibold text-slate-900 dark:text-slate-50">{{ title }}</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-3 md:justify-end">

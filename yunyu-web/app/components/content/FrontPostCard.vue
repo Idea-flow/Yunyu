@@ -36,16 +36,19 @@ const props = withDefaults(defineProps<{
  * 作用：根据卡片布局模式统一生成横向列表和纵向推荐卡片的基础容器结构。
  */
 const rootClassName = computed(() => {
-  const baseClass = [
-    'group overflow-hidden rounded-[28px] border border-white/60 bg-white/82 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.36)]',
-    'transition duration-300 hover:border-sky-200 dark:border-white/10 dark:bg-slate-950/68 dark:hover:border-sky-900'
-  ].join(' ')
-
   if (props.layout === 'stack') {
-    return [baseClass, 'hover:-translate-y-0.5', props.rootClass].filter(Boolean).join(' ')
+    return [
+      'group overflow-hidden rounded-[28px] border border-white/60 bg-white/82 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.36)]',
+      'transition duration-300 hover:-translate-y-0.5 hover:border-sky-200 dark:border-white/10 dark:bg-slate-950/68 dark:hover:border-sky-900',
+      props.rootClass
+    ].filter(Boolean).join(' ')
   }
 
-  return [baseClass, 'grid gap-4 p-4 sm:grid-cols-[240px_minmax(0,1fr)]', props.rootClass].filter(Boolean).join(' ')
+  return [
+    'group grid gap-5 border-b border-slate-200/75 pb-6 transition duration-300 last:border-b-0 dark:border-white/10',
+    'sm:grid-cols-[260px_minmax(0,1fr)]',
+    props.rootClass
+  ].filter(Boolean).join(' ')
 })
 
 /**
@@ -61,7 +64,7 @@ const imageLinkClassName = computed(() => {
  * 作用：统一卡片文字区的内边距和排版承载区域。
  */
 const bodyClassName = computed(() => {
-  return props.layout === 'stack' ? 'p-5' : 'min-w-0 py-1'
+  return props.layout === 'stack' ? 'p-5' : 'min-w-0 py-1 sm:pr-2'
 })
 
 /**
@@ -81,7 +84,7 @@ const imageClassName = computed(() => {
     return ['w-full object-cover transition duration-500 group-hover:scale-[1.04]', props.imageHeightClass || 'h-56'].join(' ')
   }
 
-  return ['w-full rounded-[22px] object-cover sm:h-full', props.imageHeightClass || 'h-52'].join(' ')
+  return ['w-full rounded-[24px] object-cover transition duration-500 group-hover:scale-[1.02] sm:h-full', props.imageHeightClass || 'h-52'].join(' ')
 })
 
 /**
@@ -90,8 +93,8 @@ const imageClassName = computed(() => {
  */
 const titleClassName = computed(() => {
   const defaultClass = props.layout === 'stack'
-    ? 'mt-4 text-lg font-semibold leading-8'
-    : 'mt-4 text-2xl font-semibold leading-9'
+    ? 'mt-4 text-[clamp(1.16rem,1.05rem+0.4vw,1.45rem)] font-semibold leading-[1.16] tracking-[-0.03em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 dark:text-slate-50'
+    : 'mt-3 text-[clamp(1.55rem,1.32rem+0.7vw,2.1rem)] font-semibold leading-[1.1] tracking-[-0.035em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 dark:text-slate-50'
 
   return [defaultClass, props.titleClass].filter(Boolean).join(' ')
 })
@@ -103,7 +106,7 @@ const titleClassName = computed(() => {
 const summaryClassName = computed(() => {
   const defaultClass = props.layout === 'stack'
     ? 'mt-3 line-clamp-3 text-sm leading-7 text-slate-600 dark:text-slate-300'
-    : 'mt-3 line-clamp-3 text-sm leading-7 text-slate-600 dark:text-slate-300'
+    : 'mt-3 line-clamp-3 text-[0.98rem] leading-8 text-slate-600 dark:text-slate-300'
 
   return [defaultClass, props.summaryClass].filter(Boolean).join(' ')
 })
@@ -153,7 +156,7 @@ function getTagLink(slug: string) {
     </NuxtLink>
 
     <div :class="bodyClassName">
-      <div class="flex flex-wrap gap-2">
+      <div :class="layout === 'stack' ? 'flex flex-wrap gap-2' : 'flex flex-wrap items-center gap-2'">
         <UBadge v-if="showCategory" color="neutral" variant="soft">{{ post.categoryName }}</UBadge>
         <NuxtLink
           v-for="topic in showTopics ? post.topicItems.slice(0, topicLimit) : []"
@@ -186,7 +189,7 @@ function getTagLink(slug: string) {
         <div
           :class="layout === 'stack'
             ? 'mt-5 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400'
-            : 'mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500 dark:text-slate-400'"
+            : 'mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[0.72rem] uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400'"
         >
           <span>{{ post.authorName }}</span>
           <span>{{ post.publishedAt }}</span>

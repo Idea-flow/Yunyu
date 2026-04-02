@@ -16,7 +16,7 @@ const props = defineProps<{
       <div
         v-for="item in props.items"
         :key="item.id"
-        class="rounded-2xl px-3 py-2 text-sm transition-colors duration-200"
+        class="rounded-[8px] px-3 py-2 text-sm transition-colors duration-200"
         :class="[
           item.level === 1 ? 'bg-slate-100/90 font-semibold text-slate-900 dark:bg-slate-800/90 dark:text-slate-50' : '',
           item.level === 2 ? 'bg-white/75 text-slate-700 dark:bg-slate-950/30 dark:text-slate-200' : '',
@@ -28,8 +28,6 @@ const props = defineProps<{
       </div>
     </template>
 
-    <div v-else class="text-sm leading-7 text-slate-500 dark:text-slate-400">
-      当前还没有可生成目录的标题，输入 `#`、`##`、`###` 这类标题后会显示内容结构。
-    </div>
+    <div v-else class="text-sm text-slate-500 dark:text-slate-400">暂无目录</div>
   </div>
 </template>

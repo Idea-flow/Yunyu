@@ -379,20 +379,19 @@ await loadUsers()
               </div>
 
               <div class="flex w-full flex-wrap items-center gap-3 pt-1 sm:ml-auto sm:w-auto sm:pt-0">
-                <UButton
-                  label="重置"
-                  color="neutral"
-                  variant="outline"
-                  class="cursor-pointer rounded-2xl"
-                  @click="handleResetFilters"
-                />
-                <AdminPrimaryButton label="搜索" icon="i-lucide-search" @click="handleSearch" />
+            <UButton
+              label="重置"
+              color="neutral"
+              variant="outline"
+              class="cursor-pointer rounded-[8px]"
+              @click="handleResetFilters"
+            />
+            <AdminPrimaryButton label="搜索" icon="i-lucide-search" @click="handleSearch" />
               </div>
             </AdminFilterPanel>
 
             <AdminTableCard
               title="用户列表"
-              description="新增后台账号并维护现有用户资料，列表最右侧提供修改和删除操作。"
               :total="total"
             >
               <template #actions>
@@ -400,9 +399,9 @@ await loadUsers()
               </template>
 
               <div v-if="isLoading" class="space-y-3">
-                <USkeleton class="h-[4.5rem] rounded-2xl" />
-                <USkeleton class="h-[4.5rem] rounded-2xl" />
-                <USkeleton class="h-[4.5rem] rounded-2xl" />
+                <USkeleton class="h-[4.5rem] rounded-[10px]" />
+                <USkeleton class="h-[4.5rem] rounded-[10px]" />
+                <USkeleton class="h-[4.5rem] rounded-[10px]" />
               </div>
 
               <div v-else class="admin-table-shell overflow-hidden">
@@ -465,7 +464,6 @@ await loadUsers()
                       <UIcon name="i-lucide-search-x" class="size-5" />
                     </div>
                     <p class="text-base font-medium text-slate-900 dark:text-slate-50">没有找到匹配的用户</p>
-                    <p class="max-w-md text-sm text-slate-500 dark:text-slate-400">可以尝试调整搜索关键词或筛选条件。</p>
                   </div>
                 </div>
               </div>
@@ -485,9 +483,7 @@ await loadUsers()
 
       <AdminFormModal
         v-model:open="isFormModalOpen"
-        eyebrow="账号维护"
         :title="isEditing ? '修改用户' : '增加用户'"
-        :description="isEditing ? '修改用户基础资料、角色与状态。' : '创建新的后台或站内账号。'"
         icon="i-lucide-user-round-cog"
         width="wide"
       >

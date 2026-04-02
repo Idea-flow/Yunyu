@@ -375,7 +375,7 @@ await Promise.all([
               label="重置"
               color="neutral"
               variant="outline"
-              class="cursor-pointer rounded-2xl"
+              class="cursor-pointer rounded-[8px]"
               @click="handleResetFilters"
             />
             <AdminPrimaryButton label="搜索" icon="i-lucide-search" @click="handleSearch" />
@@ -384,7 +384,6 @@ await Promise.all([
 
         <AdminTableCard
           title="文章列表"
-          description="新增和修改都改为独立页面，列表最右侧提供跳转编辑页和删除操作。"
           :total="total"
         >
           <template #actions>
@@ -392,9 +391,9 @@ await Promise.all([
           </template>
 
           <div v-if="isLoading" class="space-y-3">
-            <USkeleton class="h-[4.5rem] rounded-2xl" />
-            <USkeleton class="h-[4.5rem] rounded-2xl" />
-            <USkeleton class="h-[4.5rem] rounded-2xl" />
+            <USkeleton class="h-[4.5rem] rounded-[10px]" />
+            <USkeleton class="h-[4.5rem] rounded-[10px]" />
+            <USkeleton class="h-[4.5rem] rounded-[10px]" />
           </div>
 
           <div v-else class="admin-table-shell overflow-hidden">
@@ -496,7 +495,6 @@ await Promise.all([
                   <UIcon name="i-lucide-file-search" class="size-5" />
                 </div>
                 <p class="text-base font-medium text-slate-900 dark:text-slate-50">没有找到匹配的文章</p>
-                <p class="max-w-md text-sm text-slate-500 dark:text-slate-400">可以尝试调整关键词或筛选条件。</p>
               </div>
             </div>
           </div>

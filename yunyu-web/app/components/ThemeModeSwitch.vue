@@ -3,8 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 
 /**
  * 主题切换组件。
- * 作用：以单按钮顺序切换的方式承接明亮、暗黑、系统三种主题模式，
- * 让导航栏中的主题入口保持更简洁的占位和更轻的视觉干扰。
+ * 作用：以前后台共用的单按钮方式切换明亮、暗黑、系统三种主题模式。
  */
 const colorMode = useColorMode()
 const isMounted = ref(false)
@@ -49,7 +48,7 @@ const activeTheme = computed(() =>
 
 /**
  * 获取下一个主题配置。
- * 作用：为顺序切换提供明确的下一站提示，减少用户猜测。
+ * 作用：为单按钮顺序切换提供下一站目标。
  */
 const nextTheme = computed(() => {
   const currentIndex = themeOptions.findIndex(item => item.value === currentPreference.value)
@@ -59,7 +58,7 @@ const nextTheme = computed(() => {
 
 /**
  * 顺序切换主题模式。
- * 作用：按照“明亮 -> 暗黑 -> 系统”的顺序循环切换，保持操作简单直接。
+ * 作用：按照“明亮 -> 暗黑 -> 系统”的顺序循环切换。
  */
 function cycleTheme() {
   colorMode.preference = nextTheme.value.value
@@ -73,11 +72,11 @@ onMounted(() => {
 <template>
   <button
     type="button"
-    class="inline-flex h-11 min-w-11 cursor-pointer items-center justify-center rounded-full px-2 text-slate-600 transition duration-200 hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400/35 dark:text-slate-300 dark:hover:text-sky-200"
+    class="inline-flex size-10 items-center justify-center rounded-[8px] border border-slate-200 bg-white text-slate-600 transition duration-200 hover:border-slate-300 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-400/35 dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-50"
     :aria-label="`当前主题：${activeTheme.label}，点击切换到${nextTheme.label}`"
     :title="`当前主题：${activeTheme.label}，点击切换到${nextTheme.label}`"
     @click="cycleTheme"
   >
-    <UIcon :name="activeTheme.icon" class="size-5" />
+    <UIcon :name="activeTheme.icon" class="size-4" />
   </button>
 </template>

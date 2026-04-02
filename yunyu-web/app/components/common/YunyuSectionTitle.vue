@@ -53,17 +53,17 @@ const eyebrowClassName = computed(() => {
     <div :class="rootClassName">
       <p
         v-if="eyebrow"
-        class="text-xs font-semibold uppercase tracking-[0.34em]"
+        class="text-[0.72rem] font-semibold uppercase tracking-[0.34em]"
         :class="eyebrowClassName"
       >
         {{ eyebrow }}
       </p>
-      <h2 class="mt-3 text-[1.85rem] font-semibold tracking-tight text-slate-950 sm:text-[2.1rem] dark:text-slate-50">
+      <h2 class="mt-3 text-[clamp(1.95rem,1.5rem+1.15vw,2.7rem)] font-semibold leading-[1.04] tracking-[-0.04em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 dark:text-slate-50">
         {{ title }}
       </h2>
       <p
         v-if="description"
-        class="mt-3 max-w-[44rem] text-sm leading-7 text-slate-600 dark:text-slate-300"
+        class="mt-3 max-w-[44rem] text-[clamp(1rem,0.95rem+0.16vw,1.08rem)] leading-[1.95] tracking-[-0.01em] text-slate-600 dark:text-slate-300"
       >
         {{ description }}
       </p>
