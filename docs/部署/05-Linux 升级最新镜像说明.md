@@ -11,7 +11,11 @@
 第一次执行命令记录:
 
 
+docker compose up -d
 
+重启一个服务
+docker compose up -d yunyu-server
+docker compose logs -f yunyu-server
 
 ```bash
 docker compose pull yunyu-server && docker compose up -d yunyu-server
@@ -85,6 +89,7 @@ docker compose logs -f yunyu-server
 
 ```bash
 curl http://127.0.0.1:20000/actuator/health
+curl https://yunyu-server.ideaflow.top/actuator/health
 ```
 
 ## 五、如果你也更新了 `docker-compose.yml`

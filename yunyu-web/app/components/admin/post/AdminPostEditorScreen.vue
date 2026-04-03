@@ -498,14 +498,22 @@ await Promise.all([
 
       <section :class="workspaceCardClass">
         <div class="border-b border-white/60 px-5 py-4 dark:border-white/10">
-          <p class="text-base font-semibold text-slate-900 dark:text-slate-50">正文</p>
+          <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p class="text-base font-semibold text-slate-900 dark:text-slate-50">正文</p>
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">在这里完成正文输入、实时预览和渲染结果检查。</p>
+            </div>
+            <span class="text-xs font-medium uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+              Markdown Workspace
+            </span>
+          </div>
         </div>
 
         <div v-if="isLoadingDetail" class="space-y-4 px-5 py-5">
             <USkeleton class="h-[42rem] rounded-[12px]" />
         </div>
 
-        <div v-else class="px-5 py-5">
+        <div v-else class="px-4 py-4 sm:px-5 sm:py-5">
           <AdminMarkdownWorkbench
             v-model="formState.contentMarkdown"
             :html="renderedContentHtml"

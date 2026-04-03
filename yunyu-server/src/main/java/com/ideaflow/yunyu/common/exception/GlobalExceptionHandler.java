@@ -4,6 +4,8 @@ import com.ideaflow.yunyu.common.constant.ResultCode;
 import com.ideaflow.yunyu.common.response.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindingResult;
@@ -21,14 +23,21 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     /**
      * 处理业务异常。
      *
      * @param exception 业务异常
+     * @param request 当前请求
      * @return 统一失败响应
      */
     @ExceptionHandler(BizException.class)
-    public ApiResponse<Void> handleBizException(BizException exception) {
+    public ApiResponse<Void> handleBizException(BizException exception, HttpServletRequest request) {
+        log.warn("业务异常，请求路径：{}，错误码：{}，错误信息：{}",
+                request.getRequestURI(),
+                exception.getCode(),
+                exception.getMessage());
         return ApiResponse.fail(exception.getCode(), exception.getMessage());
     }
 
@@ -36,6 +45,7 @@ public class GlobalExceptionHandler {
      * 处理请求参数校验异常。
      *
      * @param exception 参数校验异常
+     * @param request 当前请求
      * @return 统一失败响应
      */
     @ExceptionHandler({
@@ -44,7 +54,10 @@ public class GlobalExceptionHandler {
             ConstraintViolationException.class,
             HttpMessageNotReadableException.class
     })
-    public ApiResponse<Void> handleValidationException(Exception exception) {
+    public ApiResponse<Void> handleValidationException(Exception exception, HttpServletRequest request) {
+        log.warn("参数校验异常，请求路径：{}，错误信息：{}",
+                request.getRequestURI(),
+                exception.getMessage());
         return ApiResponse.fail(ResultCode.BAD_REQUEST, resolveValidationMessage(exception));
     }
 
@@ -52,10 +65,15 @@ public class GlobalExceptionHandler {
      * 处理请求方法不支持异常。
      *
      * @param exception 请求方法异常
+     * @param request 当前请求
      * @return 统一失败响应
      */
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ApiResponse<Void> handleMethodNotSupportedException(HttpRequestMethodNotSupportedException exception) {
+    public ApiResponse<Void> handleMethodNotSupportedException(HttpRequestMethodNotSupportedException exception,
+                                                               HttpServletRequest request) {
+        log.warn("请求方法不支持，请求路径：{}，请求方法：{}",
+                request.getRequestURI(),
+                exception.getMethod());
         return ApiResponse.fail(ResultCode.BAD_REQUEST, "请求方法不正确");
     }
 
@@ -75,10 +93,14 @@ public class GlobalExceptionHandler {
      * 处理数据库唯一索引冲突异常。
      *
      * @param exception 唯一索引冲突异常
+     * @param request 当前请求
      * @return 统一失败响应
      */
     @ExceptionHandler(DuplicateKeyException.class)
-    public ApiResponse<Void> handleDuplicateKeyException(DuplicateKeyException exception) {
+    public ApiResponse<Void> handleDuplicateKeyException(DuplicateKeyException exception, HttpServletRequest request) {
+        log.warn("数据库唯一索引冲突，请求路径：{}，错误信息：{}",
+                request.getRequestURI(),
+                exception.getMessage());
         return ApiResponse.fail(ResultCode.BAD_REQUEST, "数据已存在，请勿重复提交");
     }
 
@@ -86,10 +108,12 @@ public class GlobalExceptionHandler {
      * 处理兜底异常。
      *
      * @param exception 未分类异常
+     * @param request 当前请求
      * @return 统一失败响应
      */
     @ExceptionHandler(Exception.class)
-    public ApiResponse<Void> handleException(Exception exception) {
+    public ApiResponse<Void> handleException(Exception exception, HttpServletRequest request) {
+        log.error("未处理异常，请求路径：{}", request.getRequestURI(), exception);
         return ApiResponse.fail(ResultCode.INTERNAL_SERVER_ERROR, ResultCode.INTERNAL_SERVER_ERROR.getMessage());
     }
 

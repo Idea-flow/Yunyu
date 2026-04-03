@@ -220,13 +220,18 @@
 }
 
 .yy-md ol {
-  padding-left: 1.35rem;
+  list-style: decimal;
+  padding-left: 1.6rem;
 }
 
 .yy-md ul > li,
 .yy-md ol > li {
   position: relative;
   padding-left: 1.6rem;
+}
+
+.yy-md ol > li {
+  padding-left: 0.4rem;
 }
 
 .yy-md ul > li::before {
@@ -244,6 +249,86 @@
 .yy-md ol > li::marker {
   color: color-mix(in srgb, var(--yy-md-link) 78%, white 22%);
   font-weight: 700;
+}
+
+.yy-md .yy-md-task-list {
+  list-style: none;
+  padding-left: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.yy-md .yy-md-task-list > li {
+  padding-left: 0;
+  margin-top: 0;
+}
+
+.yy-md .yy-md-task-list > li::before,
+.yy-md .yy-md-task-list > li::marker {
+  content: none;
+  display: none;
+}
+
+.yy-md .yy-md-task-item > p,
+.yy-md .yy-md-task-item > div,
+.yy-md .yy-md-task-item > ul,
+.yy-md .yy-md-task-item > ol {
+  margin-left: 0;
+}
+
+.yy-md .yy-md-task-item > p {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.66rem;
+  margin-bottom: 0;
+}
+
+.yy-md .yy-md-task-checkbox {
+  display: inline-flex;
+  position: relative;
+  flex-shrink: 0;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-top: 0.36rem;
+  border: 1.5px solid color-mix(in srgb, var(--yy-md-link) 18%, rgba(148, 163, 184, 0.62) 82%);
+  border-radius: 0.42rem;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.76);
+}
+
+.yy-md .yy-md-task-checkbox[data-checked='true'] {
+  border-color: color-mix(in srgb, var(--yy-md-link-hover) 24%, rgba(148, 163, 184, 0.46) 76%);
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.08), rgba(14, 165, 233, 0.14));
+}
+
+.yy-md .yy-md-task-checkbox[data-checked='true']::after {
+  content: "";
+  position: absolute;
+  left: 0.33rem;
+  top: 0.15rem;
+  width: 0.24rem;
+  height: 0.44rem;
+  border-right: 1.75px solid color-mix(in srgb, var(--yy-md-link-hover) 82%, white 18%);
+  border-bottom: 1.75px solid color-mix(in srgb, var(--yy-md-link-hover) 82%, white 18%);
+  transform: rotate(40deg);
+}
+
+.yy-md .yy-md-task-item[data-task-checked='true'] > p {
+  color: color-mix(in srgb, var(--yy-md-text) 72%, white 28%);
+}
+
+.yy-md .yy-md-task-item[data-task-checked='true'] > p > :not(.yy-md-task-checkbox) {
+  text-decoration: line-through;
+  text-decoration-thickness: 0.05em;
+  text-decoration-color: color-mix(in srgb, var(--yy-md-muted) 38%, transparent 62%);
+}
+
+.yy-md .yy-md-task-item > p > :last-child {
+  min-width: 0;
+}
+
+.yy-md .yy-md-task-item + .yy-md-task-item {
+  margin-top: 0;
 }
 
 .yy-md li > p {

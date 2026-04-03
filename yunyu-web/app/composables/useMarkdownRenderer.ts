@@ -25,6 +25,16 @@ interface CodeBlockRenderMeta {
   isCollapsible: boolean
 }
 
+/**
+ * 任务清单匹配结果类型。
+ * 作用：统一描述 Markdown 列表项是否为任务项，以及任务项当前的完成状态。
+ */
+interface TaskListMatchResult {
+  matched: boolean
+  checked: boolean
+  content: string
+}
+
 const markdownRenderer = createMarkdownRenderer()
 const shikiHighlighterPromise = getSingletonHighlighter({
   themes: ['github-light', 'github-dark-default'],
@@ -71,7 +81,174 @@ function createMarkdownRenderer() {
       assistiveText: '复制标题链接',
       visuallyHiddenClass: 'yy-md-visually-hidden'
     })
+  }).use(registerExternalLinkRule)
+    .use(registerTaskListRule)
+}
+
+/**
+ * 注册外部链接渲染规则。
+ * 作用：让 Markdown 中指向站外的链接默认在新标签页打开，并补齐安全属性。
+ *
+ * @param md MarkdownIt 实例
+ */
+function registerExternalLinkRule(md: MarkdownIt) {
+  const originalLinkOpenRule = md.renderer.rules.link_open
+
+  md.renderer.rules.link_open = (tokens, index, options, env, self) => {
+    const token = tokens[index]
+    const href = token.attrGet('href') || ''
+
+    if (isExternalLink(href)) {
+      token.attrSet('target', '_blank')
+      token.attrSet('rel', 'noopener noreferrer')
+    }
+
+    return originalLinkOpenRule?.(tokens, index, options, env, self) || self.renderToken(tokens, index, options)
+  }
+}
+
+/**
+ * 注册任务清单渲染规则。
+ * 作用：将 `- [x]` / `- [ ]` 形式的 Markdown 列表项转换为可读性更强的任务清单结构。
+ *
+ * @param md MarkdownIt 实例
+ */
+function registerTaskListRule(md: MarkdownIt) {
+  md.core.ruler.after('inline', 'yy-task-list', (state) => {
+    for (let index = 0; index < state.tokens.length; index += 1) {
+      const inlineToken = state.tokens[index]
+
+      if (inlineToken.type !== 'inline') {
+        continue
+      }
+
+      const paragraphToken = state.tokens[index - 1]
+      const listItemToken = state.tokens[index - 2]
+
+      if (paragraphToken?.type !== 'paragraph_open' || listItemToken?.type !== 'list_item_open') {
+        continue
+      }
+
+      const taskMatchResult = parseTaskListItem(inlineToken.content || '')
+
+      if (!taskMatchResult.matched) {
+        continue
+      }
+
+      listItemToken.attrJoin('class', 'yy-md-task-item')
+      listItemToken.attrSet('data-task-checked', taskMatchResult.checked ? 'true' : 'false')
+      markParentListAsTaskList(state.tokens, index, listItemToken.level)
+      stripTaskMarkerFromInlineToken(inlineToken, taskMatchResult.content)
+      prependTaskCheckboxToken(state.Token, inlineToken, taskMatchResult.checked)
+    }
   })
+}
+
+/**
+ * 判断链接是否为站外链接。
+ * 作用：避免站内相对路径、锚点链接和协议无关内容被误判为外链。
+ *
+ * @param href 链接地址
+ * @returns 是否为站外链接
+ */
+function isExternalLink(href: string) {
+  return /^https?:\/\//i.test(href)
+}
+
+/**
+ * 解析任务清单标记。
+ * 作用：识别列表项是否使用了 Markdown 任务清单语法。
+ *
+ * @param content 列表项原始文本
+ * @returns 任务清单匹配结果
+ */
+function parseTaskListItem(content: string): TaskListMatchResult {
+  const match = content.match(/^\[( |x|X)\]\s+(.*)$/s)
+
+  if (!match) {
+    return {
+      matched: false,
+      checked: false,
+      content
+    }
+  }
+
+  return {
+    matched: true,
+    checked: match[1].toLowerCase() === 'x',
+    content: match[2] || ''
+  }
+}
+
+/**
+ * 标记父级列表为任务清单。
+ * 作用：让任务清单所在列表容器能获得专属样式，而不影响普通列表。
+ *
+ * @param tokens 当前 token 列表
+ * @param startIndex 当前处理位置
+ * @param listItemLevel 当前列表项层级
+ */
+function markParentListAsTaskList(tokens: any[], startIndex: number, listItemLevel: number) {
+  for (let cursor = startIndex; cursor >= 0; cursor -= 1) {
+    const token = tokens[cursor]
+
+    if (!token) {
+      continue
+    }
+
+    if ((token.type === 'bullet_list_open' || token.type === 'ordered_list_open') && token.level === listItemLevel - 1) {
+      token.attrJoin('class', 'yy-md-task-list')
+      return
+    }
+  }
+}
+
+/**
+ * 移除任务清单前缀标记。
+ * 作用：避免 `[x]` / `[ ]` 文本继续直接显示在正文中。
+ *
+ * @param inlineToken 行内 token
+ * @param nextContent 移除前缀后的文本
+ */
+function stripTaskMarkerFromInlineToken(inlineToken: any, nextContent: string) {
+  inlineToken.content = nextContent
+
+  if (!Array.isArray(inlineToken.children) || inlineToken.children.length === 0) {
+    return
+  }
+
+  let markerRemoved = false
+  inlineToken.children = inlineToken.children.filter((child: any) => {
+    if (markerRemoved) {
+      return true
+    }
+
+    if (child.type !== 'text') {
+      return true
+    }
+
+    child.content = child.content.replace(/^\[( |x|X)\]\s+/, '')
+    markerRemoved = true
+    return child.content.length > 0
+  })
+}
+
+/**
+ * 在任务清单项前插入复选状态标记。
+ * 作用：为任务清单提供更直观的选中态展示，而不是保留原始 Markdown 标记。
+ *
+ * @param Token MarkdownIt Token 构造函数
+ * @param inlineToken 行内 token
+ * @param checked 当前是否已完成
+ */
+function prependTaskCheckboxToken(Token: any, inlineToken: any, checked: boolean) {
+  if (!Array.isArray(inlineToken.children)) {
+    inlineToken.children = []
+  }
+
+  const checkboxToken = new Token('html_inline', '', 0)
+  checkboxToken.content = `<span class="yy-md-task-checkbox" data-checked="${checked ? 'true' : 'false'}" aria-hidden="true"></span>`
+  inlineToken.children.unshift(checkboxToken)
 }
 
 /**
