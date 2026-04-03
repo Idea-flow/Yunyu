@@ -37,6 +37,44 @@ export interface SiteTopicLink {
 }
 
 /**
+ * 首页首屏统计项类型。
+ * 作用：统一描述首页首屏可配置的轻量统计展示项。
+ */
+export interface HomePageHeroStat {
+  label: string
+  value: string
+}
+
+/**
+ * 前台首页配置类型。
+ * 作用：统一描述首页品牌首屏与首页模块显隐配置。
+ */
+export interface HomePageConfig {
+  heroEnabled: boolean
+  heroLayout: 'brand'
+  heroBackgroundMode: 'gradient-grid' | 'soft-glow' | 'minimal-lines' | 'keyword-cloud'
+  heroEyebrow: string
+  heroTitle: string
+  heroSubtitle: string
+  heroPrimaryButtonText: string
+  heroPrimaryButtonLink: string
+  heroSecondaryButtonText: string
+  heroSecondaryButtonLink: string
+  heroKeywords: string[]
+  showHeroKeywords: boolean
+  showHeroStats: boolean
+  heroStats: HomePageHeroStat[]
+  showFeaturedSection: boolean
+  featuredSectionTitle: string
+  showLatestSection: boolean
+  latestSectionTitle: string
+  showCategorySection: boolean
+  categorySectionTitle: string
+  showTopicSection: boolean
+  topicSectionTitle: string
+}
+
+/**
  * 前台文章摘要类型。
  * 作用：统一描述首页卡片、列表页和相关推荐卡片的文章数据结构。
  */
@@ -118,6 +156,7 @@ export interface SiteTagItem {
  */
 export interface SiteHomeResponse {
   siteInfo: SiteBaseInfo
+  homepageConfig: HomePageConfig
   featuredPosts: SitePostSummary[]
   latestPosts: SitePostSummary[]
   categories: SiteCategoryItem[]

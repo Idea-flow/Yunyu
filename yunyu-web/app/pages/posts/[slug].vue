@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted } from 'vue'
+import { formatChineseDate } from '~/utils/date'
 import type { ArticleTocItem } from '../../types/post'
 import ArticleContentRenderer from '../../components/content/ArticleContentRenderer.vue'
 import ArticleCommentPanel from '../../components/content/ArticleCommentPanel.vue'
@@ -49,17 +50,7 @@ const relatedStreamPosts = computed(() => post.value?.relatedPosts?.slice(1) || 
  * 避免原始 ISO 时间直接暴露在界面上影响内容气质。
  */
 const postPublishedAtLabel = computed(() => {
-  const publishedAt = post.value?.publishedAt || ''
-
-  if (!publishedAt) {
-    return ''
-  }
-
-  if (publishedAt.includes('T')) {
-    return publishedAt.replace('T', ' ')
-  }
-
-  return publishedAt
+  return formatChineseDate(post.value?.publishedAt || '')
 })
 
 /**
@@ -376,7 +367,7 @@ onBeforeUnmount(() => {
                   </p>
                   <div class="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[0.72rem] uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
                     <span>{{ relatedLeadPost.categoryName }}</span>
-                    <span>{{ relatedLeadPost.publishedAt }}</span>
+                    <span>{{ formatChineseDate(relatedLeadPost.publishedAt) }}</span>
                     <span>{{ relatedLeadPost.readingMinutes }} 分钟阅读</span>
                   </div>
                 </div>
@@ -404,7 +395,7 @@ onBeforeUnmount(() => {
                     {{ item.summary }}
                   </p>
                   <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[0.68rem] uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
-                    <span>{{ item.publishedAt }}</span>
+                    <span>{{ formatChineseDate(item.publishedAt) }}</span>
                     <span>{{ item.readingMinutes }} 分钟阅读</span>
                   </div>
                 </NuxtLink>

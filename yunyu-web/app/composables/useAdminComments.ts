@@ -1,36 +1,10 @@
+import { formatChineseDateTime } from '~/utils/date'
 import type {
   AdminCommentItem,
   AdminCommentListResponse,
   AdminCommentQuery,
   AdminCommentStatus
 } from '../types/comment'
-
-/**
- * 格式化后台时间字符串。
- * 作用：将后端返回的评论时间统一转换为后台更易读的中文日期时间格式。
- *
- * @param value 原始时间值
- * @returns 格式化后的时间文案
- */
-function formatAdminCommentTime(value: string | null | undefined) {
-  if (!value) {
-    return '-'
-  }
-
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
 
 /**
  * 转换后台评论条目。
@@ -48,8 +22,8 @@ function toAdminCommentItem(item: AdminCommentItem): AdminCommentItem {
     userEmail: item.userEmail || '',
     replyToUserName: item.replyToUserName || null,
     ip: item.ip || '',
-    createdTime: formatAdminCommentTime(item.createdTime),
-    updatedTime: formatAdminCommentTime(item.updatedTime)
+    createdTime: formatChineseDateTime(item.createdTime, '-'),
+    updatedTime: formatChineseDateTime(item.updatedTime, '-')
   }
 }
 

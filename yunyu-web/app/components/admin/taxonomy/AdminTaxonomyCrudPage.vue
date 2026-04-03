@@ -487,7 +487,7 @@ await loadItems()
             <p>状态</p>
             <p v-if="showSortColumn">排序</p>
             <p>文章</p>
-            <p>更新时间</p>
+            <p>更新</p>
             <p class="text-right">操作</p>
           </template>
 

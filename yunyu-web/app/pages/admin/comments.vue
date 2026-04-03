@@ -354,7 +354,7 @@ await loadComments()
           <span>评论内容</span>
           <span>状态</span>
           <span>回复信息</span>
-          <span>创建时间</span>
+          <span>创建</span>
           <span>操作</span>
         </template>
 
@@ -409,7 +409,7 @@ await loadComments()
 
           <div class="text-xs leading-6 text-slate-500 dark:text-slate-400">
             <p>{{ comment.createdTime }}</p>
-            <p class="mt-1">更新于 {{ comment.updatedTime }}</p>
+            <p class="mt-1">更新 {{ comment.updatedTime }}</p>
           </div>
 
           <div class="flex flex-wrap items-start gap-2">

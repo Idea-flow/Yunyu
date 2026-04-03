@@ -11,6 +11,7 @@ import lombok.Data;
 public class SiteHomeResponse {
 
     private SiteBaseInfoResponse siteInfo;
+    private SiteHomepageConfigResponse homepageConfig;
     private List<SitePostSummaryResponse> featuredPosts;
     private List<SitePostSummaryResponse> latestPosts;
     private List<SiteCategoryItemResponse> categories;

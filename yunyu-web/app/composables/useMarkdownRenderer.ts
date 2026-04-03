@@ -1,5 +1,7 @@
 import MarkdownIt from 'markdown-it'
 import markdownItAnchor from 'markdown-it-anchor'
+import katex from 'katex'
+import markdownItTexmath from 'markdown-it-texmath'
 import { getSingletonHighlighter } from 'shiki'
 import type { Ref } from 'vue'
 import type { ArticleTocItem } from '../types/post'
@@ -69,19 +71,21 @@ const shikiHighlighterPromise = getSingletonHighlighter({
  */
 function createMarkdownRenderer() {
   return new MarkdownIt({
-    html: false,
+    html: true,
     linkify: true,
     breaks: true
   }).use(markdownItAnchor, {
-    slugify: createSlugifyFactory(),
-    permalink: (markdownItAnchor as any).permalink.linkInsideHeader({
-      symbol: '#',
-      placement: 'after',
-      class: 'yy-md-heading-anchor',
-      assistiveText: '复制标题链接',
-      visuallyHiddenClass: 'yy-md-visually-hidden'
-    })
+    slugify: createSlugifyFactory()
+  }).use(markdownItTexmath, {
+    engine: katex,
+    delimiters: ['dollars', 'beg_end'],
+    katexOptions: {
+      throwOnError: false,
+      strict: 'ignore',
+      output: 'html'
+    }
   }).use(registerExternalLinkRule)
+    .use(registerSafeHtmlRule)
     .use(registerTaskListRule)
 }
 
@@ -105,6 +109,47 @@ function registerExternalLinkRule(md: MarkdownIt) {
 
     return originalLinkOpenRule?.(tokens, index, options, env, self) || self.renderToken(tokens, index, options)
   }
+}
+
+/**
+ * 注册原生 HTML 渲染规则。
+ * 作用：当前版本按作者输入原样放行原生 HTML，
+ * 避免第三方播放器、嵌入页和复杂布局因为前端清洗规则被意外裁剪。
+ *
+ * @param md MarkdownIt 实例
+ */
+function registerSafeHtmlRule(md: MarkdownIt) {
+  md.renderer.rules.html_block = (tokens, index) => {
+    if (tokens[index]?.meta?.trustedHtml) {
+      return tokens[index]?.content || ''
+    }
+
+    return sanitizeTrustedHtml(tokens[index]?.content || '')
+  }
+
+  md.renderer.rules.html_inline = (tokens, index) => {
+    if (tokens[index]?.meta?.trustedHtml) {
+      return tokens[index]?.content || ''
+    }
+
+    return sanitizeTrustedHtml(tokens[index]?.content || '')
+  }
+}
+
+/**
+ * 透传原生 HTML。
+ * 作用：当前阶段不再对作者写入的原生 HTML 做标签、属性、样式和协议清洗，
+ * 让嵌入内容尽量按原始写法渲染；后续如果出现兼容或安全问题，再回到文档中的治理方案收紧。
+ *
+ * @param unsafeHtml 原始 HTML
+ * @returns 原样透传后的 HTML
+ */
+function sanitizeTrustedHtml(unsafeHtml: string) {
+  if (!unsafeHtml.trim()) {
+    return ''
+  }
+
+  return unsafeHtml.trim()
 }
 
 /**
@@ -246,9 +291,31 @@ function prependTaskCheckboxToken(Token: any, inlineToken: any, checked: boolean
     inlineToken.children = []
   }
 
+  const rowOpenToken = new Token('html_inline', '', 0)
+  rowOpenToken.content = '<span class="yy-md-task-row">'
   const checkboxToken = new Token('html_inline', '', 0)
   checkboxToken.content = `<span class="yy-md-task-checkbox" data-checked="${checked ? 'true' : 'false'}" aria-hidden="true"></span>`
-  inlineToken.children.unshift(checkboxToken)
+  const labelOpenToken = new Token('html_inline', '', 0)
+  labelOpenToken.content = '<span class="yy-md-task-label">'
+  const labelCloseToken = new Token('html_inline', '', 0)
+  labelCloseToken.content = '</span>'
+  const rowCloseToken = new Token('html_inline', '', 0)
+  rowCloseToken.content = '</span>'
+
+  rowOpenToken.meta = { trustedHtml: true }
+  checkboxToken.meta = { trustedHtml: true }
+  labelOpenToken.meta = { trustedHtml: true }
+  labelCloseToken.meta = { trustedHtml: true }
+  rowCloseToken.meta = { trustedHtml: true }
+
+  inlineToken.children = [
+    rowOpenToken,
+    checkboxToken,
+    labelOpenToken,
+    ...inlineToken.children,
+    labelCloseToken,
+    rowCloseToken
+  ]
 }
 
 /**
@@ -321,6 +388,11 @@ function extractToc(tokens: any[]): ArticleTocItem[] {
  */
 function extractPlainText(markdown: string) {
   return markdown
+    .replace(/<iframe[\s\S]*?<\/iframe>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\$\$([\s\S]*?)\$\$/g, ' $1 ')
+    .replace(/\$([^$\n]+?)\$/g, ' $1 ')
+    .replace(/\\begin\{[^}]+\}([\s\S]*?)\\end\{[^}]+\}/g, ' $1 ')
     .replace(/```[\s\S]*?```/g, ' ')
     .replace(/`[^`]*`/g, ' ')
     .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import YunyuImage from '~/components/common/YunyuImage.vue'
+import { formatChineseDate } from '~/utils/date'
 import type { SitePostSummary } from '../../types/site'
 
 /**
@@ -192,7 +193,7 @@ function getTagLink(slug: string) {
             : 'mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[0.72rem] uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400'"
         >
           <span>{{ post.authorName }}</span>
-          <span>{{ post.publishedAt }}</span>
+          <span>{{ formatChineseDate(post.publishedAt) }}</span>
           <span>{{ post.readingMinutes }} 分钟阅读</span>
           <span v-if="layout === 'row'">{{ post.viewCount }} 浏览</span>
         </div>

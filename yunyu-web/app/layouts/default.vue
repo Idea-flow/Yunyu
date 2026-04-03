@@ -39,9 +39,16 @@ const isOverlayPage = computed(() => {
 
 /**
  * 判断导航栏当前是否应进入实底玻璃态。
- * 作用：在覆盖页首屏顶部保持更轻的覆盖状态，滚动后再切换为可读性更强的玻璃容器。
+ * 作用：首页默认直接使用可读性更强的玻璃实底样式，
+ * 其他覆盖页仍按滚动状态切换，避免首页首屏和滚动后出现两套导航视觉。
  */
-const isSolidNav = computed(() => !isOverlayPage.value || isScrolled.value)
+const isSolidNav = computed(() => {
+  if (route.path === '/') {
+    return true
+  }
+
+  return !isOverlayPage.value || isScrolled.value
+})
 
 /**
  * 计算头部容器定位样式。

@@ -1,3 +1,4 @@
+import { formatChineseDateTime } from '~/utils/date'
 import type {
   AdminTaxonomyForm,
   AdminTaxonomyItem,
@@ -46,33 +47,6 @@ const TAXONOMY_ENDPOINT_MAP: Record<AdminTaxonomyKind, string> = {
 }
 
 /**
- * 格式化后台时间字符串。
- * 作用：将后端返回的时间值统一格式化为后台列表页更易读的中文时间展示。
- *
- * @param value 原始时间值
- * @returns 格式化后的时间文案
- */
-function formatAdminTime(value: string | null | undefined) {
-  if (!value) {
-    return '-'
-  }
-
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
-
-/**
  * 转换后台内容编排条目。
  * 作用：为页面补齐 `kind` 字段并清洗可空值，保证前端三个模块可以共用同一套展示组件。
  *
@@ -91,8 +65,8 @@ function toAdminTaxonomyItem(kind: AdminTaxonomyKind, item: AdminTaxonomyApiItem
     status: item.status,
     sortOrder: item.sortOrder ?? 0,
     relatedPostCount: item.relatedPostCount ?? 0,
-    createdTime: formatAdminTime(item.createdTime),
-    updatedTime: formatAdminTime(item.updatedTime)
+    createdTime: formatChineseDateTime(item.createdTime, '-'),
+    updatedTime: formatChineseDateTime(item.updatedTime, '-')
   }
 }
 

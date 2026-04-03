@@ -1,85 +1,44 @@
 <script setup lang="ts">
 import YunyuImage from '~/components/common/YunyuImage.vue'
-import FrontFilterBar from '../../components/content/FrontFilterBar.vue'
 
 /**
  * 前台分类列表页。
- * 作用：集中展示全部分类入口，让用户按内容方向进入阅读。
+ * 作用：直接展示全部分类入口，让用户按内容方向进入阅读，不再额外增加搜索干扰。
  */
-const route = useRoute()
-const router = useRouter()
 const siteContent = useSiteContent()
-const searchKeyword = ref(typeof route.query.keyword === 'string' ? route.query.keyword : '')
 
 const { data } = await useAsyncData('site-categories', async () => {
   return await siteContent.listCategories()
 })
 
-const activeKeyword = computed(() => typeof route.query.keyword === 'string' ? route.query.keyword.trim().toLowerCase() : '')
-const filteredCategories = computed(() => {
-  const keyword = activeKeyword.value
-
-  if (!keyword) {
-    return data.value || []
-  }
-
-  return (data.value || []).filter(category => {
-    return [category.name, category.description]
-      .filter(Boolean)
-      .some(value => value.toLowerCase().includes(keyword))
-  })
-})
-
-const resultText = computed(() => {
-  const total = data.value?.length || 0
-  const current = filteredCategories.value.length
-
-  if (!activeKeyword.value) {
-    return `共 ${total} 个分类入口，可按内容方向进入阅读。`
-  }
-
-  return `关键词“${typeof route.query.keyword === 'string' ? route.query.keyword.trim() : ''}”命中 ${current} / ${total} 个分类。`
-})
-const featuredCategory = computed(() => filteredCategories.value[0] || null)
-const secondaryCategories = computed(() => filteredCategories.value.slice(1))
-
-watch(() => route.query.keyword, value => {
-  searchKeyword.value = typeof value === 'string' ? value : ''
-})
+const categories = computed(() => data.value || [])
+const categoriesCountText = computed(() => `共 ${categories.value.length} 个分类入口，可按内容方向直接进入阅读。`)
+const featuredCategory = computed(() => categories.value[0] || null)
+const secondaryCategories = computed(() => categories.value.slice(1))
 
 useSeoMeta({
   title: '分类 - 云屿',
   description: '浏览云屿的全部分类入口。'
 })
-
-/**
- * 执行分类搜索。
- * 作用：把输入中的关键词同步到路由查询参数，让筛选状态可以被分享和保留。
- */
-async function handleSearch() {
-  const keyword = searchKeyword.value.trim()
-
-  await router.push({
-    path: '/categories',
-    query: keyword ? { keyword } : {}
-  })
-}
 </script>
 
 <template>
   <main class="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] dark:bg-[linear-gradient(180deg,#020617_0%,#081120_100%)]">
     <section class="mx-auto max-w-[1360px] px-5 py-8 sm:px-8 lg:px-10">
-      <FrontFilterBar
-        v-model:keyword="searchKeyword"
-        eyebrow="分类"
-        title="从内容方向进入阅读"
-        description="通过统一筛选条快速检索分类入口，再进入对应内容板块浏览相关文章。"
-        eyebrow-class="text-orange-500 dark:text-orange-300"
-        search-placeholder="搜索分类名称或说明"
-        :result-text="resultText"
-        show-search
-        @search="handleSearch"
-      />
+      <div class="max-w-3xl">
+        <p class="text-[0.72rem] font-semibold uppercase tracking-[0.32em] text-orange-500 dark:text-orange-300">
+          分类
+        </p>
+        <h1 class="mt-4 text-[clamp(2.1rem,1.7rem+1.4vw,3rem)] font-semibold leading-[1.04] tracking-[-0.045em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 dark:text-slate-50">
+          从内容方向进入阅读
+        </h1>
+        <p class="mt-4 max-w-3xl text-[1rem] leading-8 text-slate-600 dark:text-slate-300">
+          分类数量不多时，直接完整展示会比搜索更轻松，也更适合内容站慢慢浏览。
+        </p>
+        <p class="mt-5 text-sm text-slate-500 dark:text-slate-400">
+          {{ categoriesCountText }}
+        </p>
+      </div>
 
       <NuxtLink
         v-if="featuredCategory"
@@ -134,10 +93,10 @@ async function handleSearch() {
       </div>
 
       <div
-        v-if="!filteredCategories.length"
+        v-if="!categories.length"
         class="mt-6 rounded-[28px] border border-dashed border-slate-200 bg-white/70 px-6 py-12 text-center text-sm text-slate-500 dark:border-white/10 dark:bg-slate-950/50 dark:text-slate-400"
       >
-        没有找到匹配的分类，换个关键词试试看。
+        暂时还没有可展示的分类。
       </div>
     </section>
   </main>

@@ -61,6 +61,7 @@ public class SiteContentService {
     private final PostTagMapper postTagMapper;
     private final TopicPostMapper topicPostMapper;
     private final SiteConfigMapper siteConfigMapper;
+    private final HomepageConfigService homepageConfigService;
     private final ObjectMapper objectMapper;
 
     /**
@@ -75,6 +76,7 @@ public class SiteContentService {
      * @param postTagMapper 文章标签关联 Mapper
      * @param topicPostMapper 专题文章关联 Mapper
      * @param siteConfigMapper 站点配置 Mapper
+     * @param homepageConfigService 首页配置服务
      * @param objectMapper Jackson 对象映射器
      */
     public SiteContentService(PostMapper postMapper,
@@ -86,6 +88,7 @@ public class SiteContentService {
                               PostTagMapper postTagMapper,
                               TopicPostMapper topicPostMapper,
                               SiteConfigMapper siteConfigMapper,
+                              HomepageConfigService homepageConfigService,
                               ObjectMapper objectMapper) {
         this.postMapper = postMapper;
         this.postContentMapper = postContentMapper;
@@ -96,6 +99,7 @@ public class SiteContentService {
         this.postTagMapper = postTagMapper;
         this.topicPostMapper = topicPostMapper;
         this.siteConfigMapper = siteConfigMapper;
+        this.homepageConfigService = homepageConfigService;
         this.objectMapper = objectMapper;
     }
 
@@ -107,6 +111,7 @@ public class SiteContentService {
     public SiteHomeResponse getHome() {
         SiteHomeResponse response = new SiteHomeResponse();
         response.setSiteInfo(buildSiteBaseInfo());
+        response.setHomepageConfig(homepageConfigService.getSiteHomepageConfig());
         response.setFeaturedPosts(listRecommendedPosts());
         response.setLatestPosts(listLatestPosts());
         response.setCategories(listCategories());

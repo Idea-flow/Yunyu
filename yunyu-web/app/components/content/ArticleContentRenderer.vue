@@ -30,6 +30,7 @@ const hasContent = computed(() => normalizedHtml.value.length > 0)
 const containerRef = ref<HTMLElement | null>(null)
 const cleanupCallbacks: Array<() => void> = []
 const collapseHeight = 152
+const iframeWarningDelay = 5200
 const yunyuToast = useYunyuToast()
 const actionIconMap: Record<string, string> = {
   'lucide:copy': `
@@ -214,6 +215,104 @@ function ensureWindowControls(block: HTMLElement) {
 }
 
 /**
+ * 创建 iframe 加载异常提示节点。
+ * 作用：当第三方嵌入长时间空白时，给用户一个明确反馈，
+ * 提示可能是目标站禁止嵌入或当前网络不可达，并提供源链接直达验证。
+ *
+ * @param src iframe 源地址
+ * @returns 可插入 DOM 的提示节点
+ */
+function createIframeFallbackNotice(src: string) {
+  const notice = document.createElement('div')
+  notice.className = 'mt-3 rounded-[16px] border border-amber-200/80 bg-amber-50/88 px-4 py-3 text-sm text-amber-900 shadow-[0_16px_30px_-26px_rgba(217,119,6,0.35)] dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-100'
+  notice.hidden = true
+
+  const title = document.createElement('p')
+  title.className = 'font-semibold tracking-[-0.01em]'
+  title.textContent = '嵌入内容加载异常'
+
+  const description = document.createElement('p')
+  description.className = 'mt-1 leading-6 text-amber-800/90 dark:text-amber-100/80'
+  description.textContent = '该区域长时间未正常显示，可能是目标站禁止嵌入，或当前网络暂时不可达。'
+
+  notice.appendChild(title)
+  notice.appendChild(description)
+
+  if (src) {
+    const actionRow = document.createElement('div')
+    actionRow.className = 'mt-2 flex flex-wrap items-center gap-2'
+
+    const link = document.createElement('a')
+    link.className = 'inline-flex items-center rounded-full border border-amber-300/80 bg-white/88 px-3 py-1.5 text-xs font-semibold text-amber-900 transition duration-200 hover:-translate-y-0.5 hover:border-amber-400 hover:bg-white dark:border-amber-300/20 dark:bg-slate-950/55 dark:text-amber-100 dark:hover:border-amber-300/35'
+    link.href = src
+    link.target = '_blank'
+    link.rel = 'noopener noreferrer'
+    link.textContent = '打开源地址验证'
+
+    actionRow.appendChild(link)
+    notice.appendChild(actionRow)
+  }
+
+  return notice
+}
+
+/**
+ * 增强 iframe 嵌入反馈。
+ * 作用：为正文中的第三方嵌入补充超时提示，
+ * 当播放器或页面长期空白时，提醒用户排查网络或目标站嵌入策略。
+ */
+function enhanceEmbeddedIframes() {
+  if (!containerRef.value) {
+    return
+  }
+
+  const iframes = containerRef.value.querySelectorAll<HTMLIFrameElement>('iframe')
+
+  for (const iframe of iframes) {
+    const src = iframe.getAttribute('src')?.trim() || ''
+    const notice = createIframeFallbackNotice(src)
+    let resolved = false
+
+    iframe.insertAdjacentElement('afterend', notice)
+
+    const revealNotice = () => {
+      if (resolved) {
+        return
+      }
+
+      notice.hidden = false
+    }
+
+    const hideNotice = () => {
+      resolved = true
+      notice.hidden = true
+    }
+
+    const handleLoad = () => {
+      hideNotice()
+    }
+
+    const handleError = () => {
+      revealNotice()
+    }
+
+    const warningTimer = window.setTimeout(() => {
+      revealNotice()
+    }, iframeWarningDelay)
+
+    iframe.addEventListener('load', handleLoad)
+    iframe.addEventListener('error', handleError)
+
+    cleanupCallbacks.push(() => {
+      window.clearTimeout(warningTimer)
+      iframe.removeEventListener('load', handleLoad)
+      iframe.removeEventListener('error', handleError)
+      notice.remove()
+    })
+  }
+}
+
+/**
  * 增强代码块交互。
  * 作用：为通过 `v-html` 注入的代码块补充复制按钮、折叠能力和运行时状态。
  */
@@ -286,6 +385,7 @@ async function refreshEnhancements() {
 
   await nextTick()
   enhanceCodeBlocks()
+  enhanceEmbeddedIframes()
 }
 
 watch(() => [props.html, props.isLoading, props.codeDefaultExpanded] as const, async () => {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatChineseDateTime } from '~/utils/date'
 import type { ActuatorThreadDumpResponse, AdminSystemMonitorOverview } from '../../types/system-monitor'
 
 /**
@@ -162,14 +163,7 @@ function formatRatioAsPercent(value?: number | null) {
  * @returns 时间文本
  */
 function formatDateTime(value?: number | null) {
-  if (!value) {
-    return '--'
-  }
-
-  return new Intl.DateTimeFormat('zh-CN', {
-    dateStyle: 'medium',
-    timeStyle: 'medium'
-  }).format(value)
+  return formatChineseDateTime(value, '--')
 }
 
 /**

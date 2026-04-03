@@ -2,326 +2,412 @@
 
 ## 文档目标
 
-本文档用于明确 `Yunyu` 后台文章新增/编辑页面在前端侧如何处理 `Markdown` 编辑、`HTML` 预览、目录生成与提交数据结构。
+本文档用于沉淀 `Yunyu` 项目当前已经落地的 Markdown 渲染链路，并与早期架构文档中的目标方案做对照，避免后续继续出现“文档里是一套、代码里是另一套”的情况。
 
-本文档重点解决以下问题：
+本文档重点回答四个问题：
 
-- 后台文章编辑页是否需要前端把 `Markdown` 渲染成 `HTML`
-- 前端使用什么技术把 `Markdown` 渲染成 `HTML`
-- 目录 `TOC` 是否在前端生成
-- 提交文章时前端向后端传哪些字段
-- 如何与当前已有数据库设计和内容渲染策略保持一致
+- 当前项目真实的 Markdown 渲染链路到底是什么
+- 后台编辑预览、文章保存、前台详情页分别是谁在负责渲染
+- 当前已经支持了哪些 Markdown 能力，还缺哪些能力
+- 数学公式当前是如何接入的，以及后续还应该如何继续扩展
 
-## 一、已有约束
+## 一、当前代码里的真实实现
 
-当前项目已有文档已经明确以下事实：
+截至当前版本，项目里实际运行的 Markdown 渲染链路如下：
 
-- `Markdown` 是文章主内容源
-- `HTML` 是派生结果，不能作为唯一真相
-- `content_toc_json` 需要存储目录数据
-- `post_content` 表已经支持 `content_markdown`、`content_html`、`content_toc_json`
+### 1.1 后台编辑页预览链路
 
-相关文档：
+- 后台正文编辑区维护的是 `contentMarkdown`
+- 前端通过 `useMarkdownRenderer` 本地实时把 `Markdown` 转成 `HTML`
+- 同时前端提取标题结构，生成 `TOC`
+- 同时前端计算纯文本和阅读时长
+- 右侧预览区通过 `MarkdownPreview -> ArticleContentRenderer` 渲染最终预览效果
 
-- [docs/技术/01-内容模型与渲染策略.md](/Users/wangpenglong/projects/full-stack-project/Yunyu/docs/技术/01-内容模型与渲染策略.md)
-- [docs/技术/03-数据库设计.md](/Users/wangpenglong/projects/full-stack-project/Yunyu/docs/技术/03-数据库设计.md)
-- [docs/架构/01-总体技术架构.md](/Users/wangpenglong/projects/full-stack-project/Yunyu/docs/架构/01-总体技术架构.md)
+对应代码位置：
 
-因此本方案不是重新定义内容真相，而是补充：
+- `yunyu-web/app/composables/useMarkdownRenderer.ts`
+- `yunyu-web/app/components/admin/post/MarkdownPreview.vue`
+- `yunyu-web/app/components/admin/post/AdminPostEditorScreen.vue`
+- `yunyu-web/app/components/content/ArticleContentRenderer.vue`
 
-- 后台编辑阶段前端如何提升编辑体验
-- 前端如何把编辑过程中的派生结果传给后端
+### 1.2 提交保存链路
 
-## 二、核心结论
+- 前端提交文章时，同时提交：
+  - `contentMarkdown`
+  - `contentHtml`
+  - `contentTocJson`
+- 后端当前不会重新完整渲染 Markdown
+- 后端当前主要负责保存前端提交的派生结果，并补充：
+  - `contentPlainText`
+  - `readingTime`
 
-推荐采用以下方案：
+对应代码位置：
 
-- 前端编辑器仍然以 `Markdown` 作为唯一输入源
-- 前端在编辑页本地实时把 `Markdown` 渲染为 `HTML` 预览
-- 前端本地实时提取标题结构，生成 `TOC`
-- 前端提交文章时，同时提交 `contentMarkdown`、`contentHtml`、`contentToc`
-- 后端保存 `Markdown` 作为主内容源，`HTML / TOC` 作为派生字段
-- 后端后续应具备对 `HTML / TOC` 的重建或校验能力
+- `yunyu-web/app/components/admin/post/AdminPostEditorScreen.vue`
+- `yunyu-server/src/main/java/com/ideaflow/yunyu/module/post/service/AdminPostService.java`
+- `yunyu-server/src/main/java/com/ideaflow/yunyu/module/post/entity/PostContentEntity.java`
 
-换句话说：
+### 1.3 前台文章详情页链路
 
-- 编辑体验依赖前端实时渲染
-- 长期内容可信源依赖后端存储的 `Markdown`
+- 前台详情页不再现场把 `Markdown` 重新渲染为 `HTML`
+- 前台详情页直接消费后端返回的 `contentHtml`
+- 目录直接消费后端返回的 `contentTocJson`
+- 正文最终仍由 `ArticleContentRenderer` 负责展示层样式与代码块交互增强
 
-## 三、为什么前端需要本地渲染 HTML
+对应代码位置：
 
-后台文章编辑页如果只保存 `Markdown` 文本，不做前端本地渲染，会有这些问题：
+- `yunyu-web/app/pages/posts/[slug].vue`
+- `yunyu-web/app/components/content/ArticleContentRenderer.vue`
+- `yunyu-server/src/main/java/com/ideaflow/yunyu/module/site/vo/SitePostDetailResponse.java`
 
-- 作者无法在编辑时即时看到最终排版效果
-- 无法实时预览标题层级、引用、列表、代码块、图片等展示结果
-- 无法即时生成目录并检查结构是否合理
-- 无法在提交前判断正文层级、阅读节奏和篇幅信息
+## 二、当前前端渲染技术栈
 
-因此对于后台编辑页，前端本地渲染 `HTML` 是必要的。
+项目当前真正已经接入并在使用的能力如下：
 
-但这里要注意：
-
-- 前端本地渲染是为了编辑预览
-- 不是为了取代后端内容派生链路
-
-## 四、前端推荐技术选型
-
-### 4.1 推荐主技术
-
-前端正式确认使用：
-
-- `markdown-it`
-- `shiki`
-
-原因：
-
-- 当前项目架构文档已经把 `markdown-it` 作为推荐 Markdown 解析器
-- `markdown-it` 可以在浏览器和 Node.js 中运行
-- 生态成熟，适合后台编辑器预览
-- 与当前项目已有技术决策保持一致，避免前后端使用两套完全不同的 Markdown 规则
-- `shiki` 更适合技术内容平台，代码块高亮质量更高
-- `shiki` 的高亮效果更接近 VS Code，适合作为文章编辑预览与前台详情展示的统一方向
-
-### 4.2 推荐配套能力
-
-在前端编辑预览场景中，建议围绕 `markdown-it` 增加以下配套能力：
-
-- 标题锚点插件：用于给标题生成稳定 `id`
-- 代码高亮插件：用于代码块预览
-- `HTML` 清洗能力：用于限制危险标签与属性
-- 目录提取逻辑：根据标题节点生成 `TOC`
-
-当前阶段正式采用：
-
-- Markdown 解析：`markdown-it`
+- Markdown 解析器：`markdown-it`
 - 标题锚点：`markdown-it-anchor`
 - 代码高亮：`shiki`
+- 原生 HTML 宽松清洗：`sanitize-html`
+- 代码主题：`github-light`、`github-dark-default`
 
-当前阶段暂不接入：
+`yunyu-web/package.json` 当前已经接入以下数学公式能力：
 
-- `sanitize-html` 或等价白名单清洗方案
+- `katex`
+- `markdown-it-texmath`
 
-说明：
+这说明当前项目的数学公式能力已经正式接入到前端 Markdown 渲染链路中，而不是依赖正文展示层临时补救。
 
-- 当前阶段先优先完成编辑预览、目录生成和内容提交闭环
-- `HTML` 白名单清洗后续再补到正式发布链路或服务端校验链路中
+## 三、当前已经实现的 Markdown 能力
 
-### 4.3 为什么当前选择 `shiki` 而不是 `highlight.js`
+以当前代码为准，前端 `useMarkdownRenderer` 已经支持：
 
-当前项目最终选择 `shiki`，不选择 `highlight.js`，原因如下：
+- 标题解析
+- 标题 `id` 生成
+- 目录提取 `TOC`
+- 外部链接自动新标签页打开
+- 基础段落、粗体、列表、引用、图片等常规 Markdown 能力
+- 代码块通过 `Shiki` 输出高亮 HTML
+- 任务清单 `- [x] / - [ ]` 自定义渲染
+- 行内公式 `$...$`
+- 块级公式 `$$...$$`
+- 更宽松的内容型原生 HTML：`div`、`span`、`figure`、`iframe`、`video`、`audio`、`details`、`summary`、`kbd`、`sub`、`sup`、`mark` 等
+- 不限制来源的 iframe 嵌入
+- 纯文本提取
+- 阅读时长估算
 
-- `shiki` 的代码高亮质量更高，更适合技术文章与内容平台
-- `shiki` 主题体系更成熟，后续更容易与前台详情页保持统一
-- 后台文章编辑页本身就是内容工作台，预览质量比“先快速有个能用版本”更重要
+正文展示层 `ArticleContentRenderer` 当前额外负责：
 
-`highlight.js` 的优势主要是接入更快、更轻，但对于本项目当前方向，优先级低于代码块展示质量。
+- 代码块复制
+- 代码块折叠 / 展开
+- 代码块工具栏图标增强
+- macOS 风格三色圆点兼容补齐
+- 内容主题和代码主题视觉统一
 
-### 4.4 为什么前端不推荐直接手写正则转换
+## 四、当前还没有实现的能力
 
-不推荐自己用正则把 `Markdown` 转 `HTML`，原因包括：
+截至当前版本，以下能力尚未接入或未形成完整闭环：
 
-- 很难正确处理嵌套列表、引用、代码块
-- 标题、链接、图片等边界情况多
-- 后续扩展任务列表、表格、脚注等语法会越来越难维护
-- 安全处理容易遗漏
+- 脚注渲染
+- 自定义容器语法
+- 服务端统一重建 `contentHtml`
+- 服务端统一重建 `contentTocJson`
+- 服务端统一校验前端提交的 HTML 派生结果
 
-因此前端必须使用成熟解析器，不手写 Markdown 转换逻辑。
+当前最明显的待补齐项，已经从“数学公式”切换为“服务端派生链路补强”和“更多 Markdown 扩展语法能力”。
 
-## 五、前端渲染职责划分
+## 五、与历史架构文档的关系
 
-### 5.1 编辑页前端负责
+项目早期文档里的目标方案，主线是：
 
-前端在文章编辑页负责：
+- `Markdown` 作为主内容源
+- `HTML` 作为派生结果
+- 最理想状态下由服务端在发布链路中生成 `HTML / TOC / 摘要 / 阅读时长`
+- 前台详情页直接消费服务端派生结果，Nuxt 负责 SSR 页面输出
 
-- 维护 `contentMarkdown`
-- 本地实时渲染 `contentHtml`
-- 本地生成 `contentToc`
-- 统计正文字符数
-- 估算阅读时长
-- 提供编辑 / 预览切换
+这个方向本身是正确的，当前代码也没有偏离主原则。
 
-### 5.2 前端不负责
+但当前真实落地状态与目标方案之间还有一个阶段性差异：
 
-前端不负责以下事情：
+### 5.1 当前真实状态
 
-- 把前端生成的 `HTML` 视为唯一可信源
-- 决定最终线上详情页渲染真相
-- 省略 `Markdown` 只提交 `HTML`
-- 用客户端首屏渲染取代正式详情页的服务端渲染方案
+- 编辑预览的 Markdown 渲染在前端完成
+- 提交时前端把 `contentHtml` 和 `contentTocJson` 一起提交给后端
+- 后端主要负责保存和补充纯文本、阅读时长
 
-## 六、推荐前端模块设计
+### 5.2 目标状态
 
-### 6.1 `useMarkdownRenderer`
+- 前端仍然保留实时预览能力
+- 但后端应该具备独立重建 `HTML / TOC / plainText / readingTime` 的能力
+- 前端提交的派生结果更适合视为“编辑期辅助结果”，而不是长期唯一来源
 
-建议新增一个前端渲染 composable，统一负责：
+### 5.3 当前结论
 
-- 输入：`markdown`
-- 输出：`html`
-- 输出：`toc`
-- 输出：`plainText`
-- 输出：`readingMinutes`
+所以本项目当前最准确的表达应该是：
 
-建议接口形态：
+- `Markdown` 仍然是主内容源
+- 编辑预览的渲染责任当前在前端
+- 线上详情页展示当前依赖后端保存的 `contentHtml`
+- 后端尚未完全收回派生字段生成责任
 
-```ts
-interface ArticleTocItem {
-  id: string
-  text: string
-  level: number
-}
+## 六、数学公式当前如何渲染
 
-interface MarkdownRenderResult {
-  html: string
-  toc: ArticleTocItem[]
-  plainText: string
-  readingMinutes: number
-}
-```
+当前数学公式已经接入到现有 Markdown 渲染主链路中，处理方式不是在前台详情页额外二次解析，而是在 Markdown 转 HTML 时一次性完成。
 
-### 6.2 `MarkdownPreview`
+### 6.1 Markdown 解析阶段
 
-建议新增一个公共预览组件：
+`useMarkdownRenderer` 当前只接入了：
 
-- 输入：`markdown`
-- 内部调用 `useMarkdownRenderer`
-- 输出安全 `HTML`
-- 用于后台文章编辑页预览区
+- `markdown-it`
+- `markdown-it-anchor`
+- 自定义外链规则
+- 自定义任务清单规则
+- `shiki` 代码高亮
 
-### 6.3 `ArticleTocPanel`
+同时，项目已经接入：
 
-建议新增一个目录组件：
-
-- 输入：`toc`
-- 展示标题层级结构
-- 支持点击跳转到预览区对应锚点
-
-### 6.4 `AdminMarkdownEditor`
-
-建议后续把正文区进一步抽成专用组件：
-
-- 左侧编辑
-- 右侧预览
-- 顶部切换编辑 / 预览 / 分屏
-- 底部或侧栏展示字数、时长、目录摘要
-
-## 七、文章编辑页推荐交互流
-
-编辑页正文区建议采用以下流程：
-
-1. 作者输入 `Markdown`
-2. 前端监听 `contentMarkdown`
-3. 使用 `markdown-it` 渲染为 `HTML`
-4. 同时扫描标题节点，生成 `TOC`
-5. 将 `HTML` 渲染到预览区
-6. 将 `TOC` 渲染到目录面板
-7. 提交时将 `Markdown + HTML + TOC` 一并发送给后端
-
-## 八、提交数据结构建议
-
-前端提交文章时，正文相关字段建议至少包含：
-
-- `contentMarkdown`
-- `contentHtml`
-- `contentToc`
-
-可选补充字段：
-
-- `contentPlainText`
-- `readingMinutes`
-
-推荐请求载荷示意：
-
-```json
-{
-  "title": "文章标题",
-  "slug": "article-slug",
-  "summary": "文章摘要",
-  "categoryId": 1,
-  "tagIds": [1, 2],
-  "topicIds": [3],
-  "status": "DRAFT",
-  "seoTitle": "SEO 标题",
-  "seoDescription": "SEO 描述",
-  "contentMarkdown": "# 标题\\n\\n正文",
-  "contentHtml": "<h1 id=\"标题\">标题</h1><p>正文</p>",
-  "contentToc": [
-    {
-      "id": "标题",
-      "text": "标题",
-      "level": 1
-    }
-  ]
-}
-```
-
-## 九、与后端的职责边界
-
-推荐边界如下：
-
-- 前端负责实时生成，提升编辑体验
-- 后端负责长期存储和最终可信结果
-
-后端保存时建议遵守以下原则：
-
-- `content_markdown` 必存
-- `content_html` 可由前端提交
-- `content_toc_json` 可由前端提交
-- 后端后续应支持重新生成或校验这些派生字段
+- `katex`
+- `markdown-it-texmath`
 
 这意味着：
 
-- 当前阶段前端可以先把派生结果提交给后端，帮助业务快速闭环
-- 后续后端能力增强后，可以逐步把“派生字段重建”收回服务端
+- 行内公式 `$...$` 会被解析为 KaTeX 行内公式 HTML
+- 块级公式 `$$...$$` 会被解析为 KaTeX 块级公式 HTML
+- `\begin{...}...\end{...}` 形式的块级环境也已经纳入当前渲染器支持范围
 
-## 十、为什么不建议只让前端生成最终 HTML
+### 6.2 公式输出样式
 
-如果完全依赖前端生成最终 `HTML`，存在这些风险：
+项目当前已经引入 `katex`，因此公式渲染所需的基础资源也已经接入：
 
-- 前后端渲染规则容易漂移
-- 后续更换解析规则时历史文章难以统一回收
-- 如果前端清洗不严格，存在安全风险
-- 不利于后端做统一审核、摘要重建和目录重建
+- KaTeX 全局 CSS
+- KaTeX 字体资源
+- 块级公式的正文容器样式
+- 行内公式的正文融合样式
 
-因此正确做法是：
+因此后台预览和前台详情页都可以直接消费同一份公式 HTML。
 
-- 前端先生成派生结果，服务当前编辑体验
-- 后端长期仍以 `Markdown` 为主源
+### 6.3 前台详情页运行链路
 
-## 十一、当前阶段前端定稿建议
+前台详情页当前直接展示后端返回的 `contentHtml`，不会再现场解析 Markdown。
 
-当前阶段前端正式建议定为：
+这意味着：
 
-- 编辑页正文仍然维护 `Markdown`
-- 前端使用 `markdown-it + markdown-it-anchor + shiki` 进行实时预览渲染
-- 前端使用标题提取逻辑生成 `TOC`
-- 前端提交 `contentMarkdown + contentHtml + contentToc`
-- 当前阶段暂不接入 `sanitize-html`
-- 后端存储 `Markdown` 为主源，`HTML / TOC` 为派生字段
+- 后台编辑预览阶段会先生成带公式的 `contentHtml`
+- 后端保存后，前台详情页可以直接复用这份公式 HTML
+- 详情页不需要再额外跑一套公式解析逻辑
 
-## 十二、后续实施顺序
+因此当前正式实现方式是：
 
-建议按以下顺序落地：
+- 数学公式在 Markdown 渲染阶段完成
+- 正文展示层只负责样式和滚动体验
+- 存库的 `contentHtml` 已经可以承载公式结果
 
-1. 新增 `useMarkdownRenderer`
-2. 新增 `MarkdownPreview`
-3. 将文章编辑页正文区升级为实时预览模式
-4. 增加目录面板
-5. 调整文章新增/编辑接口字段，支持接收 `contentHtml` 与 `contentToc`
-6. 后端后续再补统一校验或重建链路
+## 七、原生 HTML 与 iframe 当前如何渲染
 
-## 十三、与当前项目技术路线的关系
+当前项目对原生 HTML 的策略，已经切换为“当前阶段默认全放开”。
 
-本方案不改变现有技术路线，只是补充后台编辑阶段的前端实现方案。
+- Markdown 解析阶段开启原生 HTML 识别
+- 进入最终 HTML 时不再做标签、属性、样式、协议层面的前端清洗
+- 正文尽量按作者原始 HTML 直接渲染
+- 这次改动的目的，是避免第三方播放页、嵌入页、复杂容器布局因为清洗规则而失效
 
-现有正式路线仍然成立：
+### 7.1 当前真实行为
 
-- `Markdown` 是内容主源
-- 数据库存储 `Markdown + HTML + TOC`
-- 正式内容详情页仍以服务端内容链路为准
-- `Nuxt SSR` 负责最终 Web 页面输出
+当前前端对原生 HTML 的真实行为是：
 
-因此这份文档的定位是：
+- 标签层面：默认不拦截，作者写什么就尽量输出什么
+- 属性层面：默认不拦截，包括自定义属性、播放器属性、`sandbox`、`allow`、`referrerpolicy` 等
+- `style` 层面：默认不拦截，不再限制可写 CSS 属性和属性值
+- 协议层面：默认不拦截，不再额外限制 `src` / `href` 的协议
+- `iframe` 层面：不做来源白名单限制，也不再自动注入固定 `16:9` 响应式样式
 
-- 后台编辑体验方案
-- 前端提交协议建议
-- 与现有后端存储结构对齐的实施说明
+这意味着像下面这些内容，当前都按原始 HTML 直接渲染：
+
+- 折叠块
+- 快捷键标记
+- 下标 / 上标
+- 高亮标记
+- 视频 iframe 嵌入
+- `div + iframe` 的响应式嵌入容器
+- `video / audio / picture` 等内容媒体结构
+- 自定义 `div / span` 容器和内联布局片段
+
+### 7.2 当前为什么有的网站仍然可能无法播放
+
+如果现在依然有站点不能嵌入，优先排查的就不再是前端清洗规则，而是目标站自身限制：
+
+- 目标站返回了 `X-Frame-Options`
+- 目标站配置了 `Content-Security-Policy: frame-ancestors`
+- 目标站播放器本身不允许第三方页面嵌入
+- 目标站要求特定 `referer`、登录态、cookie 或 token
+- 目标站只允许自家官方 embed 地址，而不允许普通详情页地址直接进 `iframe`
+
+也就是说：
+
+- 当前“渲染不出来”，大概率已经不是 `yunyu-web` 的 HTML 清洗在拦
+- 而是第三方站点自己禁止被嵌入
+
+### 7.3 当前实现方式
+
+当前实现落点在：
+
+- `yunyu-web/app/composables/useMarkdownRenderer.ts`
+
+当前的处理流程是：
+
+1. `MarkdownIt` 开启原生 HTML 识别能力
+2. 对 `html_block` 和 `html_inline` token 直接原样透传
+3. 不再对标签、属性、样式、协议做前端清洗
+4. 不再对 iframe 来源做白名单限制
+5. 不再对单独的 iframe 自动注入固定 16:9 响应式样式
+6. 正文展示层尽量按作者原始 HTML 呈现
+
+### 7.4 当前保留的治理预案
+
+当前版本虽然已经全放开，但这不代表未来永远不收紧。
+
+这份文档保留治理预案，目的是后续如果遇到下面这些问题，可以再把规则一项项加回来：
+
+- 某些嵌入导致站点安全风险上升
+- 某些文章写入了破坏全站样式的原生 HTML
+- 某些协议、事件属性或脚本型标签需要重新封禁
+- 某些第三方嵌入需要改成白名单治理
+- 某些样式值需要重新限制范围
+
+也就是说，当前策略是：
+
+- 现在先全放开，保证内容兼容性和嵌入成功率
+- 未来如果确实出现问题，再按标签、属性、协议、样式四层逐步收紧
+
+### 7.5 未来如需收紧，可按这四层回收
+
+如果后续要重新治理，建议按下面顺序回收，而不是一次性全收死：
+
+1. 先限制协议，例如只允许 `http`、`https`、`mailto`、`tel`
+2. 再限制危险属性，例如 `on*` 事件属性、`srcdoc`
+3. 再限制危险标签，例如 `script`、`style`、`form`
+4. 最后再决定是否给 `iframe` 增加来源白名单和 `style` 白名单
+
+## 八、数学公式最合适的实现方向
+
+基于本项目当前已经成型的链路，数学公式最适合沿着现有 `markdown-it` 体系扩展，不建议在这一块突然切到另一整套渲染体系。
+
+### 8.1 推荐方向
+
+推荐采用：
+
+- `markdown-it` 继续作为主解析器
+- `KaTeX` 负责公式渲染
+- 在 `useMarkdownRenderer` 中接入数学公式插件
+
+原因：
+
+- 当前主链路已经是 `markdown-it`
+- 接入成本最低
+- 更容易与现有编辑预览和详情页链路保持一致
+- `KaTeX` 输出 HTML 较快，适合内容站
+- 更适合当前“前端预览生成 HTML，后端保存派生结果”的阶段性实现
+
+### 8.2 语法支持建议
+
+建议至少支持以下两种公式语法：
+
+- 行内公式：`$E = mc^2$`
+- 块级公式：`$$\\int_a^b f(x) dx$$`
+
+这是内容站最常见的数学表达形式，也是后续技术文章最基本的能力边界。
+
+### 8.3 为什么优先选 KaTeX
+
+对于当前项目，更推荐 `KaTeX` 而不是 `MathJax`，原因是：
+
+- 输出更偏静态 HTML，适合当前内容存储模式
+- 预览和详情页更容易共用同一份渲染结果
+- 更符合“文章内容站”的渲染节奏
+
+如果后续需要更复杂的公式交互能力，再评估是否需要更重的方案。
+
+## 九、数学公式当前接入点
+
+当前项目已经按下面的层次完成接入。
+
+### 9.1 第一层：前端 Markdown 渲染器
+
+接入位置：
+
+- `yunyu-web/app/composables/useMarkdownRenderer.ts`
+
+当前已完成：
+
+- 给 `MarkdownIt` 注册数学公式插件
+- 让 `$...$` 和 `$$...$$` 输出公式 HTML
+- 让后台编辑页实时预览立即可见
+
+### 9.2 第二层：公式样式资源
+
+当前已完成：
+
+- 引入 `KaTeX` 样式文件
+- 把公式样式纳入当前正文内容展示体系
+- 处理块级公式的间距、横向滚动和容器表现
+
+### 9.3 第三层：前台详情页复用
+
+当前详情页本来就直接吃 `contentHtml`，因此现在已经实现：
+
+- 编辑预览生成公式 HTML
+- 保存到后端的 `contentHtml` 可以承载公式结果
+- 前台加载了公式样式
+
+那么前台详情页就能直接复用，不需要另起一套公式渲染逻辑。
+
+### 9.4 第四层：后端派生能力补强
+
+更长期仍建议：
+
+- 后端后续补上独立的 Markdown 派生链路
+- 让 `contentHtml / contentTocJson / contentPlainText / readingTime` 可以在服务端统一重建
+- 这样即使前端渲染策略升级，历史文章也可以回收重建
+
+## 十、数学公式接入后的推荐数据流
+
+建议未来的数据流明确为：
+
+1. 作者在后台输入包含公式的 `Markdown`
+2. 前端 `useMarkdownRenderer` 把公式一起渲染成 `HTML`
+3. 编辑预览区立即展示公式结果
+4. 提交时把 `contentMarkdown + contentHtml + contentTocJson` 一起提交
+5. 后端保存正文和派生字段
+6. 前台详情页直接渲染带公式结果的 `contentHtml`
+
+在当前阶段，这条链路已经足够支撑公式展示闭环。
+
+## 十一、当前阶段的正式结论
+
+当前项目关于 Markdown 渲染的正式结论如下：
+
+- 内容主源仍然是 `Markdown`
+- 当前编辑预览的 Markdown 渲染责任在前端
+- 当前前端实际使用的是 `markdown-it + markdown-it-anchor + shiki + sanitize-html`
+- 当前前端数学公式使用的是 `katex + markdown-it-texmath`
+- 当前原生 HTML 采用“宽松内容型放行”策略，而不是完全无过滤开放
+- 前台详情页当前直接展示后端返回的 `contentHtml`
+- 后端当前主要负责保存 `Markdown / HTML / TOC`，并补充纯文本与阅读时长
+- 数学公式当前已经打通后台预览、保存和前台详情页展示链路
+- iframe 等原生嵌入当前已经支持，来源不再受白名单限制
+- 当前更适合继续沿现有 `markdown-it` 链路扩展，而不是重换一套 Markdown 渲染体系
+
+## 十二、后续实施建议
+
+建议按这个顺序推进：
+
+1. 用一篇包含公式的测试文章完整走通编辑预览、保存、详情页展示
+2. 用一篇包含 iframe / video / div 嵌入的测试文章验证自由布局是否稳定
+3. 继续补充 `\begin{...}...\end{...}` 等更复杂数学环境的内容样例
+4. 再评估是否要补脚注、自定义容器等扩展语法
+5. 后续再决定是否把公式渲染能力同步收回到后端派生链路
+
+这套顺序的好处是：
+
+- 先让前台和后台预览可用
+- 不打断当前已成型的编辑链路
+- 后续仍保留把派生能力收回后端的演进空间

@@ -1,4 +1,20 @@
+import { formatChineseDateTime } from '~/utils/date'
 import type { AdminPostForm, AdminPostItem, AdminPostListResponse, AdminPostQuery } from '../types/post'
+
+/**
+ * 转换后台文章条目。
+ * 作用：统一格式化后台文章管理中可见的时间字段，避免页面层直接展示原始时间字符串。
+ *
+ * @param item 后端文章条目
+ * @returns 前端可直接使用的文章条目
+ */
+function toAdminPostItem(item: AdminPostItem): AdminPostItem {
+  return {
+    ...item,
+    updatedAt: formatChineseDateTime(item.updatedAt, '-'),
+    publishedAt: item.publishedAt ? formatChineseDateTime(item.publishedAt, '-') : null
+  }
+}
 
 /**
  * 后台文章管理组合式函数。
@@ -14,10 +30,15 @@ export function useAdminPosts() {
    * @returns 文章列表响应
    */
   async function listPosts(query: AdminPostQuery = {}) {
-    return await apiClient.request<AdminPostListResponse>('/api/admin/posts', {
+    const response = await apiClient.request<AdminPostListResponse>('/api/admin/posts', {
       method: 'GET',
       query
     })
+
+    return {
+      ...response,
+      list: response.list.map(item => toAdminPostItem(item))
+    }
   }
 
   /**
@@ -27,7 +48,8 @@ export function useAdminPosts() {
    * @returns 文章详情
    */
   async function getPost(postId: number) {
-    return await apiClient.request<AdminPostItem>(`/api/admin/posts/${postId}`)
+    const response = await apiClient.request<AdminPostItem>(`/api/admin/posts/${postId}`)
+    return toAdminPostItem(response)
   }
 
   /**
@@ -37,10 +59,12 @@ export function useAdminPosts() {
    * @returns 创建后的文章
    */
   async function createPost(payload: AdminPostForm) {
-    return await apiClient.request<AdminPostItem>('/api/admin/posts', {
+    const response = await apiClient.request<AdminPostItem>('/api/admin/posts', {
       method: 'POST',
       body: payload
     })
+
+    return toAdminPostItem(response)
   }
 
   /**
@@ -51,10 +75,12 @@ export function useAdminPosts() {
    * @returns 更新后的文章
    */
   async function updatePost(postId: number, payload: AdminPostForm) {
-    return await apiClient.request<AdminPostItem>(`/api/admin/posts/${postId}`, {
+    const response = await apiClient.request<AdminPostItem>(`/api/admin/posts/${postId}`, {
       method: 'PUT',
       body: payload
     })
+
+    return toAdminPostItem(response)
   }
 
   /**

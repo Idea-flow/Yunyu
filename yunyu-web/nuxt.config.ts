@@ -7,7 +7,7 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@nuxtjs/color-mode'
   ],
-  css: ['~/assets/css/main.css'],
+  css: ['katex/dist/katex.min.css', '~/assets/css/main.css'],
   runtimeConfig: {
     public: {
       apiBase: process.env.YUNYU_PUBLIC_API_BASE || 'http://127.0.0.1:20000'

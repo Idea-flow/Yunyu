@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatChineseDateTime } from '~/utils/date'
 import type { SiteCommentItem } from '../../types/comment'
 import CommentComposer from './CommentComposer.vue'
 import CommentRichContent from './CommentRichContent.vue'
@@ -279,33 +280,6 @@ async function handleReplySubmit() {
 }
 
 /**
- * 格式化评论时间。
- * 作用：将接口返回的时间统一转换为更适合前台阅读的中文时间格式。
- *
- * @param value 原始时间值
- * @returns 格式化后的时间文案
- */
-function formatCommentTime(value: string) {
-  if (!value) {
-    return '-'
-  }
-
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
-
-/**
  * 生成评论头像占位字符。
  * 作用：在没有头像图片时，用用户名首字符保持评论区的识别感。
  *
@@ -370,7 +344,7 @@ watch(() => props.postSlug, async () => {
             <div class="min-w-0 flex-1">
               <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">{{ comment.author.userName }}</p>
-                <p class="text-xs text-slate-400 dark:text-slate-500">{{ formatCommentTime(comment.createdTime) }}</p>
+                <p class="text-xs text-slate-400 dark:text-slate-500">{{ formatChineseDateTime(comment.createdTime, '-') }}</p>
               </div>
 
               <CommentRichContent
@@ -424,7 +398,7 @@ watch(() => props.postSlug, async () => {
                     <p v-if="reply.replyToUserName" class="text-xs text-slate-400 dark:text-slate-500">
                       回复 @{{ reply.replyToUserName }}
                     </p>
-                    <p class="text-xs text-slate-400 dark:text-slate-500">{{ formatCommentTime(reply.createdTime) }}</p>
+                    <p class="text-xs text-slate-400 dark:text-slate-500">{{ formatChineseDateTime(reply.createdTime, '-') }}</p>
                   </div>
 
                   <CommentRichContent

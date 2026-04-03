@@ -620,6 +620,39 @@ VALUES
     '动漫内容站演示数据'
   ),
   (
+    'homepage_config',
+    '首页配置',
+    JSON_OBJECT(
+      'heroEnabled', true,
+      'heroLayout', 'brand',
+      'heroBackgroundMode', 'soft-glow',
+      'heroEyebrow', 'Yunyu / 云屿',
+      'heroTitle', '把热爱、写作与长期观察，整理成一个可以慢慢逛的内容站',
+      'heroSubtitle', '记录动画、技术、审美和长期创作主题，用更轻的首页组织内容入口。',
+      'heroPrimaryButtonText', '查看文章',
+      'heroPrimaryButtonLink', '/posts',
+      'heroSecondaryButtonText', '进入专题',
+      'heroSecondaryButtonLink', '/topics',
+      'heroKeywords', JSON_ARRAY('写作', '动画', '技术', '长期主义'),
+      'showHeroKeywords', true,
+      'showHeroStats', true,
+      'heroStats', JSON_ARRAY(
+        JSON_OBJECT('label', '文章', 'value', '48'),
+        JSON_OBJECT('label', '专题', 'value', '12'),
+        JSON_OBJECT('label', '分类', 'value', '8')
+      ),
+      'showFeaturedSection', true,
+      'featuredSectionTitle', '主打内容',
+      'showLatestSection', true,
+      'latestSectionTitle', '最新文章',
+      'showCategorySection', true,
+      'categorySectionTitle', '分类',
+      'showTopicSection', true,
+      'topicSectionTitle', '专题'
+    ),
+    '首页无封面首屏演示数据'
+  ),
+  (
     'site.feature',
     '站点功能开关',
     JSON_OBJECT(
