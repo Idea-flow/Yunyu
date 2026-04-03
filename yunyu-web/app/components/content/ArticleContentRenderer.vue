@@ -224,8 +224,11 @@ function ensureWindowControls(block: HTMLElement) {
  */
 function createIframeFallbackNotice(src: string) {
   const notice = document.createElement('div')
-  notice.className = 'mt-3 rounded-[16px] border border-amber-200/80 bg-amber-50/88 px-4 py-3 text-sm text-amber-900 shadow-[0_16px_30px_-26px_rgba(217,119,6,0.35)] dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-100'
+  notice.className = 'absolute inset-0 z-10 flex items-center justify-center bg-white/94 px-5 py-5 text-sm text-amber-900 backdrop-blur-[2px] dark:bg-slate-950/92 dark:text-amber-100'
   notice.hidden = true
+
+  const panel = document.createElement('div')
+  panel.className = 'w-full max-w-md rounded-[20px] border border-amber-200/80 bg-amber-50/92 p-5 text-left shadow-[0_18px_36px_-28px_rgba(217,119,6,0.38)] dark:border-amber-400/20 dark:bg-amber-400/10'
 
   const title = document.createElement('p')
   title.className = 'font-semibold tracking-[-0.01em]'
@@ -235,8 +238,8 @@ function createIframeFallbackNotice(src: string) {
   description.className = 'mt-1 leading-6 text-amber-800/90 dark:text-amber-100/80'
   description.textContent = '该区域长时间未正常显示，可能是目标站禁止嵌入，或当前网络暂时不可达。'
 
-  notice.appendChild(title)
-  notice.appendChild(description)
+  panel.appendChild(title)
+  panel.appendChild(description)
 
   if (src) {
     const actionRow = document.createElement('div')
@@ -250,10 +253,37 @@ function createIframeFallbackNotice(src: string) {
     link.textContent = '打开源地址验证'
 
     actionRow.appendChild(link)
-    notice.appendChild(actionRow)
+    panel.appendChild(actionRow)
   }
 
+  notice.appendChild(panel)
   return notice
+}
+
+/**
+ * 为 iframe 解析提示层宿主容器。
+ * 作用：优先复用作者为单个 iframe 准备的包裹容器；
+ * 如果当前 iframe 是裸标签，则在运行时补一个最小包装层，便于把异常提示直接覆盖在原区域内。
+ *
+ * @param iframe 目标 iframe
+ * @returns 可承载覆盖层的宿主容器
+ */
+function resolveIframeNoticeHost(iframe: HTMLIFrameElement) {
+  const parent = iframe.parentElement
+
+  if (
+    parent instanceof HTMLDivElement
+    && parent.childElementCount === 1
+    && parent.firstElementChild === iframe
+  ) {
+    return parent
+  }
+
+  const wrapper = document.createElement('div')
+  wrapper.className = 'relative inline-block max-w-full align-top'
+  iframe.insertAdjacentElement('beforebegin', wrapper)
+  wrapper.appendChild(iframe)
+  return wrapper
 }
 
 /**
@@ -270,10 +300,19 @@ function enhanceEmbeddedIframes() {
 
   for (const iframe of iframes) {
     const src = iframe.getAttribute('src')?.trim() || ''
+    const host = resolveIframeNoticeHost(iframe)
     const notice = createIframeFallbackNotice(src)
     let resolved = false
 
-    iframe.insertAdjacentElement('afterend', notice)
+    if (!host.style.position) {
+      host.style.position = 'relative'
+    }
+
+    if (!host.style.minHeight && !iframe.getAttribute('height')) {
+      host.style.minHeight = '12rem'
+    }
+
+    host.appendChild(notice)
 
     const revealNotice = () => {
       if (resolved) {

@@ -16,6 +16,7 @@ public class SitePostDetailResponse {
     private String title;
     private String summary;
     private String coverUrl;
+    private String videoUrl;
     private String categoryName;
     private String categorySlug;
     private List<SiteTagLinkResponse> tagItems;

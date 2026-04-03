@@ -127,7 +127,7 @@ public class AdminPostService {
         postEntity.setStatus(resolveStatus(request.getStatus()));
         postEntity.setIsTop(0);
         postEntity.setIsRecommend(0);
-        postEntity.setHasVideo(0);
+        postEntity.setHasVideo(hasVideo(request.getVideoUrl()) ? 1 : 0);
         postEntity.setAllowComment(1);
         postEntity.setSortOrder(0);
         postEntity.setViewCount(0L);
@@ -141,7 +141,7 @@ public class AdminPostService {
         }
         postMapper.insert(postEntity);
 
-        saveOrUpdatePostContent(postEntity.getId(), request.getContentMarkdown(), request.getContentHtml(), request.getContentTocJson());
+        saveOrUpdatePostContent(postEntity.getId(), request.getContentMarkdown(), request.getContentHtml(), request.getContentTocJson(), request.getVideoUrl());
         savePostTags(postEntity.getId(), request.getTagIds());
         saveTopicPosts(postEntity.getId(), request.getTopicIds());
         return getPost(postEntity.getId());
@@ -167,6 +167,7 @@ public class AdminPostService {
         postEntity.setCategoryId(resolveCategoryId(request.getCategoryId()));
         postEntity.setSeoTitle(normalizeOptionalValue(request.getSeoTitle()));
         postEntity.setSeoDescription(normalizeOptionalValue(request.getSeoDescription()));
+        postEntity.setHasVideo(hasVideo(request.getVideoUrl()) ? 1 : 0);
         String nextStatus = resolveStatus(request.getStatus());
         postEntity.setStatus(nextStatus);
         postEntity.setUpdatedTime(LocalDateTime.now());
@@ -178,7 +179,7 @@ public class AdminPostService {
         }
         postMapper.updateById(postEntity);
 
-        saveOrUpdatePostContent(postId, request.getContentMarkdown(), request.getContentHtml(), request.getContentTocJson());
+        saveOrUpdatePostContent(postId, request.getContentMarkdown(), request.getContentHtml(), request.getContentTocJson(), request.getVideoUrl());
         savePostTags(postId, request.getTagIds());
         saveTopicPosts(postId, request.getTopicIds());
         return getPost(postId);
@@ -247,11 +248,13 @@ public class AdminPostService {
      * @param contentMarkdown Markdown 正文
      * @param contentHtml HTML 正文
      * @param contentTocJson 目录 JSON
+     * @param videoUrl 视频地址
      */
-    private void saveOrUpdatePostContent(Long postId, String contentMarkdown, String contentHtml, String contentTocJson) {
+    private void saveOrUpdatePostContent(Long postId, String contentMarkdown, String contentHtml, String contentTocJson, String videoUrl) {
         String markdown = contentMarkdown == null ? "" : contentMarkdown.trim();
         String html = contentHtml == null || contentHtml.isBlank() ? markdown : contentHtml.trim();
         String tocJson = contentTocJson == null || contentTocJson.isBlank() ? null : contentTocJson.trim();
+        String normalizedVideoUrl = normalizeOptionalValue(videoUrl);
         String plainText = markdown.replaceAll("`{1,3}[^`]*`{1,3}", " ")
                 .replaceAll("!\\[[^\\]]*\\]\\([^\\)]*\\)", " ")
                 .replaceAll("\\[[^\\]]*\\]\\([^\\)]*\\)", " ")
@@ -274,6 +277,7 @@ public class AdminPostService {
         postContentEntity.setContentMarkdown(markdown);
         postContentEntity.setContentHtml(html);
         postContentEntity.setContentTocJson(tocJson);
+        postContentEntity.setVideoUrl(normalizedVideoUrl);
         postContentEntity.setContentPlainText(plainText);
         postContentEntity.setReadingTime(readingTime);
         postContentEntity.setUpdatedTime(LocalDateTime.now());
@@ -533,6 +537,7 @@ public class AdminPostService {
         response.setSlug(postEntity.getSlug());
         response.setSummary(postEntity.getSummary());
         response.setCoverUrl(postEntity.getCoverUrl());
+        response.setVideoUrl(postContentEntity == null ? null : postContentEntity.getVideoUrl());
         response.setCategoryId(postEntity.getCategoryId());
         response.setCategoryName(categoryEntity == null ? null : categoryEntity.getName());
         response.setTagIds(tagIds == null ? List.of() : tagIds);
@@ -544,6 +549,9 @@ public class AdminPostService {
         response.setSeoTitle(postEntity.getSeoTitle());
         response.setSeoDescription(postEntity.getSeoDescription());
         response.setCoverReady(postEntity.getCoverUrl() != null && !postEntity.getCoverUrl().isBlank());
+        response.setVideoReady(postContentEntity != null
+                && postContentEntity.getVideoUrl() != null
+                && !postContentEntity.getVideoUrl().isBlank());
         response.setSummaryReady(postEntity.getSummary() != null && !postEntity.getSummary().isBlank());
         response.setReadingMinutes(postContentEntity == null || postContentEntity.getReadingTime() == null ? 1 : postContentEntity.getReadingTime());
         response.setWordCount(postContentEntity == null || postContentEntity.getContentPlainText() == null ? 0 : postContentEntity.getContentPlainText().length());
@@ -551,5 +559,16 @@ public class AdminPostService {
         response.setUpdatedAt(postEntity.getUpdatedTime());
         response.setPublishedAt(postEntity.getPublishedAt());
         return response;
+    }
+
+    /**
+     * 判断当前视频地址是否有效。
+     * 作用：统一生成文章主表中的视频存在标记，避免创建和更新逻辑重复判断。
+     *
+     * @param videoUrl 视频地址
+     * @return 是否存在视频地址
+     */
+    private boolean hasVideo(String videoUrl) {
+        return normalizeOptionalValue(videoUrl) != null;
     }
 }

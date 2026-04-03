@@ -39,6 +39,7 @@ const formState = reactive<AdminPostForm>({
   slug: '',
   summary: '',
   coverUrl: '',
+  videoUrl: '',
   categoryId: null,
   tagIds: [],
   topicIds: [],
@@ -165,6 +166,7 @@ async function loadPostDetail() {
     formState.slug = detail.slug
     formState.summary = detail.summary || ''
     formState.coverUrl = detail.coverUrl || ''
+    formState.videoUrl = detail.videoUrl || ''
     formState.categoryId = detail.categoryId ?? null
     formState.tagIds = detail.tagIds || []
     formState.topicIds = detail.topicIds || []
@@ -250,6 +252,7 @@ async function handleSubmit() {
       slug: formState.slug.trim(),
       summary: formState.summary.trim(),
       coverUrl: formState.coverUrl.trim(),
+      videoUrl: formState.videoUrl.trim(),
       categoryId: formState.categoryId,
       tagIds: [...formState.tagIds],
       topicIds: [...formState.topicIds],
@@ -407,6 +410,13 @@ await Promise.all([
                   <AdminInput
                     v-model="formState.coverUrl"
                     placeholder="请输入封面图片 URL"
+                  />
+                </UFormField>
+
+                <UFormField name="videoUrl" label="视频地址">
+                  <AdminInput
+                    v-model="formState.videoUrl"
+                    placeholder="请输入视频直链 URL"
                   />
                 </UFormField>
               </div>

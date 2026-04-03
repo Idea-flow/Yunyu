@@ -4,6 +4,7 @@ import type {
   AdminHomepageHeroStatForm,
   AdminSiteConfigForm
 } from '../../types/admin-site-config'
+import type { AdminPostItem } from '../../types/post'
 
 /**
  * 后台站点设置页。
@@ -33,12 +34,18 @@ interface SiteConfigTabItem {
 const toast = useToast()
 const adminSiteConfig = useAdminSiteConfig()
 const adminHomepageConfig = useAdminHomepageConfig()
+const adminPosts = useAdminPosts()
 
 const isLoading = ref(false)
 const isSubmitting = ref(false)
 const activeTab = ref<SiteConfigTabKey>('basic')
 const lastSavedSiteSnapshot = ref('')
 const lastSavedHomepageSnapshot = ref('')
+const heroVisualKeyword = ref('')
+const isLoadingHeroVisualOptions = ref(false)
+const heroVisualOptions = ref<AdminPostItem[]>([])
+const selectedHeroVisualPost = ref<AdminPostItem | null>(null)
+let heroVisualSearchTimer: ReturnType<typeof setTimeout> | null = null
 
 /**
  * 站点设置表单状态。
@@ -73,6 +80,8 @@ const homepageFormState = reactive<AdminHomepageConfigForm>({
   heroPrimaryButtonLink: '/posts',
   heroSecondaryButtonText: '进入专题',
   heroSecondaryButtonLink: '/topics',
+  heroVisualPostId: null,
+  heroVisualClickable: true,
   heroKeywords: ['写作', '技术', '审美', '长期主义'],
   showHeroKeywords: true,
   showHeroStats: true,
@@ -210,6 +219,7 @@ async function loadAllConfig() {
 
     assignSiteFormState(siteResponse)
     assignHomepageFormState(homepageResponse)
+    await syncSelectedHeroVisualPost()
     lastSavedSiteSnapshot.value = serializeSiteFormState(siteResponse)
     lastSavedHomepageSnapshot.value = serializeHomepageFormState(homepageResponse)
   } catch (error: any) {
@@ -258,6 +268,8 @@ function assignHomepageFormState(data: AdminHomepageConfigForm) {
   homepageFormState.heroPrimaryButtonLink = data.heroPrimaryButtonLink || '/posts'
   homepageFormState.heroSecondaryButtonText = data.heroSecondaryButtonText || ''
   homepageFormState.heroSecondaryButtonLink = data.heroSecondaryButtonLink || '/topics'
+  homepageFormState.heroVisualPostId = data.heroVisualPostId ?? null
+  homepageFormState.heroVisualClickable = data.heroVisualClickable ?? true
   homepageFormState.heroKeywords = (data.heroKeywords || []).filter(Boolean)
   homepageFormState.showHeroKeywords = data.showHeroKeywords ?? true
   homepageFormState.showHeroStats = data.showHeroStats ?? true
@@ -317,6 +329,8 @@ function serializeHomepageFormState(data: AdminHomepageConfigForm) {
     heroPrimaryButtonLink: data.heroPrimaryButtonLink.trim(),
     heroSecondaryButtonText: data.heroSecondaryButtonText.trim(),
     heroSecondaryButtonLink: data.heroSecondaryButtonLink.trim(),
+    heroVisualPostId: data.heroVisualPostId,
+    heroVisualClickable: data.heroVisualClickable,
     heroKeywords: data.heroKeywords.map(keyword => keyword.trim()).filter(Boolean),
     showHeroKeywords: data.showHeroKeywords,
     showHeroStats: data.showHeroStats,
@@ -418,6 +432,12 @@ function validateHomepageForm() {
     return false
   }
 
+  if (homepageFormState.heroVisualPostId !== null && homepageFormState.heroVisualPostId <= 0) {
+    activeTab.value = 'homepage'
+    toast.add({ title: '首屏视觉文章 ID 需大于 0', color: 'warning' })
+    return false
+  }
+
   const validKeywords = homepageFormState.heroKeywords
     .map(keyword => keyword.trim())
     .filter(Boolean)
@@ -496,6 +516,92 @@ function removeHeroStat(index: number) {
 }
 
 /**
+ * 同步已选首屏视觉文章。
+ * 作用：在加载配置或保存成功后，根据当前视觉文章 ID 拉取文章摘要，便于后台展示已选项。
+ */
+async function syncSelectedHeroVisualPost() {
+  if (!homepageFormState.heroVisualPostId) {
+    selectedHeroVisualPost.value = null
+    return
+  }
+
+  try {
+    selectedHeroVisualPost.value = await adminPosts.getPost(homepageFormState.heroVisualPostId)
+  } catch {
+    selectedHeroVisualPost.value = null
+  }
+}
+
+/**
+ * 搜索首屏视觉候选文章。
+ * 作用：根据后台输入的关键词查询已发布文章，供首页视觉块快速选择。
+ */
+async function searchHeroVisualPosts() {
+  const keyword = heroVisualKeyword.value.trim()
+
+  if (!keyword) {
+    heroVisualOptions.value = []
+    return
+  }
+
+  isLoadingHeroVisualOptions.value = true
+
+  try {
+    const response = await adminPosts.listPosts({
+      keyword,
+      status: 'PUBLISHED',
+      pageNo: 1,
+      pageSize: 8
+    })
+    heroVisualOptions.value = response.list
+  } catch {
+    heroVisualOptions.value = []
+  } finally {
+    isLoadingHeroVisualOptions.value = false
+  }
+}
+
+/**
+ * 选择首屏视觉文章。
+ * 作用：将候选文章写入首页配置表单，并同步已选文章展示状态。
+ *
+ * @param post 文章条目
+ */
+function selectHeroVisualPost(post: AdminPostItem) {
+  homepageFormState.heroVisualPostId = post.id
+  selectedHeroVisualPost.value = post
+  heroVisualKeyword.value = ''
+  heroVisualOptions.value = []
+}
+
+/**
+ * 清空首屏视觉文章。
+ * 作用：移除当前首页右侧视觉文章配置，并恢复为前台默认兜底素材。
+ */
+function clearHeroVisualPost() {
+  homepageFormState.heroVisualPostId = null
+  selectedHeroVisualPost.value = null
+  heroVisualKeyword.value = ''
+  heroVisualOptions.value = []
+}
+
+watch(heroVisualKeyword, () => {
+  if (heroVisualSearchTimer) {
+    clearTimeout(heroVisualSearchTimer)
+  }
+
+  heroVisualSearchTimer = setTimeout(() => {
+    void searchHeroVisualPosts()
+  }, 240)
+})
+
+onBeforeUnmount(() => {
+  if (heroVisualSearchTimer) {
+    clearTimeout(heroVisualSearchTimer)
+  }
+})
+
+/**
  * 创建首页统计项草稿。
  * 作用：为首页统计项输入区提供稳定的新对象结构。
  *
@@ -560,6 +666,8 @@ async function saveHomepageConfig() {
     heroPrimaryButtonLink: homepageFormState.heroPrimaryButtonLink.trim(),
     heroSecondaryButtonText: homepageFormState.heroSecondaryButtonText.trim(),
     heroSecondaryButtonLink: homepageFormState.heroSecondaryButtonLink.trim(),
+    heroVisualPostId: homepageFormState.heroVisualPostId,
+    heroVisualClickable: homepageFormState.heroVisualClickable,
     heroKeywords: homepageFormState.heroKeywords.map(keyword => keyword.trim()).filter(Boolean),
     showHeroKeywords: homepageFormState.showHeroKeywords,
     showHeroStats: homepageFormState.showHeroStats,
@@ -577,6 +685,7 @@ async function saveHomepageConfig() {
   })
 
   assignHomepageFormState(response)
+  await syncSelectedHeroVisualPost()
   lastSavedHomepageSnapshot.value = serializeHomepageFormState(response)
   toast.add({
     title: '首页配置已保存',
@@ -840,6 +949,127 @@ onMounted(async () => {
             <section class="rounded-[16px] border border-slate-200/80 bg-white/75 p-4 dark:border-white/10 dark:bg-white/4">
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
+                  <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-50">首屏视觉块</h2>
+                  <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    配置一篇文章作为右侧主视觉。有视频优先展示视频，没有视频则回退封面图。
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  :class="[
+                    'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition',
+                    homepageFormState.heroVisualClickable
+                      ? 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-400/20 dark:bg-sky-400/10 dark:text-sky-200'
+                      : 'border-slate-200 bg-white text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400'
+                  ]"
+                  @click="homepageFormState.heroVisualClickable = !homepageFormState.heroVisualClickable"
+                >
+                  {{ homepageFormState.heroVisualClickable ? '整块可点击' : '仅展示不跳转' }}
+                </button>
+              </div>
+
+              <div class="mt-4 grid gap-4 md:grid-cols-2">
+                <div class="space-y-2">
+                  <p class="text-sm font-medium text-slate-700 dark:text-slate-300">搜索并选择文章</p>
+                  <AdminInput
+                    v-model="heroVisualKeyword"
+                    icon="i-lucide-search"
+                    placeholder="输入标题关键词搜索已发布文章"
+                  />
+
+                  <div
+                    v-if="heroVisualKeyword.trim() || heroVisualOptions.length > 0 || isLoadingHeroVisualOptions"
+                    class="overflow-hidden rounded-[14px] border border-slate-200/80 bg-white/92 shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)] dark:border-white/10 dark:bg-slate-950/80"
+                  >
+                    <div v-if="isLoadingHeroVisualOptions" class="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
+                      正在搜索文章...
+                    </div>
+
+                    <div
+                      v-else-if="heroVisualOptions.length === 0"
+                      class="px-4 py-3 text-sm text-slate-500 dark:text-slate-400"
+                    >
+                      没有找到匹配文章
+                    </div>
+
+                    <button
+                      v-for="post in heroVisualOptions"
+                      v-else
+                      :key="`hero-visual-option-${post.id}`"
+                      type="button"
+                      class="flex w-full cursor-pointer items-start justify-between gap-3 border-b border-slate-200/70 px-4 py-3 text-left transition last:border-b-0 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/[0.04]"
+                      @click="selectHeroVisualPost(post)"
+                    >
+                      <div class="min-w-0">
+                        <p class="truncate text-sm font-medium text-slate-800 dark:text-slate-100">{{ post.title }}</p>
+                        <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                          #{{ post.id }} · {{ post.slug }}
+                        </p>
+                      </div>
+                      <span class="shrink-0 text-[11px] text-slate-400 dark:text-slate-500">
+                        {{ post.publishedAt || '未发布' }}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="rounded-[14px] border border-dashed border-slate-200/80 bg-white/60 px-4 py-3 text-sm text-slate-500 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-400">
+                  <p>展示顺序：视频优先，其次封面图，最后使用前台默认兜底视觉。</p>
+                  <p class="mt-1">点击逻辑：开启后，右侧整块视觉会跳转到对应文章详情页。</p>
+                </div>
+              </div>
+
+              <div v-if="selectedHeroVisualPost" class="mt-4 rounded-[14px] border border-slate-200/75 bg-white/70 px-4 py-3 dark:border-white/10 dark:bg-white/[0.04]">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="text-xs uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">已选文章</p>
+                    <p class="mt-2 truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+                      {{ selectedHeroVisualPost.title }}
+                    </p>
+                    <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                      ID {{ selectedHeroVisualPost.id }} · {{ selectedHeroVisualPost.slug }}
+                    </p>
+                    <div class="mt-3 flex flex-wrap gap-2">
+                      <span
+                        :class="[
+                          'rounded-full border px-2.5 py-1 text-[11px] font-medium',
+                          selectedHeroVisualPost.videoReady
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-200'
+                            : 'border-slate-200 bg-white text-slate-500 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-400'
+                        ]"
+                      >
+                        {{ selectedHeroVisualPost.videoReady ? '有视频' : '无视频' }}
+                      </span>
+                      <span
+                        :class="[
+                          'rounded-full border px-2.5 py-1 text-[11px] font-medium',
+                          selectedHeroVisualPost.coverReady
+                            ? 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-400/20 dark:bg-sky-400/10 dark:text-sky-200'
+                            : 'border-slate-200 bg-white text-slate-500 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-400'
+                        ]"
+                      >
+                        {{ selectedHeroVisualPost.coverReady ? '有封面' : '无封面' }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <UButton
+                    icon="i-lucide-x"
+                    label="清空"
+                    color="neutral"
+                    variant="outline"
+                    size="xs"
+                    class="rounded-[10px]"
+                    @click="clearHeroVisualPost"
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section class="rounded-[16px] border border-slate-200/80 bg-white/75 p-4 dark:border-white/10 dark:bg-white/4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
                   <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-50">关键词与统计</h2>
                   <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">这两块建议保持轻量，只做首屏辅助信息。</p>
                 </div>
@@ -1069,6 +1299,15 @@ onMounted(async () => {
                       class="rounded-full border border-slate-300/85 bg-white/72 px-4 py-2 text-xs font-medium text-slate-700 backdrop-blur-sm dark:border-white/14 dark:bg-white/6 dark:text-slate-100"
                     >
                       {{ homepageFormState.heroSecondaryButtonText }}
+                    </span>
+                  </div>
+
+                  <div class="mt-6 flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                    <span class="rounded-full border border-slate-200/80 bg-white/70 px-3 py-1 backdrop-blur-sm dark:border-white/10 dark:bg-white/[0.04]">
+                      {{ homepageFormState.heroVisualPostId ? `视觉文章 #${homepageFormState.heroVisualPostId}` : '未配置视觉文章' }}
+                    </span>
+                    <span class="rounded-full border border-slate-200/80 bg-white/70 px-3 py-1 backdrop-blur-sm dark:border-white/10 dark:bg-white/[0.04]">
+                      {{ homepageFormState.heroVisualClickable ? '整块可点击' : '仅展示' }}
                     </span>
                   </div>
 

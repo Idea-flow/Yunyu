@@ -60,6 +60,8 @@ export interface HomePageConfig {
   heroPrimaryButtonLink: string
   heroSecondaryButtonText: string
   heroSecondaryButtonLink: string
+  heroVisualPostId: number | null
+  heroVisualClickable: boolean
   heroKeywords: string[]
   showHeroKeywords: boolean
   showHeroStats: boolean
@@ -98,6 +100,20 @@ export interface SitePostSummary {
   likeCount: number
   top: boolean
   recommend: boolean
+}
+
+/**
+ * 首页首屏视觉块类型。
+ * 作用：统一描述首页右侧主视觉区域的媒体类型、地址和跳转信息。
+ */
+export interface HomePageHeroVisual {
+  mediaType: 'video' | 'image'
+  videoUrl: string
+  imageUrl: string
+  postId: number
+  postSlug: string
+  postTitle: string
+  clickable: boolean
 }
 
 /**
@@ -157,6 +173,7 @@ export interface SiteTagItem {
 export interface SiteHomeResponse {
   siteInfo: SiteBaseInfo
   homepageConfig: HomePageConfig
+  heroVisual: HomePageHeroVisual | null
   featuredPosts: SitePostSummary[]
   latestPosts: SitePostSummary[]
   categories: SiteCategoryItem[]
@@ -173,6 +190,7 @@ export interface SitePostDetail {
   title: string
   summary: string
   coverUrl: string
+  videoUrl: string
   categoryName: string
   categorySlug: string
   tagItems: SiteTagLink[]

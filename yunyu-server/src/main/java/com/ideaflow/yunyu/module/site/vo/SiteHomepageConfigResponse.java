@@ -20,6 +20,8 @@ public class SiteHomepageConfigResponse {
     private String heroPrimaryButtonLink;
     private String heroSecondaryButtonText;
     private String heroSecondaryButtonLink;
+    private Long heroVisualPostId;
+    private Boolean heroVisualClickable;
     private List<String> heroKeywords;
     private Boolean showHeroKeywords;
     private Boolean showHeroStats;

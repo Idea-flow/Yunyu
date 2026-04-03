@@ -633,6 +633,8 @@ VALUES
       'heroPrimaryButtonLink', '/posts',
       'heroSecondaryButtonText', '进入专题',
       'heroSecondaryButtonLink', '/topics',
+      'heroVisualPostId', NULL,
+      'heroVisualClickable', true,
       'heroKeywords', JSON_ARRAY('写作', '动画', '技术', '长期主义'),
       'showHeroKeywords', true,
       'showHeroStats', true,

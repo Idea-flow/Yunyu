@@ -2,7 +2,7 @@
 import YunyuImage from '~/components/common/YunyuImage.vue'
 import YunyuSectionTitle from '~/components/common/YunyuSectionTitle.vue'
 import { formatChineseDate } from '~/utils/date'
-import type { HomePageConfig, SitePostSummary } from '../types/site'
+import type { HomePageConfig, HomePageHeroVisual, SitePostSummary } from '../types/site'
 
 /**
  * 前台首页。
@@ -22,6 +22,7 @@ const categories = computed(() => homeData.value?.categories || [])
 const topics = computed(() => homeData.value?.topics || [])
 const siteInfo = computed(() => homeData.value?.siteInfo)
 const homepageConfig = computed<HomePageConfig | null>(() => homeData.value?.homepageConfig || null)
+const heroVisual = computed<HomePageHeroVisual | null>(() => homeData.value?.heroVisual || null)
 
 /**
  * 首页首屏眉题。
@@ -74,6 +75,24 @@ const heroStats = computed(() => {
 })
 
 /**
+ * 首页首屏最近更新。
+ * 作用：在首屏按钮下方补充少量最新文章入口，让首页在不堆卡片的前提下更有内容感。
+ */
+const heroRecentPosts = computed(() => {
+  const preferredPosts = latestDisplayPosts.value.length > 0 ? latestDisplayPosts.value : featuredPosts.value
+
+  return preferredPosts.slice(0, 2)
+})
+
+/**
+ * 首页首屏统计展示项。
+ * 作用：统一承接后台配置的首屏统计数据，避免模板层直接依赖原始配置字段。
+ */
+const heroStatItems = computed(() => {
+  return heroStats.value
+})
+
+/**
  * 首页最新文章展示列表。
  * 作用：首页正文只保留少量最新文章，避免内容过多导致首页显得杂乱。
  */
@@ -115,10 +134,66 @@ const selectedPosts = computed(() => {
 })
 
 /**
- * 首页首屏视频地址。
- * 作用：为首页首屏右侧提供一块纯视觉视频区域，先使用固定视频地址验证展示效果。
+ * 首页首屏默认视频地址。
+ * 作用：当后台未配置视觉文章，或目标文章既无视频也无封面图时，回退到默认视觉素材。
  */
-const heroVideoUrl = 'https://s3.hi168.com/hi168-29272-3320gqns/%E2%80%9C%E8%B6%81%E5%A4%A9%E7%A9%BA%E4%B8%8D%E6%B3%A8%E6%84%8F%EF%BC%8C%E5%81%B7%E4%B8%80%E7%82%B9%E4%BA%91%E6%9C%B5%E9%80%81%E7%BB%99%E4%BD%A0%EF%BD%9E%E2%80%9D.mp4'
+const defaultHeroVideoUrl = 'https://s3.hi168.com/hi168-29272-3320gqns/%E2%80%9C%E8%B6%81%E5%A4%A9%E7%A9%BA%E4%B8%8D%E6%B3%A8%E6%84%8F%EF%BC%8C%E5%81%B7%E4%B8%80%E7%82%B9%E4%BA%91%E6%9C%B5%E9%80%81%E7%BB%99%E4%BD%A0%EF%BD%9E%E2%80%9D.mp4'
+
+/**
+ * 首页首屏是否使用配置视频。
+ * 作用：控制右侧主视觉优先展示后台配置文章的视频资源。
+ */
+const heroVisualHasVideo = computed(() => {
+  return heroVisual.value?.mediaType === 'video' && Boolean(heroVisual.value.videoUrl)
+})
+
+/**
+ * 首页首屏是否使用配置图片。
+ * 作用：在没有视频时回退为文章封面图展示。
+ */
+const heroVisualHasImage = computed(() => {
+  return heroVisual.value?.mediaType === 'image' && Boolean(heroVisual.value.imageUrl)
+})
+
+/**
+ * 首页首屏视频地址。
+ * 作用：统一返回首页右侧主视觉视频地址，优先取配置视频，兜底使用默认素材。
+ */
+const heroVideoUrl = computed(() => {
+  if (heroVisualHasVideo.value) {
+    return heroVisual.value?.videoUrl || defaultHeroVideoUrl
+  }
+
+  return defaultHeroVideoUrl
+})
+
+/**
+ * 首页首屏图片地址。
+ * 作用：当配置文章只有封面图时，为右侧主视觉返回图片地址。
+ */
+const heroImageUrl = computed(() => {
+  return heroVisualHasImage.value ? heroVisual.value?.imageUrl || '' : ''
+})
+
+/**
+ * 首页首屏视觉块跳转地址。
+ * 作用：当后台开启整块点击时，为右侧主视觉提供文章详情跳转。
+ */
+const heroVisualLink = computed(() => {
+  if (!heroVisual.value?.clickable || !heroVisual.value?.postSlug) {
+    return ''
+  }
+
+  return getPostLink(heroVisual.value.postSlug)
+})
+
+/**
+ * 首页首屏视觉块辅助文案。
+ * 作用：在右侧主视觉下方保留一条轻量说明，优先显示视觉文章标题。
+ */
+const heroVisualCaption = computed(() => {
+  return heroVisual.value?.postTitle || heroKeywords.value.slice(0, 2).join(' / ') || '写作 / 观察'
+})
 
 /**
  * 计算首页分类入口。
@@ -301,19 +376,19 @@ function getTopicLink(slug: string) {
         </div>
       </div>
 
-      <div class="relative mx-auto flex min-h-screen max-w-[1320px] items-stretch px-5 pb-10 pt-[5.5rem] sm:px-8 sm:pt-24 lg:px-10 lg:pb-12 lg:pt-28">
-        <div class="flex w-full flex-col justify-between">
-          <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center lg:gap-14">
-            <div class="max-w-[760px]">
+      <div class="relative mx-auto flex min-h-screen max-w-[1320px] items-stretch px-5 pb-8 pt-[5.5rem] sm:px-8 sm:pt-24 lg:px-10 lg:pb-10 lg:pt-[6.5rem]">
+        <div class="flex w-full flex-col justify-between gap-10">
+          <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(420px,520px)] lg:items-center lg:gap-12">
+            <div class="max-w-[720px]">
               <p class="text-[0.67rem] font-semibold uppercase tracking-[0.38em] text-slate-500 dark:text-slate-400">
                 {{ heroEyebrow }}
               </p>
 
-              <h1 class="mt-4 max-w-[14ch] text-[clamp(2.05rem,1.55rem+1.55vw,3.2rem)] font-semibold leading-[0.98] tracking-[-0.055em] text-slate-950 [font-family:var(--font-display)] [text-wrap:balance] dark:text-white">
+              <h1 class="mt-4 max-w-[11ch] text-[clamp(1.92rem,1.48rem+1.36vw,2.95rem)] font-semibold leading-[0.98] tracking-[-0.055em] text-slate-950 [font-family:var(--font-display)] [text-wrap:balance] dark:text-white">
                 {{ heroTitle }}
               </h1>
 
-              <p class="mt-5 max-w-[35rem] text-[0.92rem] leading-8 tracking-[-0.01em] text-slate-600 dark:text-slate-300">
+              <p class="mt-5 max-w-[33rem] text-[0.9rem] leading-8 tracking-[-0.01em] text-slate-600 dark:text-slate-300">
                 {{ heroSubtitle }}
               </p>
 
@@ -335,72 +410,178 @@ function getTopicLink(slug: string) {
                   <UIcon name="i-lucide-arrow-up-right" class="size-4" />
                 </NuxtLink>
               </div>
+
+              <div
+                v-if="heroRecentPosts.length > 0"
+                class="mt-7 max-w-[34rem]"
+              >
+                <div class="flex items-center gap-4">
+                  <p class="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">
+                    最近更新
+                  </p>
+                  <NuxtLink
+                    to="/posts"
+                    class="text-[0.72rem] text-slate-400 transition hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300"
+                  >
+                    查看全部
+                  </NuxtLink>
+                </div>
+
+                <div class="mt-3 space-y-2.5">
+                  <NuxtLink
+                    v-for="post in heroRecentPosts"
+                    :key="`hero-${post.slug}`"
+                    :to="getPostLink(post.slug)"
+                    class="group flex items-center justify-between gap-3 border-b border-slate-200/70 py-2 last:border-b-0 dark:border-white/10"
+                  >
+                    <div class="min-w-0">
+                      <p class="truncate text-sm font-medium text-slate-700 transition group-hover:text-slate-950 dark:text-slate-200 dark:group-hover:text-white">
+                        {{ post.title }}
+                      </p>
+                    </div>
+
+                    <div class="flex shrink-0 items-center gap-3 text-[0.72rem] text-slate-400 dark:text-slate-500">
+                      <span>{{ formatChineseDate(post.publishedAt) }}</span>
+                      <UIcon
+                        name="i-lucide-arrow-up-right"
+                        class="size-3.5 transition group-hover:text-slate-700 dark:group-hover:text-slate-300"
+                      />
+                    </div>
+                  </NuxtLink>
+                </div>
+              </div>
             </div>
 
-            <div class="w-full max-w-[420px] justify-self-start lg:justify-self-end">
-              <div class="overflow-hidden rounded-[30px] border border-white/65 bg-white/78 shadow-[0_28px_80px_-52px_rgba(15,23,42,0.34)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6">
-                <video
-                  :src="heroVideoUrl"
-                  class="aspect-[16/10] h-full w-full object-cover"
-                  autoplay
-                  muted
-                  loop
-                  playsinline
-                  preload="metadata"
-                />
+            <div class="w-full max-w-[520px] justify-self-start lg:justify-self-end">
+              <NuxtLink
+                v-if="heroVisualLink"
+                :to="heroVisualLink"
+                class="group block cursor-pointer rounded-[36px] border border-white/70 bg-white/52 p-2 shadow-[0_34px_90px_-54px_rgba(15,23,42,0.38)] backdrop-blur-md transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_38px_98px_-54px_rgba(15,23,42,0.42)] dark:border-white/10 dark:bg-white/[0.04]"
+              >
+                <div class="overflow-hidden rounded-[30px] bg-slate-100 dark:bg-slate-900">
+                  <video
+                    v-if="heroVisualHasVideo"
+                    :src="heroVideoUrl"
+                    :poster="heroVisual?.imageUrl || undefined"
+                    class="aspect-[16/11] h-full w-full object-cover transition duration-500 group-hover:scale-[1.015]"
+                    autoplay
+                    muted
+                    loop
+                    playsinline
+                    preload="metadata"
+                  />
+                  <img
+                    v-else-if="heroVisualHasImage"
+                    :src="heroImageUrl"
+                    :alt="heroVisual?.postTitle || heroTitle"
+                    class="aspect-[16/11] h-full w-full object-cover transition duration-500 group-hover:scale-[1.015]"
+                  >
+                  <video
+                    v-else
+                    :src="heroVideoUrl"
+                    class="aspect-[16/11] h-full w-full object-cover transition duration-500 group-hover:scale-[1.015]"
+                    autoplay
+                    muted
+                    loop
+                    playsinline
+                    preload="metadata"
+                  />
+                </div>
+              </NuxtLink>
+
+              <div
+                v-else
+                class="rounded-[36px] border border-white/70 bg-white/52 p-2 shadow-[0_34px_90px_-54px_rgba(15,23,42,0.38)] backdrop-blur-md dark:border-white/10 dark:bg-white/[0.04]"
+              >
+                <div class="overflow-hidden rounded-[30px] bg-slate-100 dark:bg-slate-900">
+                  <video
+                    v-if="heroVisualHasVideo"
+                    :src="heroVideoUrl"
+                    :poster="heroVisual?.imageUrl || undefined"
+                    class="aspect-[16/11] h-full w-full object-cover"
+                    autoplay
+                    muted
+                    loop
+                    playsinline
+                    preload="metadata"
+                  />
+                  <img
+                    v-else-if="heroVisualHasImage"
+                    :src="heroImageUrl"
+                    :alt="heroVisual?.postTitle || heroTitle"
+                    class="aspect-[16/11] h-full w-full object-cover"
+                  >
+                  <video
+                    v-else
+                    :src="heroVideoUrl"
+                    class="aspect-[16/11] h-full w-full object-cover"
+                    autoplay
+                    muted
+                    loop
+                    playsinline
+                    preload="metadata"
+                  />
+                </div>
+              </div>
+
+              <div class="mt-3 flex items-center justify-between gap-3 px-1 text-[0.68rem] uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                <span>视觉片段</span>
+                <span class="truncate text-right">{{ heroVisualCaption }}</span>
               </div>
             </div>
           </div>
 
-          <div
-            class="mt-10 grid gap-8 lg:mt-12"
-            :class="heroStats.length > 0 ? 'lg:grid-cols-3' : 'lg:grid-cols-2'"
-          >
-            <div>
-              <p class="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">
-                内容方向
-              </p>
-              <div v-if="heroKeywords.length > 0" class="mt-4 flex flex-wrap gap-2">
-                <span
-                  v-for="keyword in heroKeywords"
-                  :key="keyword"
-                  class="rounded-full border border-slate-200/85 bg-white/60 px-3 py-1.5 text-[0.7rem] font-medium text-slate-600 backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:text-slate-300"
-                >
-                  {{ keyword }}
-                </span>
-              </div>
-              <p v-else class="mt-4 max-w-[24rem] text-sm leading-7 text-slate-600 dark:text-slate-300">
-                围绕写作、技术、产品与长期观察，持续整理值得慢慢读的内容。
-              </p>
-            </div>
-
-            <div>
-              <p class="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">
-                阅读路径
-              </p>
-              <p class="mt-4 max-w-[24rem] text-sm leading-7 text-slate-600 dark:text-slate-300">
-                先看最近更新，再从分类与专题进入自己感兴趣的内容线索。
-              </p>
-            </div>
-
-            <div v-if="heroStats.length > 0">
-              <p class="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">
-                站点体量
-              </p>
-              <dl class="mt-4 grid grid-cols-2 gap-4">
-                <div
-                  v-for="stat in heroStats"
-                  :key="`${stat.label}-${stat.value}`"
-                  class="min-w-0"
-                >
-                  <dt class="text-[0.68rem] uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                    {{ stat.label }}
-                  </dt>
-                  <dd class="mt-2 text-base font-semibold tracking-[-0.04em] text-slate-950 dark:text-white">
-                    {{ stat.value }}
-                  </dd>
+          <div class="mt-10 lg:mt-12">
+            <div
+              class="grid gap-6"
+              :class="heroStatItems.length > 0 ? 'lg:grid-cols-[minmax(0,1.12fr)_minmax(0,0.9fr)_auto]' : 'lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]'"
+            >
+              <div>
+                <p class="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">
+                  内容方向
+                </p>
+                <div v-if="heroKeywords.length > 0" class="mt-3 flex flex-wrap gap-2">
+                  <span
+                    v-for="keyword in heroKeywords"
+                    :key="keyword"
+                    class="rounded-full border border-slate-200/90 bg-white/78 px-3 py-1.5 text-[0.72rem] font-medium text-slate-600 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-300"
+                  >
+                    {{ keyword }}
+                  </span>
                 </div>
-              </dl>
+                <p v-else class="mt-3 max-w-[26rem] text-sm leading-7 text-slate-600 dark:text-slate-300">
+                  围绕写作、技术、产品与长期观察，持续整理值得慢慢读的内容。
+                </p>
+              </div>
+
+              <div>
+                <p class="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">
+                  阅读方式
+                </p>
+                <p class="mt-3 max-w-[22rem] text-sm leading-7 text-slate-600 dark:text-slate-300">
+                  从最近更新开始，再按分类与专题进入自己感兴趣的内容线索。
+                </p>
+              </div>
+
+              <div v-if="heroStatItems.length > 0">
+                <p class="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">
+                  站点体量
+                </p>
+                <dl class="mt-3 flex flex-wrap gap-x-6 gap-y-3">
+                  <div
+                    v-for="stat in heroStatItems"
+                    :key="`${stat.label}-${stat.value}`"
+                    class="min-w-[4.5rem]"
+                  >
+                    <dt class="text-[0.68rem] uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                      {{ stat.label }}
+                    </dt>
+                    <dd class="mt-1.5 text-[1.05rem] font-semibold tracking-[-0.04em] text-slate-950 dark:text-white">
+                      {{ stat.value }}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
             </div>
           </div>
         </div>

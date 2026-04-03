@@ -27,6 +27,9 @@ public class AdminPostUpdateRequest {
     @Size(max = 255, message = "封面地址长度不能超过255个字符")
     private String coverUrl;
 
+    @Size(max = 500, message = "视频地址长度不能超过500个字符")
+    private String videoUrl;
+
     private Long categoryId;
 
     private List<Long> tagIds;

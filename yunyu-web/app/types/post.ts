@@ -8,6 +8,7 @@ export interface AdminPostItem {
   slug: string
   summary: string | null
   coverUrl: string | null
+  videoUrl: string | null
   categoryId?: number | null
   categoryName?: string | null
   tagIds?: number[]
@@ -19,6 +20,7 @@ export interface AdminPostItem {
   seoTitle?: string | null
   seoDescription?: string | null
   coverReady: boolean
+  videoReady: boolean
   summaryReady: boolean
   readingMinutes: number
   wordCount: number
@@ -72,6 +74,7 @@ export interface AdminPostForm {
   slug: string
   summary: string
   coverUrl: string
+  videoUrl: string
   categoryId: number | null
   tagIds: number[]
   topicIds: number[]

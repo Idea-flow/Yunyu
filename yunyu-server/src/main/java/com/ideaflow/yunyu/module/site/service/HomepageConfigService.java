@@ -44,6 +44,7 @@ public class HomepageConfigService {
     private static final String DEFAULT_PRIMARY_BUTTON_LINK = "/posts";
     private static final String DEFAULT_SECONDARY_BUTTON_TEXT = "进入专题";
     private static final String DEFAULT_SECONDARY_BUTTON_LINK = "/topics";
+    private static final boolean DEFAULT_HERO_VISUAL_CLICKABLE = true;
     private static final String DEFAULT_FEATURED_SECTION_TITLE = "主打内容";
     private static final String DEFAULT_LATEST_SECTION_TITLE = "最新文章";
     private static final String DEFAULT_CATEGORY_SECTION_TITLE = "分类";
@@ -94,6 +95,8 @@ public class HomepageConfigService {
         response.setHeroPrimaryButtonLink(readJsonText(configNode, "heroPrimaryButtonLink", DEFAULT_PRIMARY_BUTTON_LINK));
         response.setHeroSecondaryButtonText(readJsonText(configNode, "heroSecondaryButtonText", DEFAULT_SECONDARY_BUTTON_TEXT));
         response.setHeroSecondaryButtonLink(readJsonText(configNode, "heroSecondaryButtonLink", DEFAULT_SECONDARY_BUTTON_LINK));
+        response.setHeroVisualPostId(readJsonLong(configNode, "heroVisualPostId"));
+        response.setHeroVisualClickable(readJsonBoolean(configNode, "heroVisualClickable", DEFAULT_HERO_VISUAL_CLICKABLE));
         response.setHeroKeywords(readHeroKeywords(configNode));
         response.setShowHeroKeywords(readJsonBoolean(configNode, "showHeroKeywords", true));
         response.setShowHeroStats(readJsonBoolean(configNode, "showHeroStats", true));
@@ -117,6 +120,7 @@ public class HomepageConfigService {
      */
     @Transactional(rollbackFor = Exception.class)
     public AdminHomepageConfigResponse updateHomepageConfig(AdminHomepageConfigUpdateRequest request) {
+        validateHeroVisualPost(request.getHeroVisualPostId());
         saveConfig(HOMEPAGE_CONFIG_KEY, "首页配置", buildHomepageConfigJson(request), "首页无封面首屏与首页模块开关配置");
         return getAdminHomepageConfig();
     }
@@ -139,6 +143,8 @@ public class HomepageConfigService {
         response.setHeroPrimaryButtonLink(readJsonText(configNode, "heroPrimaryButtonLink", DEFAULT_PRIMARY_BUTTON_LINK));
         response.setHeroSecondaryButtonText(readJsonText(configNode, "heroSecondaryButtonText", DEFAULT_SECONDARY_BUTTON_TEXT));
         response.setHeroSecondaryButtonLink(readJsonText(configNode, "heroSecondaryButtonLink", DEFAULT_SECONDARY_BUTTON_LINK));
+        response.setHeroVisualPostId(readJsonLong(configNode, "heroVisualPostId"));
+        response.setHeroVisualClickable(readJsonBoolean(configNode, "heroVisualClickable", DEFAULT_HERO_VISUAL_CLICKABLE));
         response.setHeroKeywords(readHeroKeywords(configNode));
         response.setShowHeroKeywords(readJsonBoolean(configNode, "showHeroKeywords", true));
         response.setShowHeroStats(readJsonBoolean(configNode, "showHeroStats", true));
@@ -182,6 +188,12 @@ public class HomepageConfigService {
         jsonNode.put("heroPrimaryButtonLink", normalizeText(request.getHeroPrimaryButtonLink()));
         jsonNode.put("heroSecondaryButtonText", normalizeText(request.getHeroSecondaryButtonText()));
         jsonNode.put("heroSecondaryButtonLink", normalizeText(request.getHeroSecondaryButtonLink()));
+        if (request.getHeroVisualPostId() == null) {
+            jsonNode.putNull("heroVisualPostId");
+        } else {
+            jsonNode.put("heroVisualPostId", request.getHeroVisualPostId());
+        }
+        jsonNode.put("heroVisualClickable", normalizeBoolean(request.getHeroVisualClickable(), DEFAULT_HERO_VISUAL_CLICKABLE));
         jsonNode.set("heroKeywords", buildHeroKeywordsArray(request.getHeroKeywords()));
         jsonNode.put("showHeroKeywords", normalizeBoolean(request.getShowHeroKeywords(), true));
         jsonNode.put("showHeroStats", normalizeBoolean(request.getShowHeroStats(), true));
@@ -541,6 +553,37 @@ public class HomepageConfigService {
     }
 
     /**
+     * 从 JSON 节点读取长整型值。
+     *
+     * @param jsonNode JSON 节点
+     * @param fieldName 字段名
+     * @return 长整型值
+     */
+    private Long readJsonLong(JsonNode jsonNode, String fieldName) {
+        if (jsonNode == null || jsonNode.get(fieldName) == null || jsonNode.get(fieldName).isNull()) {
+            return null;
+        }
+
+        JsonNode fieldNode = jsonNode.get(fieldName);
+        if (fieldNode.isNumber()) {
+            long value = fieldNode.asLong();
+            return value > 0 ? value : null;
+        }
+
+        String value = normalizeText(fieldNode.asText(""));
+        if (value.isEmpty()) {
+            return null;
+        }
+
+        try {
+            long numberValue = Long.parseLong(value);
+            return numberValue > 0 ? numberValue : null;
+        } catch (NumberFormatException exception) {
+            return null;
+        }
+    }
+
+    /**
      * 从 JSON 节点读取布尔值。
      *
      * @param jsonNode JSON 节点
@@ -602,6 +645,26 @@ public class HomepageConfigService {
      */
     private boolean normalizeBoolean(Boolean value, boolean defaultValue) {
         return value == null ? defaultValue : value;
+    }
+
+    /**
+     * 校验首页首屏视觉文章是否存在。
+     *
+     * @param postId 文章ID
+     */
+    private void validateHeroVisualPost(Long postId) {
+        if (postId == null) {
+            return;
+        }
+
+        PostEntity postEntity = postMapper.selectOne(new LambdaQueryWrapper<PostEntity>()
+                .eq(PostEntity::getId, postId)
+                .eq(PostEntity::getDeleted, 0)
+                .last("LIMIT 1"));
+
+        if (postEntity == null) {
+            throw new BizException(ResultCode.BAD_REQUEST, "首屏视觉文章不存在");
+        }
     }
 
     /**

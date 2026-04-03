@@ -22,7 +22,9 @@ import com.ideaflow.yunyu.module.site.mapper.SiteConfigMapper;
 import com.ideaflow.yunyu.module.site.vo.SiteBaseInfoResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteCategoryDetailResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteCategoryItemResponse;
+import com.ideaflow.yunyu.module.site.vo.SiteHeroVisualResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteHomeResponse;
+import com.ideaflow.yunyu.module.site.vo.SiteHomepageConfigResponse;
 import com.ideaflow.yunyu.module.site.vo.SitePostDetailResponse;
 import com.ideaflow.yunyu.module.site.vo.SitePostListResponse;
 import com.ideaflow.yunyu.module.site.vo.SitePostSummaryResponse;
@@ -110,8 +112,10 @@ public class SiteContentService {
      */
     public SiteHomeResponse getHome() {
         SiteHomeResponse response = new SiteHomeResponse();
+        SiteHomepageConfigResponse homepageConfig = homepageConfigService.getSiteHomepageConfig();
         response.setSiteInfo(buildSiteBaseInfo());
-        response.setHomepageConfig(homepageConfigService.getSiteHomepageConfig());
+        response.setHomepageConfig(homepageConfig);
+        response.setHeroVisual(buildHeroVisual(homepageConfig));
         response.setFeaturedPosts(listRecommendedPosts());
         response.setLatestPosts(listLatestPosts());
         response.setCategories(listCategories());
@@ -149,6 +153,7 @@ public class SiteContentService {
         response.setTitle(summaryResponse.getTitle());
         response.setSummary(summaryResponse.getSummary());
         response.setCoverUrl(summaryResponse.getCoverUrl());
+        response.setVideoUrl(postContentEntity == null ? "" : defaultString(postContentEntity.getVideoUrl()));
         response.setCategoryName(summaryResponse.getCategoryName());
         response.setCategorySlug(summaryResponse.getCategorySlug());
         response.setTagNames(summaryResponse.getTagNames());
@@ -446,6 +451,42 @@ public class SiteContentService {
     }
 
     /**
+     * 构建首页首屏视觉块响应。
+     * 作用：根据首页配置中指定的视觉文章，优先返回视频，其次返回封面图，供首页右侧主视觉直接展示。
+     *
+     * @param homepageConfig 首页配置
+     * @return 首屏视觉块响应
+     */
+    private SiteHeroVisualResponse buildHeroVisual(SiteHomepageConfigResponse homepageConfig) {
+        if (homepageConfig == null || homepageConfig.getHeroVisualPostId() == null) {
+            return null;
+        }
+
+        PostEntity postEntity = findPublishedPostById(homepageConfig.getHeroVisualPostId());
+        if (postEntity == null) {
+            return null;
+        }
+
+        PostContentEntity postContentEntity = findPostContent(postEntity.getId());
+        String videoUrl = postContentEntity == null ? "" : defaultString(postContentEntity.getVideoUrl());
+        String imageUrl = defaultString(postEntity.getCoverUrl());
+
+        if (videoUrl.isEmpty() && imageUrl.isEmpty()) {
+            return null;
+        }
+
+        SiteHeroVisualResponse response = new SiteHeroVisualResponse();
+        response.setMediaType(videoUrl.isEmpty() ? "image" : "video");
+        response.setVideoUrl(videoUrl);
+        response.setImageUrl(imageUrl);
+        response.setPostId(postEntity.getId());
+        response.setPostSlug(defaultString(postEntity.getSlug()));
+        response.setPostTitle(defaultString(postEntity.getTitle()));
+        response.setClickable(Boolean.TRUE.equals(homepageConfig.getHeroVisualClickable()));
+        return response;
+    }
+
+    /**
      * 转换前台分类摘要响应。
      *
      * @param categoryEntity 分类实体
@@ -535,6 +576,24 @@ public class SiteContentService {
             throw new BizException(ResultCode.NOT_FOUND, "文章不存在");
         }
         return postEntity;
+    }
+
+    /**
+     * 通过 ID 查询已发布文章。
+     *
+     * @param postId 文章ID
+     * @return 文章实体
+     */
+    private PostEntity findPublishedPostById(Long postId) {
+        if (postId == null) {
+            return null;
+        }
+
+        return postMapper.selectOne(new LambdaQueryWrapper<PostEntity>()
+                .eq(PostEntity::getId, postId)
+                .eq(PostEntity::getDeleted, 0)
+                .eq(PostEntity::getStatus, "PUBLISHED")
+                .last("LIMIT 1"));
     }
 
     /**

@@ -35,6 +35,12 @@ if (error.value) {
 const post = computed(() => data.value)
 
 /**
+ * 判断文章详情是否存在视频。
+ * 作用：当文章配置了视频地址时，在首屏图片下方插入独立的视频播放区。
+ */
+const hasInlineVideo = computed(() => Boolean(post.value?.videoUrl))
+
+/**
  * 计算文章详情首屏展示标签。
  * 作用：控制文章头部标签数量，避免首屏信息区过于拥挤。
  */
@@ -71,6 +77,24 @@ const tocItems = computed<ArticleTocItem[]>(() => {
     return []
   }
 })
+
+/**
+ * 判断详情页是否需要显示目录侧栏。
+ * 作用：当文章没有目录时隐藏目录模块，避免右侧出现空白容器。
+ */
+const hasToc = computed(() => tocItems.value.length > 0)
+
+/**
+ * 判断详情页是否需要显示标签侧栏。
+ * 作用：当文章没有标签时隐藏标签模块，减少无效占位。
+ */
+const hasPostTags = computed(() => postTagItems.value.length > 0)
+
+/**
+ * 判断详情页是否需要显示右侧侧栏。
+ * 作用：只有目录或标签任一存在时才保留侧栏布局。
+ */
+const showArticleSidebar = computed(() => hasToc.value || hasPostTags.value)
 
 watch(tocItems, value => {
   activeTocId.value = value[0]?.id || ''
@@ -303,7 +327,7 @@ onBeforeUnmount(() => {
     </section>
 
     <section v-if="post" class="relative z-10 mx-auto -mt-6 max-w-[1440px] px-5 pb-16 sm:-mt-8 sm:px-8 lg:-mt-10 lg:px-10 lg:pb-24">
-      <div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div class="grid gap-8" :class="showArticleSidebar ? 'xl:grid-cols-[minmax(0,1fr)_340px]' : ''">
         <div ref="articleContentRef" class="space-y-8">
           <section class="px-1 pt-2 text-[0.78rem] text-slate-500 dark:text-slate-400">
             <div class="flex flex-wrap items-center gap-x-3 gap-y-2 sm:gap-x-4">
@@ -315,8 +339,24 @@ onBeforeUnmount(() => {
               <span class="h-1 w-1 rounded-full bg-slate-300/90 dark:bg-slate-600" />
               <span>热度 {{ post.viewCount }} 次浏览</span>
             </div>
+          </section>
 
-            <div v-if="heroTags.length" class="mt-3 flex flex-wrap gap-2">
+          <section
+            v-if="hasInlineVideo"
+            class="overflow-hidden rounded-[34px] border border-white/60 bg-white/84 p-2 shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/70"
+          >
+            <video
+              :src="post.videoUrl"
+              :poster="post.coverUrl || undefined"
+              class="aspect-video h-full w-full rounded-[26px] object-cover"
+              controls
+              playsinline
+              preload="metadata"
+            />
+          </section>
+
+          <section v-if="heroTags.length" class="px-1">
+            <div class="flex flex-wrap gap-2">
               <NuxtLink
                 v-for="tag in heroTags"
                 :key="`${post.slug}-${tag.slug}`"
@@ -404,8 +444,8 @@ onBeforeUnmount(() => {
           </section>
         </div>
 
-        <aside class="space-y-5 xl:sticky xl:top-28 xl:self-start">
-          <div class="overflow-hidden rounded-[26px] border border-white/55 bg-white/78 p-4 shadow-[0_18px_52px_-42px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/64">
+        <aside v-if="showArticleSidebar" class="space-y-5 xl:sticky xl:top-28 xl:self-start">
+          <div v-if="hasToc" class="overflow-hidden rounded-[26px] border border-white/55 bg-white/78 p-4 shadow-[0_18px_52px_-42px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/64">
             <div class="flex items-start justify-between gap-3 border-b border-slate-200/50 pb-3 dark:border-white/10">
               <div>
                 <p class="text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-orange-500/85 dark:text-orange-300/85">
@@ -425,7 +465,7 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <div class="overflow-hidden rounded-[30px] border border-white/55 bg-white/82 p-5 shadow-[0_24px_76px_-50px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/68">
+          <div v-if="hasPostTags" class="overflow-hidden rounded-[30px] border border-white/55 bg-white/82 p-5 shadow-[0_24px_76px_-50px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/68">
             <div class="flex items-start justify-between gap-3 border-b border-slate-200/60 pb-4 dark:border-white/10">
               <div>
                 <p class="text-[0.68rem] font-semibold uppercase tracking-[0.3em] text-sky-600 dark:text-sky-300">

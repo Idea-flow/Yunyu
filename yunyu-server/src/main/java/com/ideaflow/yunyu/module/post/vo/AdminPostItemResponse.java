@@ -16,6 +16,7 @@ public class AdminPostItemResponse {
     private String slug;
     private String summary;
     private String coverUrl;
+    private String videoUrl;
     private Long categoryId;
     private String categoryName;
     private List<Long> tagIds;
@@ -27,6 +28,7 @@ public class AdminPostItemResponse {
     private String seoTitle;
     private String seoDescription;
     private Boolean coverReady;
+    private Boolean videoReady;
     private Boolean summaryReady;
     private Integer readingMinutes;
     private Integer wordCount;

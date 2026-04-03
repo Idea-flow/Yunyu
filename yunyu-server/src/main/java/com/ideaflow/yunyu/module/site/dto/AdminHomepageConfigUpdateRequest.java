@@ -3,6 +3,7 @@ package com.ideaflow.yunyu.module.site.dto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import lombok.Data;
@@ -46,6 +47,11 @@ public class AdminHomepageConfigUpdateRequest {
 
     @Size(max = 255, message = "次按钮跳转地址长度不能超过255个字符")
     private String heroSecondaryButtonLink;
+
+    @Positive(message = "首屏视觉文章 ID 必须大于 0")
+    private Long heroVisualPostId;
+
+    private Boolean heroVisualClickable;
 
     @Size(max = 6, message = "首页关键词最多6个")
     private List<@Size(max = 20, message = "首页关键词长度不能超过20个字符") String> heroKeywords;

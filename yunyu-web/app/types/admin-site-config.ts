@@ -40,6 +40,8 @@ export interface AdminHomepageConfigForm {
   heroPrimaryButtonLink: string
   heroSecondaryButtonText: string
   heroSecondaryButtonLink: string
+  heroVisualPostId: number | null
+  heroVisualClickable: boolean
   heroKeywords: string[]
   showHeroKeywords: boolean
   showHeroStats: boolean
