@@ -76,8 +76,14 @@ const articleCodeTheme = computed<ArticleCodeTheme>(() => {
 
   return colorMode.value === 'dark' ? 'github-dark' : 'github-light'
 })
-const relatedLeadPost = computed(() => post.value?.relatedPosts?.[0] || null)
-const relatedStreamPosts = computed(() => post.value?.relatedPosts?.slice(1) || [])
+const relatedCompactPosts = computed(() => post.value?.relatedPosts?.slice(0, 2) || [])
+
+/**
+ * 判断详情页是否存在延伸阅读。
+ * 作用：当后端未返回相关推荐时隐藏“继续阅读”区块，避免正文后出现空白导览容器。
+ */
+const hasRelatedPosts = computed(() => (post.value?.relatedPosts?.length || 0) > 0)
+
 const currentArticleContentThemeLabel = computed(() => {
   return articleContentThemeOptions.find(item => item.value === selectedArticleContentTheme.value)?.label || '杂志感'
 })
@@ -807,61 +813,53 @@ onBeforeUnmount(() => {
             :allow-comment="post.allowComment"
           />
 
-          <section class="rounded-[24px] border border-white/60 bg-white/86 p-4 shadow-[0_24px_60px_-44px_rgba(15,23,42,0.24)] dark:border-white/10 dark:bg-slate-950/74 sm:rounded-[36px] sm:p-6 sm:shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)]">
-            <YunyuSectionTitle
-              eyebrow="继续阅读"
-              title="沿这条线继续读"
-              description="延伸阅读区不只是补充内容，而是让当前主题还能自然向前展开。"
-              link-label="返回首页"
-              link-to="/"
-            />
+          <section
+            v-if="hasRelatedPosts"
+            class="relative overflow-hidden rounded-[28px] border border-white/65 bg-white/88 p-4 shadow-[0_28px_76px_-48px_rgba(15,23,42,0.22)] before:pointer-events-none before:absolute before:-left-16 before:top-8 before:h-40 before:w-40 before:rounded-full before:bg-sky-200/26 before:blur-3xl after:pointer-events-none after:absolute after:-right-12 after:bottom-0 after:h-44 after:w-44 after:rounded-full after:bg-orange-200/26 after:blur-3xl dark:border-white/10 dark:bg-slate-950/76 dark:before:bg-sky-500/12 dark:after:bg-orange-400/10 sm:rounded-[36px] sm:p-6 sm:shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)]"
+          >
+            <div class="relative">
+              <div class="border-b border-slate-200/70 pb-4 dark:border-white/10 sm:pb-5">
+                <p class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-sky-600 dark:text-sky-300">
+                  继续阅读
+                </p>
+              </div>
 
-            <div class="mt-6 space-y-5 sm:mt-8 sm:space-y-6">
-              <NuxtLink
-                v-if="relatedLeadPost"
-                :to="`/posts/${relatedLeadPost.slug}`"
-                class="group grid min-w-0 gap-6 border-b border-slate-200/75 pb-6 dark:border-white/10 lg:grid-cols-[minmax(0,1fr)_280px]"
-              >
-                <div class="min-w-0">
-                  <p class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-sky-600 dark:text-sky-300">延伸阅读</p>
-                  <h3 class="mt-3 text-[clamp(1.28rem,5vw,2.3rem)] font-semibold leading-[1.12] tracking-[-0.035em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 transition group-hover:text-sky-700 sm:mt-4 sm:leading-[1.08] dark:text-slate-50 dark:group-hover:text-sky-200">
-                    {{ relatedLeadPost.title }}
-                  </h3>
-                  <p class="mt-3 max-w-3xl text-[0.92rem] leading-7 text-slate-600 sm:mt-4 sm:text-[0.98rem] sm:leading-8 dark:text-slate-300">
-                    {{ relatedLeadPost.summary }}
-                  </p>
-                  <div class="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[0.72rem] uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
-                    <span>{{ relatedLeadPost.categoryName }}</span>
-                    <span>{{ formatChineseDate(relatedLeadPost.publishedAt) }}</span>
-                    <span>{{ relatedLeadPost.readingMinutes }} 分钟阅读</span>
-                  </div>
-                </div>
-
-                <YunyuImage
-                  :src="relatedLeadPost.coverUrl"
-                  :alt="relatedLeadPost.title"
-                  image-class="h-52 w-full object-cover transition duration-500 group-hover:scale-[1.02] sm:h-64 lg:h-full"
-                  rounded-class="rounded-[20px] sm:rounded-[26px]"
-                />
-              </NuxtLink>
-
-              <div class="grid min-w-0 gap-4 lg:grid-cols-2">
+              <div class="mt-5 grid min-w-0 gap-4 sm:mt-6 lg:grid-cols-2">
                 <NuxtLink
-                  v-for="item in relatedStreamPosts"
+                  v-for="item in relatedCompactPosts"
                   :key="item.slug"
                   :to="`/posts/${item.slug}`"
-                  class="group min-w-0 rounded-[20px] border border-slate-200/75 bg-white/88 p-4 transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-[0_24px_54px_-40px_rgba(14,165,233,0.34)] sm:rounded-[26px] dark:border-slate-800 dark:bg-slate-900/82 dark:hover:border-sky-900"
+                  class="group relative min-w-0 cursor-pointer overflow-hidden rounded-[22px] border border-slate-200/80 bg-white/90 p-4 transition duration-300 hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-[0_24px_54px_-40px_rgba(14,165,233,0.34)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-slate-800 dark:bg-slate-900/82 dark:hover:border-sky-900 dark:focus-visible:ring-sky-400/70 dark:focus-visible:ring-offset-slate-950 sm:rounded-[26px] sm:p-5"
                 >
-                  <p class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">{{ item.categoryName }}</p>
-                  <h3 class="mt-3 text-[clamp(1.02rem,3.9vw,1.35rem)] font-semibold leading-6 tracking-[-0.03em] [font-family:var(--font-display)] text-slate-950 transition sm:leading-7 group-hover:text-sky-700 dark:text-slate-50 dark:group-hover:text-sky-200">
+                  <div class="pointer-events-none absolute inset-y-5 left-0 w-px bg-gradient-to-b from-transparent via-sky-200 to-transparent dark:via-sky-400/35" />
+
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <p class="text-[0.72rem] font-medium text-slate-500 dark:text-slate-400">{{ item.categoryName }}</p>
+                    </div>
+
+                    <div class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200/80 bg-slate-50 text-slate-400 transition group-hover:border-sky-200 group-hover:text-sky-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-500 dark:group-hover:border-sky-800 dark:group-hover:text-sky-200">
+                      <UIcon name="i-lucide-arrow-up-right" class="size-4" />
+                    </div>
+                  </div>
+
+                  <h3 class="mt-4 text-[clamp(1.06rem,3.8vw,1.38rem)] font-semibold leading-7 tracking-[-0.03em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 transition group-hover:text-sky-700 dark:text-slate-50 dark:group-hover:text-sky-200">
                     {{ item.title }}
                   </h3>
-                  <p class="mt-2 line-clamp-2 text-[0.88rem] leading-6 text-slate-500 sm:text-sm sm:leading-7 dark:text-slate-400">
+
+                  <p class="mt-3 line-clamp-3 text-[0.9rem] leading-7 text-slate-500 dark:text-slate-400">
                     {{ item.summary }}
                   </p>
-                  <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[0.68rem] uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
-                    <span>{{ formatChineseDate(item.publishedAt) }}</span>
-                    <span>{{ item.readingMinutes }} 分钟阅读</span>
+
+                  <div class="mt-5 flex flex-wrap gap-2.5 text-[0.72rem] text-slate-400 dark:text-slate-500">
+                    <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-slate-50/92 px-3 py-1.5 dark:border-white/10 dark:bg-white/[0.04]">
+                      <UIcon name="i-lucide-calendar-days" class="size-3.5" />
+                      <span>{{ formatChineseDate(item.publishedAt) }}</span>
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-slate-50/92 px-3 py-1.5 dark:border-white/10 dark:bg-white/[0.04]">
+                      <UIcon name="i-lucide-clock-3" class="size-3.5" />
+                      <span>{{ item.readingMinutes }} 分钟阅读</span>
+                    </span>
                   </div>
                 </NuxtLink>
               </div>
@@ -870,22 +868,23 @@ onBeforeUnmount(() => {
         </div>
 
         <aside v-if="showArticleSidebar" class="hidden space-y-5 lg:block lg:h-fit lg:self-start lg:sticky lg:top-24">
-          <div v-if="hasToc" class="overflow-hidden rounded-[26px] border border-white/55 bg-white/78 p-4 shadow-[0_18px_52px_-42px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/64">
-            <div class="flex items-start justify-between gap-3 border-b border-slate-200/50 pb-3 dark:border-white/10">
-              <div>
-                <p class="text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-orange-500/85 dark:text-orange-300/85">
-                  目录
-                </p>
-                <h2 class="mt-1 text-[0.98rem] font-semibold tracking-[-0.028em] [font-family:var(--font-display)] text-slate-950 dark:text-slate-50">阅读导航</h2>
+          <div
+            v-if="hasToc"
+            class="overflow-hidden rounded-[28px] border border-stone-200/75 bg-white/78 p-5 shadow-[0_20px_48px_-40px_rgba(15,23,42,0.18)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/62"
+          >
+            <div>
+              <div class="flex items-start justify-between gap-3 border-b border-stone-200/70 pb-4 dark:border-white/10">
+                <div class="min-w-0">
+                  <p class="text-[0.82rem] font-semibold tracking-[0.08em] text-stone-950 dark:text-stone-50">
+                    目录
+                  </p>
+                </div>
               </div>
-              <div class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[1rem] border border-slate-200/70 bg-white/72 text-sky-600 shadow-[0_10px_22px_-22px_rgba(14,165,233,0.24)] dark:border-white/10 dark:bg-white/5 dark:text-sky-200">
-                <UIcon name="i-lucide-book-marked" class="size-4" />
-              </div>
-            </div>
 
-            <div class="mt-2.5 rounded-[1.15rem] bg-slate-50/66 px-1.5 py-1.5 dark:bg-slate-900/42">
-              <div ref="tocScrollContainerRef" class="max-h-[32rem] overflow-auto pr-0.5 lg:max-h-[calc(100svh-8rem)] [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.24)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/50 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/50">
-                <ArticleTocTree :items="tocItems" :active-id="activeTocId" @select="handleTocSelect" />
+              <div class="mt-4 rounded-[1.4rem] bg-stone-50/72 px-2 py-2 dark:bg-white/[0.025]">
+                <div ref="tocScrollContainerRef" class="max-h-[32rem] overflow-auto pr-1 lg:max-h-[calc(100svh-8rem)] [scrollbar-width:thin] [scrollbar-color:rgba(168,162,158,0.3)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-stone-300/55 dark:[&::-webkit-scrollbar-thumb]:bg-stone-500/40">
+                  <ArticleTocTree :items="tocItems" :active-id="activeTocId" @select="handleTocSelect" />
+                </div>
               </div>
             </div>
           </div>
@@ -934,10 +933,12 @@ onBeforeUnmount(() => {
       >
         <button
           type="button"
-          class="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/88 px-3.5 py-2 text-[0.78rem] font-medium text-slate-700 shadow-[0_18px_42px_-24px_rgba(15,23,42,0.28)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:text-slate-950 dark:border-white/10 dark:bg-slate-950/82 dark:text-slate-200 dark:hover:text-white"
+          class="inline-flex min-h-11 items-center gap-2 rounded-full border border-stone-200/80 bg-white/88 px-3.5 py-2 text-[0.78rem] font-medium text-stone-700 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.22)] backdrop-blur-xl transition duration-200 hover:-translate-y-0.5 hover:text-stone-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-white/10 dark:bg-slate-950/82 dark:text-stone-200 dark:hover:text-white dark:focus-visible:ring-stone-500/50 dark:focus-visible:ring-offset-slate-950"
           @click="openMobileTocDrawer"
         >
-          <UIcon name="i-lucide-align-left" class="size-4" />
+          <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-stone-100 text-stone-600 dark:bg-white/[0.06] dark:text-stone-200">
+            <UIcon name="i-lucide-align-left" class="size-4" />
+          </span>
           <span>目录</span>
         </button>
       </div>
@@ -969,26 +970,23 @@ onBeforeUnmount(() => {
     >
       <section
         v-if="hasToc && mobileTocOpen"
-        class="fixed inset-x-0 bottom-0 z-[60] mx-auto max-w-2xl rounded-t-[28px] border border-white/70 bg-white/96 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-[0_-30px_80px_-36px_rgba(15,23,42,0.36)] backdrop-blur-xl lg:hidden dark:border-white/10 dark:bg-slate-950/94"
+        class="fixed inset-x-0 bottom-0 z-[60] mx-auto max-w-2xl rounded-t-[28px] border border-stone-200/80 bg-white/96 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-[0_-30px_80px_-36px_rgba(15,23,42,0.28)] backdrop-blur-xl lg:hidden dark:border-white/10 dark:bg-slate-950/94"
         aria-label="文章目录"
         aria-modal="true"
         role="dialog"
       >
-        <div class="mx-auto mb-3 h-1.5 w-14 rounded-full bg-slate-200 dark:bg-slate-700" />
+        <div class="mx-auto mb-3 h-1.5 w-14 rounded-full bg-stone-200 dark:bg-stone-700/80" />
 
-        <div class="flex items-center justify-between gap-3 border-b border-slate-200/70 pb-3 dark:border-white/10">
-          <div>
-            <p class="text-[0.66rem] font-semibold uppercase tracking-[0.24em] text-sky-600 dark:text-sky-300">
+        <div class="flex items-start justify-between gap-3 border-b border-stone-200/70 pb-3 dark:border-white/10">
+          <div class="min-w-0">
+            <p class="text-[0.82rem] font-semibold tracking-[0.08em] text-stone-950 dark:text-stone-50">
               目录
             </p>
-            <h2 class="mt-1 text-[1rem] font-semibold tracking-[-0.03em] text-slate-950 dark:text-slate-50">
-              阅读导航
-            </h2>
           </div>
 
           <button
             type="button"
-            class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/80 bg-white/82 text-slate-500 transition hover:text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-white"
+            class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-stone-100 text-stone-500 transition hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:bg-white/[0.06] dark:text-stone-300 dark:hover:text-white dark:focus-visible:ring-stone-500/50 dark:focus-visible:ring-offset-slate-950"
             aria-label="关闭目录"
             @click="closeMobileTocDrawer"
           >
@@ -996,8 +994,10 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
-        <div class="mt-3 max-h-[60svh] overflow-auto pb-2 pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.28)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/60 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/60">
-          <ArticleTocTree :items="tocItems" :active-id="activeTocId" @select="handleTocSelect" />
+        <div class="mt-3 rounded-[1.25rem] bg-stone-50/78 p-2 dark:bg-white/[0.03]">
+          <div class="max-h-[60svh] overflow-auto pb-2 pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(168,162,158,0.28)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-stone-300/60 dark:[&::-webkit-scrollbar-thumb]:bg-stone-500/60">
+            <ArticleTocTree :items="tocItems" :active-id="activeTocId" @select="handleTocSelect" />
+          </div>
         </div>
       </section>
     </Transition>

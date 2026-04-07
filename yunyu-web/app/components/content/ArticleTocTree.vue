@@ -27,7 +27,7 @@ const emit = defineEmits<{
  */
 function getIndentStyle(level: number) {
   return {
-    paddingLeft: `${Math.max(0, level - 1) * 0.72}rem`
+    paddingLeft: `${Math.max(0, level - 1) * 0.78}rem`
   }
 }
 
@@ -40,8 +40,8 @@ function getIndentStyle(level: number) {
  */
 function getItemClass(item: ArticleTocItem) {
   return props.activeId === item.id
-    ? 'bg-[linear-gradient(90deg,rgba(14,165,233,0.08),rgba(255,255,255,0.96))] text-slate-950 ring-1 ring-sky-200/70 shadow-[0_18px_30px_-28px_rgba(14,165,233,0.24)] dark:bg-[linear-gradient(90deg,rgba(56,189,248,0.14),rgba(15,23,42,0.8))] dark:text-slate-50 dark:ring-sky-400/20'
-    : 'text-slate-500 hover:bg-slate-50/72 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900/28 dark:hover:text-slate-50'
+    ? 'bg-stone-950/[0.045] text-stone-950 ring-1 ring-stone-200/80 dark:bg-white/[0.06] dark:text-stone-50 dark:ring-white/10'
+    : 'text-stone-500 hover:bg-stone-900/[0.03] hover:text-stone-900 dark:text-stone-300/72 dark:hover:bg-white/[0.04] dark:hover:text-stone-50'
 }
 
 /**
@@ -52,9 +52,28 @@ function getItemClass(item: ArticleTocItem) {
  * @returns 文字样式类名
  */
 function getTextClass(item: ArticleTocItem) {
-  return item.level <= 2
-    ? 'text-[0.85rem] font-semibold leading-6 tracking-[-0.02em]'
-    : 'text-[0.78rem] font-medium leading-[1.6] text-slate-400 dark:text-slate-500'
+  if (item.level <= 1) {
+    return 'text-[0.84rem] font-semibold leading-6 tracking-[-0.02em]'
+  }
+
+  if (item.level === 2) {
+    return 'text-[0.81rem] font-medium leading-[1.62] text-stone-600 dark:text-stone-300/88'
+  }
+
+  return 'text-[0.78rem] font-medium leading-[1.58] text-stone-400 dark:text-stone-400/80'
+}
+
+/**
+ * 计算目录项节点样式。
+ * 作用：通过节点颜色和边框变化强化当前章节定位，同时保留普通目录的安静阅读感。
+ *
+ * @param item 当前目录项
+ * @returns 节点样式类名
+ */
+function getDotClass(item: ArticleTocItem) {
+  return props.activeId === item.id
+    ? 'bg-stone-900 dark:bg-stone-100'
+    : 'bg-stone-300 group-hover:bg-stone-500 dark:bg-stone-600 dark:group-hover:bg-stone-400'
 }
 
 /**
@@ -75,17 +94,22 @@ function handleSelect(item: ArticleTocItem) {
       :key="item.id"
       type="button"
       :data-toc-id="item.id"
-      class="group relative flex w-full items-start gap-2.5 overflow-hidden rounded-[0.95rem] px-2.5 py-2 text-left transition duration-200 ease-out cursor-pointer"
+      class="group relative flex min-h-11 w-full items-start gap-3 overflow-hidden rounded-[0.95rem] px-3 py-2.5 text-left transition duration-200 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-stone-500/55 dark:focus-visible:ring-offset-slate-950"
       :class="getItemClass(item)"
       :style="getIndentStyle(item.level)"
       @click="handleSelect(item)"
     >
-      <span
-        class="absolute left-0 top-1/2 h-0 w-[2px] -translate-y-1/2 rounded-full bg-sky-500/80 transition-all duration-200 dark:bg-sky-300/80"
-        :class="props.activeId === item.id ? 'h-5.5' : 'h-0 group-hover:h-4 group-hover:bg-slate-300 dark:group-hover:bg-slate-600'"
-      />
-      <span class="min-w-0 pr-1 transition duration-200" :class="[getTextClass(item), props.activeId === item.id ? 'translate-x-0.5 text-slate-950 dark:text-slate-50' : '']">
-        {{ item.text }}
+      <span class="flex min-w-0 flex-1 items-start gap-3">
+        <span
+          class="relative mt-[0.7rem] inline-flex h-1.5 w-1.5 shrink-0 rounded-full transition duration-200"
+          :class="getDotClass(item)"
+        />
+
+        <span class="min-w-0 flex-1 pr-1 transition duration-200">
+          <span class="block min-w-0 transition duration-200" :class="[getTextClass(item), props.activeId === item.id ? 'text-stone-950 dark:text-stone-50' : '']">
+            {{ item.text }}
+          </span>
+        </span>
       </span>
     </button>
   </div>
