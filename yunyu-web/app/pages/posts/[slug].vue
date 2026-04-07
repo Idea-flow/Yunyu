@@ -85,6 +85,63 @@ const currentArticleCodeThemeLabel = computed(() => {
 })
 
 /**
+ * 解析标题内部纯文本。
+ * 作用：从 HTML 标题片段中提取可读文本，供前台目录展示使用，
+ * 避免目录里残留标签、换行和多余空白字符。
+ *
+ * @param html 标题内部 HTML
+ * @returns 清洗后的纯文本
+ */
+function extractHeadingText(html: string) {
+  return html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, '\'')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
+ * 从正文 HTML 中提取目录结构。
+ * 作用：当前台接口没有返回 `contentTocJson` 时，仍然可以根据正文中的标题标签生成目录，
+ * 保证详情页右侧目录和移动端目录抽屉都能正常显示。
+ *
+ * @param contentHtml 文章正文 HTML
+ * @returns 可供目录树组件直接使用的目录数组
+ */
+function extractTocItemsFromHtml(contentHtml: string) {
+  const headingPattern = /<h([1-6])\b([^>]*)>([\s\S]*?)<\/h\1>/gi
+  const items: ArticleTocItem[] = []
+  let match: RegExpExecArray | null
+
+  while ((match = headingPattern.exec(contentHtml)) !== null) {
+    const level = Number.parseInt(match[1] || '0', 10)
+    const attrs = match[2] || ''
+    const innerHtml = match[3] || ''
+    const text = extractHeadingText(innerHtml)
+
+    if (!text) {
+      continue
+    }
+
+    const idMatch = attrs.match(/\sid=(['"])(.*?)\1/i)
+    const id = idMatch?.[2]?.trim() || `article-heading-${items.length + 1}`
+
+    items.push({
+      id,
+      text,
+      level
+    })
+  }
+
+  return items
+}
+
+/**
  * 计算文章发布时间展示文本。
  * 作用：把后端返回的时间字符串转成更适合前台阅读的展示格式，
  * 避免原始 ISO 时间直接暴露在界面上影响内容气质。
@@ -100,16 +157,16 @@ const postPublishedAtLabel = computed(() => {
 const tocItems = computed<ArticleTocItem[]>(() => {
   const tocJson = post.value?.contentTocJson
 
-  if (!tocJson) {
-    return []
+  if (tocJson) {
+    try {
+      const parsed = JSON.parse(tocJson)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return extractTocItemsFromHtml(post.value?.contentHtml || '')
+    }
   }
 
-  try {
-    const parsed = JSON.parse(tocJson)
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
+  return extractTocItemsFromHtml(post.value?.contentHtml || '')
 })
 
 /**
@@ -308,18 +365,68 @@ function syncActiveTocIntoView() {
 }
 
 /**
+ * 获取正文渲染根节点。
+ * 作用：把目录联动范围限制在文章正文 `.yy-md` 内部，
+ * 避免把评论区、相关推荐等区域的标题错误算进目录监听。
+ */
+function getArticleBodyElement() {
+  if (!articleContentRef.value) {
+    return null
+  }
+
+  return articleContentRef.value.querySelector<HTMLElement>('.yy-md')
+}
+
+/**
+ * 同步正文标题锚点。
+ * 作用：当前端兜底从 HTML 标题生成目录时，为未携带 `id` 的标题节点补齐锚点，
+ * 让目录点击跳转和滚动监听都能稳定工作。
+ */
+function syncArticleHeadingIds() {
+  const articleBody = getArticleBodyElement()
+
+  if (!articleBody) {
+    return []
+  }
+
+  const headings = Array.from(articleBody.querySelectorAll<HTMLElement>('h1, h2, h3, h4, h5, h6'))
+
+  headings.forEach((heading, index) => {
+    const tocItem = tocItems.value[index]
+
+    if (!tocItem) {
+      return
+    }
+
+    if (!heading.id) {
+      heading.id = tocItem.id
+    }
+  })
+
+  return headings
+}
+
+/**
  * 监听正文标题节点。
  * 作用：根据当前滚动位置自动同步激活目录项，让目录和正文保持联动。
  */
 function observeArticleHeadings() {
   cleanupTocObserver()
 
-  if (!import.meta.client || !articleContentRef.value || !tocItems.value.length) {
+  if (!import.meta.client || !tocItems.value.length) {
+    return
+  }
+
+  syncArticleHeadingIds()
+
+  const articleBody = getArticleBodyElement()
+
+  if (!articleBody) {
     return
   }
 
   const headings = tocItems.value
-    .map(item => articleContentRef.value?.querySelector<HTMLElement>(`#${CSS.escape(item.id)}`))
+    .map(item => articleBody.querySelector<HTMLElement>(`#${CSS.escape(item.id)}`))
     .filter((item): item is HTMLElement => Boolean(item))
 
   if (!headings.length) {
@@ -423,7 +530,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <main class="min-h-screen overflow-x-hidden bg-[linear-gradient(180deg,#f4f8ff_0%,#ffffff_34%,#f8fbff_100%)] text-slate-900 dark:bg-[linear-gradient(180deg,#020617_0%,#071120_40%,#020617_100%)] dark:text-slate-100">
+  <main class="min-h-screen overflow-x-clip bg-[linear-gradient(180deg,#f4f8ff_0%,#ffffff_34%,#f8fbff_100%)] text-slate-900 dark:bg-[linear-gradient(180deg,#020617_0%,#071120_40%,#020617_100%)] dark:text-slate-100">
     <div class="fixed inset-x-0 top-0 z-40 h-1.5 bg-transparent">
       <div
         class="h-full rounded-r-full bg-[linear-gradient(90deg,rgba(14,165,233,0.95),rgba(249,115,22,0.88))] shadow-[0_10px_24px_-12px_rgba(14,165,233,0.72)] transition-[width] duration-200 ease-out"
@@ -533,7 +640,7 @@ onBeforeUnmount(() => {
     </section>
 
     <section v-if="post" class="relative z-10 mx-auto -mt-4 max-w-[1440px] px-4 pb-14 sm:-mt-8 sm:px-8 lg:-mt-10 lg:px-10 lg:pb-24">
-      <div class="grid min-w-0 gap-6 sm:gap-8" :class="showArticleSidebar ? 'xl:grid-cols-[minmax(0,1fr)_340px]' : ''">
+      <div class="grid min-w-0 gap-6 sm:gap-8 lg:items-start" :class="showArticleSidebar ? 'lg:grid-cols-[minmax(0,1fr)_340px]' : ''">
         <div ref="articleContentRef" class="min-w-0 w-full max-w-full space-y-6 sm:space-y-8">
           <section class="px-1 pt-1 text-[0.74rem] text-slate-500 dark:text-slate-400 sm:pt-2 sm:text-[0.78rem]">
             <div class="flex flex-wrap items-center gap-x-3 gap-y-2 sm:gap-x-4">
@@ -705,7 +812,7 @@ onBeforeUnmount(() => {
           </section>
         </div>
 
-        <aside v-if="showArticleSidebar" class="hidden space-y-5 xl:sticky xl:top-28 xl:block xl:self-start">
+        <aside v-if="showArticleSidebar" class="hidden space-y-5 lg:block lg:h-fit lg:self-start lg:sticky lg:top-24">
           <div v-if="hasToc" class="overflow-hidden rounded-[26px] border border-white/55 bg-white/78 p-4 shadow-[0_18px_52px_-42px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/64">
             <div class="flex items-start justify-between gap-3 border-b border-slate-200/50 pb-3 dark:border-white/10">
               <div>
@@ -720,8 +827,8 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="mt-2.5 rounded-[1.15rem] bg-slate-50/66 px-1.5 py-1.5 dark:bg-slate-900/42">
-              <div ref="tocScrollContainerRef" class="max-h-[32rem] overflow-auto pr-0.5 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.24)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/50 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/50">
-              <ArticleTocTree :items="tocItems" :active-id="activeTocId" @select="handleTocSelect" />
+              <div ref="tocScrollContainerRef" class="max-h-[32rem] overflow-auto pr-0.5 lg:max-h-[calc(100svh-8rem)] [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.24)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/50 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/50">
+                <ArticleTocTree :items="tocItems" :active-id="activeTocId" @select="handleTocSelect" />
               </div>
             </div>
           </div>
@@ -766,7 +873,7 @@ onBeforeUnmount(() => {
     >
       <div
         v-if="hasToc && mobileTocVisible"
-        class="fixed bottom-5 right-4 z-40 xl:hidden"
+        class="fixed bottom-5 right-4 z-40 lg:hidden"
       >
         <button
           type="button"
@@ -789,7 +896,7 @@ onBeforeUnmount(() => {
     >
       <div
         v-if="hasToc && mobileTocOpen"
-        class="fixed inset-0 z-50 bg-slate-950/36 backdrop-blur-[2px] xl:hidden"
+        class="fixed inset-0 z-50 bg-slate-950/36 backdrop-blur-[2px] lg:hidden"
         aria-hidden="true"
         @click="closeMobileTocDrawer"
       />
@@ -805,7 +912,7 @@ onBeforeUnmount(() => {
     >
       <section
         v-if="hasToc && mobileTocOpen"
-        class="fixed inset-x-0 bottom-0 z-[60] mx-auto max-w-2xl rounded-t-[28px] border border-white/70 bg-white/96 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-[0_-30px_80px_-36px_rgba(15,23,42,0.36)] backdrop-blur-xl xl:hidden dark:border-white/10 dark:bg-slate-950/94"
+        class="fixed inset-x-0 bottom-0 z-[60] mx-auto max-w-2xl rounded-t-[28px] border border-white/70 bg-white/96 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-[0_-30px_80px_-36px_rgba(15,23,42,0.36)] backdrop-blur-xl lg:hidden dark:border-white/10 dark:bg-slate-950/94"
         aria-label="文章目录"
         aria-modal="true"
         role="dialog"
