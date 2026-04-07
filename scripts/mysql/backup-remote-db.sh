@@ -31,12 +31,24 @@ BACKUP_FILE="${BACKUP_DIR}/${REMOTE_DB_NAME}-${TIMESTAMP}.sql"
 
 mkdir -p "${BACKUP_DIR}"
 
+file_size_bytes() {
+  if [[ -f "$1" ]]; then
+    wc -c < "$1" | tr -d ' '
+  else
+    echo "0"
+  fi
+}
+
 echo "开始备份远程数据库："
 echo "  Host: ${REMOTE_DB_HOST}"
 echo "  Port: ${REMOTE_DB_PORT}"
 echo "  Database: ${REMOTE_DB_NAME}"
 echo "  User: ${REMOTE_DB_USER}"
 echo "  Backup File: ${BACKUP_FILE}"
+echo "  Client Image: ${MYSQL_CLIENT_IMAGE}"
+echo
+echo "正在执行远程数据库导出。"
+echo "说明：mysqldump 在备份过程中通常不会持续输出日志，脚本会每 5 秒打印一次当前备份文件大小。"
 
 docker run --rm \
   --add-host=host.docker.internal:host-gateway \
@@ -52,6 +64,18 @@ docker run --rm \
   --triggers \
   --events \
   --set-gtid-purged=OFF \
-  "${REMOTE_DB_NAME}" > "${BACKUP_FILE}"
+  "${REMOTE_DB_NAME}" > "${BACKUP_FILE}" &
 
+DUMP_PID=$!
+
+while kill -0 "${DUMP_PID}" >/dev/null 2>&1; do
+  sleep 5
+  CURRENT_SIZE_BYTES="$(file_size_bytes "${BACKUP_FILE}")"
+  echo "备份进行中，当前文件大小：${CURRENT_SIZE_BYTES} bytes"
+done
+
+wait "${DUMP_PID}"
+
+FINAL_SIZE_BYTES="$(file_size_bytes "${BACKUP_FILE}")"
 echo "远程数据库备份完成：${BACKUP_FILE}"
+echo "备份文件大小：${FINAL_SIZE_BYTES} bytes"

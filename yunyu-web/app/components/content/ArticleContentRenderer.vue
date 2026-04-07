@@ -442,7 +442,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div
-    class="yy-md-shell min-h-72 min-w-0 overflow-hidden rounded-[24px] border border-slate-200/80 bg-white/78 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] dark:border-slate-700 dark:bg-slate-950/52"
+    class="yy-md-shell min-h-56 min-w-0 w-full max-w-full overflow-hidden rounded-[20px] border border-slate-200/80 bg-white/78 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] sm:min-h-64 sm:rounded-[22px] sm:p-5 lg:min-h-72 lg:rounded-[24px] lg:p-6 dark:border-slate-700 dark:bg-slate-950/52"
     :class="props.containerClass"
   >
     <div v-if="props.isLoading" class="space-y-3">
@@ -455,7 +455,7 @@ onBeforeUnmount(() => {
     <article
       v-else-if="hasContent"
       ref="containerRef"
-      class="yy-md min-w-0 max-w-none"
+      class="yy-md min-w-0 w-full max-w-full"
       :class="props.bodyClass"
       :data-content-theme="props.contentTheme"
       :data-code-theme="props.codeTheme"

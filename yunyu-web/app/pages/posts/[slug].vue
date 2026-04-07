@@ -17,6 +17,9 @@ const siteContent = useSiteContent()
 const colorMode = useColorMode()
 const activeTocId = ref('')
 const readingProgress = ref(0)
+const mobileTocOpen = ref(false)
+const mobileTocVisible = ref(false)
+const lastWindowScrollTop = ref(0)
 const articleContentRef = ref<HTMLElement | null>(null)
 const tocScrollContainerRef = ref<HTMLElement | null>(null)
 let tocObserver: IntersectionObserver | null = null
@@ -135,6 +138,7 @@ useSeoMeta({
  */
 function handleTocSelect(item: ArticleTocItem) {
   activeTocId.value = item.id
+  mobileTocOpen.value = false
 
   if (!import.meta.client) {
     return
@@ -150,6 +154,26 @@ function handleTocSelect(item: ArticleTocItem) {
     behavior: 'smooth',
     block: 'start'
   })
+}
+
+/**
+ * 打开移动端目录抽屉。
+ * 作用：仅在文章存在目录时唤起移动端目录导航，减少小屏幕下的结构打扰。
+ */
+function openMobileTocDrawer() {
+  if (!hasToc.value) {
+    return
+  }
+
+  mobileTocOpen.value = true
+}
+
+/**
+ * 关闭移动端目录抽屉。
+ * 作用：统一处理遮罩、关闭按钮和目录点击后的抽屉收起行为。
+ */
+function closeMobileTocDrawer() {
+  mobileTocOpen.value = false
 }
 
 /**
@@ -250,6 +274,36 @@ function syncReadingProgress() {
   readingProgress.value = Math.round((passedDistance / totalDistance) * 100)
 }
 
+/**
+ * 同步移动端目录按钮显隐。
+ * 作用：让目录按钮在首屏保持隐藏，用户进入正文阅读后再出现，减少首屏干扰。
+ */
+function syncMobileTocVisibility() {
+  if (!import.meta.client) {
+    return
+  }
+
+  if (!hasToc.value) {
+    mobileTocVisible.value = false
+    mobileTocOpen.value = false
+    lastWindowScrollTop.value = 0
+    return
+  }
+
+  const scrollTop = window.scrollY || window.pageYOffset || 0
+  const revealOffset = Math.max(Math.round(window.innerHeight * 0.42), 220)
+  const nearTopOffset = Math.max(Math.round(window.innerHeight * 0.18), 72)
+  const isScrollingDown = scrollTop > lastWindowScrollTop.value
+
+  if (scrollTop <= nearTopOffset) {
+    mobileTocVisible.value = false
+  } else if (isScrollingDown && scrollTop > revealOffset) {
+    mobileTocVisible.value = true
+  }
+
+  lastWindowScrollTop.value = scrollTop
+}
+
 onMounted(async () => {
   if (!import.meta.client) {
     return
@@ -258,8 +312,11 @@ onMounted(async () => {
   await nextTick()
   observeArticleHeadings()
   syncReadingProgress()
+  syncMobileTocVisibility()
   window.addEventListener('scroll', syncReadingProgress, { passive: true })
+  window.addEventListener('scroll', syncMobileTocVisibility, { passive: true })
   window.addEventListener('resize', syncReadingProgress)
+  window.addEventListener('resize', syncMobileTocVisibility)
 })
 
 onBeforeUnmount(() => {
@@ -270,12 +327,14 @@ onBeforeUnmount(() => {
   }
 
   window.removeEventListener('scroll', syncReadingProgress)
+  window.removeEventListener('scroll', syncMobileTocVisibility)
   window.removeEventListener('resize', syncReadingProgress)
+  window.removeEventListener('resize', syncMobileTocVisibility)
 })
 </script>
 
 <template>
-  <main class="min-h-screen bg-[linear-gradient(180deg,#f4f8ff_0%,#ffffff_34%,#f8fbff_100%)] text-slate-900 dark:bg-[linear-gradient(180deg,#020617_0%,#071120_40%,#020617_100%)] dark:text-slate-100">
+  <main class="min-h-screen overflow-x-hidden bg-[linear-gradient(180deg,#f4f8ff_0%,#ffffff_34%,#f8fbff_100%)] text-slate-900 dark:bg-[linear-gradient(180deg,#020617_0%,#071120_40%,#020617_100%)] dark:text-slate-100">
     <div class="fixed inset-x-0 top-0 z-40 h-1.5 bg-transparent">
       <div
         class="h-full rounded-r-full bg-[linear-gradient(90deg,rgba(14,165,233,0.95),rgba(249,115,22,0.88))] shadow-[0_10px_24px_-12px_rgba(14,165,233,0.72)] transition-[width] duration-200 ease-out"
@@ -284,7 +343,7 @@ onBeforeUnmount(() => {
     </div>
 
     <section v-if="post" class="relative overflow-hidden">
-      <div class="relative h-[42svh] min-h-[360px] w-full sm:h-[48svh] lg:h-[54svh]">
+      <div class="relative h-[34svh] min-h-[280px] w-full sm:h-[42svh] sm:min-h-[340px] lg:h-[54svh]">
         <div class="absolute inset-0">
           <YunyuImage
             :src="post.coverUrl"
@@ -296,7 +355,7 @@ onBeforeUnmount(() => {
           <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.18)_0%,rgba(15,23,42,0.18)_18%,rgba(15,23,42,0.22)_42%,rgba(15,23,42,0.62)_100%)] dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.1)_0%,rgba(2,6,23,0.14)_20%,rgba(2,6,23,0.26)_44%,rgba(2,6,23,0.72)_100%)]" />
         </div>
         <div class="absolute inset-x-0 bottom-0 z-10">
-          <div class="mx-auto max-w-[1440px] px-5 pb-10 sm:px-8 sm:pb-12 lg:px-10 lg:pb-14">
+          <div class="mx-auto max-w-[1440px] px-5 pb-8 sm:px-8 sm:pb-12 lg:px-10 lg:pb-14">
             <div class="max-w-[44rem]">
               <div class="flex flex-wrap gap-2">
                 <NuxtLink :to="`/categories/${post.categorySlug}`">
@@ -315,7 +374,7 @@ onBeforeUnmount(() => {
                 </NuxtLink>
               </div>
 
-              <h1 class="mt-5 max-w-[36rem] text-[clamp(1.34rem,1.18rem+0.82vw,2.08rem)] font-semibold leading-[1.08] tracking-[-0.032em] [font-family:var(--font-display)] [text-wrap:balance] text-white drop-shadow-[0_14px_32px_rgba(15,23,42,0.3)]">
+              <h1 class="mt-4 max-w-[36rem] text-[clamp(1.16rem,4.9vw,2.08rem)] font-semibold leading-[1.1] tracking-[-0.032em] [font-family:var(--font-display)] [text-wrap:balance] text-white drop-shadow-[0_14px_32px_rgba(15,23,42,0.3)] sm:mt-5 sm:text-[clamp(1.34rem,1.18rem+0.82vw,2.08rem)] sm:leading-[1.08]">
                 {{ post.title }}
               </h1>
 
@@ -326,10 +385,10 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <section v-if="post" class="relative z-10 mx-auto -mt-6 max-w-[1440px] px-5 pb-16 sm:-mt-8 sm:px-8 lg:-mt-10 lg:px-10 lg:pb-24">
-      <div class="grid gap-8" :class="showArticleSidebar ? 'xl:grid-cols-[minmax(0,1fr)_340px]' : ''">
-        <div ref="articleContentRef" class="space-y-8">
-          <section class="px-1 pt-2 text-[0.78rem] text-slate-500 dark:text-slate-400">
+    <section v-if="post" class="relative z-10 mx-auto -mt-4 max-w-[1440px] px-4 pb-14 sm:-mt-8 sm:px-8 lg:-mt-10 lg:px-10 lg:pb-24">
+      <div class="grid min-w-0 gap-6 sm:gap-8" :class="showArticleSidebar ? 'xl:grid-cols-[minmax(0,1fr)_340px]' : ''">
+        <div ref="articleContentRef" class="min-w-0 w-full max-w-full space-y-6 sm:space-y-8">
+          <section class="px-1 pt-1 text-[0.74rem] text-slate-500 dark:text-slate-400 sm:pt-2 sm:text-[0.78rem]">
             <div class="flex flex-wrap items-center gap-x-3 gap-y-2 sm:gap-x-4">
               <span class="font-medium text-slate-700 dark:text-slate-200">作者 {{ post.authorName }}</span>
               <span class="h-1 w-1 rounded-full bg-slate-300/90 dark:bg-slate-600" />
@@ -343,12 +402,12 @@ onBeforeUnmount(() => {
 
           <section
             v-if="hasInlineVideo"
-            class="overflow-hidden rounded-[34px] border border-white/60 bg-white/84 p-2 shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/70"
+            class="overflow-hidden rounded-[24px] border border-white/60 bg-white/84 p-1.5 shadow-[0_24px_60px_-44px_rgba(15,23,42,0.24)] backdrop-blur-xl sm:rounded-[34px] sm:p-2 sm:shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)] dark:border-white/10 dark:bg-slate-950/70"
           >
             <video
               :src="post.videoUrl"
               :poster="post.coverUrl || undefined"
-              class="aspect-video h-full w-full rounded-[26px] object-cover"
+              class="aspect-video h-full w-full rounded-[18px] object-cover sm:rounded-[26px]"
               controls
               playsinline
               preload="metadata"
@@ -373,8 +432,8 @@ onBeforeUnmount(() => {
             content-theme="editorial"
             :code-theme="articleCodeTheme"
             :code-default-expanded="false"
-            container-class="relative overflow-hidden rounded-[38px] border border-white/55 bg-white/84 px-2 py-5 shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)] backdrop-blur-xl before:pointer-events-none before:absolute before:inset-x-10 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-sky-200/90 before:to-transparent dark:border-white/10 dark:bg-slate-950/70 dark:before:via-sky-400/30"
-            body-class="px-4 sm:px-6 lg:px-12"
+            container-class="relative overflow-hidden rounded-[24px] border border-white/55 bg-white/84 px-1.5 py-4 shadow-[0_24px_60px_-44px_rgba(15,23,42,0.24)] backdrop-blur-xl before:pointer-events-none before:absolute before:inset-x-8 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-sky-200/90 before:to-transparent sm:rounded-[30px] sm:px-2 sm:py-5 sm:shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)] lg:rounded-[38px] dark:border-white/10 dark:bg-slate-950/70 dark:before:via-sky-400/30"
+            body-class="px-3.5 sm:px-6 lg:px-12"
           />
 
           <ArticleCommentPanel
@@ -382,7 +441,7 @@ onBeforeUnmount(() => {
             :allow-comment="post.allowComment"
           />
 
-          <section class="rounded-[36px] border border-white/60 bg-white/86 p-5 shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)] dark:border-white/10 dark:bg-slate-950/74 sm:p-6">
+          <section class="rounded-[24px] border border-white/60 bg-white/86 p-4 shadow-[0_24px_60px_-44px_rgba(15,23,42,0.24)] dark:border-white/10 dark:bg-slate-950/74 sm:rounded-[36px] sm:p-6 sm:shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)]">
             <YunyuSectionTitle
               eyebrow="继续阅读"
               title="沿这条线继续读"
@@ -391,18 +450,18 @@ onBeforeUnmount(() => {
               link-to="/"
             />
 
-            <div class="mt-8 space-y-6">
+            <div class="mt-6 space-y-5 sm:mt-8 sm:space-y-6">
               <NuxtLink
                 v-if="relatedLeadPost"
                 :to="`/posts/${relatedLeadPost.slug}`"
-                class="group grid gap-6 border-b border-slate-200/75 pb-6 dark:border-white/10 lg:grid-cols-[minmax(0,1fr)_280px]"
+                class="group grid min-w-0 gap-6 border-b border-slate-200/75 pb-6 dark:border-white/10 lg:grid-cols-[minmax(0,1fr)_280px]"
               >
                 <div class="min-w-0">
                   <p class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-sky-600 dark:text-sky-300">延伸阅读</p>
-                  <h3 class="mt-4 text-[clamp(1.7rem,1.4rem+0.8vw,2.3rem)] font-semibold leading-[1.08] tracking-[-0.035em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 transition group-hover:text-sky-700 dark:text-slate-50 dark:group-hover:text-sky-200">
+                  <h3 class="mt-3 text-[clamp(1.28rem,5vw,2.3rem)] font-semibold leading-[1.12] tracking-[-0.035em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 transition group-hover:text-sky-700 sm:mt-4 sm:leading-[1.08] dark:text-slate-50 dark:group-hover:text-sky-200">
                     {{ relatedLeadPost.title }}
                   </h3>
-                  <p class="mt-4 max-w-3xl text-[0.98rem] leading-8 text-slate-600 dark:text-slate-300">
+                  <p class="mt-3 max-w-3xl text-[0.92rem] leading-7 text-slate-600 sm:mt-4 sm:text-[0.98rem] sm:leading-8 dark:text-slate-300">
                     {{ relatedLeadPost.summary }}
                   </p>
                   <div class="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[0.72rem] uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
@@ -415,23 +474,23 @@ onBeforeUnmount(() => {
                 <YunyuImage
                   :src="relatedLeadPost.coverUrl"
                   :alt="relatedLeadPost.title"
-                  image-class="h-64 w-full object-cover transition duration-500 group-hover:scale-[1.02] lg:h-full"
-                  rounded-class="rounded-[26px]"
+                  image-class="h-52 w-full object-cover transition duration-500 group-hover:scale-[1.02] sm:h-64 lg:h-full"
+                  rounded-class="rounded-[20px] sm:rounded-[26px]"
                 />
               </NuxtLink>
 
-              <div class="grid gap-4 lg:grid-cols-2">
+              <div class="grid min-w-0 gap-4 lg:grid-cols-2">
                 <NuxtLink
                   v-for="item in relatedStreamPosts"
                   :key="item.slug"
                   :to="`/posts/${item.slug}`"
-                  class="group rounded-[26px] border border-slate-200/75 bg-white/88 p-4 transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-[0_24px_54px_-40px_rgba(14,165,233,0.34)] dark:border-slate-800 dark:bg-slate-900/82 dark:hover:border-sky-900"
+                  class="group min-w-0 rounded-[20px] border border-slate-200/75 bg-white/88 p-4 transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-[0_24px_54px_-40px_rgba(14,165,233,0.34)] sm:rounded-[26px] dark:border-slate-800 dark:bg-slate-900/82 dark:hover:border-sky-900"
                 >
                   <p class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">{{ item.categoryName }}</p>
-                  <h3 class="mt-3 text-[clamp(1.12rem,1.02rem+0.32vw,1.35rem)] font-semibold leading-7 tracking-[-0.03em] [font-family:var(--font-display)] text-slate-950 transition group-hover:text-sky-700 dark:text-slate-50 dark:group-hover:text-sky-200">
+                  <h3 class="mt-3 text-[clamp(1.02rem,3.9vw,1.35rem)] font-semibold leading-6 tracking-[-0.03em] [font-family:var(--font-display)] text-slate-950 transition sm:leading-7 group-hover:text-sky-700 dark:text-slate-50 dark:group-hover:text-sky-200">
                     {{ item.title }}
                   </h3>
-                  <p class="mt-2 line-clamp-2 text-sm leading-7 text-slate-500 dark:text-slate-400">
+                  <p class="mt-2 line-clamp-2 text-[0.88rem] leading-6 text-slate-500 sm:text-sm sm:leading-7 dark:text-slate-400">
                     {{ item.summary }}
                   </p>
                   <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[0.68rem] uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
@@ -444,7 +503,7 @@ onBeforeUnmount(() => {
           </section>
         </div>
 
-        <aside v-if="showArticleSidebar" class="space-y-5 xl:sticky xl:top-28 xl:self-start">
+        <aside v-if="showArticleSidebar" class="hidden space-y-5 xl:sticky xl:top-28 xl:block xl:self-start">
           <div v-if="hasToc" class="overflow-hidden rounded-[26px] border border-white/55 bg-white/78 p-4 shadow-[0_18px_52px_-42px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/64">
             <div class="flex items-start justify-between gap-3 border-b border-slate-200/50 pb-3 dark:border-white/10">
               <div>
@@ -494,5 +553,87 @@ onBeforeUnmount(() => {
         </aside>
       </div>
     </section>
+
+    <Transition
+      enter-active-class="transition duration-220 ease-out"
+      enter-from-class="translate-y-2 opacity-0"
+      enter-to-class="translate-y-0 opacity-100"
+      leave-active-class="transition duration-180 ease-in"
+      leave-from-class="translate-y-0 opacity-100"
+      leave-to-class="translate-y-2 opacity-0"
+    >
+      <div
+        v-if="hasToc && mobileTocVisible"
+        class="fixed bottom-5 right-4 z-40 xl:hidden"
+      >
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/88 px-3.5 py-2 text-[0.78rem] font-medium text-slate-700 shadow-[0_18px_42px_-24px_rgba(15,23,42,0.28)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:text-slate-950 dark:border-white/10 dark:bg-slate-950/82 dark:text-slate-200 dark:hover:text-white"
+          @click="openMobileTocDrawer"
+        >
+          <UIcon name="i-lucide-align-left" class="size-4" />
+          <span>目录</span>
+        </button>
+      </div>
+    </Transition>
+
+    <Transition
+      enter-active-class="transition duration-220 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-180 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="hasToc && mobileTocOpen"
+        class="fixed inset-0 z-50 bg-slate-950/36 backdrop-blur-[2px] xl:hidden"
+        aria-hidden="true"
+        @click="closeMobileTocDrawer"
+      />
+    </Transition>
+
+    <Transition
+      enter-active-class="transition duration-260 ease-out"
+      enter-from-class="translate-y-full opacity-0"
+      enter-to-class="translate-y-0 opacity-100"
+      leave-active-class="transition duration-220 ease-in"
+      leave-from-class="translate-y-0 opacity-100"
+      leave-to-class="translate-y-full opacity-0"
+    >
+      <section
+        v-if="hasToc && mobileTocOpen"
+        class="fixed inset-x-0 bottom-0 z-[60] mx-auto max-w-2xl rounded-t-[28px] border border-white/70 bg-white/96 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-[0_-30px_80px_-36px_rgba(15,23,42,0.36)] backdrop-blur-xl xl:hidden dark:border-white/10 dark:bg-slate-950/94"
+        aria-label="文章目录"
+        aria-modal="true"
+        role="dialog"
+      >
+        <div class="mx-auto mb-3 h-1.5 w-14 rounded-full bg-slate-200 dark:bg-slate-700" />
+
+        <div class="flex items-center justify-between gap-3 border-b border-slate-200/70 pb-3 dark:border-white/10">
+          <div>
+            <p class="text-[0.66rem] font-semibold uppercase tracking-[0.24em] text-sky-600 dark:text-sky-300">
+              目录
+            </p>
+            <h2 class="mt-1 text-[1rem] font-semibold tracking-[-0.03em] text-slate-950 dark:text-slate-50">
+              阅读导航
+            </h2>
+          </div>
+
+          <button
+            type="button"
+            class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/80 bg-white/82 text-slate-500 transition hover:text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-white"
+            aria-label="关闭目录"
+            @click="closeMobileTocDrawer"
+          >
+            <UIcon name="i-lucide-x" class="size-4" />
+          </button>
+        </div>
+
+        <div class="mt-3 max-h-[60svh] overflow-auto pb-2 pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.28)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/60 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/60">
+          <ArticleTocTree :items="tocItems" :active-id="activeTocId" @select="handleTocSelect" />
+        </div>
+      </section>
+    </Transition>
   </main>
 </template>

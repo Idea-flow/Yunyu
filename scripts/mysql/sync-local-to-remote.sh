@@ -16,6 +16,14 @@ cleanup() {
 }
 trap cleanup EXIT
 
+file_size_bytes() {
+  if [[ -f "$1" ]]; then
+    wc -c < "$1" | tr -d ' '
+  else
+    echo "0"
+  fi
+}
+
 if [[ ! -f "${CONFIG_FILE}" ]]; then
   echo "未找到配置文件：${CONFIG_FILE}"
   echo "请先复制 ${SCRIPT_DIR}/mysql-sync.env.example 为 ${SCRIPT_DIR}/mysql-sync.env 并填写连接信息。"
@@ -82,12 +90,26 @@ run_mysqldump \
   --triggers \
   --events \
   --set-gtid-purged=OFF \
-  "${LOCAL_DB_NAME}" > "${TMP_DUMP_FILE}"
+  "${LOCAL_DB_NAME}" > "${TMP_DUMP_FILE}" &
+
+DUMP_PID=$!
+
+while kill -0 "${DUMP_PID}" >/dev/null 2>&1; do
+  sleep 5
+  CURRENT_DUMP_SIZE_BYTES="$(file_size_bytes "${TMP_DUMP_FILE}")"
+  echo "本地数据库导出进行中，当前临时 SQL 文件大小：${CURRENT_DUMP_SIZE_BYTES} bytes"
+done
+
+wait "${DUMP_PID}"
+
+FINAL_DUMP_SIZE_BYTES="$(file_size_bytes "${TMP_DUMP_FILE}")"
+echo "本地数据库导出完成，临时 SQL 文件大小：${FINAL_DUMP_SIZE_BYTES} bytes"
 
 echo "本地数据库导出完成，开始清空远程数据库 ${REMOTE_DB_NAME} ..."
 MYSQL_SYNC_CONFIG="${CONFIG_FILE}" bash "${RESET_SCRIPT}"
 
 echo "开始将本地数据导入远程数据库 ${REMOTE_DB_NAME} ..."
+echo "说明：导入过程中 mysql 客户端通常不会持续输出日志，脚本会每 5 秒打印一次导入心跳。"
 docker run --rm -i \
   --add-host=host.docker.internal:host-gateway \
   "${MYSQL_CLIENT_IMAGE}" \
@@ -96,6 +118,15 @@ docker run --rm -i \
   --port="${REMOTE_DB_PORT}" \
   --user="${REMOTE_DB_USER}" \
   --password="${REMOTE_DB_PASSWORD}" \
-  --database="${REMOTE_DB_NAME}" < "${TMP_DUMP_FILE}"
+  --database="${REMOTE_DB_NAME}" < "${TMP_DUMP_FILE}" &
+
+IMPORT_PID=$!
+
+while kill -0 "${IMPORT_PID}" >/dev/null 2>&1; do
+  sleep 5
+  echo "远程数据库导入进行中，目标库：${REMOTE_DB_NAME}，当前导入源文件大小：${FINAL_DUMP_SIZE_BYTES} bytes"
+done
+
+wait "${IMPORT_PID}"
 
 echo "本地数据库 ${LOCAL_DB_NAME} 已成功同步到远程数据库 ${REMOTE_DB_NAME} 。"

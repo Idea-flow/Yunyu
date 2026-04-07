@@ -140,10 +140,13 @@
 .yy-md pre,
 .yy-md .shiki {
   margin: 0;
+  width: 100%;
+  max-width: 100%;
   background: var(--yy-code-block-bg) !important;
   border: 0;
   border-radius: 0;
   box-shadow: none;
+  box-sizing: border-box;
 }
 
 .yy-md pre {
@@ -182,6 +185,7 @@
 .yy-md .shiki code {
   display: grid;
   min-width: max-content;
+  width: fit-content;
   font-size: 0.85rem;
   font-family: "SFMono-Regular", "SF Mono", "JetBrains Mono", "Consolas", monospace;
 }
@@ -206,4 +210,90 @@
 .yy-md .shiki::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.7);
   border-radius: 999px;
+}
+
+@media (max-width: 768px) {
+  .yy-md-code-block {
+    --yy-code-body-max-height: 8.4rem;
+    border-radius: 1.08rem;
+    box-shadow: 0 18px 34px -28px rgba(15, 23, 42, 0.22);
+  }
+
+  .yy-md-code-toolbar {
+    gap: 0.32rem;
+    padding: 0.34rem 0.5rem;
+  }
+
+  .yy-md-code-toolbar-meta,
+  .yy-md-code-toolbar-actions {
+    gap: 0.34rem;
+  }
+
+  .yy-md-code-window-controls {
+    gap: 0.24rem;
+    margin-right: 0.12rem;
+  }
+
+  .yy-md-code-window-dot {
+    width: 0.52rem;
+    height: 0.52rem;
+  }
+
+  .yy-md-code-language-pill {
+    font-size: 0.54rem;
+    letter-spacing: 0.06em;
+  }
+
+  .yy-md-code-action-icon {
+    width: 1.34rem;
+    height: 1.34rem;
+  }
+
+  .yy-md-code-action-icon-glyph {
+    width: 0.74rem;
+    height: 0.74rem;
+  }
+
+  .yy-md .shiki {
+    padding: 0.82rem 0.88rem 0.9rem;
+    line-height: 1.68;
+  }
+
+  .yy-md .shiki code {
+    font-size: 0.8rem;
+  }
+
+  .yy-md pre::-webkit-scrollbar,
+  .yy-md .shiki::-webkit-scrollbar {
+    height: 0.42rem;
+    width: 0.42rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .yy-md-code-block {
+    --yy-code-body-max-height: 7.7rem;
+    border-radius: 0.96rem;
+  }
+
+  .yy-md-code-toolbar {
+    padding: 0.3rem 0.42rem;
+  }
+
+  .yy-md-code-language-pill {
+    font-size: 0.52rem;
+  }
+
+  .yy-md-code-action {
+    font-size: 0.68rem;
+  }
+
+  .yy-md .shiki {
+    padding: 0.74rem 0.78rem 0.82rem;
+    line-height: 1.62;
+  }
+
+  .yy-md .shiki code {
+    font-size: 0.78rem;
+  }
 }
