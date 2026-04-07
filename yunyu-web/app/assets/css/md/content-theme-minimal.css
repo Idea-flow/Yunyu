@@ -14,6 +14,9 @@
   --yy-md-table-border: rgba(226, 232, 240, 0.96);
   --yy-md-table-head-bg: rgba(248, 250, 252, 0.98);
   --yy-md-table-row-bg: rgba(255, 255, 255, 0.96);
+  --yy-md-formula-bg: rgba(248, 250, 252, 0.97);
+  --yy-md-formula-border: rgba(226, 232, 240, 0.94);
+  --yy-md-formula-text: rgb(30 41 59);
   --yy-md-hr: rgba(203, 213, 225, 0.4);
   --yy-md-image-border: rgba(226, 232, 240, 0.96);
 }
@@ -53,14 +56,17 @@
   --yy-md-link: rgb(103 232 249);
   --yy-md-link-hover: rgb(165 243 252);
   --yy-md-selection: rgba(34, 211, 238, 0.2);
-  --yy-md-quote-bg: rgba(15, 23, 42, 0.9);
-  --yy-md-quote-border: rgba(34, 211, 238, 0.34);
-  --yy-md-quote-text: rgb(226 232 240);
+  --yy-md-quote-bg: rgba(15, 23, 42, 0.95);
+  --yy-md-quote-border: rgba(34, 211, 238, 0.42);
+  --yy-md-quote-text: rgb(241 245 249);
   --yy-md-inline-code-bg: rgba(30, 41, 59, 0.94);
   --yy-md-inline-code-text: rgb(226 232 240);
-  --yy-md-table-border: rgba(51, 65, 85, 0.92);
-  --yy-md-table-head-bg: rgba(15, 23, 42, 0.96);
-  --yy-md-table-row-bg: rgba(2, 6, 23, 0.66);
+  --yy-md-table-border: rgba(100, 116, 139, 0.44);
+  --yy-md-table-head-bg: rgba(30, 41, 59, 0.96);
+  --yy-md-table-row-bg: rgba(15, 23, 42, 0.86);
+  --yy-md-formula-bg: rgba(15, 23, 42, 0.94);
+  --yy-md-formula-border: rgba(51, 65, 85, 0.88);
+  --yy-md-formula-text: rgb(241 245 249);
   --yy-md-hr: rgba(34, 211, 238, 0.16);
   --yy-md-image-border: rgba(51, 65, 85, 0.92);
 }

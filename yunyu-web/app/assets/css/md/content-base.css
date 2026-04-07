@@ -19,6 +19,7 @@
   --yy-md-table-accent: rgba(56, 189, 248, 0.24);
   --yy-md-formula-bg: rgba(248, 250, 252, 0.94);
   --yy-md-formula-border: rgba(203, 213, 225, 0.88);
+  --yy-md-formula-text: rgb(30 41 59);
   --yy-md-hr: rgba(148, 163, 184, 0.28);
   --yy-md-image-border: rgba(226, 232, 240, 0.92);
   --yy-md-list-marker: rgba(14, 165, 233, 0.72);
@@ -429,7 +430,7 @@
 }
 
 .yy-md .katex {
-  color: inherit;
+  color: var(--yy-md-formula-text);
   font-size: 1.03em;
 }
 
@@ -440,6 +441,7 @@
   border: 1px solid var(--yy-md-formula-border);
   border-radius: 1.2rem;
   padding: 1rem 1.15rem;
+  color: var(--yy-md-formula-text);
   background:
     radial-gradient(circle at top left, rgba(56, 189, 248, 0.08), transparent 14rem),
     var(--yy-md-formula-bg);
@@ -631,6 +633,27 @@
 
 .yy-md tbody tr:last-child > * {
   border-bottom: 0;
+}
+
+.dark .yy-md blockquote {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 20px 42px -34px rgba(2, 6, 23, 0.72);
+}
+
+.dark .yy-md blockquote::before {
+  color: color-mix(in srgb, var(--yy-md-quote-border) 82%, white 18%);
+}
+
+.dark .yy-md table {
+  background: var(--yy-md-table-row-bg);
+  box-shadow: 0 24px 52px -36px rgba(2, 6, 23, 0.62);
+}
+
+.dark .yy-md thead th {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.dark .yy-md tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--yy-md-table-row-bg) 82%, var(--yy-md-table-head-bg) 18%);
 }
 
 .yy-md .katex-display,

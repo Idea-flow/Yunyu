@@ -1,20 +1,20 @@
 .yy-md[data-code-theme='github-dark'] {
-  --yy-code-block-bg: #0f172a;
-  --yy-code-block-border: rgba(51, 65, 85, 0.92);
-  --yy-code-top-highlight: rgba(255, 255, 255, 0.06);
+  --yy-code-block-bg: #111827;
+  --yy-code-block-border: rgba(100, 116, 139, 0.44);
+  --yy-code-top-highlight: rgba(125, 211, 252, 0.16);
   --yy-code-text: #e2e8f0;
-  --yy-code-toolbar-bg: rgba(15, 23, 42, 0.92);
-  --yy-code-toolbar-border: rgba(51, 65, 85, 0.92);
-  --yy-code-label-text: #cbd5e1;
+  --yy-code-toolbar-bg: rgba(15, 23, 42, 0.98);
+  --yy-code-toolbar-border: rgba(100, 116, 139, 0.34);
+  --yy-code-label-text: #f1f5f9;
   --yy-code-label-dot: #38bdf8;
-  --yy-code-action-bg: rgba(30, 41, 59, 0.92);
-  --yy-code-action-border: rgba(71, 85, 105, 0.88);
-  --yy-code-action-text: #cbd5e1;
-  --yy-code-action-bg-hover: rgba(14, 165, 233, 0.18);
-  --yy-code-action-border-hover: rgba(56, 189, 248, 0.42);
-  --yy-code-action-text-hover: #e0f2fe;
-  --yy-code-collapse-hint-bg: rgba(15, 23, 42, 0.76);
-  --yy-code-collapse-hint-border: rgba(71, 85, 105, 0.9);
-  --yy-code-collapse-hint-text: #cbd5e1;
-  --yy-code-collapse-mask: rgba(15, 23, 42, 0.98);
+  --yy-code-action-bg: rgba(30, 41, 59, 0.96);
+  --yy-code-action-border: rgba(100, 116, 139, 0.42);
+  --yy-code-action-text: #e2e8f0;
+  --yy-code-action-bg-hover: rgba(14, 165, 233, 0.22);
+  --yy-code-action-border-hover: rgba(56, 189, 248, 0.48);
+  --yy-code-action-text-hover: #f0f9ff;
+  --yy-code-collapse-hint-bg: rgba(15, 23, 42, 0.82);
+  --yy-code-collapse-hint-border: rgba(100, 116, 139, 0.42);
+  --yy-code-collapse-hint-text: #e2e8f0;
+  --yy-code-collapse-mask: rgba(17, 24, 39, 0.98);
 }
