@@ -2,9 +2,18 @@
 @import "@nuxt/ui";
 @import "./md/index.css";
 
+/* 全局注册本地字体文件，避免依赖外部字体服务。 */
+@font-face {
+  font-family: "Yunyu Local Font";
+  src: url("../font/font.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 @theme static {
-  --font-sans: "Inter", "PingFang SC", "Microsoft YaHei", sans-serif;
-  --font-display: "Playfair Display", "Times New Roman", "PingFang SC", serif;
+  --font-sans: "Yunyu Local Font", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --font-display: "Yunyu Local Font", "PingFang SC", "Hiragino Serif GB", "Songti SC", "STSong", serif;
 }
 
 :root {

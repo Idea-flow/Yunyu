@@ -7,6 +7,10 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@nuxtjs/color-mode'
   ],
+  ui: {
+    // 关闭 @nuxt/ui 自动注入的 @nuxt/fonts，避免开发环境请求 Google 字体元数据。
+    fonts: false
+  },
   css: ['katex/dist/katex.min.css', '~/assets/css/main.css'],
   runtimeConfig: {
     public: {
@@ -22,19 +26,6 @@ export default defineNuxtConfig({
     head: {
       title: '云屿 Yunyu',
       link: [
-        {
-          rel: 'preconnect',
-          href: 'https://fonts.googleapis.com'
-        },
-        {
-          rel: 'preconnect',
-          href: 'https://fonts.gstatic.com',
-          crossorigin: ''
-        },
-        {
-          rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap'
-        },
         {
           rel: 'icon',
           type: 'image/x-icon',
