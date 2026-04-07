@@ -24,9 +24,11 @@ const readingProgress = ref(0)
 const mobileTocOpen = ref(false)
 const mobileTocVisible = ref(false)
 const lastWindowScrollTop = ref(0)
+const isTocManualScrolling = ref(false)
 const articleContentRef = ref<HTMLElement | null>(null)
 const tocScrollContainerRef = ref<HTMLElement | null>(null)
 let tocObserver: IntersectionObserver | null = null
+let tocManualScrollTimer: number | null = null
 const ARTICLE_CONTENT_THEME_STORAGE_KEY = 'yunyu-post-content-theme'
 const ARTICLE_CODE_THEME_STORAGE_KEY = 'yunyu-post-code-theme-family'
 const articleContentThemeOptions: Array<{ value: ArticleContentTheme, label: string, hint: string }> = [
@@ -248,15 +250,20 @@ function handleTocSelect(item: ArticleTocItem) {
     return
   }
 
-  const target = document.getElementById(item.id)
+  const articleBody = getArticleBodyElement()
+  const target = articleBody?.querySelector<HTMLElement>(`#${CSS.escape(item.id)}`) || document.getElementById(item.id)
 
   if (!target) {
     return
   }
 
-  target.scrollIntoView({
+  startTocManualScrollLock()
+  const offsetTop = getTocScrollOffset()
+  const targetScrollTop = window.scrollY + target.getBoundingClientRect().top - offsetTop
+
+  window.scrollTo({
+    top: Math.max(targetScrollTop, 0),
     behavior: 'smooth',
-    block: 'start'
   })
 }
 
@@ -365,6 +372,44 @@ function syncActiveTocIntoView() {
 }
 
 /**
+ * 计算目录点击滚动偏移量。
+ * 作用：让目录跳转时自动避开顶部固定导航和进度条，避免标题被遮挡导致“跳到附近章节”的错觉。
+ */
+function getTocScrollOffset() {
+  if (!import.meta.client) {
+    return 96
+  }
+
+  const headerElement = document.querySelector('header')
+  const headerHeight = headerElement instanceof HTMLElement ? headerElement.getBoundingClientRect().height : 0
+  const readingProgressHeight = 6
+  const spacing = 12
+
+  return Math.round(headerHeight + readingProgressHeight + spacing)
+}
+
+/**
+ * 标记目录手动滚动状态。
+ * 作用：目录点击触发平滑滚动时，短暂冻结自动激活逻辑，避免观察器在滚动途中切到相邻标题。
+ */
+function startTocManualScrollLock() {
+  if (!import.meta.client) {
+    return
+  }
+
+  isTocManualScrolling.value = true
+
+  if (tocManualScrollTimer !== null) {
+    window.clearTimeout(tocManualScrollTimer)
+  }
+
+  tocManualScrollTimer = window.setTimeout(() => {
+    isTocManualScrolling.value = false
+    tocManualScrollTimer = null
+  }, 950)
+}
+
+/**
  * 获取正文渲染根节点。
  * 作用：把目录联动范围限制在文章正文 `.yy-md` 内部，
  * 避免把评论区、相关推荐等区域的标题错误算进目录监听。
@@ -390,6 +435,7 @@ function syncArticleHeadingIds() {
   }
 
   const headings = Array.from(articleBody.querySelectorAll<HTMLElement>('h1, h2, h3, h4, h5, h6'))
+  const scrollMarginTop = getTocScrollOffset()
 
   headings.forEach((heading, index) => {
     const tocItem = tocItems.value[index]
@@ -401,6 +447,8 @@ function syncArticleHeadingIds() {
     if (!heading.id) {
       heading.id = tocItem.id
     }
+
+    heading.style.scrollMarginTop = `${scrollMarginTop}px`
   })
 
   return headings
@@ -434,6 +482,10 @@ function observeArticleHeadings() {
   }
 
   tocObserver = new IntersectionObserver((entries) => {
+    if (isTocManualScrolling.value) {
+      return
+    }
+
     const visibleEntries = entries
       .filter(entry => entry.isIntersecting)
       .sort((first, second) => first.boundingClientRect.top - second.boundingClientRect.top)
@@ -445,7 +497,7 @@ function observeArticleHeadings() {
     activeTocId.value = visibleEntries[0].target.id
   }, {
     root: null,
-    rootMargin: '-18% 0px -62% 0px',
+    rootMargin: `-${getTocScrollOffset()}px 0px -62% 0px`,
     threshold: [0, 1]
   })
 
@@ -520,6 +572,11 @@ onBeforeUnmount(() => {
 
   if (!import.meta.client) {
     return
+  }
+
+  if (tocManualScrollTimer !== null) {
+    window.clearTimeout(tocManualScrollTimer)
+    tocManualScrollTimer = null
   }
 
   window.removeEventListener('scroll', syncReadingProgress)
