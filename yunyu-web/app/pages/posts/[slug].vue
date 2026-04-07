@@ -8,6 +8,10 @@ import ArticleTocTree from '../../components/content/ArticleTocTree.vue'
 import YunyuImage from '~/components/common/YunyuImage.vue'
 import YunyuSectionTitle from '~/components/common/YunyuSectionTitle.vue'
 
+type ArticleContentTheme = 'editorial' | 'documentation' | 'minimal'
+type ArticleCodeThemeFamily = 'github' | 'vitesse'
+type ArticleCodeTheme = 'github-light' | 'github-dark' | 'vitesse-light' | 'vitesse-dark'
+
 /**
  * 前台文章详情页。
  * 作用：接入后端真实公开接口，展示文章正文、目录与相关推荐内容。
@@ -23,6 +27,19 @@ const lastWindowScrollTop = ref(0)
 const articleContentRef = ref<HTMLElement | null>(null)
 const tocScrollContainerRef = ref<HTMLElement | null>(null)
 let tocObserver: IntersectionObserver | null = null
+const ARTICLE_CONTENT_THEME_STORAGE_KEY = 'yunyu-post-content-theme'
+const ARTICLE_CODE_THEME_STORAGE_KEY = 'yunyu-post-code-theme-family'
+const articleContentThemeOptions: Array<{ value: ArticleContentTheme, label: string, hint: string }> = [
+  { value: 'editorial', label: '杂志感', hint: '更有内容阅读氛围' },
+  { value: 'documentation', label: '文档感', hint: '结构更规整清楚' },
+  { value: 'minimal', label: '极简', hint: '更轻更紧凑' }
+]
+const articleCodeThemeFamilyOptions: Array<{ value: ArticleCodeThemeFamily, label: string, hint: string }> = [
+  { value: 'github', label: 'GitHub', hint: '稳定克制' },
+  { value: 'vitesse', label: 'Vitesse', hint: '技术感更强' }
+]
+const selectedArticleContentTheme = ref<ArticleContentTheme>('editorial')
+const selectedArticleCodeThemeFamily = ref<ArticleCodeThemeFamily>('github')
 
 const { data, error } = await useAsyncData(`site-post-${route.params.slug}`, async () => {
   return await siteContent.getPostDetail(String(route.params.slug || ''))
@@ -49,9 +66,23 @@ const hasInlineVideo = computed(() => Boolean(post.value?.videoUrl))
  */
 const postTagItems = computed(() => post.value?.tagItems || [])
 const heroTags = computed(() => post.value?.tagItems?.slice(0, 4) || [])
-const articleCodeTheme = computed(() => colorMode.value === 'dark' ? 'github-dark' : 'github-light')
+const articleContentTheme = computed(() => selectedArticleContentTheme.value)
+const articleCodeTheme = computed<ArticleCodeTheme>(() => {
+  if (selectedArticleCodeThemeFamily.value === 'vitesse') {
+    return colorMode.value === 'dark' ? 'vitesse-dark' : 'vitesse-light'
+  }
+
+  return colorMode.value === 'dark' ? 'github-dark' : 'github-light'
+})
 const relatedLeadPost = computed(() => post.value?.relatedPosts?.[0] || null)
 const relatedStreamPosts = computed(() => post.value?.relatedPosts?.slice(1) || [])
+const currentArticleContentThemeLabel = computed(() => {
+  return articleContentThemeOptions.find(item => item.value === selectedArticleContentTheme.value)?.label || '杂志感'
+})
+const currentArticleCodeThemeLabel = computed(() => {
+  const familyLabel = articleCodeThemeFamilyOptions.find(item => item.value === selectedArticleCodeThemeFamily.value)?.label || 'GitHub'
+  return `${familyLabel} · ${colorMode.value === 'dark' ? '暗色' : '亮色'}`
+})
 
 /**
  * 计算文章发布时间展示文本。
@@ -98,6 +129,22 @@ const hasPostTags = computed(() => postTagItems.value.length > 0)
  * 作用：只有目录或标签任一存在时才保留侧栏布局。
  */
 const showArticleSidebar = computed(() => hasToc.value || hasPostTags.value)
+
+watch(selectedArticleContentTheme, value => {
+  if (!import.meta.client) {
+    return
+  }
+
+  window.localStorage.setItem(ARTICLE_CONTENT_THEME_STORAGE_KEY, value)
+})
+
+watch(selectedArticleCodeThemeFamily, value => {
+  if (!import.meta.client) {
+    return
+  }
+
+  window.localStorage.setItem(ARTICLE_CODE_THEME_STORAGE_KEY, value)
+})
 
 watch(tocItems, value => {
   activeTocId.value = value[0]?.id || ''
@@ -174,6 +221,47 @@ function openMobileTocDrawer() {
  */
 function closeMobileTocDrawer() {
   mobileTocOpen.value = false
+}
+
+/**
+ * 切换详情页正文主题。
+ * 作用：允许读者根据当前阅读内容切换正文排版风格，并记住个人偏好。
+ *
+ * @param theme 目标正文主题
+ */
+function switchArticleContentTheme(theme: ArticleContentTheme) {
+  selectedArticleContentTheme.value = theme
+}
+
+/**
+ * 切换详情页代码主题家族。
+ * 作用：只切换代码主题风格家族，具体明暗版本由当前系统主题自动映射。
+ *
+ * @param family 目标代码主题家族
+ */
+function switchArticleCodeThemeFamily(family: ArticleCodeThemeFamily) {
+  selectedArticleCodeThemeFamily.value = family
+}
+
+/**
+ * 恢复详情页主题偏好。
+ * 作用：首次进入文章详情页时，从本地缓存中读取用户上一次选择的正文主题和代码主题。
+ */
+function hydrateArticleThemePreference() {
+  if (!import.meta.client) {
+    return
+  }
+
+  const savedContentTheme = window.localStorage.getItem(ARTICLE_CONTENT_THEME_STORAGE_KEY)
+  const savedCodeThemeFamily = window.localStorage.getItem(ARTICLE_CODE_THEME_STORAGE_KEY)
+
+  if (savedContentTheme === 'editorial' || savedContentTheme === 'documentation' || savedContentTheme === 'minimal') {
+    selectedArticleContentTheme.value = savedContentTheme
+  }
+
+  if (savedCodeThemeFamily === 'github' || savedCodeThemeFamily === 'vitesse') {
+    selectedArticleCodeThemeFamily.value = savedCodeThemeFamily
+  }
 }
 
 /**
@@ -310,6 +398,7 @@ onMounted(async () => {
   }
 
   await nextTick()
+  hydrateArticleThemePreference()
   observeArticleHeadings()
   syncReadingProgress()
   syncMobileTocVisibility()
@@ -356,28 +445,86 @@ onBeforeUnmount(() => {
         </div>
         <div class="absolute inset-x-0 bottom-0 z-10">
           <div class="mx-auto max-w-[1440px] px-5 pb-8 sm:px-8 sm:pb-12 lg:px-10 lg:pb-14">
-            <div class="max-w-[44rem]">
-              <div class="flex flex-wrap gap-2">
-                <NuxtLink :to="`/categories/${post.categorySlug}`">
-                  <UBadge color="neutral" variant="soft" size="lg" class="backdrop-blur-md">
-                    {{ post.categoryName }}
-                  </UBadge>
-                </NuxtLink>
-                <NuxtLink
-                  v-for="topic in post.topicItems"
-                  :key="`${post.slug}-${topic.slug}`"
-                  :to="`/topics/${topic.slug}`"
-                >
-                  <UBadge color="primary" variant="soft" size="lg" class="backdrop-blur-md">
-                    {{ topic.name }}
-                  </UBadge>
-                </NuxtLink>
+            <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end lg:gap-8">
+              <div class="max-w-[44rem] min-w-0">
+                <div class="flex flex-wrap gap-2">
+                  <NuxtLink :to="`/categories/${post.categorySlug}`">
+                    <UBadge color="neutral" variant="soft" size="lg" class="backdrop-blur-md">
+                      {{ post.categoryName }}
+                    </UBadge>
+                  </NuxtLink>
+                  <NuxtLink
+                    v-for="topic in post.topicItems"
+                    :key="`${post.slug}-${topic.slug}`"
+                    :to="`/topics/${topic.slug}`"
+                  >
+                    <UBadge color="primary" variant="soft" size="lg" class="backdrop-blur-md">
+                      {{ topic.name }}
+                    </UBadge>
+                  </NuxtLink>
+                </div>
+
+                <h1 class="mt-4 max-w-[36rem] text-[clamp(1.16rem,4.9vw,2.08rem)] font-semibold leading-[1.1] tracking-[-0.032em] [font-family:var(--font-display)] [text-wrap:balance] text-white drop-shadow-[0_14px_32px_rgba(15,23,42,0.3)] sm:mt-5 sm:text-[clamp(1.34rem,1.18rem+0.82vw,2.08rem)] sm:leading-[1.08]">
+                  {{ post.title }}
+                </h1>
               </div>
 
-              <h1 class="mt-4 max-w-[36rem] text-[clamp(1.16rem,4.9vw,2.08rem)] font-semibold leading-[1.1] tracking-[-0.032em] [font-family:var(--font-display)] [text-wrap:balance] text-white drop-shadow-[0_14px_32px_rgba(15,23,42,0.3)] sm:mt-5 sm:text-[clamp(1.34rem,1.18rem+0.82vw,2.08rem)] sm:leading-[1.08]">
-                {{ post.title }}
-              </h1>
+              <section class="hidden justify-self-end lg:block lg:w-full lg:max-w-[320px]">
+                <div class="rounded-[18px] border border-white/12 bg-black/12 px-4 py-3 text-white/88 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.34)] backdrop-blur-[14px]">
+                  <div class="flex items-center justify-between gap-3">
+                    <p class="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-white/56">阅读主题</p>
+                    <span class="text-[0.66rem] text-white/58">
+                      {{ colorMode.value === 'dark' ? '暗色模式' : '亮色模式' }}
+                    </span>
+                  </div>
 
+                  <div class="mt-3 space-y-3">
+                    <div>
+                      <div class="flex items-center justify-between gap-3">
+                        <p class="text-[0.68rem] font-medium text-white/74">排版</p>
+                        <span class="text-[0.66rem] text-white/52">{{ currentArticleContentThemeLabel }}</span>
+                      </div>
+                      <div class="mt-1.5 flex flex-wrap gap-1.5">
+                        <button
+                          v-for="theme in articleContentThemeOptions"
+                          :key="theme.value"
+                          type="button"
+                          class="inline-flex cursor-pointer items-center rounded-full border px-2.5 py-1 text-[0.68rem] font-medium transition"
+                          :class="selectedArticleContentTheme === theme.value
+                            ? 'border-white/22 bg-white/14 text-white'
+                            : 'border-white/8 bg-transparent text-white/64 hover:border-white/16 hover:bg-white/[0.06] hover:text-white/88'"
+                          :title="theme.hint"
+                          @click="switchArticleContentTheme(theme.value)"
+                        >
+                          {{ theme.label }}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div class="flex items-center justify-between gap-3">
+                        <p class="text-[0.68rem] font-medium text-white/74">代码</p>
+                        <span class="text-[0.66rem] text-white/52">{{ currentArticleCodeThemeLabel }}</span>
+                      </div>
+                      <div class="mt-1.5 flex flex-wrap gap-1.5">
+                        <button
+                          v-for="theme in articleCodeThemeFamilyOptions"
+                          :key="theme.value"
+                          type="button"
+                          class="inline-flex cursor-pointer items-center rounded-full border px-2.5 py-1 text-[0.68rem] font-medium transition"
+                          :class="selectedArticleCodeThemeFamily === theme.value
+                            ? 'border-sky-300/22 bg-sky-300/12 text-white'
+                            : 'border-white/8 bg-transparent text-white/64 hover:border-white/16 hover:bg-white/[0.06] hover:text-white/88'"
+                          :title="`${theme.hint}，会随当前明暗模式自动切换`"
+                          @click="switchArticleCodeThemeFamily(theme.value)"
+                        >
+                          {{ theme.label }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
             </div>
           </div>
         </div>
@@ -397,6 +544,61 @@ onBeforeUnmount(() => {
               <span>阅读 {{ post.readingMinutes }} 分钟</span>
               <span class="h-1 w-1 rounded-full bg-slate-300/90 dark:bg-slate-600" />
               <span>热度 {{ post.viewCount }} 次浏览</span>
+            </div>
+          </section>
+
+          <section class="rounded-[16px] border border-slate-200/70 bg-white/76 px-3.5 py-3 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/56 lg:hidden">
+            <div class="flex items-center justify-between gap-3">
+              <p class="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">阅读主题</p>
+              <span class="text-[0.66rem] text-slate-400 dark:text-slate-500">
+                {{ colorMode.value === 'dark' ? '暗色模式' : '亮色模式' }}
+              </span>
+            </div>
+
+            <div class="mt-3 space-y-3">
+              <div>
+                <div class="flex items-center justify-between gap-3">
+                  <p class="text-[0.7rem] font-medium text-slate-600 dark:text-slate-300">排版</p>
+                  <span class="text-[0.66rem] text-slate-400 dark:text-slate-500">{{ currentArticleContentThemeLabel }}</span>
+                </div>
+                <div class="mt-1.5 flex flex-wrap gap-1.5">
+                  <button
+                    v-for="theme in articleContentThemeOptions"
+                    :key="theme.value"
+                    type="button"
+                    class="inline-flex cursor-pointer items-center rounded-full border px-2.5 py-1 text-[0.68rem] font-medium transition"
+                    :class="selectedArticleContentTheme === theme.value
+                      ? 'border-slate-300 bg-slate-900 text-white dark:border-white/12 dark:bg-white dark:text-slate-950'
+                      : 'border-slate-200/80 bg-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900 dark:border-white/10 dark:text-slate-300 dark:hover:border-white/14 dark:hover:text-slate-50'"
+                    :title="theme.hint"
+                    @click="switchArticleContentTheme(theme.value)"
+                  >
+                    {{ theme.label }}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between gap-3">
+                  <p class="text-[0.7rem] font-medium text-slate-600 dark:text-slate-300">代码</p>
+                  <span class="text-[0.66rem] text-slate-400 dark:text-slate-500">{{ currentArticleCodeThemeLabel }}</span>
+                </div>
+                <div class="mt-1.5 flex flex-wrap gap-1.5">
+                  <button
+                    v-for="theme in articleCodeThemeFamilyOptions"
+                    :key="theme.value"
+                    type="button"
+                    class="inline-flex cursor-pointer items-center rounded-full border px-2.5 py-1 text-[0.68rem] font-medium transition"
+                    :class="selectedArticleCodeThemeFamily === theme.value
+                      ? 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-400/20 dark:bg-sky-400/12 dark:text-sky-200'
+                      : 'border-slate-200/80 bg-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900 dark:border-white/10 dark:text-slate-300 dark:hover:border-white/14 dark:hover:text-slate-50'"
+                    :title="`${theme.hint}，会随当前明暗模式自动切换`"
+                    @click="switchArticleCodeThemeFamily(theme.value)"
+                  >
+                    {{ theme.label }}
+                  </button>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -429,7 +631,7 @@ onBeforeUnmount(() => {
 
           <ArticleContentRenderer
             :html="post.contentHtml"
-            content-theme="editorial"
+            :content-theme="articleContentTheme"
             :code-theme="articleCodeTheme"
             :code-default-expanded="false"
             container-class="relative overflow-hidden rounded-[24px] border border-white/55 bg-white/84 px-1.5 py-4 shadow-[0_24px_60px_-44px_rgba(15,23,42,0.24)] backdrop-blur-xl before:pointer-events-none before:absolute before:inset-x-8 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-sky-200/90 before:to-transparent sm:rounded-[30px] sm:px-2 sm:py-5 sm:shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)] lg:rounded-[38px] dark:border-white/10 dark:bg-slate-950/70 dark:before:via-sky-400/30"
