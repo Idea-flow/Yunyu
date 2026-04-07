@@ -352,6 +352,31 @@ function enhanceEmbeddedIframes() {
 }
 
 /**
+ * 增强表格容器。
+ * 作用：为正文中的原生表格自动补一层横向滚动容器，
+ * 让表格本体可以恢复标准布局，从而在列数较少时铺满正文宽度，
+ * 在内容较宽时仍然保留横向滚动能力。
+ */
+function enhanceTables() {
+  if (!containerRef.value) {
+    return
+  }
+
+  const tables = containerRef.value.querySelectorAll<HTMLTableElement>('table')
+
+  for (const table of tables) {
+    if (table.parentElement?.classList.contains('yy-md-table-scroll')) {
+      continue
+    }
+
+    const wrapper = document.createElement('div')
+    wrapper.className = 'yy-md-table-scroll'
+    table.insertAdjacentElement('beforebegin', wrapper)
+    wrapper.appendChild(table)
+  }
+}
+
+/**
  * 增强代码块交互。
  * 作用：为通过 `v-html` 注入的代码块补充复制按钮、折叠能力和运行时状态。
  */
@@ -423,6 +448,7 @@ async function refreshEnhancements() {
   }
 
   await nextTick()
+  enhanceTables()
   enhanceCodeBlocks()
   enhanceEmbeddedIframes()
 }

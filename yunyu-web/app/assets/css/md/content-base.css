@@ -544,15 +544,27 @@
   color: var(--yy-md-muted);
 }
 
+.yy-md .yy-md-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  margin-top: 0;
+  margin-bottom: 1.45rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.yy-md .yy-md-table-scroll > table {
+  margin-bottom: 0;
+}
+
 .yy-md table {
   position: relative;
-  display: block;
-  width: 100%;
+  display: table;
+  width: max-content;
   min-width: 100%;
-  max-width: 100%;
-  overflow: hidden;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  max-width: none;
+  overflow: visible;
   border: 1px solid var(--yy-md-table-border);
   border-collapse: separate;
   border-spacing: 0;
@@ -658,6 +670,7 @@
 
 .yy-md .katex-display,
 .yy-md .shiki,
+.yy-md .yy-md-table-scroll,
 .yy-md table {
   scrollbar-width: thin;
   scrollbar-color: rgba(148, 163, 184, 0.42) transparent;
@@ -665,12 +678,14 @@
 
 .yy-md .katex-display::-webkit-scrollbar,
 .yy-md .shiki::-webkit-scrollbar,
+.yy-md .yy-md-table-scroll::-webkit-scrollbar,
 .yy-md table::-webkit-scrollbar {
   height: 0.42rem;
 }
 
 .yy-md .katex-display::-webkit-scrollbar-thumb,
 .yy-md .shiki::-webkit-scrollbar-thumb,
+.yy-md .yy-md-table-scroll::-webkit-scrollbar-thumb,
 .yy-md table::-webkit-scrollbar-thumb {
   border-radius: 999px;
   background: rgba(148, 163, 184, 0.56);
@@ -678,6 +693,7 @@
 
 .yy-md .katex-display::-webkit-scrollbar-track,
 .yy-md .shiki::-webkit-scrollbar-track,
+.yy-md .yy-md-table-scroll::-webkit-scrollbar-track,
 .yy-md table::-webkit-scrollbar-track {
   background: transparent;
 }
