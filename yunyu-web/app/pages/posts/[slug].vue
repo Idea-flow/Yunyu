@@ -870,19 +870,19 @@ onBeforeUnmount(() => {
         <aside v-if="showArticleSidebar" class="hidden space-y-5 lg:block lg:h-fit lg:self-start lg:sticky lg:top-24">
           <div
             v-if="hasToc"
-            class="overflow-hidden rounded-[28px] border border-stone-200/75 bg-white/78 p-5 shadow-[0_20px_48px_-40px_rgba(15,23,42,0.18)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/62"
+            class="relative overflow-hidden rounded-[24px] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.86),rgba(255,255,255,0.72))] p-4 shadow-[0_22px_48px_-40px_rgba(15,23,42,0.22)] backdrop-blur-xl before:pointer-events-none before:absolute before:inset-x-8 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-sky-200/85 before:to-transparent dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.82),rgba(15,23,42,0.72))] dark:before:via-sky-400/30"
           >
-            <div>
-              <div class="flex items-start justify-between gap-3 border-b border-stone-200/70 pb-4 dark:border-white/10">
+            <div class="relative">
+              <div class="border-b border-slate-200/70 pb-3 dark:border-white/10">
                 <div class="min-w-0">
-                  <p class="text-[0.82rem] font-semibold tracking-[0.08em] text-stone-950 dark:text-stone-50">
+                  <p class="text-[0.76rem] font-medium tracking-[0.18em] text-slate-400 dark:text-slate-500">
                     目录
                   </p>
                 </div>
               </div>
 
-              <div class="mt-4 rounded-[1.4rem] bg-stone-50/72 px-2 py-2 dark:bg-white/[0.025]">
-                <div ref="tocScrollContainerRef" class="max-h-[32rem] overflow-auto pr-1 lg:max-h-[calc(100svh-8rem)] [scrollbar-width:thin] [scrollbar-color:rgba(168,162,158,0.3)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-stone-300/55 dark:[&::-webkit-scrollbar-thumb]:bg-stone-500/40">
+              <div class="mt-3">
+                <div ref="tocScrollContainerRef" class="max-h-[32rem] overflow-auto pr-1 lg:max-h-[calc(100svh-8rem)] [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.22)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/45 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/38">
                   <ArticleTocTree :items="tocItems" :active-id="activeTocId" @select="handleTocSelect" />
                 </div>
               </div>
@@ -933,12 +933,10 @@ onBeforeUnmount(() => {
       >
         <button
           type="button"
-          class="inline-flex min-h-11 items-center gap-2 rounded-full border border-stone-200/80 bg-white/88 px-3.5 py-2 text-[0.78rem] font-medium text-stone-700 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.22)] backdrop-blur-xl transition duration-200 hover:-translate-y-0.5 hover:text-stone-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-white/10 dark:bg-slate-950/82 dark:text-stone-200 dark:hover:text-white dark:focus-visible:ring-stone-500/50 dark:focus-visible:ring-offset-slate-950"
+          class="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/65 bg-[linear-gradient(180deg,rgba(255,255,255,0.9),rgba(255,255,255,0.78))] px-3.5 py-2 text-[0.78rem] font-medium text-slate-600 shadow-[0_16px_34px_-28px_rgba(15,23,42,0.22)] backdrop-blur-xl transition duration-200 hover:border-sky-200/80 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.88),rgba(15,23,42,0.8))] dark:text-slate-300 dark:hover:border-sky-400/20 dark:hover:text-white dark:focus-visible:ring-sky-400/25 dark:focus-visible:ring-offset-slate-950"
           @click="openMobileTocDrawer"
         >
-          <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-stone-100 text-stone-600 dark:bg-white/[0.06] dark:text-stone-200">
-            <UIcon name="i-lucide-align-left" class="size-4" />
-          </span>
+          <UIcon name="i-lucide-align-left" class="size-4 text-sky-500/70 dark:text-sky-300/70" />
           <span>目录</span>
         </button>
       </div>
@@ -970,23 +968,23 @@ onBeforeUnmount(() => {
     >
       <section
         v-if="hasToc && mobileTocOpen"
-        class="fixed inset-x-0 bottom-0 z-[60] mx-auto max-w-2xl rounded-t-[28px] border border-stone-200/80 bg-white/96 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-[0_-30px_80px_-36px_rgba(15,23,42,0.28)] backdrop-blur-xl lg:hidden dark:border-white/10 dark:bg-slate-950/94"
+        class="fixed inset-x-0 bottom-0 z-[60] mx-auto max-w-2xl rounded-t-[26px] border border-white/65 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,255,255,0.88))] px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-[0_-24px_60px_-34px_rgba(15,23,42,0.24)] backdrop-blur-xl lg:hidden dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.94),rgba(15,23,42,0.9))]"
         aria-label="文章目录"
         aria-modal="true"
         role="dialog"
       >
-        <div class="mx-auto mb-3 h-1.5 w-14 rounded-full bg-stone-200 dark:bg-stone-700/80" />
+        <div class="mx-auto mb-3 h-1.5 w-14 rounded-full bg-slate-200/90 dark:bg-slate-700/80" />
 
-        <div class="flex items-start justify-between gap-3 border-b border-stone-200/70 pb-3 dark:border-white/10">
+        <div class="flex items-start justify-between gap-3 border-b border-slate-200/70 pb-3 dark:border-white/10">
           <div class="min-w-0">
-            <p class="text-[0.82rem] font-semibold tracking-[0.08em] text-stone-950 dark:text-stone-50">
+            <p class="text-[0.76rem] font-medium tracking-[0.18em] text-slate-400 dark:text-slate-500">
               目录
             </p>
           </div>
 
           <button
             type="button"
-            class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-stone-100 text-stone-500 transition hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:bg-white/[0.06] dark:text-stone-300 dark:hover:text-white dark:focus-visible:ring-stone-500/50 dark:focus-visible:ring-offset-slate-950"
+            class="inline-flex h-10 w-10 items-center justify-center text-slate-400 transition hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:text-slate-500 dark:hover:text-white dark:focus-visible:ring-sky-400/25 dark:focus-visible:ring-offset-slate-950"
             aria-label="关闭目录"
             @click="closeMobileTocDrawer"
           >
@@ -994,8 +992,8 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
-        <div class="mt-3 rounded-[1.25rem] bg-stone-50/78 p-2 dark:bg-white/[0.03]">
-          <div class="max-h-[60svh] overflow-auto pb-2 pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(168,162,158,0.28)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-stone-300/60 dark:[&::-webkit-scrollbar-thumb]:bg-stone-500/60">
+        <div class="mt-3">
+          <div class="max-h-[60svh] overflow-auto pb-2 pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.22)_transparent] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/50 dark:[&::-webkit-scrollbar-thumb]:bg-slate-500/45">
             <ArticleTocTree :items="tocItems" :active-id="activeTocId" @select="handleTocSelect" />
           </div>
         </div>
