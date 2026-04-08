@@ -25,7 +25,19 @@ export function useYunyuToast() {
       description: options.description,
       color: type === 'info' ? 'info' : type,
       icon: resolveIcon(type),
-      duration: options.duration ?? 2200
+      duration: options.duration ?? 2000,
+      close: false,
+      progress: false,
+      ui: {
+        root: 'rounded-[18px] border border-slate-200/75 bg-white/94 px-4 py-3 shadow-[0_18px_42px_-30px_rgba(15,23,42,0.22)] ring-0 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/92',
+        wrapper: 'min-w-0',
+        title: 'text-[0.92rem] font-medium tracking-[-0.01em] text-slate-900 dark:text-slate-50',
+        description: 'mt-1 text-[0.8rem] leading-6 text-slate-500 dark:text-slate-400',
+        icon: 'mt-0.5 size-4.5 shrink-0',
+        actions: 'hidden',
+        close: 'hidden',
+        progress: 'hidden'
+      }
     })
   }
 

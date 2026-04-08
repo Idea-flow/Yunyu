@@ -15,7 +15,7 @@ const props = defineProps<{
 }>()
 
 const route = useRoute()
-const toast = useToast()
+const yunyuToast = useYunyuToast()
 const auth = useAuth()
 const siteContent = useSiteContent()
 
@@ -93,11 +93,7 @@ async function loadComments() {
     totalPages.value = response.totalPages
     commentCount.value = response.commentCount
   } catch (error: any) {
-    toast.add({
-      title: '评论加载失败',
-      description: error?.message || '暂时无法获取评论列表，请稍后重试。',
-      color: 'error'
-    })
+    yunyuToast.error('评论加载失败', error?.message || '暂时无法获取评论列表，请稍后重试。')
   } finally {
     isLoading.value = false
   }
@@ -127,10 +123,7 @@ async function handlePageChange(pageNo: number) {
  */
 function startReply(comment: SiteCommentItem) {
   if (!props.allowComment) {
-    toast.add({
-      title: '当前文章未开放评论',
-      color: 'warning'
-    })
+    yunyuToast.warning('当前文章未开放评论')
     return
   }
 
@@ -169,18 +162,12 @@ async function goToLogin() {
  */
 async function submitComment(payload: { content: string, replyCommentId?: number | null }) {
   if (!props.allowComment) {
-    toast.add({
-      title: '当前文章未开放评论',
-      color: 'warning'
-    })
+    yunyuToast.warning('当前文章未开放评论')
     return
   }
 
   if (!isLoggedIn.value) {
-    toast.add({
-      title: '请先登录后再发表评论',
-      color: 'warning'
-    })
+    yunyuToast.warning('请先登录后再发表评论')
     await goToLogin()
     return null
   }
@@ -188,10 +175,7 @@ async function submitComment(payload: { content: string, replyCommentId?: number
   const content = payload.content.trim()
 
   if (!content) {
-    toast.add({
-      title: '请输入评论内容',
-      color: 'warning'
-    })
+    yunyuToast.warning('请输入评论内容')
     return null
   }
 
@@ -201,19 +185,11 @@ async function submitComment(payload: { content: string, replyCommentId?: number
       replyCommentId: payload.replyCommentId || null
     })
 
-    toast.add({
-      title: response.visible ? '评论已发布' : '评论已提交',
-      description: response.message,
-      color: 'success'
-    })
+    yunyuToast.success(response.visible ? '评论已发布' : '评论已提交', response.message)
 
     return response
   } catch (error: any) {
-    toast.add({
-      title: '评论发送失败',
-      description: error?.message || '评论暂未发送成功，请稍后重试。',
-      color: 'error'
-    })
+    yunyuToast.error('评论发送失败', error?.message || '评论暂未发送成功，请稍后重试。')
     return null
   }
 }
