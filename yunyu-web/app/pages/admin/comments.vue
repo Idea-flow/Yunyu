@@ -13,6 +13,8 @@ definePageMeta({
 
 type CommentStatusFilter = 'ALL' | AdminCommentStatus
 
+const route = useRoute()
+const router = useRouter()
 const toast = useToast()
 const adminComments = useAdminComments()
 
@@ -43,6 +45,63 @@ const statusOptions = [
 const hasActiveFilters = computed(() => {
   return Boolean(searchKeyword.value.trim() || searchPostId.value || activeStatus.value !== 'ALL')
 })
+
+/**
+ * 解析路由中的评论状态筛选值。
+ * 作用：让后台评论页支持通过 URL 直接进入“待审核评论”等指定筛选视图。
+ *
+ * @param value 路由中的状态查询参数
+ * @returns 合法的评论状态筛选值
+ */
+function resolveRouteStatus(value: unknown): CommentStatusFilter {
+  if (value === 'PENDING' || value === 'APPROVED' || value === 'REJECTED') {
+    return value
+  }
+
+  return 'ALL'
+}
+
+/**
+ * 根据当前路由同步评论筛选条件。
+ * 作用：统一承接后台侧边栏、首页入口或手动输入 URL 时带来的查询参数，保持页面状态一致。
+ */
+function hydrateFiltersFromRoute() {
+  searchKeyword.value = typeof route.query.keyword === 'string' ? route.query.keyword : ''
+  searchPostId.value = typeof route.query.postId === 'string' ? route.query.postId.replace(/[^\d]/g, '') : ''
+  activeStatus.value = resolveRouteStatus(route.query.status)
+
+  const routePageNo = Number(route.query.pageNo || 1)
+  currentPage.value = Number.isFinite(routePageNo) && routePageNo > 0 ? routePageNo : 1
+}
+
+/**
+ * 将当前筛选条件同步回路由。
+ * 作用：让“待审核评论”等入口在刷新页面后仍保留当前筛选状态，也方便复制链接直达同一视图。
+ */
+async function syncRouteQuery() {
+  const nextQuery: Record<string, string> = {}
+
+  if (searchKeyword.value.trim()) {
+    nextQuery.keyword = searchKeyword.value.trim()
+  }
+
+  if (searchPostId.value) {
+    nextQuery.postId = searchPostId.value
+  }
+
+  if (activeStatus.value !== 'ALL') {
+    nextQuery.status = activeStatus.value
+  }
+
+  if (currentPage.value > 1) {
+    nextQuery.pageNo = String(currentPage.value)
+  }
+
+  await router.replace({
+    path: '/admin/comments',
+    query: nextQuery
+  })
+}
 
 /**
  * 解析文章 ID 筛选值。
@@ -173,6 +232,7 @@ function handlePostIdInput(value: string | number | null) {
  */
 async function handleSearch() {
   currentPage.value = 1
+  await syncRouteQuery()
   await loadComments()
 }
 
@@ -185,6 +245,7 @@ async function resetFilters() {
   searchPostId.value = ''
   activeStatus.value = 'ALL'
   currentPage.value = 1
+  await syncRouteQuery()
   await loadComments()
 }
 
@@ -197,6 +258,7 @@ async function resetFilters() {
 async function handleStatusChange(value: string | number | null) {
   activeStatus.value = (value as CommentStatusFilter) || 'ALL'
   currentPage.value = 1
+  await syncRouteQuery()
   await loadComments()
 }
 
@@ -208,6 +270,7 @@ async function handleStatusChange(value: string | number | null) {
  */
 async function handlePageChange(page: number) {
   currentPage.value = page
+  await syncRouteQuery()
   await loadComments()
 }
 
@@ -220,6 +283,7 @@ async function handlePageChange(page: number) {
 async function handlePageSizeChange(value: number) {
   pageSize.value = value
   currentPage.value = 1
+  await syncRouteQuery()
   await loadComments()
 }
 
@@ -254,6 +318,15 @@ const deleteDescription = computed(() => {
   return `确认删除「${deletingComment.value.userName}」的这条评论吗？若该评论下存在回复分支，也会一并从前台隐藏。`
 })
 
+watch(
+  () => route.fullPath,
+  async () => {
+    hydrateFiltersFromRoute()
+    await loadComments()
+  }
+)
+
+hydrateFiltersFromRoute()
 await loadComments()
 </script>
 

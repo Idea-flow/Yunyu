@@ -7,6 +7,7 @@ interface AdminNavigationItem {
   label: string
   icon: string
   to: string
+  matchStatus?: string
 }
 
 /**
@@ -49,6 +50,12 @@ const navigationItems: AdminNavigationItem[] = [
     label: '评论管理',
     icon: 'i-lucide-messages-square',
     to: '/admin/comments'
+  },
+  {
+    label: '待审核评论',
+    icon: 'i-lucide-message-circle-warning',
+    to: '/admin/comments?status=PENDING',
+    matchStatus: 'PENDING'
   },
   {
     label: '用户管理',
@@ -94,8 +101,16 @@ watch(sidebarCollapsed, (value) => {
  * @returns 是否为当前激活路由
  */
 function isActiveItem(item: AdminNavigationItem) {
+  if (item.matchStatus) {
+    return route.path === '/admin/comments' && route.query.status === item.matchStatus
+  }
+
   if (item.to === '/admin') {
     return route.path === '/admin'
+  }
+
+  if (item.to === '/admin/comments') {
+    return route.path === '/admin/comments' && !route.query.status
   }
 
   return route.path.startsWith(item.to)
