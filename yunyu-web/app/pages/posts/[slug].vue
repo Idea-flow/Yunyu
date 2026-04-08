@@ -729,6 +729,7 @@ onBeforeUnmount(() => {
           <ArticleCommentPanel
             :post-slug="post.slug"
             :allow-comment="post.allowComment"
+            :initial-comment-count="post.commentCount"
           />
 
           <section

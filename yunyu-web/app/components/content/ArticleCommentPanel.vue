@@ -12,6 +12,7 @@ import FrontPaginationBar from './FrontPaginationBar.vue'
 const props = defineProps<{
   postSlug: string
   allowComment: boolean
+  initialCommentCount?: number
 }>()
 
 const route = useRoute()
@@ -19,20 +20,23 @@ const yunyuToast = useYunyuToast()
 const auth = useAuth()
 const siteContent = useSiteContent()
 
-await auth.fetchCurrentUser()
-
 const currentPage = ref(1)
 const pageSize = 10
 const isLoading = ref(false)
 const isRootSubmitting = ref(false)
 const isReplySubmitting = ref(false)
+const commentSectionRef = ref<HTMLElement | null>(null)
+const commentsActivated = ref(false)
+const hasLoadedComments = ref(false)
+const commentsLoadFailed = ref(false)
 const comments = ref<SiteCommentItem[]>([])
 const total = ref(0)
 const totalPages = ref(1)
-const commentCount = ref(0)
+const commentCount = ref(props.initialCommentCount || 0)
 const replyTarget = ref<SiteCommentItem | null>(null)
 const rootContent = ref('')
 const replyContent = ref('')
+let commentSectionObserver: IntersectionObserver | null = null
 
 /**
  * 判断当前是否已登录。
@@ -82,6 +86,7 @@ const replyCommentPlaceholder = computed(() => {
  */
 async function loadComments() {
   isLoading.value = true
+  commentsLoadFailed.value = false
 
   try {
     const response = await siteContent.listPostComments(props.postSlug, {
@@ -92,11 +97,95 @@ async function loadComments() {
     total.value = response.total
     totalPages.value = response.totalPages
     commentCount.value = response.commentCount
+    hasLoadedComments.value = true
   } catch (error: any) {
+    commentsLoadFailed.value = true
     yunyuToast.error('评论加载失败', error?.message || '暂时无法获取评论列表，请稍后重试。')
   } finally {
     isLoading.value = false
   }
+}
+
+/**
+ * 恢复前台登录态。
+ * 作用：仅在客户端挂载后恢复本地用户缓存并异步校验真实登录状态，
+ * 避免评论区在 SSR 阶段额外发起认证请求，拖慢文章首屏渲染。
+ */
+async function restoreClientAuthState() {
+  auth.hydratePersistedUser()
+  await auth.fetchCurrentUser()
+}
+
+/**
+ * 激活评论区数据加载。
+ * 作用：当评论区即将进入视口时，再按需请求评论列表，
+ * 避免用户尚未滚动到评论区时就提前发起接口请求。
+ */
+async function activateCommentsIfNeeded() {
+  if (!import.meta.client || commentsActivated.value) {
+    return
+  }
+
+  commentsActivated.value = true
+  await loadComments()
+}
+
+/**
+ * 建立评论区进入视口监听。
+ * 作用：使用 `IntersectionObserver` 延迟评论区数据加载时机，
+ * 仅在用户接近评论区时才真正触发评论查询。
+ */
+function observeCommentSection() {
+  if (!import.meta.client) {
+    return
+  }
+
+  commentSectionObserver?.disconnect()
+  commentSectionObserver = null
+
+  const target = commentSectionRef.value
+
+  if (!target) {
+    return
+  }
+
+  commentSectionObserver = new IntersectionObserver((entries) => {
+    const entry = entries[0]
+
+    if (!entry?.isIntersecting) {
+      return
+    }
+
+    void activateCommentsIfNeeded()
+    commentSectionObserver?.disconnect()
+    commentSectionObserver = null
+  }, {
+    root: null,
+    rootMargin: '240px 0px 160px 0px',
+    threshold: 0.01
+  })
+
+  commentSectionObserver.observe(target)
+}
+
+/**
+ * 重置评论区展示状态。
+ * 作用：在文章切换时清空上一篇文章的评论数据与回复上下文，
+ * 避免新文章尚未激活评论加载前沿用旧文章的评论内容。
+ */
+function resetCommentState() {
+  currentPage.value = 1
+  replyTarget.value = null
+  rootContent.value = ''
+  replyContent.value = ''
+  commentsActivated.value = false
+  hasLoadedComments.value = false
+  commentsLoadFailed.value = false
+  comments.value = []
+  total.value = 0
+  totalPages.value = 1
+  commentCount.value = props.initialCommentCount || 0
+  isLoading.value = false
 }
 
 /**
@@ -267,21 +356,36 @@ function getAvatarFallback(userName: string) {
 }
 
 watch(() => props.postSlug, async () => {
-  currentPage.value = 1
-  replyTarget.value = null
-  rootContent.value = ''
-  replyContent.value = ''
-  await loadComments()
+  resetCommentState()
+
+  if (!import.meta.client) {
+    return
+  }
+
+  await nextTick()
+  observeCommentSection()
 }, { immediate: true })
+
+onMounted(async () => {
+  await restoreClientAuthState()
+  observeCommentSection()
+})
+
+onBeforeUnmount(() => {
+  commentSectionObserver?.disconnect()
+  commentSectionObserver = null
+})
 </script>
 
 <template>
-  <section class="rounded-[28px] border border-slate-200/60 bg-white/78 p-5 shadow-[0_12px_30px_-30px_rgba(15,23,42,0.08)] dark:border-white/8 dark:bg-slate-950/52 sm:p-6">
+  <section ref="commentSectionRef" class="rounded-[28px] border border-slate-200/60 bg-white/78 p-5 shadow-[0_12px_30px_-30px_rgba(15,23,42,0.08)] dark:border-white/8 dark:bg-slate-950/52 sm:p-6">
     <div class="flex items-center justify-between gap-4 border-b border-slate-200/60 pb-4 dark:border-white/8">
       <h2 class="text-[1.2rem] font-semibold tracking-[-0.03em] [font-family:var(--font-display)] text-slate-950 dark:text-slate-50">
         评论
       </h2>
-      <p class="text-sm text-slate-400 dark:text-slate-500">{{ commentCount }} 条</p>
+      <p class="text-sm text-slate-400 dark:text-slate-500">
+        {{ hasLoadedComments ? `${commentCount} 条` : `共 ${commentCount} 条` }}
+      </p>
     </div>
 
     <div class="mt-5">
@@ -298,7 +402,7 @@ watch(() => props.postSlug, async () => {
     </div>
 
     <div class="mt-6">
-      <div v-if="isLoading" class="space-y-4">
+      <div v-if="!commentsActivated || isLoading" class="space-y-4">
         <USkeleton
           v-for="index in 3"
           :key="index"
@@ -422,10 +526,21 @@ watch(() => props.postSlug, async () => {
         />
       </div>
 
-      <div
-        v-else
-        class="px-2 py-8 text-center"
-      >
+      <div v-else-if="commentsLoadFailed" class="px-2 py-8 text-center">
+        <div class="mx-auto flex size-12 items-center justify-center rounded-full bg-rose-50 text-rose-400 dark:bg-rose-500/10 dark:text-rose-300">
+          <UIcon name="i-lucide-octagon-alert" class="size-6" />
+        </div>
+        <p class="mt-3 text-sm text-slate-600 dark:text-slate-300">评论加载失败了</p>
+        <button
+          type="button"
+          class="mt-4 inline-flex items-center rounded-full border border-slate-200/80 px-3.5 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-950 dark:border-white/10 dark:text-slate-300 dark:hover:border-white/16 dark:hover:text-slate-50"
+          @click="loadComments"
+        >
+          重试加载
+        </button>
+      </div>
+
+      <div v-else-if="hasLoadedComments" class="px-2 py-8 text-center">
         <div class="mx-auto flex size-12 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-white/8 dark:text-slate-500">
           <UIcon name="i-lucide-messages-square" class="size-6" />
         </div>
