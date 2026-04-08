@@ -65,7 +65,7 @@ public class AdminHomepageConfigUpdateRequest {
 
     private Boolean showFeaturedSection;
 
-    @Size(max = 32, message = "主打内容标题长度不能超过32个字符")
+    @Size(max = 32, message = "推荐标题长度不能超过32个字符")
     private String featuredSectionTitle;
 
     private Boolean showLatestSection;

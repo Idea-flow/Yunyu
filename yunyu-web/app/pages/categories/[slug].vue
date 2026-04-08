@@ -85,7 +85,6 @@ async function changePage(nextPage: number) {
           :key="post.slug"
           :post="post"
           :show-category="false"
-          root-class="sm:grid-cols-[240px_minmax(0,1fr)]"
           title-class="mt-0"
         />
       </div>

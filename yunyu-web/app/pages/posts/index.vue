@@ -188,10 +188,11 @@ async function changePage(nextPage: number) {
           />
 
           <UButton
-            color="primary"
+            color="neutral"
+            variant="ghost"
             icon="i-lucide-search"
             aria-label="搜索文章"
-            class="rounded-full"
+            class="rounded-full text-white hover:bg-white/10 hover:text-white"
             :loading="pending"
             @click="handleSearch"
           />

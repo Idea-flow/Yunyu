@@ -47,7 +47,7 @@ const rootClassName = computed(() => {
 
   return [
     'group grid gap-5 border-b border-slate-200/75 pb-6 transition duration-300 last:border-b-0 dark:border-white/10',
-    'sm:grid-cols-[260px_minmax(0,1fr)]',
+    'sm:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[340px_minmax(0,1fr)]',
     props.rootClass
   ].filter(Boolean).join(' ')
 })
@@ -97,7 +97,7 @@ const imageWrapperClassName = computed(() => {
     return [props.imageHeightClass || 'h-56'].join(' ')
   }
 
-  return [props.imageHeightClass || 'h-52 sm:h-full sm:min-h-[13rem]'].join(' ')
+  return [props.imageHeightClass || 'h-56 sm:h-auto sm:aspect-[16/10] lg:aspect-[16/9]'].join(' ')
 })
 
 /**

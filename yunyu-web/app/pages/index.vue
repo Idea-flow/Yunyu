@@ -787,8 +787,7 @@ function getTopicLink(slug: string) {
       <section v-if="showFeaturedSection" class="border-t border-slate-200/80 pt-16 dark:border-white/10">
         <YunyuSectionTitle
           eyebrow="Selected"
-          :title="homepageConfig?.featuredSectionTitle || '继续阅读'"
-          description="首页不再堆太多内容，只留下几篇适合继续读下去的文章。"
+          :title="homepageConfig?.featuredSectionTitle || '推荐'"
           link-label="查看全部"
           link-to="/posts"
           size="compact"

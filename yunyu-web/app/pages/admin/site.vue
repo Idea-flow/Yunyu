@@ -8,7 +8,7 @@ import type { AdminPostItem } from '../../types/post'
 
 /**
  * 后台站点设置页。
- * 作用：提供统一的站点配置与首页配置编辑入口，通过标签分组承载基础信息、SEO、视觉风格与首页首屏配置。
+ * 作用：提供统一的站点配置与首页展示编辑入口，通过标签分组承载基础信息、SEO、视觉风格与首页首屏配置。
  */
 definePageMeta({
   layout: 'admin',
@@ -90,7 +90,7 @@ const siteFormState = reactive<AdminSiteConfigForm>({
 })
 
 /**
- * 首页配置表单状态。
+ * 首页展示表单状态。
  * 作用：承载首页无封面首屏、关键词、统计项和首页模块开关配置，并与后台首页配置接口保持一致。
  */
 const homepageFormState = reactive<AdminHomepageConfigForm>({
@@ -115,7 +115,7 @@ const homepageFormState = reactive<AdminHomepageConfigForm>({
     { label: '分类', value: '8' }
   ],
   showFeaturedSection: true,
-  featuredSectionTitle: '主打内容',
+  featuredSectionTitle: '推荐',
   showLatestSection: true,
   latestSectionTitle: '最新文章',
   showCategorySection: true,
@@ -135,11 +135,11 @@ const tabItems: SiteConfigTabItem[] = [
   { key: 'basic', label: '基础信息', icon: 'i-lucide-badge-info' },
   { key: 'seo', label: 'SEO 配置', icon: 'i-lucide-search-check' },
   { key: 'theme', label: '视觉风格', icon: 'i-lucide-palette' },
-  { key: 'homepage', label: '首页配置', icon: 'i-lucide-layout-template' }
+  { key: 'homepage', label: '首页展示', icon: 'i-lucide-layout-template' }
 ]
 
 /**
- * 当前是否处于首页配置标签。
+ * 当前是否处于首页展示标签。
  * 作用：统一控制保存行为、文案与页面右侧预览区显隐。
  */
 const isHomepageTab = computed(() => activeTab.value === 'homepage')
@@ -151,8 +151,8 @@ const isHomepageTab = computed(() => activeTab.value === 'homepage')
 const siteHasUnsavedChanges = computed(() => serializeSiteFormState(siteFormState) !== lastSavedSiteSnapshot.value)
 
 /**
- * 当前首页配置是否存在未保存修改。
- * 作用：比较首页配置当前表单和最近一次保存快照。
+ * 当前首页展示是否存在未保存修改。
+ * 作用：比较首页展示当前表单和最近一次保存快照。
  */
 const homepageHasUnsavedChanges = computed(() => serializeHomepageFormState(homepageFormState) !== lastSavedHomepageSnapshot.value)
 
@@ -174,17 +174,17 @@ const currentTabHasUnsavedChanges = computed(() => {
  * 保存按钮文案。
  * 作用：根据当前标签切换为更准确的保存提示，避免用户不清楚保存目标。
  */
-const submitButtonLabel = computed(() => isHomepageTab.value ? '保存首页配置' : '保存站点配置')
+const submitButtonLabel = computed(() => isHomepageTab.value ? '保存首页展示' : '保存站点配置')
 
 /**
  * 保存中按钮文案。
  * 作用：根据当前标签切换保存中的状态提示。
  */
-const submitLoadingLabel = computed(() => isHomepageTab.value ? '首页配置保存中...' : '站点配置保存中...')
+const submitLoadingLabel = computed(() => isHomepageTab.value ? '首页展示保存中...' : '站点配置保存中...')
 
 /**
  * 首页预览背景样式。
- * 作用：在后台首页配置标签内提供小型可视化预览，帮助判断背景模式和排版气质。
+ * 作用：在后台首页展示标签内提供小型可视化预览，帮助判断背景模式和排版气质。
  */
 const homepagePreviewBackgroundClass = computed(() => {
   if (homepageFormState.heroBackgroundMode === 'soft-glow') {
@@ -243,7 +243,7 @@ async function loadAllConfig() {
   } catch (error: any) {
     toast.add({
       title: '加载配置失败',
-      description: error?.message || '暂时无法获取站点设置或首页配置。',
+      description: error?.message || '暂时无法获取站点设置或首页展示。',
       color: 'error'
     })
   } finally {
@@ -294,7 +294,7 @@ function assignHomepageFormState(data: AdminHomepageConfigForm) {
     value: stat.value || ''
   }))
   homepageFormState.showFeaturedSection = data.showFeaturedSection ?? true
-  homepageFormState.featuredSectionTitle = data.featuredSectionTitle || '主打内容'
+  homepageFormState.featuredSectionTitle = data.featuredSectionTitle || '推荐'
   homepageFormState.showLatestSection = data.showLatestSection ?? true
   homepageFormState.latestSectionTitle = data.latestSectionTitle || '最新文章'
   homepageFormState.showCategorySection = data.showCategorySection ?? true
@@ -709,7 +709,7 @@ async function saveHomepageConfig() {
   await syncSelectedHeroVisualPost()
   lastSavedHomepageSnapshot.value = serializeHomepageFormState(response)
   toast.add({
-    title: '首页配置已保存',
+    title: '首页展示已保存',
     color: 'success'
   })
 }
@@ -730,7 +730,7 @@ async function handleSubmit() {
     await saveSiteConfig()
   } catch (error: any) {
     toast.add({
-      title: isHomepageTab.value ? '保存首页配置失败' : '保存站点配置失败',
+      title: isHomepageTab.value ? '保存首页展示失败' : '保存站点配置失败',
       description: error?.message || '保存未成功，请稍后重试。',
       color: 'error'
     })
@@ -1183,7 +1183,7 @@ onMounted(async () => {
               <div class="mt-4 grid gap-3 md:grid-cols-2">
                 <div class="rounded-[14px] border border-slate-200/75 bg-white/70 p-3 dark:border-white/10 dark:bg-white/4">
                   <div class="flex items-center justify-between gap-3">
-                    <p class="text-sm font-medium text-slate-800 dark:text-slate-100">主打内容区</p>
+                    <p class="text-sm font-medium text-slate-800 dark:text-slate-100">推荐内容区</p>
                     <AdminToggleButton
                       v-model="homepageFormState.showFeaturedSection"
                       tone="success"
@@ -1193,7 +1193,7 @@ onMounted(async () => {
                     />
                   </div>
                   <div class="mt-3">
-                    <AdminInput v-model="homepageFormState.featuredSectionTitle" placeholder="主打内容标题" />
+                    <AdminInput v-model="homepageFormState.featuredSectionTitle" placeholder="推荐标题" />
                   </div>
                 </div>
 

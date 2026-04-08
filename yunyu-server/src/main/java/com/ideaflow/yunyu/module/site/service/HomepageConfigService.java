@@ -45,7 +45,7 @@ public class HomepageConfigService {
     private static final String DEFAULT_SECONDARY_BUTTON_TEXT = "进入专题";
     private static final String DEFAULT_SECONDARY_BUTTON_LINK = "/topics";
     private static final boolean DEFAULT_HERO_VISUAL_CLICKABLE = true;
-    private static final String DEFAULT_FEATURED_SECTION_TITLE = "主打内容";
+    private static final String DEFAULT_FEATURED_SECTION_TITLE = "推荐";
     private static final String DEFAULT_LATEST_SECTION_TITLE = "最新文章";
     private static final String DEFAULT_CATEGORY_SECTION_TITLE = "分类";
     private static final String DEFAULT_TOPIC_SECTION_TITLE = "专题";
