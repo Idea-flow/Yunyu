@@ -19,6 +19,7 @@ type ArticleCodeTheme = 'github-light' | 'github-dark'
 const route = useRoute()
 const siteContent = useSiteContent()
 const colorMode = useColorMode()
+const isThemeModeMounted = ref(false)
 const activeTocId = ref('')
 const readingProgress = ref(0)
 const mobileTocOpen = ref(false)
@@ -76,6 +77,13 @@ const hasRelatedPosts = computed(() => (post.value?.relatedPosts?.length || 0) >
 
 const currentArticleContentThemeLabel = computed(() => {
   return articleContentThemeOptions.find(item => item.value === selectedArticleContentTheme.value)?.label || '杂志感'
+})
+const currentThemeModeLabel = computed(() => {
+  if (!isThemeModeMounted.value) {
+    return '系统主题'
+  }
+
+  return colorMode.value === 'dark' ? '暗色模式' : '亮色模式'
 })
 
 /**
@@ -525,6 +533,7 @@ onMounted(async () => {
     return
   }
 
+  isThemeModeMounted.value = true
   await nextTick()
   hydrateArticleThemePreference()
   observeArticleHeadings()
@@ -598,7 +607,7 @@ onBeforeUnmount(() => {
             <div class="flex items-center justify-between gap-3">
               <p class="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-white/56">阅读主题</p>
               <span class="text-[0.66rem] text-white/58">
-                {{ colorMode.value === 'dark' ? '暗色模式' : '亮色模式' }}
+                {{ currentThemeModeLabel }}
               </span>
             </div>
 
@@ -649,7 +658,7 @@ onBeforeUnmount(() => {
             <div class="flex items-center justify-between gap-3">
               <p class="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">阅读主题</p>
               <span class="text-[0.66rem] text-slate-400 dark:text-slate-500">
-                {{ colorMode.value === 'dark' ? '暗色模式' : '亮色模式' }}
+                {{ currentThemeModeLabel }}
               </span>
             </div>
 

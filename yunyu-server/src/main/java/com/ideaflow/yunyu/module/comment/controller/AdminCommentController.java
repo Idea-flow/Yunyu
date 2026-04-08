@@ -6,6 +6,7 @@ import com.ideaflow.yunyu.module.comment.dto.AdminCommentStatusUpdateRequest;
 import com.ideaflow.yunyu.module.comment.service.AdminCommentService;
 import com.ideaflow.yunyu.module.comment.vo.AdminCommentItemResponse;
 import com.ideaflow.yunyu.module.comment.vo.AdminCommentListResponse;
+import com.ideaflow.yunyu.module.comment.vo.AdminCommentThreadGroupListResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -47,6 +48,18 @@ public class AdminCommentController {
     @GetMapping
     public ApiResponse<AdminCommentListResponse> listComments(AdminCommentQueryRequest request) {
         return ApiResponse.success(adminCommentService.listComments(request));
+    }
+
+    /**
+     * 查询后台评论树形审核列表。
+     *
+     * @param request 查询请求
+     * @return 按文章分组的评论树形审核列表
+     */
+    @Operation(summary = "查询后台评论树形审核列表")
+    @GetMapping("/thread-groups")
+    public ApiResponse<AdminCommentThreadGroupListResponse> listCommentThreadGroups(AdminCommentQueryRequest request) {
+        return ApiResponse.success(adminCommentService.listCommentThreadGroups(request));
     }
 
     /**

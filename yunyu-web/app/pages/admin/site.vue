@@ -902,24 +902,13 @@ onMounted(async () => {
                   <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">控制无封面首屏是否展示、背景模式和主文案。</p>
                 </div>
 
-                <button
-                  type="button"
-                  :class="[
-                    'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition',
-                    homepageFormState.heroEnabled
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-200'
-                      : 'border-slate-200 bg-white text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400'
-                  ]"
-                  @click="homepageFormState.heroEnabled = !homepageFormState.heroEnabled"
-                >
-                  <span
-                    :class="[
-                      'h-2.5 w-2.5 rounded-full',
-                      homepageFormState.heroEnabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
-                    ]"
-                  />
-                  {{ homepageFormState.heroEnabled ? '首屏已启用' : '首屏已关闭' }}
-                </button>
+                <AdminToggleButton
+                  v-model="homepageFormState.heroEnabled"
+                  tone="success"
+                  active-label="首屏已启用"
+                  inactive-label="首屏已关闭"
+                  show-dot
+                />
               </div>
 
               <div class="mt-4 grid gap-4 md:grid-cols-2">
@@ -991,18 +980,12 @@ onMounted(async () => {
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  :class="[
-                    'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition',
-                    homepageFormState.heroVisualClickable
-                      ? 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-400/20 dark:bg-sky-400/10 dark:text-sky-200'
-                      : 'border-slate-200 bg-white text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400'
-                  ]"
-                  @click="homepageFormState.heroVisualClickable = !homepageFormState.heroVisualClickable"
-                >
-                  {{ homepageFormState.heroVisualClickable ? '整块可点击' : '仅展示不跳转' }}
-                </button>
+                <AdminToggleButton
+                  v-model="homepageFormState.heroVisualClickable"
+                  tone="info"
+                  active-label="整块可点击"
+                  inactive-label="仅展示不跳转"
+                />
               </div>
 
               <div class="mt-4 grid gap-4 md:grid-cols-2">
@@ -1109,30 +1092,18 @@ onMounted(async () => {
                   <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">这两块建议保持轻量，只做首屏辅助信息。</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    :class="[
-                      'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition',
-                      homepageFormState.showHeroKeywords
-                        ? 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-400/20 dark:bg-sky-400/10 dark:text-sky-200'
-                        : 'border-slate-200 bg-white text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400'
-                    ]"
-                    @click="homepageFormState.showHeroKeywords = !homepageFormState.showHeroKeywords"
-                  >
-                    关键词{{ homepageFormState.showHeroKeywords ? '开启' : '关闭' }}
-                  </button>
-                  <button
-                    type="button"
-                    :class="[
-                      'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition',
-                      homepageFormState.showHeroStats
-                        ? 'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-400/20 dark:bg-orange-400/10 dark:text-orange-200'
-                        : 'border-slate-200 bg-white text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400'
-                    ]"
-                    @click="homepageFormState.showHeroStats = !homepageFormState.showHeroStats"
-                  >
-                    统计{{ homepageFormState.showHeroStats ? '开启' : '关闭' }}
-                  </button>
+                  <AdminToggleButton
+                    v-model="homepageFormState.showHeroKeywords"
+                    tone="info"
+                    active-label="关键词开启"
+                    inactive-label="关键词关闭"
+                  />
+                  <AdminToggleButton
+                    v-model="homepageFormState.showHeroStats"
+                    tone="warning"
+                    active-label="统计开启"
+                    inactive-label="统计关闭"
+                  />
                 </div>
               </div>
 
@@ -1213,18 +1184,13 @@ onMounted(async () => {
                 <div class="rounded-[14px] border border-slate-200/75 bg-white/70 p-3 dark:border-white/10 dark:bg-white/4">
                   <div class="flex items-center justify-between gap-3">
                     <p class="text-sm font-medium text-slate-800 dark:text-slate-100">主打内容区</p>
-                    <button
-                      type="button"
-                      :class="[
-                        'rounded-full border px-2.5 py-1 text-[11px] font-medium transition',
-                        homepageFormState.showFeaturedSection
-                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-200'
-                          : 'border-slate-200 bg-white text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400'
-                      ]"
-                      @click="homepageFormState.showFeaturedSection = !homepageFormState.showFeaturedSection"
-                    >
-                      {{ homepageFormState.showFeaturedSection ? '显示' : '隐藏' }}
-                    </button>
+                    <AdminToggleButton
+                      v-model="homepageFormState.showFeaturedSection"
+                      tone="success"
+                      size="sm"
+                      active-label="显示"
+                      inactive-label="隐藏"
+                    />
                   </div>
                   <div class="mt-3">
                     <AdminInput v-model="homepageFormState.featuredSectionTitle" placeholder="主打内容标题" />
@@ -1234,18 +1200,13 @@ onMounted(async () => {
                 <div class="rounded-[14px] border border-slate-200/75 bg-white/70 p-3 dark:border-white/10 dark:bg-white/4">
                   <div class="flex items-center justify-between gap-3">
                     <p class="text-sm font-medium text-slate-800 dark:text-slate-100">最新文章区</p>
-                    <button
-                      type="button"
-                      :class="[
-                        'rounded-full border px-2.5 py-1 text-[11px] font-medium transition',
-                        homepageFormState.showLatestSection
-                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-200'
-                          : 'border-slate-200 bg-white text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400'
-                      ]"
-                      @click="homepageFormState.showLatestSection = !homepageFormState.showLatestSection"
-                    >
-                      {{ homepageFormState.showLatestSection ? '显示' : '隐藏' }}
-                    </button>
+                    <AdminToggleButton
+                      v-model="homepageFormState.showLatestSection"
+                      tone="success"
+                      size="sm"
+                      active-label="显示"
+                      inactive-label="隐藏"
+                    />
                   </div>
                   <div class="mt-3">
                     <AdminInput v-model="homepageFormState.latestSectionTitle" placeholder="最新文章标题" />
@@ -1255,18 +1216,13 @@ onMounted(async () => {
                 <div class="rounded-[14px] border border-slate-200/75 bg-white/70 p-3 dark:border-white/10 dark:bg-white/4">
                   <div class="flex items-center justify-between gap-3">
                     <p class="text-sm font-medium text-slate-800 dark:text-slate-100">分类区</p>
-                    <button
-                      type="button"
-                      :class="[
-                        'rounded-full border px-2.5 py-1 text-[11px] font-medium transition',
-                        homepageFormState.showCategorySection
-                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-200'
-                          : 'border-slate-200 bg-white text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400'
-                      ]"
-                      @click="homepageFormState.showCategorySection = !homepageFormState.showCategorySection"
-                    >
-                      {{ homepageFormState.showCategorySection ? '显示' : '隐藏' }}
-                    </button>
+                    <AdminToggleButton
+                      v-model="homepageFormState.showCategorySection"
+                      tone="success"
+                      size="sm"
+                      active-label="显示"
+                      inactive-label="隐藏"
+                    />
                   </div>
                   <div class="mt-3">
                     <AdminInput v-model="homepageFormState.categorySectionTitle" placeholder="分类标题" />
@@ -1276,18 +1232,13 @@ onMounted(async () => {
                 <div class="rounded-[14px] border border-slate-200/75 bg-white/70 p-3 dark:border-white/10 dark:bg-white/4">
                   <div class="flex items-center justify-between gap-3">
                     <p class="text-sm font-medium text-slate-800 dark:text-slate-100">专题区</p>
-                    <button
-                      type="button"
-                      :class="[
-                        'rounded-full border px-2.5 py-1 text-[11px] font-medium transition',
-                        homepageFormState.showTopicSection
-                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-200'
-                          : 'border-slate-200 bg-white text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400'
-                      ]"
-                      @click="homepageFormState.showTopicSection = !homepageFormState.showTopicSection"
-                    >
-                      {{ homepageFormState.showTopicSection ? '显示' : '隐藏' }}
-                    </button>
+                    <AdminToggleButton
+                      v-model="homepageFormState.showTopicSection"
+                      tone="success"
+                      size="sm"
+                      active-label="显示"
+                      inactive-label="隐藏"
+                    />
                   </div>
                   <div class="mt-3">
                     <AdminInput v-model="homepageFormState.topicSectionTitle" placeholder="专题标题" />

@@ -232,6 +232,35 @@
   box-shadow: none;
 }
 
+.dark .yy-md[data-code-theme='github-light'],
+.dark .yy-md[data-code-theme='vitesse-light'] {
+  --yy-code-block-bg: #111827;
+  --yy-code-block-border: rgba(100, 116, 139, 0.28);
+  --yy-code-top-highlight: rgba(125, 211, 252, 0.1);
+  --yy-code-text: #e2e8f0;
+  --yy-code-toolbar-bg: rgba(15, 23, 42, 0.84);
+  --yy-code-toolbar-border: rgba(100, 116, 139, 0.16);
+  --yy-code-label-text: #f1f5f9;
+  --yy-code-label-dot: #38bdf8;
+  --yy-code-action-text: #e2e8f0;
+  --yy-code-action-text-hover: #7dd3fc;
+  --yy-code-action-focus-ring: rgba(56, 189, 248, 0.24);
+  --yy-code-collapse-hint-bg: rgba(15, 23, 42, 0.82);
+  --yy-code-collapse-hint-border: rgba(100, 116, 139, 0.42);
+  --yy-code-collapse-hint-text: #e2e8f0;
+  --yy-code-collapse-mask: rgba(17, 24, 39, 0.98);
+}
+
+.dark .yy-md .shiki.shiki-themes {
+  color: var(--shiki-dark, var(--yy-code-text, inherit));
+  background-color: var(--shiki-dark-bg, var(--yy-code-block-bg)) !important;
+}
+
+.dark .yy-md .shiki.shiki-themes .line,
+.dark .yy-md .shiki.shiki-themes span {
+  color: var(--shiki-dark, inherit);
+}
+
 @media (max-width: 768px) {
   .yy-md-code-block {
     --yy-code-body-max-height: 8.4rem;

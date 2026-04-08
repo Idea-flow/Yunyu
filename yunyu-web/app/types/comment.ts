@@ -107,6 +107,77 @@ export interface AdminCommentListResponse {
 }
 
 /**
+ * 后台评论回复流条目类型。
+ * 作用：统一描述后台评论树形审核页中挂在根评论下面的回复项。
+ */
+export interface AdminCommentThreadReplyItem {
+  id: number
+  postId: number
+  rootId: number
+  replyCommentId: number | null
+  replyToUserName: string | null
+  userId: number
+  userName: string
+  userEmail: string
+  content: string
+  status: AdminCommentStatus
+  ip: string
+  createdTime: string
+  updatedTime: string
+  visibleOnSite: boolean
+  matchedByFilter: boolean
+}
+
+/**
+ * 后台评论主评论类型。
+ * 作用：统一描述后台评论树形审核页中的一级评论及其回复流。
+ */
+export interface AdminCommentThreadRootItem {
+  id: number
+  postId: number
+  userId: number
+  userName: string
+  userEmail: string
+  content: string
+  status: AdminCommentStatus
+  ip: string
+  createdTime: string
+  updatedTime: string
+  visibleOnSite: boolean
+  matchedByFilter: boolean
+  hasMatchingDescendant: boolean
+  replies: AdminCommentThreadReplyItem[]
+}
+
+/**
+ * 后台评论文章分组类型。
+ * 作用：统一描述后台评论树形审核页中某篇文章下的评论概览和评论树。
+ */
+export interface AdminCommentThreadGroup {
+  postId: number
+  postTitle: string
+  postSlug: string
+  totalCommentCount: number
+  pendingCommentCount: number
+  approvedCommentCount: number
+  rejectedCommentCount: number
+  latestCommentTime: string | null
+  roots: AdminCommentThreadRootItem[]
+}
+
+/**
+ * 后台评论树形审核列表响应类型。
+ * 作用：承接按文章分组后的评论审核视图数据与分页信息。
+ */
+export interface AdminCommentThreadGroupListResponse {
+  list: AdminCommentThreadGroup[]
+  total: number
+  pageNo: number
+  pageSize: number
+  totalPages: number
+}
+
+/**
  * 后台评论查询参数类型。
  * 作用：统一描述评论管理页的筛选条件与分页参数。
  */

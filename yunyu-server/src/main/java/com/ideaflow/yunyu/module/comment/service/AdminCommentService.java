@@ -11,6 +11,10 @@ import com.ideaflow.yunyu.module.comment.entity.CommentEntity;
 import com.ideaflow.yunyu.module.comment.mapper.CommentMapper;
 import com.ideaflow.yunyu.module.comment.vo.AdminCommentItemResponse;
 import com.ideaflow.yunyu.module.comment.vo.AdminCommentListResponse;
+import com.ideaflow.yunyu.module.comment.vo.AdminCommentThreadGroupListResponse;
+import com.ideaflow.yunyu.module.comment.vo.AdminCommentThreadGroupResponse;
+import com.ideaflow.yunyu.module.comment.vo.AdminCommentThreadReplyItemResponse;
+import com.ideaflow.yunyu.module.comment.vo.AdminCommentThreadRootItemResponse;
 import com.ideaflow.yunyu.module.post.entity.PostEntity;
 import com.ideaflow.yunyu.module.post.mapper.PostMapper;
 import com.ideaflow.yunyu.module.user.entity.UserEntity;
@@ -26,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -75,6 +80,63 @@ public class AdminCommentService {
                 .toList();
         long totalPages = page.getPages() <= 0 ? 1 : page.getPages();
         return new AdminCommentListResponse(items, page.getTotal(), pageNo, pageSize, totalPages);
+    }
+
+    /**
+     * 查询后台评论树形审核列表。
+     *
+     * @param request 查询请求
+     * @return 按文章分组的评论树形审核响应
+     */
+    public AdminCommentThreadGroupListResponse listCommentThreadGroups(AdminCommentQueryRequest request) {
+        long pageNo = normalizePageNo(request.getPageNo());
+        long pageSize = normalizePageSize(request.getPageSize());
+        List<CommentEntity> matchedComments = commentMapper.selectList(buildCommentListQuery(request));
+        List<Long> matchedPostIds = matchedComments.stream()
+                .map(CommentEntity::getPostId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        long total = matchedPostIds.size();
+        long totalPages = total == 0 ? 1 : (long) Math.ceil((double) total / pageSize);
+        List<Long> currentPagePostIds = paginatePostIds(matchedPostIds, pageNo, pageSize);
+
+        if (currentPagePostIds.isEmpty()) {
+            return new AdminCommentThreadGroupListResponse(Collections.emptyList(), total, pageNo, pageSize, totalPages);
+        }
+
+        List<CommentEntity> pageComments = commentMapper.selectList(new LambdaQueryWrapper<CommentEntity>()
+                .in(CommentEntity::getPostId, currentPagePostIds)
+                .eq(CommentEntity::getDeleted, 0)
+                .orderByDesc(CommentEntity::getCreatedTime)
+                .orderByDesc(CommentEntity::getId));
+
+        Map<Long, PostEntity> postMap = loadPostMap(pageComments);
+        Map<Long, UserEntity> userMap = loadUserMap(pageComments);
+        Map<Long, CommentEntity> replyCommentMap = loadReplyCommentMap(pageComments);
+        Map<Long, UserEntity> replyUserMap = loadReplyUserMap(replyCommentMap.values());
+        Set<Long> matchedCommentIds = matchedComments.stream()
+                .filter(comment -> currentPagePostIds.contains(comment.getPostId()))
+                .map(CommentEntity::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        Map<Long, List<CommentEntity>> commentsByPost = pageComments.stream()
+                .filter(comment -> comment.getPostId() != null)
+                .collect(Collectors.groupingBy(CommentEntity::getPostId, LinkedHashMap::new, Collectors.toList()));
+        boolean filteredByComment = isCommentLevelFilterActive(request);
+
+        List<AdminCommentThreadGroupResponse> groups = currentPagePostIds.stream()
+                .map(postId -> buildCommentThreadGroupResponse(postId,
+                        commentsByPost.getOrDefault(postId, Collections.emptyList()),
+                        postMap,
+                        userMap,
+                        replyCommentMap,
+                        replyUserMap,
+                        matchedCommentIds,
+                        filteredByComment))
+                .toList();
+
+        return new AdminCommentThreadGroupListResponse(groups, total, pageNo, pageSize, totalPages);
     }
 
     /**
@@ -231,6 +293,152 @@ public class AdminCommentService {
     }
 
     /**
+     * 构建后台评论文章分组响应。
+     *
+     * @param postId 文章ID
+     * @param comments 当前文章评论集合
+     * @param postMap 文章映射
+     * @param userMap 用户映射
+     * @param replyCommentMap 回复目标评论映射
+     * @param replyUserMap 回复目标用户映射
+     * @param matchedCommentIds 命中评论ID集合
+     * @param filteredByComment 当前是否启用评论级筛选
+     * @return 文章分组响应
+     */
+    private AdminCommentThreadGroupResponse buildCommentThreadGroupResponse(Long postId,
+                                                                           List<CommentEntity> comments,
+                                                                           Map<Long, PostEntity> postMap,
+                                                                           Map<Long, UserEntity> userMap,
+                                                                           Map<Long, CommentEntity> replyCommentMap,
+                                                                           Map<Long, UserEntity> replyUserMap,
+                                                                           Set<Long> matchedCommentIds,
+                                                                           boolean filteredByComment) {
+        PostEntity postEntity = postMap.get(postId);
+        List<CommentEntity> rootComments = comments.stream()
+                .filter(comment -> comment.getRootId() == null)
+                .sorted((left, right) -> compareCommentByTimeDesc(left, right))
+                .toList();
+        Map<Long, List<CommentEntity>> repliesByRootId = comments.stream()
+                .filter(comment -> comment.getRootId() != null)
+                .collect(Collectors.groupingBy(CommentEntity::getRootId, LinkedHashMap::new, Collectors.collectingAndThen(Collectors.toList(), list -> {
+                    list.sort(this::compareCommentByTimeAsc);
+                    return list;
+                })));
+
+        List<AdminCommentThreadRootItemResponse> roots = new ArrayList<>();
+        for (CommentEntity rootComment : rootComments) {
+            List<CommentEntity> allReplies = repliesByRootId.getOrDefault(rootComment.getId(), Collections.emptyList());
+            boolean matchedRoot = matchedCommentIds.contains(rootComment.getId());
+            List<CommentEntity> matchedReplies = allReplies.stream()
+                    .filter(reply -> matchedCommentIds.contains(reply.getId()))
+                    .toList();
+            boolean shouldInclude = !filteredByComment || matchedRoot || !matchedReplies.isEmpty();
+            if (!shouldInclude) {
+                continue;
+            }
+
+            List<CommentEntity> displayReplies = !filteredByComment || matchedRoot ? allReplies : matchedReplies;
+            roots.add(toAdminCommentThreadRootItemResponse(rootComment,
+                    displayReplies,
+                    userMap,
+                    replyCommentMap,
+                    replyUserMap,
+                    matchedCommentIds,
+                    !matchedReplies.isEmpty()));
+        }
+
+        AdminCommentThreadGroupResponse response = new AdminCommentThreadGroupResponse();
+        response.setPostId(postId);
+        response.setPostTitle(postEntity == null ? "未知文章" : defaultString(postEntity.getTitle(), "未命名文章"));
+        response.setPostSlug(postEntity == null ? "" : defaultString(postEntity.getSlug(), ""));
+        response.setTotalCommentCount((long) comments.size());
+        response.setPendingCommentCount(countCommentsByStatus(comments, "PENDING"));
+        response.setApprovedCommentCount(countCommentsByStatus(comments, "APPROVED"));
+        response.setRejectedCommentCount(countCommentsByStatus(comments, "REJECTED"));
+        response.setLatestCommentTime(resolveLatestCommentTime(comments));
+        response.setRoots(roots);
+        return response;
+    }
+
+    /**
+     * 构建后台评论主评论响应。
+     *
+     * @param rootComment 根评论实体
+     * @param replies 需要展示的回复集合
+     * @param userMap 用户映射
+     * @param replyCommentMap 回复目标评论映射
+     * @param replyUserMap 回复目标用户映射
+     * @param matchedCommentIds 命中评论ID集合
+     * @param hasMatchingDescendant 是否存在命中的后代回复
+     * @return 主评论响应
+     */
+    private AdminCommentThreadRootItemResponse toAdminCommentThreadRootItemResponse(CommentEntity rootComment,
+                                                                                    List<CommentEntity> replies,
+                                                                                    Map<Long, UserEntity> userMap,
+                                                                                    Map<Long, CommentEntity> replyCommentMap,
+                                                                                    Map<Long, UserEntity> replyUserMap,
+                                                                                    Set<Long> matchedCommentIds,
+                                                                                    boolean hasMatchingDescendant) {
+        UserEntity userEntity = userMap.get(rootComment.getUserId());
+        AdminCommentThreadRootItemResponse response = new AdminCommentThreadRootItemResponse();
+        response.setId(rootComment.getId());
+        response.setPostId(rootComment.getPostId());
+        response.setUserId(rootComment.getUserId());
+        response.setUserName(userEntity == null ? "未知用户" : defaultString(userEntity.getUserName(), "匿名用户"));
+        response.setUserEmail(userEntity == null ? "" : defaultString(userEntity.getEmail(), ""));
+        response.setContent(rootComment.getContent());
+        response.setStatus(rootComment.getStatus());
+        response.setIp(defaultString(rootComment.getIp(), ""));
+        response.setCreatedTime(rootComment.getCreatedTime());
+        response.setUpdatedTime(rootComment.getUpdatedTime());
+        response.setVisibleOnSite(isCommentVisibleOnSite(rootComment));
+        response.setMatchedByFilter(matchedCommentIds.contains(rootComment.getId()));
+        response.setHasMatchingDescendant(hasMatchingDescendant);
+        response.setReplies(replies.stream()
+                .map(reply -> toAdminCommentThreadReplyItemResponse(reply, userMap, replyCommentMap, replyUserMap, matchedCommentIds))
+                .toList());
+        return response;
+    }
+
+    /**
+     * 构建后台评论回复流响应。
+     *
+     * @param replyComment 回复评论实体
+     * @param userMap 用户映射
+     * @param replyCommentMap 回复目标评论映射
+     * @param replyUserMap 回复目标用户映射
+     * @param matchedCommentIds 命中评论ID集合
+     * @return 回复流响应
+     */
+    private AdminCommentThreadReplyItemResponse toAdminCommentThreadReplyItemResponse(CommentEntity replyComment,
+                                                                                      Map<Long, UserEntity> userMap,
+                                                                                      Map<Long, CommentEntity> replyCommentMap,
+                                                                                      Map<Long, UserEntity> replyUserMap,
+                                                                                      Set<Long> matchedCommentIds) {
+        UserEntity userEntity = userMap.get(replyComment.getUserId());
+        CommentEntity targetComment = replyCommentMap.get(replyComment.getReplyCommentId());
+        UserEntity replyTargetUser = targetComment == null ? null : replyUserMap.get(targetComment.getUserId());
+
+        AdminCommentThreadReplyItemResponse response = new AdminCommentThreadReplyItemResponse();
+        response.setId(replyComment.getId());
+        response.setPostId(replyComment.getPostId());
+        response.setRootId(replyComment.getRootId());
+        response.setReplyCommentId(replyComment.getReplyCommentId());
+        response.setReplyToUserName(replyTargetUser == null ? null : defaultString(replyTargetUser.getUserName(), "匿名用户"));
+        response.setUserId(replyComment.getUserId());
+        response.setUserName(userEntity == null ? "未知用户" : defaultString(userEntity.getUserName(), "匿名用户"));
+        response.setUserEmail(userEntity == null ? "" : defaultString(userEntity.getEmail(), ""));
+        response.setContent(replyComment.getContent());
+        response.setStatus(replyComment.getStatus());
+        response.setIp(defaultString(replyComment.getIp(), ""));
+        response.setCreatedTime(replyComment.getCreatedTime());
+        response.setUpdatedTime(replyComment.getUpdatedTime());
+        response.setVisibleOnSite(isCommentVisibleOnSite(replyComment));
+        response.setMatchedByFilter(matchedCommentIds.contains(replyComment.getId()));
+        return response;
+    }
+
+    /**
      * 加载评论关联文章映射。
      *
      * @param comments 评论集合
@@ -337,6 +545,133 @@ public class AdminCommentService {
                 .map(PostEntity::getId)
                 .filter(Objects::nonNull)
                 .toList();
+    }
+
+    /**
+     * 判断当前请求是否启用了评论级筛选。
+     *
+     * @param request 查询请求
+     * @return 是否启用评论级筛选
+     */
+    private boolean isCommentLevelFilterActive(AdminCommentQueryRequest request) {
+        return (request.getKeyword() != null && !request.getKeyword().isBlank())
+                || (request.getStatus() != null && !request.getStatus().isBlank())
+                || (request.getUserId() != null && request.getUserId() > 0);
+    }
+
+    /**
+     * 对文章ID列表执行分页。
+     *
+     * @param postIds 文章ID列表
+     * @param pageNo 当前页码
+     * @param pageSize 每页数量
+     * @return 当前页文章ID列表
+     */
+    private List<Long> paginatePostIds(List<Long> postIds, long pageNo, long pageSize) {
+        if (postIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        int fromIndex = (int) Math.min(postIds.size(), Math.max(0, (pageNo - 1) * pageSize));
+        int toIndex = (int) Math.min(postIds.size(), fromIndex + pageSize);
+        if (fromIndex >= toIndex) {
+            return Collections.emptyList();
+        }
+        return postIds.subList(fromIndex, toIndex);
+    }
+
+    /**
+     * 统计指定状态的评论数量。
+     *
+     * @param comments 评论集合
+     * @param status 目标状态
+     * @return 评论数量
+     */
+    private long countCommentsByStatus(List<CommentEntity> comments, String status) {
+        return comments.stream()
+                .filter(comment -> Objects.equals(comment.getStatus(), status))
+                .count();
+    }
+
+    /**
+     * 解析文章下最近一条评论时间。
+     *
+     * @param comments 评论集合
+     * @return 最近评论时间
+     */
+    private LocalDateTime resolveLatestCommentTime(List<CommentEntity> comments) {
+        return comments.stream()
+                .map(CommentEntity::getCreatedTime)
+                .filter(Objects::nonNull)
+                .max(LocalDateTime::compareTo)
+                .orElse(null);
+    }
+
+    /**
+     * 判断评论当前是否在前台可见。
+     *
+     * @param commentEntity 评论实体
+     * @return 是否前台可见
+     */
+    private boolean isCommentVisibleOnSite(CommentEntity commentEntity) {
+        return commentEntity != null && Objects.equals(commentEntity.getStatus(), "APPROVED");
+    }
+
+    /**
+     * 比较评论创建时间，按从新到旧排序。
+     *
+     * @param left 左侧评论
+     * @param right 右侧评论
+     * @return 比较结果
+     */
+    private int compareCommentByTimeDesc(CommentEntity left, CommentEntity right) {
+        return compareCommentByTimeAsc(right, left);
+    }
+
+    /**
+     * 比较评论创建时间，按从旧到新排序。
+     *
+     * @param left 左侧评论
+     * @param right 右侧评论
+     * @return 比较结果
+     */
+    private int compareCommentByTimeAsc(CommentEntity left, CommentEntity right) {
+        LocalDateTime leftTime = left == null ? null : left.getCreatedTime();
+        LocalDateTime rightTime = right == null ? null : right.getCreatedTime();
+        if (leftTime == null && rightTime == null) {
+            return compareCommentId(left, right);
+        }
+        if (leftTime == null) {
+            return -1;
+        }
+        if (rightTime == null) {
+            return 1;
+        }
+
+        int timeCompare = leftTime.compareTo(rightTime);
+        return timeCompare != 0 ? timeCompare : compareCommentId(left, right);
+    }
+
+    /**
+     * 比较评论ID。
+     *
+     * @param left 左侧评论
+     * @param right 右侧评论
+     * @return 比较结果
+     */
+    private int compareCommentId(CommentEntity left, CommentEntity right) {
+        Long leftId = left == null ? null : left.getId();
+        Long rightId = right == null ? null : right.getId();
+        if (leftId == null && rightId == null) {
+            return 0;
+        }
+        if (leftId == null) {
+            return -1;
+        }
+        if (rightId == null) {
+            return 1;
+        }
+        return leftId.compareTo(rightId);
     }
 
     /**

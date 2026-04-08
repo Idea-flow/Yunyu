@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import type { AdminCommentItem, AdminCommentStatus } from '../../types/comment'
+import type {
+  AdminCommentStatus,
+  AdminCommentThreadGroup,
+  AdminCommentThreadReplyItem,
+  AdminCommentThreadRootItem
+} from '../../types/comment'
 import CommentRichContent from '../../components/content/CommentRichContent.vue'
 
 /**
  * 后台评论管理页。
- * 作用：为站长提供评论列表查询、审核通过、驳回和删除的统一管理入口。
+ * 作用：按文章分组展示评论主楼与回复流，为站长提供更清晰的评论审核、驳回和删除入口。
  */
 definePageMeta({
   layout: 'admin',
@@ -20,7 +25,7 @@ const adminComments = useAdminComments()
 
 const isLoading = ref(false)
 const actionCommentId = ref<number | null>(null)
-const deletingComment = ref<AdminCommentItem | null>(null)
+const deletingComment = ref<AdminCommentThreadRootItem | AdminCommentThreadReplyItem | null>(null)
 const isDeleteModalOpen = ref(false)
 const searchKeyword = ref('')
 const searchPostId = ref('')
@@ -29,7 +34,7 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
 const totalPages = ref(1)
-const comments = ref<AdminCommentItem[]>([])
+const groups = ref<AdminCommentThreadGroup[]>([])
 
 const statusOptions = [
   { label: '全部状态', value: 'ALL' },
@@ -44,6 +49,42 @@ const statusOptions = [
  */
 const hasActiveFilters = computed(() => {
   return Boolean(searchKeyword.value.trim() || searchPostId.value || activeStatus.value !== 'ALL')
+})
+
+/**
+ * 判断当前是否启用了评论级筛选。
+ * 作用：控制上下文评论和命中评论的视觉差异，帮助用户快速聚焦命中项。
+ */
+const hasCommentLevelFilter = computed(() => {
+  return Boolean(searchKeyword.value.trim() || activeStatus.value !== 'ALL')
+})
+
+/**
+ * 统计当前页展示的评论总数。
+ * 作用：在页面头部补充当前审核视图的评论体量感知。
+ */
+const currentPageCommentCount = computed(() => {
+  return groups.value.reduce((sum, group) => sum + group.totalCommentCount, 0)
+})
+
+/**
+ * 当前空态标题。
+ * 作用：根据是否启用筛选条件，给出更贴合当前场景的空态提示。
+ */
+const emptyTitle = computed(() => {
+  return hasActiveFilters.value ? '当前筛选条件下暂无评论' : '暂时还没有评论记录'
+})
+
+/**
+ * 删除确认说明。
+ * 作用：明确提示删除评论时会连带隐藏该评论下的回复分支。
+ */
+const deleteDescription = computed(() => {
+  if (!deletingComment.value) {
+    return '删除后将无法恢复。'
+  }
+
+  return `确认删除「${deletingComment.value.userName}」的这条评论吗？若该评论下存在回复分支，也会一并从前台隐藏。`
 })
 
 /**
@@ -118,27 +159,27 @@ function resolveSearchPostId() {
 }
 
 /**
- * 拉取评论列表。
- * 作用：根据当前关键词、状态和分页参数刷新评论管理页数据。
+ * 拉取评论树形审核列表。
+ * 作用：根据当前关键词、状态、文章和分页参数刷新按文章分组的评论审核视图。
  */
-async function loadComments() {
+async function loadCommentGroups() {
   isLoading.value = true
 
   try {
-    const response = await adminComments.listComments({
+    const response = await adminComments.listCommentThreadGroups({
       keyword: searchKeyword.value || undefined,
       postId: resolveSearchPostId(),
       status: activeStatus.value === 'ALL' ? undefined : activeStatus.value,
       pageNo: currentPage.value,
       pageSize: pageSize.value
     })
-    comments.value = response.list
+    groups.value = response.list
     total.value = response.total
     totalPages.value = response.totalPages
   } catch (error: any) {
     toast.add({
       title: '加载评论失败',
-      description: error?.message || '暂时无法获取评论列表，请稍后重试。',
+      description: error?.message || '暂时无法获取评论审核视图，请稍后重试。',
       color: 'error'
     })
   } finally {
@@ -148,21 +189,21 @@ async function loadComments() {
 
 /**
  * 执行评论状态更新。
- * 作用：供站长快速完成评论审核通过或驳回，并在成功后刷新当前列表。
+ * 作用：供站长快速完成评论审核通过或驳回，并在成功后刷新当前审核视图。
  *
  * @param comment 评论条目
  * @param status 目标状态
  */
-async function changeCommentStatus(comment: AdminCommentItem, status: AdminCommentStatus) {
+async function changeCommentStatus(comment: AdminCommentThreadRootItem | AdminCommentThreadReplyItem, status: AdminCommentStatus) {
   actionCommentId.value = comment.id
 
   try {
     await adminComments.updateCommentStatus(comment.id, status)
     toast.add({
-      title: status === 'APPROVED' ? '评论已通过' : status === 'REJECTED' ? '评论已驳回' : '评论已退回待审',
+      title: status === 'APPROVED' ? '评论已通过' : status === 'REJECTED' ? '评论已驳回' : '评论状态已更新',
       color: 'success'
     })
-    await loadComments()
+    await loadCommentGroups()
   } catch (error: any) {
     toast.add({
       title: '评论状态更新失败',
@@ -180,14 +221,14 @@ async function changeCommentStatus(comment: AdminCommentItem, status: AdminComme
  *
  * @param comment 评论条目
  */
-function openDeleteModal(comment: AdminCommentItem) {
+function openDeleteModal(comment: AdminCommentThreadRootItem | AdminCommentThreadReplyItem) {
   deletingComment.value = comment
   isDeleteModalOpen.value = true
 }
 
 /**
  * 确认删除评论。
- * 作用：执行评论软删除，并刷新列表以同步最新审核队列状态。
+ * 作用：执行评论软删除，并刷新审核视图以同步最新数据。
  */
 async function confirmDelete() {
   if (!deletingComment.value) {
@@ -204,7 +245,7 @@ async function confirmDelete() {
     })
     isDeleteModalOpen.value = false
     deletingComment.value = null
-    await loadComments()
+    await loadCommentGroups()
   } catch (error: any) {
     toast.add({
       title: '评论删除失败',
@@ -233,12 +274,12 @@ function handlePostIdInput(value: string | number | null) {
 async function handleSearch() {
   currentPage.value = 1
   await syncRouteQuery()
-  await loadComments()
+  await loadCommentGroups()
 }
 
 /**
  * 重置评论筛选条件。
- * 作用：一键清空关键词、文章 ID 与状态筛选，并回到第一页重新加载列表。
+ * 作用：一键清空关键词、文章 ID 与状态筛选，并回到第一页重新加载视图。
  */
 async function resetFilters() {
   searchKeyword.value = ''
@@ -246,12 +287,12 @@ async function resetFilters() {
   activeStatus.value = 'ALL'
   currentPage.value = 1
   await syncRouteQuery()
-  await loadComments()
+  await loadCommentGroups()
 }
 
 /**
  * 处理筛选状态切换。
- * 作用：切换评论审核状态时同步刷新列表。
+ * 作用：切换评论审核状态时同步刷新树形审核视图。
  *
  * @param value 当前选择值
  */
@@ -259,24 +300,24 @@ async function handleStatusChange(value: string | number | null) {
   activeStatus.value = (value as CommentStatusFilter) || 'ALL'
   currentPage.value = 1
   await syncRouteQuery()
-  await loadComments()
+  await loadCommentGroups()
 }
 
 /**
  * 处理评论分页切换。
- * 作用：在页码改变后刷新评论列表。
+ * 作用：在页码改变后刷新按文章分组的评论审核列表。
  *
  * @param page 新页码
  */
 async function handlePageChange(page: number) {
   currentPage.value = page
   await syncRouteQuery()
-  await loadComments()
+  await loadCommentGroups()
 }
 
 /**
  * 处理每页条数切换。
- * 作用：修改每页展示容量后回到第一页重新请求列表。
+ * 作用：修改每页展示容量后回到第一页重新请求分组列表。
  *
  * @param value 新条数
  */
@@ -284,15 +325,15 @@ async function handlePageSizeChange(value: number) {
   pageSize.value = value
   currentPage.value = 1
   await syncRouteQuery()
-  await loadComments()
+  await loadCommentGroups()
 }
 
 /**
- * 解析评论状态标签颜色。
- * 作用：让待审、通过、驳回状态在后台列表中具备稳定的视觉区分。
+ * 解析评论状态颜色。
+ * 作用：让待审、通过、驳回状态在后台审核页中具备稳定的视觉区分。
  *
  * @param status 评论状态
- * @returns Nuxt UI 颜色标识
+ * @returns 状态颜色
  */
 function resolveStatusColor(status: AdminCommentStatus) {
   if (status === 'APPROVED') {
@@ -307,27 +348,67 @@ function resolveStatusColor(status: AdminCommentStatus) {
 }
 
 /**
- * 生成删除确认说明。
- * 作用：明确提示删除评论时会连带隐藏该评论下的回复分支。
+ * 解析评论状态文案。
+ * 作用：统一后台审核页中的评论状态展示文本。
+ *
+ * @param status 评论状态
+ * @returns 状态文案
  */
-const deleteDescription = computed(() => {
-  if (!deletingComment.value) {
-    return '删除后将无法恢复。'
+function resolveStatusLabel(status: AdminCommentStatus) {
+  if (status === 'APPROVED') {
+    return '已通过'
   }
 
-  return `确认删除「${deletingComment.value.userName}」的这条评论吗？若该评论下存在回复分支，也会一并从前台隐藏。`
-})
+  if (status === 'REJECTED') {
+    return '已驳回'
+  }
+
+  return '待审核'
+}
+
+/**
+ * 解析前台可见性说明。
+ * 作用：让站长在后台直接理解当前评论是否已经对前台访客可见。
+ *
+ * @param visible 是否前台可见
+ * @returns 可见性说明
+ */
+function resolveVisibilityLabel(visible: boolean) {
+  return visible ? '前台可见' : '前台暂不可见'
+}
+
+/**
+ * 判断主评论是否仅作为上下文展示。
+ * 作用：在筛选命中回复时弱化父级主评论，帮助用户聚焦真正命中的评论。
+ *
+ * @param root 主评论
+ * @returns 是否上下文评论
+ */
+function isContextRoot(root: AdminCommentThreadRootItem) {
+  return hasCommentLevelFilter.value && !root.matchedByFilter && root.hasMatchingDescendant
+}
+
+/**
+ * 判断回复是否仅作为上下文展示。
+ * 作用：在根评论命中搜索时弱化未直接命中的回复，避免审核视图噪声过强。
+ *
+ * @param reply 回复项
+ * @returns 是否上下文回复
+ */
+function isContextReply(reply: AdminCommentThreadReplyItem) {
+  return hasCommentLevelFilter.value && !reply.matchedByFilter
+}
 
 watch(
   () => route.fullPath,
   async () => {
     hydrateFiltersFromRoute()
-    await loadComments()
+    await loadCommentGroups()
   }
 )
 
 hydrateFiltersFromRoute()
-await loadComments()
+await loadCommentGroups()
 </script>
 
 <template>
@@ -337,13 +418,18 @@ await loadComments()
         <div>
           <h1 class="text-base font-semibold text-slate-900 dark:text-slate-50">评论管理</h1>
           <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            集中处理前台评论审核、异常内容清理和互动质量维护。
+            按文章分组查看评论主楼与回复流，集中处理审核、驳回和删除。
           </p>
         </div>
 
-        <UBadge color="neutral" variant="soft" class="rounded-[10px] px-3 py-1.5">
-          当前共 {{ total }} 条评论记录
-        </UBadge>
+        <div class="flex flex-wrap items-center gap-2">
+          <UBadge color="neutral" variant="soft" class="rounded-[10px] px-3 py-1.5">
+            命中 {{ total }} 篇文章
+          </UBadge>
+          <UBadge color="neutral" variant="soft" class="rounded-[10px] px-3 py-1.5">
+            当前页 {{ currentPageCommentCount }} 条评论
+          </UBadge>
+        </div>
       </div>
     </section>
 
@@ -392,122 +478,243 @@ await loadComments()
           @click="handleSearch"
         />
 
-        <button
-          type="button"
-          class="inline-flex min-h-9 min-w-20 items-center justify-center rounded-[10px] border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-55 dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:border-white/15 dark:hover:bg-slate-900/80 dark:hover:text-slate-100"
+        <AdminButton
+          label="重置"
+          tone="neutral"
+          variant="ghost"
           :disabled="!hasActiveFilters || isLoading"
           @click="resetFilters"
-        >
-          重置
-        </button>
+        />
 
-        <AdminPrimaryButton
-          label="刷新列表"
+        <AdminButton
+          label="刷新"
           icon="i-lucide-refresh-cw"
+          tone="neutral"
+          variant="outline"
           :loading="isLoading"
           loading-label="刷新中..."
-          @click="loadComments"
+          @click="loadCommentGroups"
         />
       </template>
     </AdminListFilterBar>
 
-    <AdminTableCard title="评论列表" :total="total">
-      <AdminDataTable
-        :is-loading="isLoading"
-        :has-data="comments.length > 0"
-        min-width="1440px"
-        header-class="grid-cols-[110px_220px_180px_minmax(320px,1fr)_120px_150px_160px_170px]"
-        empty-title="当前筛选条件下暂无评论"
-        empty-icon="i-lucide-message-square-off"
-      >
-        <template #header>
-          <span>评论 ID</span>
-          <span>文章</span>
-          <span>评论作者</span>
-          <span>评论内容</span>
-          <span>状态</span>
-          <span>回复信息</span>
-          <span>创建</span>
-          <span>操作</span>
-        </template>
-
+    <AdminTableCard title="文章评论审核视图" :total="total">
+      <div v-if="isLoading" class="space-y-4">
         <div
-          v-for="comment in comments"
-          :key="comment.id"
-          class="grid grid-cols-[110px_220px_180px_minmax(320px,1fr)_120px_150px_160px_170px] gap-4 px-4 py-4 text-sm text-slate-600 dark:text-slate-300"
+          v-for="index in 3"
+          :key="`comment-group-skeleton-${index}`"
+          class="rounded-[18px] border border-slate-200/70 bg-white/72 p-4 dark:border-white/10 dark:bg-white/[0.04]"
         >
-          <div class="min-w-0">
-            <p class="font-semibold text-slate-900 dark:text-slate-50">#{{ comment.id }}</p>
-            <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
-              {{ comment.replyCommentId ? '回复评论' : '主评论' }}
-            </p>
-          </div>
-
-          <div class="min-w-0">
-            <NuxtLink
-              :to="`/posts/${comment.postSlug}`"
-              target="_blank"
-              class="line-clamp-2 font-medium text-slate-900 transition hover:text-sky-600 dark:text-slate-50 dark:hover:text-sky-300"
-            >
-              {{ comment.postTitle }}
-            </NuxtLink>
-            <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">ID {{ comment.postId }}</p>
-          </div>
-
-          <div class="min-w-0">
-            <p class="truncate font-medium text-slate-900 dark:text-slate-50">{{ comment.userName }}</p>
-            <p class="mt-1 truncate text-xs text-slate-400 dark:text-slate-500">{{ comment.userEmail }}</p>
-          </div>
-
-          <div class="min-w-0">
-            <CommentRichContent
-              :content="comment.content"
-              emoji-size="sm"
-              class="leading-7 text-slate-600 dark:text-slate-300"
-            />
-            <p v-if="comment.ip" class="mt-2 text-xs text-slate-400 dark:text-slate-500">IP：{{ comment.ip }}</p>
-          </div>
-
-          <div class="flex items-start">
-            <UBadge :color="resolveStatusColor(comment.status)" variant="soft">
-              {{ comment.status === 'APPROVED' ? '已通过' : comment.status === 'REJECTED' ? '已驳回' : '待审核' }}
-            </UBadge>
-          </div>
-
-          <div class="min-w-0 text-xs leading-6 text-slate-500 dark:text-slate-400">
-            <p v-if="comment.replyCommentId">回复 ID：{{ comment.replyCommentId }}</p>
-            <p v-if="comment.replyToUserName">回复对象：{{ comment.replyToUserName }}</p>
-            <p v-if="comment.rootId">楼层根 ID：{{ comment.rootId }}</p>
-          </div>
-
-          <div class="text-xs leading-6 text-slate-500 dark:text-slate-400">
-            <p>{{ comment.createdTime }}</p>
-            <p class="mt-1">更新 {{ comment.updatedTime }}</p>
-          </div>
-
-          <div class="flex flex-wrap items-start gap-2">
-            <AdminActionIconButton
-              icon="i-lucide-badge-check"
-              label="通过评论"
-              :disabled="actionCommentId === comment.id || comment.status === 'APPROVED'"
-              @click="changeCommentStatus(comment, 'APPROVED')"
-            />
-            <AdminActionIconButton
-              icon="i-lucide-circle-off"
-              label="驳回评论"
-              :disabled="actionCommentId === comment.id || comment.status === 'REJECTED'"
-              @click="changeCommentStatus(comment, 'REJECTED')"
-            />
-            <AdminActionIconButton
-              icon="i-lucide-trash-2"
-              label="删除评论"
-              tone="danger"
-              :disabled="actionCommentId === comment.id"
-              @click="openDeleteModal(comment)"
-            />
-          </div>
+          <USkeleton class="h-5 w-48 rounded-[8px]" />
+          <USkeleton class="mt-3 h-4 w-72 rounded-[8px]" />
+          <USkeleton class="mt-5 h-24 rounded-[14px]" />
         </div>
-      </AdminDataTable>
+      </div>
+
+      <div v-else-if="groups.length === 0" class="rounded-[18px] border border-dashed border-slate-200/80 bg-white/65 px-6 py-16 text-center dark:border-white/10 dark:bg-white/[0.03]">
+        <div class="mx-auto flex size-12 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-white/[0.05] dark:text-slate-400">
+          <UIcon name="i-lucide-message-square-off" class="size-5" />
+        </div>
+        <p class="mt-4 text-base font-semibold text-slate-900 dark:text-slate-50">{{ emptyTitle }}</p>
+        <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          可以尝试调整关键词、文章 ID 或状态筛选条件后重新查询。
+        </p>
+      </div>
+
+      <div v-else class="space-y-4">
+        <section
+          v-for="group in groups"
+          :key="`comment-group-${group.postId}`"
+          class="overflow-hidden rounded-[18px] border border-slate-200/75 bg-white/72 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] dark:border-white/10 dark:bg-white/[0.04]"
+        >
+          <div class="border-b border-slate-200/70 px-5 py-4 dark:border-white/10">
+            <div class="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <NuxtLink
+                    :to="`/posts/${group.postSlug}`"
+                    target="_blank"
+                    class="text-base font-semibold text-slate-900 transition hover:text-sky-600 dark:text-slate-50 dark:hover:text-sky-300"
+                  >
+                    {{ group.postTitle }}
+                  </NuxtLink>
+                  <span class="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-500 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
+                    /posts/{{ group.postSlug }}
+                  </span>
+                </div>
+
+                <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <span class="rounded-full border border-slate-200 bg-white px-2.5 py-1 dark:border-white/10 dark:bg-white/[0.03]">
+                    共 {{ group.totalCommentCount }} 条评论
+                  </span>
+                  <span class="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-700 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-200">
+                    待审核 {{ group.pendingCommentCount }}
+                  </span>
+                  <span class="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-200">
+                    已通过 {{ group.approvedCommentCount }}
+                  </span>
+                  <span class="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-rose-700 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-200">
+                    已驳回 {{ group.rejectedCommentCount }}
+                  </span>
+                  <span v-if="group.latestCommentTime" class="rounded-full border border-slate-200 bg-white px-2.5 py-1 dark:border-white/10 dark:bg-white/[0.03]">
+                    最近评论 {{ group.latestCommentTime }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-4 px-5 py-5">
+            <div
+              v-for="root in group.roots"
+              :key="`comment-root-${root.id}`"
+              class="rounded-[18px] border p-4 transition duration-200"
+              :class="isContextRoot(root)
+                ? 'border-slate-200/80 bg-slate-50/82 opacity-90 dark:border-white/10 dark:bg-white/[0.03]'
+                : root.matchedByFilter
+                  ? 'border-[var(--admin-primary-border)] bg-[var(--admin-primary-soft-surface)] shadow-[0_16px_32px_-28px_var(--admin-primary-shadow)] dark:border-[color:color-mix(in_srgb,var(--site-primary-color)_28%,transparent)] dark:bg-[color:color-mix(in_srgb,var(--site-primary-color)_10%,transparent)]'
+                  : 'border-slate-200/80 bg-white/78 dark:border-white/10 dark:bg-white/[0.03]'"
+            >
+              <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">{{ root.userName }}</p>
+                    <span class="text-xs text-slate-400 dark:text-slate-500">{{ root.userEmail }}</span>
+                    <UBadge :color="resolveStatusColor(root.status)" variant="soft">
+                      {{ resolveStatusLabel(root.status) }}
+                    </UBadge>
+                    <span
+                      class="rounded-full border px-2 py-0.5 text-[11px] font-medium"
+                      :class="root.visibleOnSite
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-200'
+                        : 'border-slate-200 bg-white text-slate-500 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400'"
+                    >
+                      {{ resolveVisibilityLabel(root.visibleOnSite) }}
+                    </span>
+                    <span
+                      v-if="isContextRoot(root)"
+                      class="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-500 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400"
+                    >
+                      上下文评论
+                    </span>
+                  </div>
+
+                  <p class="mt-2 text-xs text-slate-400 dark:text-slate-500">
+                    {{ root.createdTime }}
+                    <span class="mx-1">·</span>
+                    更新 {{ root.updatedTime }}
+                    <span v-if="root.ip" class="mx-1">·</span>
+                    <span v-if="root.ip">IP {{ root.ip }}</span>
+                    <span class="mx-1">·</span>
+                    ID #{{ root.id }}
+                  </p>
+
+                  <div class="mt-4 text-sm leading-7 text-slate-700 dark:text-slate-300">
+                    <CommentRichContent :content="root.content" emoji-size="sm" />
+                  </div>
+                </div>
+
+                <div class="flex shrink-0 flex-wrap items-start gap-2 xl:justify-end">
+                  <AdminActionIconButton
+                    icon="i-lucide-badge-check"
+                    label="通过评论"
+                    :disabled="actionCommentId === root.id || root.status === 'APPROVED'"
+                    @click="changeCommentStatus(root, 'APPROVED')"
+                  />
+                  <AdminActionIconButton
+                    icon="i-lucide-circle-off"
+                    label="驳回评论"
+                    :disabled="actionCommentId === root.id || root.status === 'REJECTED'"
+                    @click="changeCommentStatus(root, 'REJECTED')"
+                  />
+                  <AdminActionIconButton
+                    icon="i-lucide-trash-2"
+                    label="删除评论"
+                    tone="danger"
+                    :disabled="actionCommentId === root.id"
+                    @click="openDeleteModal(root)"
+                  />
+                </div>
+              </div>
+
+              <div v-if="root.replies.length > 0" class="mt-5 space-y-3 border-t border-slate-200/70 pt-4 dark:border-white/10">
+                <div
+                  v-for="reply in root.replies"
+                  :key="`comment-reply-${reply.id}`"
+                  class="rounded-[16px] border px-4 py-4"
+                  :class="isContextReply(reply)
+                    ? 'border-slate-200/75 bg-slate-50/78 opacity-90 dark:border-white/10 dark:bg-white/[0.03]'
+                    : reply.matchedByFilter
+                      ? 'border-sky-200/80 bg-sky-50/75 dark:border-sky-400/20 dark:bg-sky-400/10'
+                      : 'border-slate-200/75 bg-white/72 dark:border-white/10 dark:bg-white/[0.025]'"
+                >
+                  <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                    <div class="min-w-0 flex-1">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <span class="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
+                          回复
+                          <template v-if="reply.replyToUserName">
+                            @{{ reply.replyToUserName }}
+                          </template>
+                        </span>
+                        <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">{{ reply.userName }}</p>
+                        <span class="text-xs text-slate-400 dark:text-slate-500">{{ reply.userEmail }}</span>
+                        <UBadge :color="resolveStatusColor(reply.status)" variant="soft">
+                          {{ resolveStatusLabel(reply.status) }}
+                        </UBadge>
+                        <span
+                          class="rounded-full border px-2 py-0.5 text-[11px] font-medium"
+                          :class="reply.visibleOnSite
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-200'
+                            : 'border-slate-200 bg-white text-slate-500 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400'"
+                        >
+                          {{ resolveVisibilityLabel(reply.visibleOnSite) }}
+                        </span>
+                      </div>
+
+                      <p class="mt-2 text-xs text-slate-400 dark:text-slate-500">
+                        {{ reply.createdTime }}
+                        <span class="mx-1">·</span>
+                        更新 {{ reply.updatedTime }}
+                        <span v-if="reply.ip" class="mx-1">·</span>
+                        <span v-if="reply.ip">IP {{ reply.ip }}</span>
+                        <span class="mx-1">·</span>
+                        ID #{{ reply.id }}
+                      </p>
+
+                      <div class="mt-4 text-sm leading-7 text-slate-700 dark:text-slate-300">
+                        <CommentRichContent :content="reply.content" emoji-size="sm" />
+                      </div>
+                    </div>
+
+                    <div class="flex shrink-0 flex-wrap items-start gap-2 xl:justify-end">
+                      <AdminActionIconButton
+                        icon="i-lucide-badge-check"
+                        label="通过评论"
+                        :disabled="actionCommentId === reply.id || reply.status === 'APPROVED'"
+                        @click="changeCommentStatus(reply, 'APPROVED')"
+                      />
+                      <AdminActionIconButton
+                        icon="i-lucide-circle-off"
+                        label="驳回评论"
+                        :disabled="actionCommentId === reply.id || reply.status === 'REJECTED'"
+                        @click="changeCommentStatus(reply, 'REJECTED')"
+                      />
+                      <AdminActionIconButton
+                        icon="i-lucide-trash-2"
+                        label="删除评论"
+                        tone="danger"
+                        :disabled="actionCommentId === reply.id"
+                        @click="openDeleteModal(reply)"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
 
       <template #footer>
         <AdminPaginationBar

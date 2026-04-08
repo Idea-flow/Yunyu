@@ -3,6 +3,10 @@ import type {
   AdminCommentItem,
   AdminCommentListResponse,
   AdminCommentQuery,
+  AdminCommentThreadGroup,
+  AdminCommentThreadGroupListResponse,
+  AdminCommentThreadReplyItem,
+  AdminCommentThreadRootItem,
   AdminCommentStatus
 } from '../types/comment'
 
@@ -24,6 +28,61 @@ function toAdminCommentItem(item: AdminCommentItem): AdminCommentItem {
     ip: item.ip || '',
     createdTime: formatChineseDateTime(item.createdTime, '-'),
     updatedTime: formatChineseDateTime(item.updatedTime, '-')
+  }
+}
+
+/**
+ * 转换后台评论回复流条目。
+ * 作用：统一格式化回复项时间字段，并清洗可空字段，便于树形审核页直接渲染。
+ *
+ * @param item 后端回复流条目
+ * @returns 前端可直接使用的回复流条目
+ */
+function toAdminCommentThreadReplyItem(item: AdminCommentThreadReplyItem): AdminCommentThreadReplyItem {
+  return {
+    ...item,
+    replyToUserName: item.replyToUserName || null,
+    userName: item.userName || '未知用户',
+    userEmail: item.userEmail || '',
+    ip: item.ip || '',
+    createdTime: formatChineseDateTime(item.createdTime, '-'),
+    updatedTime: formatChineseDateTime(item.updatedTime, '-')
+  }
+}
+
+/**
+ * 转换后台评论主评论条目。
+ * 作用：统一格式化主评论时间字段，并递归清洗其下回复流数据。
+ *
+ * @param item 后端主评论条目
+ * @returns 前端可直接使用的主评论条目
+ */
+function toAdminCommentThreadRootItem(item: AdminCommentThreadRootItem): AdminCommentThreadRootItem {
+  return {
+    ...item,
+    userName: item.userName || '未知用户',
+    userEmail: item.userEmail || '',
+    ip: item.ip || '',
+    createdTime: formatChineseDateTime(item.createdTime, '-'),
+    updatedTime: formatChineseDateTime(item.updatedTime, '-'),
+    replies: (item.replies || []).map(reply => toAdminCommentThreadReplyItem(reply))
+  }
+}
+
+/**
+ * 转换后台评论文章分组条目。
+ * 作用：统一格式化文章分组时间字段，并递归清洗评论树数据。
+ *
+ * @param item 后端文章分组条目
+ * @returns 前端可直接使用的文章分组条目
+ */
+function toAdminCommentThreadGroup(item: AdminCommentThreadGroup): AdminCommentThreadGroup {
+  return {
+    ...item,
+    postTitle: item.postTitle || '未知文章',
+    postSlug: item.postSlug || '',
+    latestCommentTime: item.latestCommentTime ? formatChineseDateTime(item.latestCommentTime, '-') : null,
+    roots: (item.roots || []).map(root => toAdminCommentThreadRootItem(root))
   }
 }
 
@@ -50,6 +109,25 @@ export function useAdminComments() {
     return {
       ...response,
       list: response.list.map(item => toAdminCommentItem(item))
+    }
+  }
+
+  /**
+   * 查询后台评论树形审核列表。
+   * 作用：按文章分组获取后台评论树形审核视图，供新版评论管理页直接渲染。
+   *
+   * @param query 查询参数
+   * @returns 按文章分组的评论审核列表
+   */
+  async function listCommentThreadGroups(query: AdminCommentQuery = {}): Promise<AdminCommentThreadGroupListResponse> {
+    const response = await apiClient.request<AdminCommentThreadGroupListResponse>('/api/admin/comments/thread-groups', {
+      method: 'GET',
+      query
+    })
+
+    return {
+      ...response,
+      list: response.list.map(item => toAdminCommentThreadGroup(item))
     }
   }
 
@@ -84,6 +162,7 @@ export function useAdminComments() {
 
   return {
     listComments,
+    listCommentThreadGroups,
     updateCommentStatus,
     deleteComment
   }
