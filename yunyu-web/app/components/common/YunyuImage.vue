@@ -22,6 +22,7 @@ interface YunyuImageProps {
   imageClass?: string
   skeletonClass?: string
   wrapperClass?: string
+  fallbackText?: string
 }
 
 const props = withDefaults(defineProps<YunyuImageProps>(), {
@@ -34,23 +35,26 @@ const props = withDefaults(defineProps<YunyuImageProps>(), {
   objectFitClass: 'object-cover',
   imageClass: '',
   skeletonClass: '',
-  wrapperClass: ''
+  wrapperClass: '',
+  fallbackText: ''
 })
 
 const attrs = useAttrs()
 const imageRef = ref<HTMLImageElement | null>(null)
 const isLoaded = ref(false)
 const hasError = ref(false)
+const normalizedSrc = computed(() => props.src.trim())
+const shouldRenderImage = computed(() => Boolean(normalizedSrc.value))
 
 /**
  * 监听图片地址变化。
  * 当外部切换到新图片时，重置加载状态并重新展示骨架屏。
  */
 watch(
-  () => props.src,
+  () => normalizedSrc.value,
   async () => {
     isLoaded.value = false
-    hasError.value = false
+    hasError.value = !normalizedSrc.value
     await nextTick()
     syncImageState()
   }
@@ -79,6 +83,11 @@ function handleError() {
  * 作用：处理浏览器缓存命中场景，避免图片已完成但骨架屏仍停留在界面上。
  */
 function syncImageState() {
+  if (!normalizedSrc.value) {
+    handleError()
+    return
+  }
+
   const element = imageRef.value
 
   if (!element || !element.src) {
@@ -116,16 +125,31 @@ onMounted(() => {
     :style="wrapperStyle"
   >
     <div
-      v-if="!isLoaded"
+      v-if="!isLoaded && !hasError"
       class="yunyu-image__skeleton absolute inset-0"
-      :class="[roundedClass, skeletonClass, hasError ? 'opacity-80' : 'opacity-100']"
+      :class="[roundedClass, skeletonClass, 'opacity-100']"
       aria-hidden="true"
     />
 
+    <div
+      v-if="hasError"
+      class="absolute inset-0 flex items-center justify-center px-6 text-center"
+      :class="roundedClass"
+    >
+      <div class="absolute inset-0 bg-[linear-gradient(135deg,rgba(219,234,254,0.96)_0%,rgba(224,242,254,0.92)_34%,rgba(236,253,245,0.92)_100%)] dark:bg-[linear-gradient(135deg,rgba(15,23,42,0.98)_0%,rgba(30,41,59,0.95)_42%,rgba(20,83,45,0.82)_100%)]" />
+      <div class="relative max-w-[14rem] space-y-2 text-slate-700 dark:text-slate-100">
+        <p class="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-slate-500/80 dark:text-slate-300/80">YUNYU</p>
+        <p class="text-[clamp(1rem,0.9rem+0.35vw,1.22rem)] font-semibold leading-7 tracking-[-0.02em] [font-family:var(--font-display)]">
+          {{ fallbackText || '遇事不决，可问春风' }}
+        </p>
+      </div>
+    </div>
+
     <img
+      v-if="shouldRenderImage"
       ref="imageRef"
       v-bind="attrs"
-      :src="src"
+      :src="normalizedSrc"
       :alt="alt"
       :loading="loading"
       :decoding="decoding"

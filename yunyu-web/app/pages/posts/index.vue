@@ -165,9 +165,10 @@ async function changePage(nextPage: number) {
       content-container-class="w-full max-w-[1440px] px-5 py-10 sm:px-8 sm:py-14 lg:px-10"
     >
       <div class="mx-auto w-full max-w-3xl">
-        <div class="mx-auto flex w-full max-w-2xl items-center gap-2 rounded-[24px] border border-white/16 bg-black/12 p-2 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.34)] backdrop-blur-[14px]">
+        <div class="mx-auto flex w-full max-w-2xl items-center gap-2 rounded-[24px] bg-black/12 p-2 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.34)] backdrop-blur-[14px]">
           <UInput
             v-model="searchKeyword"
+            variant="none"
             size="xl"
             placeholder="搜索标题、摘要或关键词"
             class="w-full"

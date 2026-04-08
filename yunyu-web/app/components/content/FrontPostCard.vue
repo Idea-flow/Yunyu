@@ -82,10 +82,22 @@ const contentLinkClassName = computed(() => {
  */
 const imageClassName = computed(() => {
   if (props.layout === 'stack') {
-    return ['w-full object-cover transition duration-500 group-hover:scale-[1.04]', props.imageHeightClass || 'h-56'].join(' ')
+    return ['h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]'].join(' ')
   }
 
-  return ['w-full rounded-[24px] object-cover transition duration-500 group-hover:scale-[1.02] sm:h-full', props.imageHeightClass || 'h-52'].join(' ')
+  return ['h-full w-full rounded-[24px] object-cover transition duration-500 group-hover:scale-[1.02]'].join(' ')
+})
+
+/**
+ * 计算图片容器样式。
+ * 作用：统一图片、骨架占位和无图底板的高度，避免加载中或缺图时高度塌陷。
+ */
+const imageWrapperClassName = computed(() => {
+  if (props.layout === 'stack') {
+    return [props.imageHeightClass || 'h-56'].join(' ')
+  }
+
+  return [props.imageHeightClass || 'h-52 sm:h-full sm:min-h-[13rem]'].join(' ')
 })
 
 /**
@@ -142,7 +154,9 @@ function getTagLink(slug: string) {
         <YunyuImage
           :src="post.coverUrl"
           :alt="post.title"
+          :wrapper-class="imageWrapperClassName"
           :image-class="imageClassName"
+          fallback-text="遇事不决，可问春风"
           rounded-class="rounded-t-[28px] rounded-b-none"
         />
       </div>
@@ -151,7 +165,9 @@ function getTagLink(slug: string) {
         v-else
         :src="post.coverUrl"
         :alt="post.title"
+        :wrapper-class="imageWrapperClassName"
         :image-class="imageClassName"
+        fallback-text="遇事不决，可问春风"
         rounded-class="rounded-[22px]"
       />
     </NuxtLink>

@@ -20,7 +20,6 @@ const navigationItems = [
 
 const isScrolled = ref(false)
 const navTransitionProgress = ref(0)
-const isPostDetailPage = computed(() => route.path.startsWith('/posts/'))
 const isLoggedIn = computed(() => Boolean(auth.currentUser.value))
 const canAccessAdmin = computed(() => auth.currentUser.value?.role === 'SUPER_ADMIN')
 const currentUserDisplayName = computed(() => {
@@ -231,13 +230,13 @@ const userMenuItems = computed(() => {
 })
 
 /**
- * 读取文章详情封面区域底部位置。
- * 作用：让详情页导航的切换时机跟随封面区域，而不是依赖固定滚动值，
+ * 读取文章封面区域底部位置。
+ * 作用：让文章列表页、文章详情页的导航切换时机统一跟随封面区域，
  * 避免在封面还未完全离开导航区域时就提前切换成实底样式。
  *
  * @returns 封面区域相对视口的底部位置；如果当前不存在封面区域则返回 `null`
  */
-function getPostDetailHeroBottom() {
+function getPostHeroBottom() {
   if (!import.meta.client) {
     return null
   }
@@ -260,8 +259,8 @@ function syncScrollState() {
     return
   }
 
-  if (isPostDetailPage.value) {
-    const heroBottom = getPostDetailHeroBottom()
+  if (isOverlayPage.value) {
+    const heroBottom = getPostHeroBottom()
     const headerElement = document.querySelector('header')
     const headerHeight = headerElement instanceof HTMLElement ? headerElement.getBoundingClientRect().height : 0
 
