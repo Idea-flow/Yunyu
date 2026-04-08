@@ -374,12 +374,11 @@ async function jumpToTocItem(item: ArticleTocItem) {
             <span>{{ currentPreviewCodeThemeLabel }}</span>
           </button>
 
-          <UButton
-            color="neutral"
-            variant="soft"
+          <AdminButton
+            tone="neutral"
+            variant="outline"
             icon="i-lucide-code-xml"
             label="查看结果"
-            class="rounded-[12px]"
             @click="openPreviewModal"
           />
         </div>
@@ -691,11 +690,10 @@ async function jumpToTocItem(item: ArticleTocItem) {
 
       <template #footer>
         <div class="flex w-full justify-end">
-          <UButton
-            color="neutral"
-            variant="soft"
+          <AdminButton
+            tone="neutral"
+            variant="outline"
             label="关闭"
-            class="rounded-[8px]"
             @click="closePreviewModal"
           />
         </div>

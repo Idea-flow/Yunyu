@@ -21,6 +21,14 @@
   --ui-container: 80rem;
   --site-primary-color: #38BDF8;
   --site-secondary-color: #FB923C;
+  --admin-primary-ring: color-mix(in srgb, var(--site-primary-color) 24%, transparent);
+  --admin-primary-soft: color-mix(in srgb, var(--site-primary-color) 14%, white);
+  --admin-primary-soft-strong: color-mix(in srgb, var(--site-primary-color) 22%, white);
+  --admin-primary-soft-surface: color-mix(in srgb, var(--site-primary-color) 10%, white);
+  --admin-secondary-soft-surface: color-mix(in srgb, var(--site-secondary-color) 10%, white);
+  --admin-primary-border: color-mix(in srgb, var(--site-primary-color) 26%, white);
+  --admin-primary-text: color-mix(in srgb, var(--site-primary-color) 62%, black);
+  --admin-primary-shadow: color-mix(in srgb, var(--site-primary-color) 52%, transparent);
   --ui-primary: var(--site-primary-color);
   --front-atlas-shell-border: rgb(255 255 255 / 0.72);
   --front-atlas-shell-shadow: 0 26px 60px -42px rgba(148, 163, 184, 0.34);

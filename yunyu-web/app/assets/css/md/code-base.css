@@ -165,12 +165,13 @@
 .yy-md .shiki {
   display: block;
   overflow-x: auto;
+  overflow-y: hidden;
   padding: 0.92rem 1.02rem 1rem;
   line-height: 1.76;
   color: var(--shiki-light, var(--yy-code-text, inherit));
   background-color: var(--shiki-light-bg, var(--yy-code-block-bg)) !important;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.36) transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .yy-md .shiki .line,
@@ -206,8 +207,8 @@
 
 .yy-md pre::-webkit-scrollbar,
 .yy-md .shiki::-webkit-scrollbar {
-  height: 0.55rem;
-  width: 0.55rem;
+  height: 0;
+  width: 0;
 }
 
 .yy-md pre::-webkit-scrollbar-track,

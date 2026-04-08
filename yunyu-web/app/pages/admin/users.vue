@@ -399,11 +399,10 @@ await loadUsers()
         </template>
 
         <template #actions>
-          <UButton
+          <AdminButton
             label="重置"
-            color="neutral"
+            tone="neutral"
             variant="ghost"
-            class="cursor-pointer rounded-[10px]"
             @click="handleResetFilters"
           />
           <AdminPrimaryButton label="搜索" icon="i-lucide-search" @click="handleSearch" />
@@ -595,9 +594,9 @@ await loadUsers()
 
       <template #footer>
         <div class="flex w-full justify-end gap-3">
-          <UButton
+          <AdminButton
             label="取消"
-            color="neutral"
+            tone="neutral"
             variant="ghost"
             @click="isFormModalOpen = false"
           />

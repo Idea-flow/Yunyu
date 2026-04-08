@@ -235,21 +235,19 @@ const pendingItems = computed<AdminDashboardPendingItem[]>(() => {
 
         <div class="flex flex-wrap items-center gap-2">
           <UBadge color="success" variant="soft" class="rounded-[8px] px-3 py-1">已登录</UBadge>
-          <UButton
+          <AdminButton
             icon="i-lucide-refresh-cw"
             :loading="dashboardPending"
             label="刷新数据"
-            color="neutral"
+            tone="neutral"
             variant="ghost"
-            class="rounded-[10px]"
             @click="handleRefreshDashboard"
           />
-          <UButton
+          <AdminButton
             icon="i-lucide-log-out"
             label="退出登录"
-            color="neutral"
+            tone="neutral"
             variant="ghost"
-            class="rounded-[10px]"
             @click="auth.logout().then(() => navigateTo('/login?redirect=/admin'))"
           />
         </div>

@@ -192,12 +192,12 @@ async function handleLogout() {
       <div class="flex h-full min-h-0 flex-col overflow-hidden rounded-[20px] border border-white/50 bg-[linear-gradient(180deg,rgba(255,255,255,0.76),rgba(255,255,255,0.56))] shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.76),rgba(15,23,42,0.66))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)]">
         <div
           :class="[
-            'bg-[linear-gradient(135deg,rgba(56,189,248,0.14),rgba(251,146,60,0.10)_88%)] py-5 dark:bg-[linear-gradient(135deg,rgba(56,189,248,0.16),rgba(251,146,60,0.12)_88%)]',
+            'bg-[linear-gradient(135deg,var(--admin-primary-soft-surface),var(--admin-secondary-soft-surface)_88%)] py-5 dark:bg-[linear-gradient(135deg,color-mix(in_srgb,var(--site-primary-color)_16%,transparent),color-mix(in_srgb,var(--site-secondary-color)_14%,transparent)_88%)]',
             sidebarCollapsed ? 'px-3' : 'px-5'
           ]"
         >
           <div :class="['flex items-center', sidebarCollapsed ? 'justify-center' : 'gap-3']">
-            <div class="flex size-11 items-center justify-center rounded-[12px] bg-sky-500 text-sm font-semibold text-white shadow-[0_14px_24px_-18px_rgba(14,165,233,0.7)] dark:bg-sky-400 dark:text-slate-950">
+            <div class="flex size-11 items-center justify-center rounded-[12px] bg-[var(--site-primary-color)] text-sm font-semibold text-white shadow-[0_14px_24px_-18px_var(--admin-primary-shadow)] dark:text-slate-950">
               Y
             </div>
 
@@ -226,7 +226,7 @@ async function handleLogout() {
               'relative flex min-h-11 items-center rounded-[12px] border py-2.5 text-slate-700 transition duration-200 dark:text-slate-200',
               sidebarCollapsed ? 'justify-center px-0' : 'gap-2.5 px-3',
               isActiveItem(item)
-                ? 'border-sky-100/90 bg-[linear-gradient(135deg,rgba(248,252,255,0.92),rgba(255,250,245,0.58))] text-slate-900 before:absolute before:start-2 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-sky-400 dark:border-sky-400/20 dark:bg-[linear-gradient(135deg,rgba(56,189,248,0.10),rgba(251,146,60,0.05))] dark:text-slate-50'
+                ? 'border-[var(--admin-primary-border)] bg-[linear-gradient(135deg,var(--admin-primary-soft-surface),var(--admin-secondary-soft-surface))] text-slate-900 before:absolute before:start-2 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-[var(--site-primary-color)] dark:border-[color:color-mix(in_srgb,var(--site-primary-color)_28%,transparent)] dark:bg-[linear-gradient(135deg,color-mix(in_srgb,var(--site-primary-color)_10%,transparent),color-mix(in_srgb,var(--site-secondary-color)_8%,transparent))] dark:text-slate-50'
                 : 'border-transparent hover:border-white/70 hover:bg-white/68 hover:text-slate-900 dark:hover:border-white/10 dark:hover:bg-white/5 dark:hover:text-slate-50'
             ]"
           >
@@ -240,7 +240,7 @@ async function handleLogout() {
 
             <span
               v-if="!sidebarCollapsed && resolveNavigationBadge(item)"
-              class="ms-auto inline-flex min-w-[1.5rem] items-center justify-center rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-semibold leading-none text-sky-700 dark:bg-sky-500/14 dark:text-sky-200"
+              class="ms-auto inline-flex min-w-[1.5rem] items-center justify-center rounded-full bg-[var(--admin-primary-soft-strong)] px-2 py-0.5 text-[11px] font-semibold leading-none text-[var(--admin-primary-text)] dark:bg-[color:color-mix(in_srgb,var(--site-primary-color)_14%,transparent)] dark:text-[var(--site-primary-color)]"
             >
               {{ resolveNavigationBadge(item) }}
             </span>
@@ -282,7 +282,7 @@ async function handleLogout() {
 
     <div class="flex min-w-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-3 lg:px-5 lg:pb-5 lg:pl-3 lg:pt-4">
       <div class="admin-shell overflow-hidden rounded-[18px]">
-        <div class="bg-[linear-gradient(135deg,rgba(56,189,248,0.10),rgba(251,146,60,0.06)_92%)] px-5 py-3 dark:bg-[linear-gradient(135deg,rgba(56,189,248,0.12),rgba(251,146,60,0.08)_92%)]">
+        <div class="bg-[linear-gradient(135deg,var(--admin-primary-soft-surface),var(--admin-secondary-soft-surface)_92%)] px-5 py-3 dark:bg-[linear-gradient(135deg,color-mix(in_srgb,var(--site-primary-color)_12%,transparent),color-mix(in_srgb,var(--site-secondary-color)_10%,transparent)_92%)]">
           <div class="flex items-center justify-between gap-4">
             <div class="min-w-0">
               <p class="truncate text-sm font-semibold text-slate-900 dark:text-slate-50">云屿内容管理系统</p>

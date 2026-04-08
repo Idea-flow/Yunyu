@@ -37,12 +37,12 @@ const inputUi = computed(() => ({
     'transition-[border-color,box-shadow,background-color,color] duration-200',
     'placeholder:text-slate-400',
     'hover:border-slate-300 hover:bg-white',
-    'focus-visible:border-sky-400 focus-visible:bg-white focus-visible:ring-3 focus-visible:ring-sky-100/90',
+    'focus-visible:border-[var(--site-primary-color)] focus-visible:bg-white focus-visible:ring-3 focus-visible:ring-[var(--admin-primary-ring)]',
     'disabled:cursor-not-allowed disabled:opacity-60',
     'dark:border-slate-700/80 dark:bg-slate-950/80 dark:text-slate-100',
     'dark:shadow-[0_14px_30px_-24px_rgba(0,0,0,0.46)] dark:placeholder:text-slate-500',
     'dark:hover:border-slate-600 dark:hover:bg-slate-950/92',
-    'dark:focus-visible:border-sky-300 dark:focus-visible:bg-slate-950 dark:focus-visible:ring-sky-400/20'
+    'dark:focus-visible:border-[var(--site-primary-color)] dark:focus-visible:bg-slate-950 dark:focus-visible:ring-[var(--admin-primary-ring)]'
   ].join(' '),
   leading: 'ps-4',
   leadingIcon: 'size-5 text-slate-400 dark:text-slate-500',

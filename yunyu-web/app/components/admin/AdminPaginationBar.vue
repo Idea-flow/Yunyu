@@ -138,30 +138,32 @@ function handlePageJumpInput(value: string | number | null) {
         @update:page="handlePageChange"
       >
         <template #item="{ item, page }">
-          <UButton
-            color="neutral"
-            :variant="page === item.value ? 'soft' : 'ghost'"
+          <AdminButton
+            tone="neutral"
+            :variant="page === item.value ? 'outline' : 'ghost'"
             :label="String(item.value)"
-            class="inline-flex h-9 w-9 items-center justify-center rounded-[12px] border-0 px-0 text-center text-sm font-medium leading-none transition-all duration-200"
+            square
             :class="page === item.value
-              ? 'bg-slate-900/[0.06] text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.72),0_10px_22px_-20px_rgba(15,23,42,0.24)] dark:bg-white/[0.09] dark:text-slate-100'
-              : 'text-slate-500 hover:bg-white/78 hover:text-slate-700 dark:text-slate-300 dark:hover:bg-white/8 dark:hover:text-slate-100'"
+              ? 'border-slate-200/80 bg-slate-900/[0.06] text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.72),0_10px_22px_-20px_rgba(15,23,42,0.24)] dark:border-white/10 dark:bg-white/[0.09] dark:text-slate-100'
+              : 'border-transparent text-slate-500 hover:bg-white/78 hover:text-slate-700 dark:text-slate-300 dark:hover:bg-white/8 dark:hover:text-slate-100'"
           />
         </template>
         <template #prev>
-          <UButton
-            color="neutral"
+          <AdminButton
+            tone="neutral"
             variant="ghost"
             icon="i-lucide-chevron-left"
-            class="min-h-9 min-w-9 rounded-[12px] border-0 text-slate-400 transition-colors duration-200 hover:bg-white/78 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/8 dark:hover:text-slate-100"
+            square
+            class="border-transparent text-slate-400 transition-colors duration-200 hover:bg-white/78 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/8 dark:hover:text-slate-100"
           />
         </template>
         <template #next>
-          <UButton
-            color="neutral"
+          <AdminButton
+            tone="neutral"
             variant="ghost"
             icon="i-lucide-chevron-right"
-            class="min-h-9 min-w-9 rounded-[12px] border-0 text-slate-400 transition-colors duration-200 hover:bg-white/78 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/8 dark:hover:text-slate-100"
+            square
+            class="border-transparent text-slate-400 transition-colors duration-200 hover:bg-white/78 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/8 dark:hover:text-slate-100"
           />
         </template>
       </UPagination>

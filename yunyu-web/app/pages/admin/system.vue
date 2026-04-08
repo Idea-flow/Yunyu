@@ -209,19 +209,19 @@ onMounted(async () => {
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-          <UButton
+          <AdminButton
             icon="i-lucide-activity"
             label="线程快照"
-            color="neutral"
+            tone="neutral"
             variant="outline"
-            class="rounded-[10px]"
             @click="openThreadDump"
           />
-          <UButton
+          <AdminButton
             :loading="isLoading"
             icon="i-lucide-refresh-cw"
             label="刷新"
-            class="rounded-[10px]"
+            tone="primary"
+            variant="solid"
             @click="loadOverview"
           />
         </div>
@@ -340,11 +340,12 @@ onMounted(async () => {
             <UBadge color="neutral" variant="soft" class="rounded-[8px] px-3 py-1">
               {{ threadDump?.threads?.length || 0 }}
             </UBadge>
-            <UButton
+            <AdminButton
               :loading="isRefreshingThreadDump"
               icon="i-lucide-refresh-cw"
               label="刷新"
-              class="rounded-[8px]"
+              tone="neutral"
+              variant="outline"
               @click="refreshThreadDump"
             />
           </div>

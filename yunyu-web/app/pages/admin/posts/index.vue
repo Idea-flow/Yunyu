@@ -617,11 +617,10 @@ await Promise.all([
         </div>
 
         <div class="flex w-full flex-wrap items-center justify-end gap-2 xl:ml-auto xl:w-auto">
-          <UButton
+          <AdminButton
             label="重置"
-            color="neutral"
+            tone="neutral"
             variant="ghost"
-            class="cursor-pointer rounded-[10px]"
             @click="handleResetFilters"
           />
           <AdminPrimaryButton label="搜索" icon="i-lucide-search" @click="handleSearch" />

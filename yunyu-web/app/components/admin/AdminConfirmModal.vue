@@ -67,11 +67,10 @@ function handleConfirm() {
 
     <template #footer>
       <div class="flex w-full justify-end gap-3">
-        <UButton
+        <AdminButton
           :label="props.cancelLabel"
-          color="neutral"
+          tone="neutral"
           variant="ghost"
-          class="rounded-[10px]"
           @click="handleOpenChange(false)"
         />
         <AdminPrimaryButton

@@ -355,11 +355,10 @@ await Promise.all([
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-          <UButton
+          <AdminButton
             :label="draftActionLabel"
-            color="neutral"
+            tone="neutral"
             variant="outline"
-            class="cursor-pointer rounded-[10px]"
             :loading="isSubmitting && formState.status === 'DRAFT'"
             @click="handleSubmitWithStatus('DRAFT')"
           />

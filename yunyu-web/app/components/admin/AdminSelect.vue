@@ -37,12 +37,12 @@ const selectUi = computed(() => ({
     'transition-[border-color,box-shadow,background-color,color] duration-200',
     'placeholder:text-slate-400',
     'hover:border-slate-300 hover:bg-white',
-    'focus-visible:border-sky-400 focus-visible:bg-white focus-visible:ring-3 focus-visible:ring-sky-100/90',
+    'focus-visible:border-[var(--site-primary-color)] focus-visible:bg-white focus-visible:ring-3 focus-visible:ring-[var(--admin-primary-ring)]',
     'disabled:cursor-not-allowed disabled:opacity-60',
     'dark:border-slate-700/80 dark:bg-slate-950/80 dark:text-slate-100',
     'dark:shadow-[0_14px_30px_-24px_rgba(0,0,0,0.46)] dark:placeholder:text-slate-500',
     'dark:hover:border-slate-600 dark:hover:bg-slate-950/92',
-    'dark:focus-visible:border-sky-300 dark:focus-visible:bg-slate-950 dark:focus-visible:ring-sky-400/20'
+    'dark:focus-visible:border-[var(--site-primary-color)] dark:focus-visible:bg-slate-950 dark:focus-visible:ring-[var(--admin-primary-ring)]'
   ].join(' '),
   leadingIcon: 'text-slate-400 dark:text-slate-500',
   value: props.compact
@@ -68,9 +68,9 @@ const selectUi = computed(() => ({
     'min-h-9 cursor-pointer rounded-[8px] px-3 py-2 text-slate-600',
     'transition-[background-color,color] duration-150',
     'data-highlighted:bg-slate-100 data-highlighted:text-slate-900',
-    'data-[state=checked]:bg-sky-50 data-[state=checked]:text-sky-700',
+    'data-[state=checked]:bg-[var(--admin-primary-soft-surface)] data-[state=checked]:text-[var(--admin-primary-text)]',
     'dark:text-slate-300 dark:data-highlighted:bg-slate-800 dark:data-highlighted:text-slate-50',
-    'dark:data-[state=checked]:bg-sky-400/12 dark:data-[state=checked]:text-sky-200'
+    'dark:data-[state=checked]:bg-[color:color-mix(in_srgb,var(--site-primary-color)_14%,transparent)] dark:data-[state=checked]:text-[var(--site-primary-color)]'
   ].join(' '),
   itemLeadingIcon: 'text-slate-400 dark:text-slate-500',
   itemLabel: 'truncate text-sm font-medium',

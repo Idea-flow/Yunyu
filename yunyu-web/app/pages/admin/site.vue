@@ -756,14 +756,13 @@ onMounted(async () => {
         </div>
 
         <div class="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap">
-          <UButton
+          <AdminButton
             :loading="isLoading"
             icon="i-lucide-refresh-cw"
             label="刷新"
-            color="neutral"
+            tone="neutral"
             variant="outline"
             size="sm"
-            class="rounded-[10px]"
             @click="loadAllConfig"
           />
           <AdminPrimaryButton
@@ -865,12 +864,11 @@ onMounted(async () => {
                 <span class="ml-1 text-xs font-medium text-slate-500 dark:text-slate-400">当前配色</span>
               </div>
 
-              <UButton
+              <AdminButton
                 icon="i-lucide-rotate-ccw"
                 label="恢复默认"
-                color="neutral"
+                tone="neutral"
                 variant="outline"
-                class="rounded-[12px]"
                 @click="resetThemeColors"
               />
             </div>
@@ -1092,13 +1090,12 @@ onMounted(async () => {
                     </div>
                   </div>
 
-                  <UButton
+                  <AdminButton
                     icon="i-lucide-x"
                     label="清空"
-                    color="neutral"
+                    tone="neutral"
                     variant="outline"
                     size="xs"
-                    class="rounded-[10px]"
                     @click="clearHeroVisualPost"
                   />
                 </div>
@@ -1143,13 +1140,12 @@ onMounted(async () => {
                 <div class="space-y-3">
                   <div class="flex items-center justify-between gap-3">
                     <p class="text-sm font-medium text-slate-700 dark:text-slate-300">首屏关键词</p>
-                    <UButton
+                    <AdminButton
                       icon="i-lucide-plus"
                       label="新增关键词"
-                      color="neutral"
+                      tone="neutral"
                       variant="outline"
                       size="xs"
-                      class="rounded-[10px]"
                       @click="addHeroKeyword"
                     />
                   </div>
@@ -1164,12 +1160,12 @@ onMounted(async () => {
                         v-model="homepageFormState.heroKeywords[index]"
                         :placeholder="`关键词 ${index + 1}`"
                       />
-                      <UButton
+                      <AdminButton
                         icon="i-lucide-trash-2"
-                        color="neutral"
+                        tone="neutral"
                         variant="outline"
                         size="xs"
-                        class="rounded-[10px]"
+                        square
                         @click="removeHeroKeyword(index)"
                       />
                     </div>
@@ -1179,13 +1175,12 @@ onMounted(async () => {
                 <div class="space-y-3">
                   <div class="flex items-center justify-between gap-3">
                     <p class="text-sm font-medium text-slate-700 dark:text-slate-300">首屏统计项</p>
-                    <UButton
+                    <AdminButton
                       icon="i-lucide-plus"
                       label="新增统计项"
-                      color="neutral"
+                      tone="neutral"
                       variant="outline"
                       size="xs"
-                      class="rounded-[10px]"
                       @click="addHeroStat"
                     />
                   </div>
@@ -1198,12 +1193,12 @@ onMounted(async () => {
                     >
                       <AdminInput v-model="stat.label" :placeholder="`统计标题 ${index + 1}`" />
                       <AdminInput v-model="stat.value" :placeholder="`统计值 ${index + 1}`" />
-                      <UButton
+                      <AdminButton
                         icon="i-lucide-trash-2"
-                        color="neutral"
+                        tone="neutral"
                         variant="outline"
                         size="xs"
-                        class="rounded-[10px]"
+                        square
                         @click="removeHeroStat(index)"
                       />
                     </div>
