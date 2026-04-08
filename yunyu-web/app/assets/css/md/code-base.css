@@ -3,19 +3,19 @@
   position: relative;
   overflow: hidden;
   border: 1px solid var(--yy-code-block-border);
-  border-radius: 1.3rem;
+  border-radius: 1.08rem;
   background: var(--yy-code-block-bg);
-  box-shadow: 0 24px 48px -34px rgba(15, 23, 42, 0.28);
+  box-shadow: 0 16px 34px -30px rgba(15, 23, 42, 0.14);
 }
 
 .yy-md-code-block::before {
   content: "";
   position: absolute;
   inset: 0 0 auto 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, var(--yy-code-top-highlight) 18%, var(--yy-code-top-highlight) 82%, transparent 100%);
+  height: 2.2rem;
+  background: linear-gradient(180deg, var(--yy-code-top-highlight) 0%, rgba(255, 255, 255, 0) 100%);
   pointer-events: none;
-  opacity: 0.9;
+  opacity: 0.52;
 }
 
 .yy-md-code-toolbar {
@@ -25,7 +25,7 @@
   gap: 0.4rem;
   border-bottom: 1px solid var(--yy-code-toolbar-border);
   background: var(--yy-code-toolbar-bg);
-  padding: 0.36rem 0.6rem;
+  padding: 0.38rem 0.62rem 0.34rem;
 }
 
 .yy-md-code-toolbar-meta,
@@ -81,34 +81,40 @@
 
 .yy-md-code-action {
   cursor: pointer;
-  border: 1px solid var(--yy-code-action-border, transparent);
+  border: 0;
   border-radius: 999px;
-  background: var(--yy-code-action-bg, transparent);
+  background: transparent;
   color: var(--yy-code-action-text);
-  padding: 0.14rem;
+  padding: 0.12rem;
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   line-height: 1;
-  opacity: 0.7;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  transition: color 180ms ease, transform 180ms ease, opacity 180ms ease, background-color 180ms ease, border-color 180ms ease;
+  opacity: 0.58;
+  box-shadow: none;
+  transition: color 180ms ease, transform 180ms ease, opacity 180ms ease, box-shadow 180ms ease;
 }
 
 .yy-md-code-action:hover {
-  background: var(--yy-code-action-bg-hover, var(--yy-code-action-bg, transparent));
-  border-color: var(--yy-code-action-border-hover, var(--yy-code-action-border, transparent));
+  background: transparent;
+  color: var(--yy-code-action-text-hover);
+  opacity: 0.96;
+  transform: translateY(-1px);
+}
+
+.yy-md-code-action:focus-visible {
+  outline: none;
   color: var(--yy-code-action-text-hover);
   opacity: 1;
-  transform: translateY(-1px) scale(1.04);
+  box-shadow: 0 0 0 2px var(--yy-code-action-focus-ring);
 }
 
 .yy-md-code-action-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.72rem;
+  height: 1.72rem;
   padding: 0;
   font-size: 0.84rem;
 }
@@ -159,12 +165,12 @@
 .yy-md .shiki {
   display: block;
   overflow-x: auto;
-  padding: 0.98rem 1.05rem 1.08rem;
-  line-height: 1.8;
+  padding: 0.92rem 1.02rem 1rem;
+  line-height: 1.76;
   color: var(--shiki-light, var(--yy-code-text, inherit));
   background-color: var(--shiki-light-bg, var(--yy-code-block-bg)) !important;
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+  scrollbar-color: rgba(148, 163, 184, 0.36) transparent;
 }
 
 .yy-md .shiki .line,
@@ -211,30 +217,30 @@
 
 .yy-md pre::-webkit-scrollbar-thumb,
 .yy-md .shiki::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.7);
+  background: rgba(148, 163, 184, 0.52);
   border-radius: 999px;
 }
 
 .yy-md[data-code-theme='github-dark'] .yy-md-code-block,
 .yy-md[data-code-theme='vitesse-dark'] .yy-md-code-block {
-  box-shadow: 0 28px 58px -38px rgba(2, 6, 23, 0.78), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow: 0 18px 40px -32px rgba(2, 6, 23, 0.46);
 }
 
 .yy-md[data-code-theme='github-dark'] .yy-md-code-toolbar,
 .yy-md[data-code-theme='vitesse-dark'] .yy-md-code-toolbar {
-  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.02);
+  box-shadow: none;
 }
 
 @media (max-width: 768px) {
   .yy-md-code-block {
     --yy-code-body-max-height: 8.4rem;
-    border-radius: 1.08rem;
-    box-shadow: 0 18px 34px -28px rgba(15, 23, 42, 0.22);
+    border-radius: 0.96rem;
+    box-shadow: 0 14px 28px -26px rgba(15, 23, 42, 0.12);
   }
 
   .yy-md-code-toolbar {
     gap: 0.32rem;
-    padding: 0.34rem 0.5rem;
+    padding: 0.34rem 0.5rem 0.3rem;
   }
 
   .yy-md-code-toolbar-meta,
@@ -258,8 +264,8 @@
   }
 
   .yy-md-code-action-icon {
-    width: 1.34rem;
-    height: 1.34rem;
+    width: 1.58rem;
+    height: 1.58rem;
   }
 
   .yy-md-code-action-icon-glyph {
@@ -268,8 +274,8 @@
   }
 
   .yy-md .shiki {
-    padding: 0.82rem 0.88rem 0.9rem;
-    line-height: 1.68;
+    padding: 0.78rem 0.84rem 0.88rem;
+    line-height: 1.64;
   }
 
   .yy-md .shiki code {
@@ -286,7 +292,7 @@
 @media (max-width: 640px) {
   .yy-md-code-block {
     --yy-code-body-max-height: 7.7rem;
-    border-radius: 0.96rem;
+    border-radius: 0.88rem;
   }
 
   .yy-md-code-toolbar {
@@ -302,8 +308,8 @@
   }
 
   .yy-md .shiki {
-    padding: 0.74rem 0.78rem 0.82rem;
-    line-height: 1.62;
+    padding: 0.72rem 0.76rem 0.8rem;
+    line-height: 1.58;
   }
 
   .yy-md .shiki code {
