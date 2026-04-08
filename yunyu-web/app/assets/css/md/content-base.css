@@ -669,7 +669,6 @@
 }
 
 .yy-md .katex-display,
-.yy-md .shiki,
 .yy-md .yy-md-table-scroll,
 .yy-md table {
   scrollbar-width: thin;
@@ -677,14 +676,12 @@
 }
 
 .yy-md .katex-display::-webkit-scrollbar,
-.yy-md .shiki::-webkit-scrollbar,
 .yy-md .yy-md-table-scroll::-webkit-scrollbar,
 .yy-md table::-webkit-scrollbar {
   height: 0.42rem;
 }
 
 .yy-md .katex-display::-webkit-scrollbar-thumb,
-.yy-md .shiki::-webkit-scrollbar-thumb,
 .yy-md .yy-md-table-scroll::-webkit-scrollbar-thumb,
 .yy-md table::-webkit-scrollbar-thumb {
   border-radius: 999px;
@@ -692,7 +689,6 @@
 }
 
 .yy-md .katex-display::-webkit-scrollbar-track,
-.yy-md .shiki::-webkit-scrollbar-track,
 .yy-md .yy-md-table-scroll::-webkit-scrollbar-track,
 .yy-md table::-webkit-scrollbar-track {
   background: transparent;

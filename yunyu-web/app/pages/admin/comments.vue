@@ -35,6 +35,8 @@ const pageSize = ref(10)
 const total = ref(0)
 const totalPages = ref(1)
 const groups = ref<AdminCommentThreadGroup[]>([])
+const collapsedPostIds = ref<number[]>([])
+const hasInitializedCollapseState = ref(false)
 
 const statusOptions = [
   { label: '全部状态', value: 'ALL' },
@@ -74,6 +76,12 @@ const currentPageCommentCount = computed(() => {
 const emptyTitle = computed(() => {
   return hasActiveFilters.value ? '当前筛选条件下暂无评论' : '暂时还没有评论记录'
 })
+
+/**
+ * 当前已折叠文章数。
+ * 作用：让评论页顶部能快速感知当前有多少文章分组被收起。
+ */
+const collapsedGroupCount = computed(() => collapsedPostIds.value.length)
 
 /**
  * 删除确认说明。
@@ -176,6 +184,12 @@ async function loadCommentGroups() {
     groups.value = response.list
     total.value = response.total
     totalPages.value = response.totalPages
+    if (!hasInitializedCollapseState.value) {
+      collapsedPostIds.value = groups.value.map(group => group.postId)
+      hasInitializedCollapseState.value = true
+    } else {
+      collapsedPostIds.value = collapsedPostIds.value.filter(postId => groups.value.some(group => group.postId === postId))
+    }
   } catch (error: any) {
     toast.add({
       title: '加载评论失败',
@@ -378,6 +392,48 @@ function resolveVisibilityLabel(visible: boolean) {
 }
 
 /**
+ * 判断文章分组当前是否折叠。
+ * 作用：统一控制文章卡片评论列表区域的展开与收起状态。
+ *
+ * @param postId 文章ID
+ * @returns 是否折叠
+ */
+function isGroupCollapsed(postId: number) {
+  return collapsedPostIds.value.includes(postId)
+}
+
+/**
+ * 切换文章分组折叠状态。
+ * 作用：让评论较多的文章支持临时收起，降低页面纵向长度。
+ *
+ * @param postId 文章ID
+ */
+function toggleGroupCollapse(postId: number) {
+  if (isGroupCollapsed(postId)) {
+    collapsedPostIds.value = collapsedPostIds.value.filter(id => id !== postId)
+    return
+  }
+
+  collapsedPostIds.value = [...collapsedPostIds.value, postId]
+}
+
+/**
+ * 收起全部文章分组。
+ * 作用：在评论较多时快速压缩页面长度，便于定位目标文章。
+ */
+function collapseAllGroups() {
+  collapsedPostIds.value = groups.value.map(group => group.postId)
+}
+
+/**
+ * 展开全部文章分组。
+ * 作用：快速恢复当前页全部文章的评论审核视图。
+ */
+function expandAllGroups() {
+  collapsedPostIds.value = []
+}
+
+/**
  * 判断主评论是否仅作为上下文展示。
  * 作用：在筛选命中回复时弱化父级主评论，帮助用户聚焦真正命中的评论。
  *
@@ -397,6 +453,84 @@ function isContextRoot(root: AdminCommentThreadRootItem) {
  */
 function isContextReply(reply: AdminCommentThreadReplyItem) {
   return hasCommentLevelFilter.value && !reply.matchedByFilter
+}
+
+/**
+ * 解析主评论容器样式。
+ * 作用：强化命中评论、上下文评论和普通评论的视觉差异，提升扫描效率。
+ *
+ * @param root 主评论
+ * @returns 样式类名
+ */
+function resolveRootCardClass(root: AdminCommentThreadRootItem) {
+  if (isContextRoot(root)) {
+    return 'border-amber-200/85 bg-[linear-gradient(180deg,rgba(255,251,235,0.9),rgba(255,255,255,0.82))] shadow-[inset_4px_0_0_rgba(245,158,11,0.42),0_16px_32px_-28px_rgba(245,158,11,0.16)] dark:border-amber-400/20 dark:bg-[linear-gradient(180deg,rgba(245,158,11,0.08),rgba(255,255,255,0.03))]'
+  }
+
+  if (root.matchedByFilter) {
+    return 'border-[var(--admin-primary-border)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--site-primary-color)_10%,white),var(--admin-primary-soft-surface))] shadow-[inset_4px_0_0_var(--site-primary-color),0_18px_34px_-28px_var(--admin-primary-shadow)] dark:border-[color:color-mix(in_srgb,var(--site-primary-color)_28%,transparent)] dark:bg-[linear-gradient(180deg,color-mix(in_srgb,var(--site-primary-color)_16%,transparent),color-mix(in_srgb,var(--site-primary-color)_8%,transparent))]'
+  }
+
+  return 'border-slate-200/80 bg-white/78 dark:border-white/10 dark:bg-white/[0.03]'
+}
+
+/**
+ * 解析回复容器样式。
+ * 作用：让命中回复、上下文回复和普通回复在视觉上更容易区分。
+ *
+ * @param reply 回复项
+ * @returns 样式类名
+ */
+function resolveReplyCardClass(reply: AdminCommentThreadReplyItem) {
+  if (isContextReply(reply)) {
+    return 'border-amber-200/80 bg-[linear-gradient(180deg,rgba(255,251,235,0.84),rgba(255,255,255,0.78))] shadow-[inset_3px_0_0_rgba(245,158,11,0.34)] dark:border-amber-400/16 dark:bg-[linear-gradient(180deg,rgba(245,158,11,0.06),rgba(255,255,255,0.025))]'
+  }
+
+  if (reply.matchedByFilter) {
+    return 'border-sky-200/80 bg-[linear-gradient(180deg,rgba(240,249,255,0.92),rgba(255,255,255,0.8))] shadow-[inset_3px_0_0_rgba(14,165,233,0.55),0_14px_28px_-26px_rgba(14,165,233,0.24)] dark:border-sky-400/20 dark:bg-[linear-gradient(180deg,rgba(14,165,233,0.12),rgba(255,255,255,0.03))]'
+  }
+
+  return 'border-slate-200/75 bg-white/72 dark:border-white/10 dark:bg-white/[0.025]'
+}
+
+/**
+ * 解析回复目标用户名。
+ * 作用：让后台在没有完整回复链结构时，也能稳定展示“当前评论回复给谁”。
+ *
+ * @param root 主评论
+ * @param reply 回复项
+ * @returns 被回复用户名
+ */
+function resolveReplyTargetName(root: AdminCommentThreadRootItem, reply: AdminCommentThreadReplyItem) {
+  return reply.replyToUserName?.trim() || root.userName
+}
+
+/**
+ * 判断当前回复是否直接回复主评论。
+ * 作用：在后台审核页中区分“回复主评论”和“回复某条子回复”两种关系。
+ *
+ * @param root 主评论
+ * @param reply 回复项
+ * @returns 是否直接回复主评论
+ */
+function isReplyToRoot(root: AdminCommentThreadRootItem, reply: AdminCommentThreadReplyItem) {
+  return resolveReplyTargetName(root, reply) === root.userName
+}
+
+/**
+ * 解析回复关系说明。
+ * 作用：补充一句更容易读懂的中文说明，降低审核时理解回复链的成本。
+ *
+ * @param root 主评论
+ * @param reply 回复项
+ * @returns 回复关系文案
+ */
+function resolveReplyRelationDescription(root: AdminCommentThreadRootItem, reply: AdminCommentThreadReplyItem) {
+  if (isReplyToRoot(root, reply)) {
+    return '这条回复直接挂在当前主评论下。'
+  }
+
+  return `这条回复是在当前主评论下，回复 @${resolveReplyTargetName(root, reply)}。`
 }
 
 watch(
@@ -428,6 +562,9 @@ await loadCommentGroups()
           </UBadge>
           <UBadge color="neutral" variant="soft" class="rounded-[10px] px-3 py-1.5">
             当前页 {{ currentPageCommentCount }} 条评论
+          </UBadge>
+          <UBadge v-if="collapsedGroupCount > 0" color="warning" variant="soft" class="rounded-[10px] px-3 py-1.5">
+            已折叠 {{ collapsedGroupCount }} 篇
           </UBadge>
         </div>
       </div>
@@ -499,6 +636,27 @@ await loadCommentGroups()
     </AdminListFilterBar>
 
     <AdminTableCard title="文章评论审核视图" :total="total">
+      <template #actions>
+        <AdminButton
+          v-if="groups.length > 0 && collapsedGroupCount < groups.length"
+          label="全部折叠"
+          icon="i-lucide-chevrons-up-down"
+          tone="neutral"
+          variant="ghost"
+          size="sm"
+          @click="collapseAllGroups"
+        />
+        <AdminButton
+          v-if="groups.length > 0 && collapsedGroupCount > 0"
+          label="全部展开"
+          icon="i-lucide-unfold-vertical"
+          tone="neutral"
+          variant="ghost"
+          size="sm"
+          @click="expandAllGroups"
+        />
+      </template>
+
       <div v-if="isLoading" class="space-y-4">
         <div
           v-for="index in 3"
@@ -561,19 +719,29 @@ await loadCommentGroups()
                   </span>
                 </div>
               </div>
+
+              <div class="flex shrink-0 items-center gap-2">
+                <span class="text-xs text-slate-400 dark:text-slate-500">
+                  {{ isGroupCollapsed(group.postId) ? '已折叠' : `${group.roots.length} 条主评论` }}
+                </span>
+                <AdminButton
+                  :label="isGroupCollapsed(group.postId) ? '展开' : '折叠'"
+                  :icon="isGroupCollapsed(group.postId) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-up'"
+                  tone="neutral"
+                  variant="outline"
+                  size="sm"
+                  @click="toggleGroupCollapse(group.postId)"
+                />
+              </div>
             </div>
           </div>
 
-          <div class="space-y-4 px-5 py-5">
+          <div v-if="!isGroupCollapsed(group.postId)" class="space-y-4 px-5 py-5">
             <div
               v-for="root in group.roots"
               :key="`comment-root-${root.id}`"
               class="rounded-[18px] border p-4 transition duration-200"
-              :class="isContextRoot(root)
-                ? 'border-slate-200/80 bg-slate-50/82 opacity-90 dark:border-white/10 dark:bg-white/[0.03]'
-                : root.matchedByFilter
-                  ? 'border-[var(--admin-primary-border)] bg-[var(--admin-primary-soft-surface)] shadow-[0_16px_32px_-28px_var(--admin-primary-shadow)] dark:border-[color:color-mix(in_srgb,var(--site-primary-color)_28%,transparent)] dark:bg-[color:color-mix(in_srgb,var(--site-primary-color)_10%,transparent)]'
-                  : 'border-slate-200/80 bg-white/78 dark:border-white/10 dark:bg-white/[0.03]'"
+              :class="resolveRootCardClass(root)"
             >
               <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                 <div class="min-w-0 flex-1">
@@ -592,8 +760,14 @@ await loadCommentGroups()
                       {{ resolveVisibilityLabel(root.visibleOnSite) }}
                     </span>
                     <span
+                      v-if="root.matchedByFilter"
+                      class="rounded-full border border-[var(--admin-primary-border)] bg-white px-2 py-0.5 text-[11px] font-semibold text-[var(--admin-primary-text)] dark:border-[color:color-mix(in_srgb,var(--site-primary-color)_28%,transparent)] dark:bg-white/[0.06] dark:text-[var(--site-primary-color)]"
+                    >
+                      命中评论
+                    </span>
+                    <span
                       v-if="isContextRoot(root)"
-                      class="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-500 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400"
+                      class="rounded-full border border-amber-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:border-amber-400/20 dark:bg-white/[0.04] dark:text-amber-200"
                     >
                       上下文评论
                     </span>
@@ -642,26 +816,28 @@ await loadCommentGroups()
                   v-for="reply in root.replies"
                   :key="`comment-reply-${reply.id}`"
                   class="rounded-[16px] border px-4 py-4"
-                  :class="isContextReply(reply)
-                    ? 'border-slate-200/75 bg-slate-50/78 opacity-90 dark:border-white/10 dark:bg-white/[0.03]'
-                    : reply.matchedByFilter
-                      ? 'border-sky-200/80 bg-sky-50/75 dark:border-sky-400/20 dark:bg-sky-400/10'
-                      : 'border-slate-200/75 bg-white/72 dark:border-white/10 dark:bg-white/[0.025]'"
+                  :class="resolveReplyCardClass(reply)"
                 >
                   <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                     <div class="min-w-0 flex-1">
                       <div class="flex flex-wrap items-center gap-2">
-                        <span class="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
-                          回复
-                          <template v-if="reply.replyToUserName">
-                            @{{ reply.replyToUserName }}
-                          </template>
-                        </span>
                         <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">{{ reply.userName }}</p>
                         <span class="text-xs text-slate-400 dark:text-slate-500">{{ reply.userEmail }}</span>
                         <UBadge :color="resolveStatusColor(reply.status)" variant="soft">
                           {{ resolveStatusLabel(reply.status) }}
                         </UBadge>
+                        <span
+                          v-if="reply.matchedByFilter"
+                          class="rounded-full border border-sky-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-sky-700 dark:border-sky-400/20 dark:bg-white/[0.04] dark:text-sky-200"
+                        >
+                          命中回复
+                        </span>
+                        <span
+                          v-if="isContextReply(reply)"
+                          class="rounded-full border border-amber-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:border-amber-400/20 dark:bg-white/[0.04] dark:text-amber-200"
+                        >
+                          上下文回复
+                        </span>
                         <span
                           class="rounded-full border px-2 py-0.5 text-[11px] font-medium"
                           :class="reply.visibleOnSite
@@ -684,6 +860,36 @@ await loadCommentGroups()
 
                       <div class="mt-4 text-sm leading-7 text-slate-700 dark:text-slate-300">
                         <CommentRichContent :content="reply.content" emoji-size="sm" />
+                      </div>
+
+                      <div class="mt-4 rounded-[16px] border border-slate-200/80 bg-white/80 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:border-white/10 dark:bg-white/[0.04]">
+                        <div class="flex flex-wrap items-center gap-2 text-sm">
+                          <span class="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white dark:bg-slate-100 dark:text-slate-900">
+                            回复关系
+                          </span>
+                          <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-100">
+                            {{ reply.userName }}
+                          </span>
+                          <UIcon name="i-lucide-arrow-right" class="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                          <span class="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 font-semibold text-sky-700 dark:border-sky-400/20 dark:bg-sky-400/10 dark:text-sky-200">
+                            @{{ resolveReplyTargetName(root, reply) }}
+                          </span>
+                          <span class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-200">
+                            所属主评论：{{ root.userName }}
+                          </span>
+                          <span
+                            class="rounded-full border px-3 py-1 text-xs font-medium"
+                            :class="isReplyToRoot(root, reply)
+                              ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-200'
+                              : 'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-400/20 dark:bg-violet-400/10 dark:text-violet-200'"
+                          >
+                            {{ isReplyToRoot(root, reply) ? '直接回复主评论' : '回复某条子回复' }}
+                          </span>
+                        </div>
+
+                        <p class="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
+                          {{ resolveReplyRelationDescription(root, reply) }}
+                        </p>
                       </div>
                     </div>
 
@@ -712,6 +918,13 @@ await loadCommentGroups()
                 </div>
               </div>
             </div>
+          </div>
+
+          <div
+            v-else
+            class="px-5 py-4 text-sm text-slate-500 dark:text-slate-400"
+          >
+            当前文章评论已折叠，可点击右上角“展开”继续查看。
           </div>
         </section>
       </div>

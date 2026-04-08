@@ -30,6 +30,25 @@ export interface ActuatorInfoResponse {
 }
 
 /**
+ * Actuator 健康组件类型。
+ * 作用：承接健康检查中各组件的状态与详情，供系统监控页提炼数据库、磁盘等关键信息。
+ */
+export interface ActuatorHealthComponent {
+  status?: string
+  details?: Record<string, unknown>
+}
+
+/**
+ * Actuator 健康检查响应类型。
+ * 作用：描述 `health` 端点的最小结构，方便系统监控页读取整体与组件状态。
+ */
+export interface ActuatorHealthResponse {
+  status?: string
+  components?: Record<string, ActuatorHealthComponent>
+  groups?: string[]
+}
+
+/**
  * Actuator 指标测量项类型。
  * 作用：统一描述监控指标的单个测量值与统计方式，
  * 便于页面对 CPU、线程和内存指标进行解析。
@@ -87,10 +106,24 @@ export interface ActuatorThreadDumpResponse {
  */
 export interface AdminSystemMonitorOverview {
   jvm: JvmInfo | null
+  healthStatus: string | null
+  databaseStatus: string | null
+  diskStatus: string | null
   heapUsedBytes: number | null
   nonHeapUsedBytes: number | null
   heapMaxBytes: number | null
   liveThreads: number | null
+  daemonThreads: number | null
+  blockedThreads: number | null
   cpuUsageRatio: number | null
+  threadStateCounts: Record<string, number>
+  publishedPostTotal: number
+  draftPostTotal: number
+  pendingCommentTotal: number
+  approvedCommentTotal: number
+  userTotal: number
+  activeUserTotal: number
+  categoryTotal: number
+  tagTotal: number
   metricsNames: string[]
 }

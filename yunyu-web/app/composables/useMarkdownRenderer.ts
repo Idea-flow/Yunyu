@@ -526,7 +526,9 @@ async function renderTokensToHtml(tokens: any[]) {
     </div>
   </div>
   <div class="yy-md-code-body">
-    ${renderedHtml}
+    <div class="yy-md-code-surface">
+      ${renderedHtml}
+    </div>
   </div>
 </div>`.trim())
   }))

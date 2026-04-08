@@ -4,7 +4,7 @@
   overflow: hidden;
   border: 1px solid var(--yy-code-block-border);
   border-radius: 1.08rem;
-  background: var(--yy-code-block-bg);
+  background: transparent;
   box-shadow: 0 16px 34px -30px rgba(15, 23, 42, 0.14);
 }
 
@@ -133,6 +133,13 @@
   will-change: max-height;
 }
 
+.yy-md-code-surface {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0 0 calc(1.08rem - 1px) calc(1.08rem - 1px);
+  background: var(--yy-code-surface-bg, var(--yy-code-block-bg));
+}
+
 .yy-md-code-block[data-code-collapsed='true'] .yy-md-code-body {
   max-height: var(--yy-code-body-max-height);
 }
@@ -151,11 +158,11 @@
   margin: 0;
   width: 100%;
   max-width: 100%;
-  background: var(--yy-code-block-bg) !important;
   border: 0;
   border-radius: 0;
   box-shadow: none;
   box-sizing: border-box;
+  background: transparent !important;
 }
 
 .yy-md pre {
@@ -166,10 +173,9 @@
   display: block;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 0.92rem 1.02rem 1rem;
+  padding: 0.94rem 1.04rem 0.82rem;
   line-height: 1.76;
   color: var(--shiki-light, var(--yy-code-text, inherit));
-  background-color: var(--shiki-light-bg, var(--yy-code-block-bg)) !important;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -182,7 +188,6 @@
 .yy-md[data-code-theme='github-dark'] .shiki,
 .yy-md[data-code-theme='vitesse-dark'] .shiki {
   color: var(--shiki-dark, var(--yy-code-text, inherit));
-  background-color: var(--shiki-dark-bg, var(--yy-code-block-bg)) !important;
 }
 
 .yy-md[data-code-theme='github-dark'] .shiki .line,
@@ -201,8 +206,8 @@
 }
 
 .yy-md .shiki code .line {
-  display: inline-block;
-  min-height: 1.8em;
+  display: block;
+  min-height: 1.66em;
 }
 
 .yy-md pre::-webkit-scrollbar,
@@ -235,6 +240,7 @@
 .dark .yy-md[data-code-theme='github-light'],
 .dark .yy-md[data-code-theme='vitesse-light'] {
   --yy-code-block-bg: #111827;
+  --yy-code-surface-bg: #0d1117;
   --yy-code-block-border: rgba(100, 116, 139, 0.28);
   --yy-code-top-highlight: rgba(125, 211, 252, 0.1);
   --yy-code-text: #e2e8f0;
@@ -253,7 +259,6 @@
 
 .dark .yy-md .shiki.shiki-themes {
   color: var(--shiki-dark, var(--yy-code-text, inherit));
-  background-color: var(--shiki-dark-bg, var(--yy-code-block-bg)) !important;
 }
 
 .dark .yy-md .shiki.shiki-themes .line,
@@ -266,6 +271,14 @@
     --yy-code-body-max-height: 8.4rem;
     border-radius: 0.96rem;
     box-shadow: 0 14px 28px -26px rgba(15, 23, 42, 0.12);
+  }
+
+  .yy-md-code-body {
+    border-radius: 0;
+  }
+
+  .yy-md-code-surface {
+    border-radius: 0 0 calc(0.96rem - 1px) calc(0.96rem - 1px);
   }
 
   .yy-md-code-toolbar {
@@ -304,7 +317,7 @@
   }
 
   .yy-md .shiki {
-    padding: 0.78rem 0.84rem 0.88rem;
+    padding: 0.78rem 0.84rem 0.72rem;
     line-height: 1.64;
   }
 
@@ -314,8 +327,8 @@
 
   .yy-md pre::-webkit-scrollbar,
   .yy-md .shiki::-webkit-scrollbar {
-    height: 0.42rem;
-    width: 0.42rem;
+    height: 0;
+    width: 0;
   }
 }
 
@@ -323,6 +336,14 @@
   .yy-md-code-block {
     --yy-code-body-max-height: 7.7rem;
     border-radius: 0.88rem;
+  }
+
+  .yy-md-code-body {
+    border-radius: 0;
+  }
+
+  .yy-md-code-surface {
+    border-radius: 0 0 calc(0.88rem - 1px) calc(0.88rem - 1px);
   }
 
   .yy-md-code-toolbar {
@@ -338,7 +359,7 @@
   }
 
   .yy-md .shiki {
-    padding: 0.72rem 0.76rem 0.8rem;
+    padding: 0.72rem 0.76rem 0.66rem;
     line-height: 1.58;
   }
 

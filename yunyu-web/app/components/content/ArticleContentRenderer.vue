@@ -215,6 +215,36 @@ function ensureWindowControls(block: HTMLElement) {
 }
 
 /**
+ * 确保代码块正文拥有独立视觉承载层。
+ * 作用：把历史 HTML 中直接挂在 `.yy-md-code-body` 下的 Shiki 节点包进 `.yy-md-code-surface`，
+ * 让正文裁剪层与真实视觉层彻底分离，避免背景、圆角和底部留白互相打架。
+ *
+ * @param codeBody 代码块内容容器
+ * @returns 代码块视觉承载层节点
+ */
+function ensureCodeSurface(codeBody: HTMLElement) {
+  const existingSurface = codeBody.querySelector<HTMLElement>('.yy-md-code-surface')
+
+  if (existingSurface) {
+    return existingSurface
+  }
+
+  const shikiElement = Array.from(codeBody.children).find((child): child is HTMLElement => {
+    return child instanceof HTMLElement && (child.classList.contains('shiki') || child.tagName === 'PRE')
+  })
+
+  if (!shikiElement) {
+    return null
+  }
+
+  const surface = document.createElement('div')
+  surface.className = 'yy-md-code-surface'
+  codeBody.insertBefore(surface, shikiElement)
+  surface.appendChild(shikiElement)
+  return surface
+}
+
+/**
  * 创建 iframe 加载异常提示节点。
  * 作用：当第三方嵌入长时间空白时，给用户一个明确反馈，
  * 提示可能是目标站禁止嵌入或当前网络不可达，并提供源链接直达验证。
@@ -414,6 +444,8 @@ function enhanceCodeBlocks() {
     if (!codeBody || !toggleButton) {
       continue
     }
+
+    ensureCodeSurface(codeBody)
 
     const isOverflowing = codeBody.scrollHeight > collapseHeight
     block.dataset.codeOverflowing = isOverflowing ? 'true' : 'false'
