@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import YunyuHero from '~/components/common/YunyuHero.vue'
 import YunyuImage from '~/components/common/YunyuImage.vue'
 
 /**
@@ -12,7 +13,28 @@ const { data } = await useAsyncData('site-categories', async () => {
 })
 
 const categories = computed(() => data.value || [])
-const categoriesCountText = computed(() => `共 ${categories.value.length} 个分类入口，可按内容方向直接进入阅读。`)
+
+/**
+ * 计算分类列表页首屏主视觉数据。
+ * 作用：优先复用当前分类数据中的首个封面作为大图背景，让分类页与专题页保持统一的封面首屏节奏。
+ */
+const heroCategory = computed(() => categories.value[0] || null)
+
+/**
+ * 计算分类页首屏统计信息。
+ * 作用：在封面图首屏中补充分类总量与覆盖文章数，让 Hero 承担概览信息而不是只做装饰。
+ */
+const heroStats = computed(() => {
+  const totalCategories = categories.value.length
+  const totalArticles = categories.value.reduce((sum, item) => sum + (item.articleCount || 0), 0)
+
+  return [
+    { label: '分类总数', value: totalCategories },
+    { label: '内容方向', value: totalCategories },
+    { label: '覆盖文章', value: totalArticles }
+  ]
+})
+
 const featuredCategory = computed(() => categories.value[0] || null)
 const secondaryCategories = computed(() => categories.value.slice(1))
 
@@ -24,22 +46,30 @@ useSeoMeta({
 
 <template>
   <main class="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] dark:bg-[linear-gradient(180deg,#020617_0%,#081120_100%)]">
-    <section class="mx-auto max-w-[1360px] px-5 py-8 sm:px-8 lg:px-10">
-      <div class="max-w-3xl">
-        <p class="text-[0.72rem] font-semibold uppercase tracking-[0.32em] text-orange-500 dark:text-orange-300">
-          分类
-        </p>
-        <h1 class="mt-4 text-[clamp(2.1rem,1.7rem+1.4vw,3rem)] font-semibold leading-[1.04] tracking-[-0.045em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 dark:text-slate-50">
-          从内容方向进入阅读
-        </h1>
-        <p class="mt-4 max-w-3xl text-[1rem] leading-8 text-slate-600 dark:text-slate-300">
-          分类数量不多时，直接完整展示会比搜索更轻松，也更适合内容站慢慢浏览。
-        </p>
-        <p class="mt-5 text-sm text-slate-500 dark:text-slate-400">
-          {{ categoriesCountText }}
-        </p>
+    <YunyuHero
+      :src="heroCategory?.coverUrl"
+      :alt="heroCategory?.name || '云屿分类'"
+      min-height-class="h-[min(62svh,32rem)] sm:h-[min(68svh,36rem)] lg:h-[min(74svh,42rem)]"
+      content-padding-class="px-5 pb-8 sm:px-8 sm:pb-10 lg:px-10 lg:pb-12"
+      content-width-class="max-w-5xl"
+    >
+      <div class="inline-flex items-center rounded-full border border-white/16 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-white/90 backdrop-blur-md">
+        Category Archive
       </div>
 
+      <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-white/86">
+        <div
+          v-for="stat in heroStats"
+          :key="stat.label"
+          class="flex items-baseline gap-2"
+        >
+          <p class="text-[0.72rem] font-medium tracking-[0.14em] text-white/58">{{ stat.label }}</p>
+          <p class="text-base font-semibold text-white sm:text-lg">{{ stat.value }}</p>
+        </div>
+      </div>
+    </YunyuHero>
+
+    <section class="mx-auto max-w-[1360px] px-5 pb-10 pt-8 sm:px-8 lg:px-10">
       <NuxtLink
         v-if="featuredCategory"
         :to="`/categories/${featuredCategory.slug}`"

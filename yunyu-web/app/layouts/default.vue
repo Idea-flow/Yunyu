@@ -52,6 +52,7 @@ const isOverlayPage = computed(() => {
     || route.path.startsWith('/posts/') || route.path === '/'
   || route.path === '/topics' || route.path.startsWith('/topics/')
       || route.path.startsWith('/categories/')
+      || route.path.startsWith('/categories')
 })
 
 /**
@@ -78,7 +79,7 @@ const isSolidNav = computed(() => {
 const headerClassName = computed(() => {
   return isOverlayPage.value
     ? 'fixed inset-x-0 top-0 z-40'
-    : 'sticky top-0 z-30 bg-transparent'
+    : 'sticky top-2 z-30 bg-transparent sm:top-3'
 })
 
 /**
@@ -98,7 +99,7 @@ const navPanelClassName = computed(() => {
     return 'border border-white/10 bg-slate-950/10 shadow-none backdrop-blur-[14px] dark:border-white/10 dark:bg-slate-950/14'
   }
 
-  return 'border border-slate-300/72 bg-white/84 shadow-[0_22px_46px_-32px_rgba(15,23,42,0.18)] backdrop-blur-[22px] dark:border-white/10 dark:bg-slate-950/64'
+  return 'border border-slate-300/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(244,246,250,0.88))] shadow-[0_24px_52px_-34px_rgba(15,23,42,0.22)] backdrop-blur-[24px] dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.82),rgba(2,6,23,0.72))]'
 })
 
 /**
@@ -150,7 +151,7 @@ const brandSubtitleClassName = computed(() => {
 const navLinkClassName = computed(() => {
   return !isSolidNav.value
     ? 'rounded-full px-4 py-2 text-sm font-medium text-white/88 transition-[background-color,color,transform] duration-200 ease-out hover:bg-white/10 hover:text-white motion-reduce:transition-none'
-    : 'rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition-[background-color,color,transform,box-shadow] duration-200 ease-out hover:bg-slate-100/88 hover:text-sky-700 dark:text-slate-300 dark:hover:bg-white/8 dark:hover:text-sky-200 motion-reduce:transition-none'
+    : 'rounded-full px-4 py-2 text-sm font-medium text-slate-700 transition-[background-color,color,transform,box-shadow] duration-200 ease-out hover:bg-white/80 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/8 dark:hover:text-sky-200 motion-reduce:transition-none'
 })
 
 /**
@@ -160,7 +161,7 @@ const navLinkClassName = computed(() => {
 const navLinkActiveClassName = computed(() => {
   return !isSolidNav.value
     ? 'bg-white/12 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
-    : 'bg-white/92 text-slate-900 shadow-[0_12px_26px_-20px_rgba(15,23,42,0.18)] dark:bg-white/12 dark:text-sky-100'
+    : 'border border-white/85 bg-white/96 text-slate-950 shadow-[0_14px_30px_-22px_rgba(15,23,42,0.22)] dark:border-white/10 dark:bg-white/12 dark:text-sky-100'
 })
 
 /**
@@ -173,7 +174,7 @@ const headerInnerClassName = computed(() => {
     return 'mx-auto max-w-[1360px] px-5 pt-2 pb-3 sm:px-8 sm:pt-3 lg:px-10'
   }
 
-  return 'mx-auto max-w-[1360px] px-5 py-4 sm:px-8 lg:px-10'
+  return 'mx-auto max-w-[1360px] px-5 pb-3 sm:px-8 sm:pb-4 lg:px-10'
 })
 
 /**
@@ -380,7 +381,7 @@ async function handleUserMenuSelect(item: { key: string }) {
               :style="postDetailOverlayLayerStyle"
             />
             <div
-              class="absolute inset-0 rounded-[inherit] border border-slate-300/72 bg-white/84 shadow-[0_22px_46px_-32px_rgba(15,23,42,0.18)] transition-opacity duration-300 ease-out dark:border-white/10 dark:bg-slate-950/64 motion-reduce:transition-none"
+              class="absolute inset-0 rounded-[inherit] border border-slate-300/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(244,246,250,0.88))] shadow-[0_24px_52px_-34px_rgba(15,23,42,0.22)] transition-opacity duration-300 ease-out dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.82),rgba(2,6,23,0.72))] motion-reduce:transition-none"
               :style="postDetailSolidLayerStyle"
             />
           </div>
@@ -404,7 +405,7 @@ async function handleUserMenuSelect(item: { key: string }) {
 
             <div
               class="hidden h-8 w-px transition-colors duration-300 ease-out motion-reduce:transition-none md:block"
-              :class="!isSolidNav ? 'bg-white/14' : 'bg-slate-200/60 dark:bg-white/10'"
+              :class="!isSolidNav ? 'bg-white/14' : 'bg-slate-300/70 dark:bg-white/10'"
             />
 
             <nav class="hidden items-center gap-1 md:flex">

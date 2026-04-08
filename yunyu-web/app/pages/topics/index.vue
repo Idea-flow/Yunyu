@@ -54,15 +54,7 @@ useSeoMeta({
         Topic Archive
       </div>
 
-      <h1 class="mt-5 text-[clamp(2.55rem,1.85rem+2.5vw,4.8rem)] font-semibold leading-[0.98] tracking-[-0.045em] [font-family:var(--font-display)] [text-wrap:balance] text-white drop-shadow-lg">
-        专题不是标签堆叠，而是成组阅读入口
-      </h1>
-
-      <p class="mt-4 max-w-3xl text-sm leading-7 text-white/86 drop-shadow-md sm:text-base sm:leading-8">
-        在云屿里，专题页负责把同一主题下的文章串成连续阅读路径，让内容更像一条可以慢慢展开的线。
-      </p>
-
-      <div class="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 text-white/86">
+      <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-white/86">
         <div
           v-for="stat in heroStats"
           :key="stat.label"
