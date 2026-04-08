@@ -51,15 +51,74 @@ const heroBrandMark = computed(() => {
 })
 
 /**
- * 首页首屏关键词。
- * 作用：当后台开启关键词展示时，在首屏中展示少量主题方向。
+ * 首页首屏默认视频地址。
+ * 作用：当后台配置了视觉文章但目标文章既无视频也无封面图时，回退到默认视觉素材。
  */
-const heroKeywords = computed(() => {
-  if (!homepageConfig.value?.showHeroKeywords) {
-    return []
+const defaultHeroVideoUrl = 'https://s3.hi168.com/hi168-29272-3320gqns/%E2%80%9C%E8%B6%81%E5%A4%A9%E7%A9%BA%E4%B8%8D%E6%B3%A8%E6%84%8F%EF%BC%8C%E5%81%B7%E4%B8%80%E7%82%B9%E4%BA%91%E6%9C%B5%E9%80%81%E7%BB%99%E4%BD%A0%EF%BD%9E%E2%80%9D.mp4'
+
+/**
+ * 首页是否展示右侧视觉片段。
+ * 作用：只有后台实际配置了视觉文章且前台拿到可展示数据时，才渲染右侧视觉区域；
+ * 未配置时保持当前更克制的单列首屏样式。
+ */
+const showHeroVisual = computed(() => {
+  return Boolean(homepageConfig.value?.heroVisualPostId && heroVisual.value)
+})
+
+/**
+ * 首页首屏是否使用配置视频。
+ * 作用：控制右侧主视觉优先展示后台配置文章的视频资源。
+ */
+const heroVisualHasVideo = computed(() => {
+  return heroVisual.value?.mediaType === 'video' && Boolean(heroVisual.value.videoUrl)
+})
+
+/**
+ * 首页首屏是否使用配置图片。
+ * 作用：在没有视频时回退为文章封面图展示。
+ */
+const heroVisualHasImage = computed(() => {
+  return heroVisual.value?.mediaType === 'image' && Boolean(heroVisual.value.imageUrl)
+})
+
+/**
+ * 首页首屏视频地址。
+ * 作用：统一返回首页右侧主视觉视频地址，优先取配置视频，兜底使用默认素材。
+ */
+const heroVideoUrl = computed(() => {
+  if (heroVisualHasVideo.value) {
+    return heroVisual.value?.videoUrl || defaultHeroVideoUrl
   }
 
-  return (homepageConfig.value?.heroKeywords || []).slice(0, 5)
+  return defaultHeroVideoUrl
+})
+
+/**
+ * 首页首屏图片地址。
+ * 作用：当配置文章只有封面图时，为右侧主视觉返回图片地址。
+ */
+const heroImageUrl = computed(() => {
+  return heroVisualHasImage.value ? heroVisual.value?.imageUrl || '' : ''
+})
+
+/**
+ * 首页首屏视觉块跳转地址。
+ * 作用：当后台开启整块点击时，为右侧主视觉提供文章详情跳转。
+ */
+const heroVisualLink = computed(() => {
+  if (!heroVisual.value?.clickable || !heroVisual.value?.postSlug) {
+    return ''
+  }
+
+  return getPostLink(heroVisual.value.postSlug)
+})
+
+/**
+ * 首页首屏视觉块辅助文案。
+ * 作用：在右侧主视觉下方保留一条轻量说明，优先显示视觉文章标题。
+ */
+const heroVisualCaption = computed(() => {
+  return heroVisual.value?.postTitle || '首页视觉'
 })
 
 /**
@@ -131,68 +190,6 @@ const selectedPosts = computed(() => {
   ].filter(Boolean))
 
   return featuredPosts.value.filter(post => !excludedSlugs.has(post.slug)).slice(0, 3)
-})
-
-/**
- * 首页首屏默认视频地址。
- * 作用：当后台未配置视觉文章，或目标文章既无视频也无封面图时，回退到默认视觉素材。
- */
-const defaultHeroVideoUrl = 'https://s3.hi168.com/hi168-29272-3320gqns/%E2%80%9C%E8%B6%81%E5%A4%A9%E7%A9%BA%E4%B8%8D%E6%B3%A8%E6%84%8F%EF%BC%8C%E5%81%B7%E4%B8%80%E7%82%B9%E4%BA%91%E6%9C%B5%E9%80%81%E7%BB%99%E4%BD%A0%EF%BD%9E%E2%80%9D.mp4'
-
-/**
- * 首页首屏是否使用配置视频。
- * 作用：控制右侧主视觉优先展示后台配置文章的视频资源。
- */
-const heroVisualHasVideo = computed(() => {
-  return heroVisual.value?.mediaType === 'video' && Boolean(heroVisual.value.videoUrl)
-})
-
-/**
- * 首页首屏是否使用配置图片。
- * 作用：在没有视频时回退为文章封面图展示。
- */
-const heroVisualHasImage = computed(() => {
-  return heroVisual.value?.mediaType === 'image' && Boolean(heroVisual.value.imageUrl)
-})
-
-/**
- * 首页首屏视频地址。
- * 作用：统一返回首页右侧主视觉视频地址，优先取配置视频，兜底使用默认素材。
- */
-const heroVideoUrl = computed(() => {
-  if (heroVisualHasVideo.value) {
-    return heroVisual.value?.videoUrl || defaultHeroVideoUrl
-  }
-
-  return defaultHeroVideoUrl
-})
-
-/**
- * 首页首屏图片地址。
- * 作用：当配置文章只有封面图时，为右侧主视觉返回图片地址。
- */
-const heroImageUrl = computed(() => {
-  return heroVisualHasImage.value ? heroVisual.value?.imageUrl || '' : ''
-})
-
-/**
- * 首页首屏视觉块跳转地址。
- * 作用：当后台开启整块点击时，为右侧主视觉提供文章详情跳转。
- */
-const heroVisualLink = computed(() => {
-  if (!heroVisual.value?.clickable || !heroVisual.value?.postSlug) {
-    return ''
-  }
-
-  return getPostLink(heroVisual.value.postSlug)
-})
-
-/**
- * 首页首屏视觉块辅助文案。
- * 作用：在右侧主视觉下方保留一条轻量说明，优先显示视觉文章标题。
- */
-const heroVisualCaption = computed(() => {
-  return heroVisual.value?.postTitle || heroKeywords.value.slice(0, 2).join(' / ') || '写作 / 观察'
 })
 
 /**
@@ -378,8 +375,11 @@ function getTopicLink(slug: string) {
 
       <div class="relative mx-auto flex min-h-screen max-w-[1320px] items-stretch px-5 pb-8 pt-[5.5rem] sm:px-8 sm:pt-24 lg:px-10 lg:pb-10 lg:pt-[6.5rem]">
         <div class="flex w-full flex-col justify-between gap-10">
-          <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(420px,520px)] lg:items-center lg:gap-12">
-            <div class="max-w-[720px]">
+          <div
+            class="grid gap-10"
+            :class="showHeroVisual ? 'lg:grid-cols-[minmax(0,1fr)_minmax(420px,520px)] lg:items-center lg:gap-12' : ''"
+          >
+            <div :class="showHeroVisual ? 'max-w-[720px]' : 'max-w-[820px]'">
               <p class="text-[0.67rem] font-semibold uppercase tracking-[0.38em] text-slate-500 dark:text-slate-400">
                 {{ heroEyebrow }}
               </p>
@@ -452,7 +452,10 @@ function getTopicLink(slug: string) {
               </div>
             </div>
 
-            <div class="w-full max-w-[520px] justify-self-start lg:justify-self-end">
+            <div
+              v-if="showHeroVisual"
+              class="w-full max-w-[520px] justify-self-start lg:justify-self-end"
+            >
               <NuxtLink
                 v-if="heroVisualLink"
                 :to="heroVisualLink"
@@ -529,13 +532,14 @@ function getTopicLink(slug: string) {
                 <span class="truncate text-right">{{ heroVisualCaption }}</span>
               </div>
             </div>
+
           </div>
 
           <div v-if="heroStatItems.length > 0" class="mt-10 lg:mt-12">
             <div class="flex justify-start lg:justify-end">
               <div>
                 <p class="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">
-                  站点体量
+                  内容概览
                 </p>
                 <dl class="mt-3 flex flex-wrap gap-x-6 gap-y-3">
                   <div

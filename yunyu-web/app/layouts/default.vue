@@ -98,7 +98,7 @@ const navPanelClassName = computed(() => {
     return 'border border-white/10 bg-slate-950/10 shadow-none backdrop-blur-[14px] dark:border-white/10 dark:bg-slate-950/14'
   }
 
-  return 'border border-slate-200/58 bg-white/68 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.12)] backdrop-blur-[18px] dark:border-white/8 dark:bg-slate-950/52'
+  return 'border border-slate-300/72 bg-white/84 shadow-[0_22px_46px_-32px_rgba(15,23,42,0.18)] backdrop-blur-[22px] dark:border-white/10 dark:bg-slate-950/64'
 })
 
 /**
@@ -160,7 +160,7 @@ const navLinkClassName = computed(() => {
 const navLinkActiveClassName = computed(() => {
   return !isSolidNav.value
     ? 'bg-white/12 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
-    : 'bg-white/72 text-sky-700 shadow-[0_10px_24px_-20px_rgba(14,165,233,0.22)] dark:bg-white/10 dark:text-sky-200'
+    : 'bg-white/92 text-slate-900 shadow-[0_12px_26px_-20px_rgba(15,23,42,0.18)] dark:bg-white/12 dark:text-sky-100'
 })
 
 /**
@@ -380,7 +380,7 @@ async function handleUserMenuSelect(item: { key: string }) {
               :style="postDetailOverlayLayerStyle"
             />
             <div
-              class="absolute inset-0 rounded-[inherit] border border-slate-200/58 bg-white/68 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.12)] transition-opacity duration-300 ease-out dark:border-white/8 dark:bg-slate-950/52 motion-reduce:transition-none"
+              class="absolute inset-0 rounded-[inherit] border border-slate-300/72 bg-white/84 shadow-[0_22px_46px_-32px_rgba(15,23,42,0.18)] transition-opacity duration-300 ease-out dark:border-white/10 dark:bg-slate-950/64 motion-reduce:transition-none"
               :style="postDetailSolidLayerStyle"
             />
           </div>

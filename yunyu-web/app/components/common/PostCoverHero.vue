@@ -10,7 +10,6 @@ withDefaults(defineProps<{
   alt?: string
   heightClass?: string
   overlayClass?: string
-  bottomFadeClass?: string
   contentWrapperClass?: string
   contentContainerClass?: string
   showHeroMarker?: boolean
@@ -19,7 +18,6 @@ withDefaults(defineProps<{
   alt: '',
   heightClass: 'h-[34svh] min-h-[280px] w-full sm:h-[42svh] sm:min-h-[340px] lg:h-[54svh]',
   overlayClass: 'bg-[linear-gradient(180deg,rgba(15,23,42,0.18)_0%,rgba(15,23,42,0.18)_18%,rgba(15,23,42,0.22)_42%,rgba(15,23,42,0.62)_100%)] dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.1)_0%,rgba(2,6,23,0.14)_20%,rgba(2,6,23,0.26)_44%,rgba(2,6,23,0.72)_100%)]',
-  bottomFadeClass: 'bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(244,248,255,0.9)_100%)] dark:bg-[linear-gradient(180deg,rgba(2,6,23,0)_0%,rgba(2,6,23,0.96)_100%)]',
   contentWrapperClass: 'absolute inset-x-0 bottom-0 z-10',
   contentContainerClass: 'mx-auto max-w-[1440px] px-5 pb-8 sm:px-8 sm:pb-12 lg:px-10 lg:pb-14',
   showHeroMarker: true
@@ -57,7 +55,7 @@ withDefaults(defineProps<{
         </div>
       </div>
 
-      <div class="pointer-events-none absolute inset-x-0 bottom-0 h-24" :class="bottomFadeClass" />
+      <div class="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(244,248,255,0.9)_100%)] dark:bg-[linear-gradient(180deg,rgba(2,6,23,0)_0%,rgba(2,6,23,0.96)_100%)]" />
     </div>
   </section>
 </template>
