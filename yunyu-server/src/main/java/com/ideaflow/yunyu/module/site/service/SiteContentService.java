@@ -116,7 +116,7 @@ public class SiteContentService {
         response.setSiteInfo(getSiteBaseInfo());
         response.setHomepageConfig(homepageConfig);
         response.setHeroVisual(buildHeroVisual(homepageConfig));
-        response.setFeaturedPosts(listRecommendedPosts());
+        response.setRecommendedPosts(listRecommendedPosts());
         response.setLatestPosts(listLatestPosts());
         response.setCategories(listCategories());
         response.setTopics(listTopics());

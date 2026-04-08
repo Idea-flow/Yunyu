@@ -172,7 +172,7 @@ export interface SiteHomeResponse {
   siteInfo: SiteBaseInfo
   homepageConfig: HomePageConfig
   heroVisual: HomePageHeroVisual | null
-  featuredPosts: SitePostSummary[]
+  recommendedPosts: SitePostSummary[]
   latestPosts: SitePostSummary[]
   categories: SiteCategoryItem[]
   topics: SiteTopicItem[]

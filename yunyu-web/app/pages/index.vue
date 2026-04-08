@@ -16,7 +16,7 @@ const { data, pending, error } = await useAsyncData('site-home', async () => {
 })
 
 const homeData = computed(() => data.value)
-const featuredPosts = computed(() => homeData.value?.featuredPosts || [])
+const recommendedPosts = computed(() => homeData.value?.recommendedPosts || [])
 const latestPosts = computed(() => homeData.value?.latestPosts || [])
 const categories = computed(() => homeData.value?.categories || [])
 const topics = computed(() => homeData.value?.topics || [])
@@ -150,7 +150,7 @@ const heroStats = computed(() => {
  * 作用：在首屏按钮下方补充少量最新文章入口，让首页在不堆卡片的前提下更有内容感。
  */
 const heroRecentPosts = computed(() => {
-  const preferredPosts = latestDisplayPosts.value.length > 0 ? latestDisplayPosts.value : featuredPosts.value
+  const preferredPosts = latestDisplayPosts.value.length > 0 ? latestDisplayPosts.value : recommendedPosts.value
 
   return preferredPosts.slice(0, 2)
 })
@@ -183,7 +183,7 @@ const latestDisplayPosts = computed(() => latestPosts.value.slice(0, 4))
  * 作用：将最新内容中的第一篇文章作为正文主入口，承担首页进入阅读的第一视觉焦点。
  */
 const editorialLeadPost = computed<SitePostSummary | null>(() => {
-  return latestDisplayPosts.value[0] || featuredPosts.value[0] || null
+  return latestDisplayPosts.value[0] || recommendedPosts.value[0] || null
 })
 
 /**
@@ -195,7 +195,7 @@ const editorialSidePosts = computed(() => {
     return latestDisplayPosts.value.slice(1, 4)
   }
 
-  return featuredPosts.value
+  return recommendedPosts.value
     .filter(post => post.slug !== editorialLeadPost.value?.slug)
     .slice(0, 3)
 })
@@ -210,7 +210,7 @@ const selectedPosts = computed(() => {
     ...editorialSidePosts.value.map(post => post.slug)
   ].filter(Boolean))
 
-  return featuredPosts.value.filter(post => !excludedSlugs.has(post.slug)).slice(0, 3)
+  return recommendedPosts.value.filter(post => !excludedSlugs.has(post.slug)).slice(0, 3)
 })
 
 /**
@@ -666,10 +666,7 @@ function getTopicLink(slug: string) {
               </h2>
 
               <div class="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[0.7rem] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                <span>{{ editorialLeadPost.authorName }}</span>
                 <span>{{ formatChineseDate(editorialLeadPost.publishedAt) }}</span>
-                <span>{{ editorialLeadPost.readingMinutes }} 分钟阅读</span>
-                <span>{{ editorialLeadPost.viewCount }} 浏览</span>
               </div>
             </div>
           </NuxtLink>
@@ -699,10 +696,6 @@ function getTopicLink(slug: string) {
                   {{ post.title }}
                 </h3>
 
-                <div class="mt-3 flex items-center gap-4 text-[0.72rem] text-slate-500 dark:text-slate-400">
-                  <span>{{ post.readingMinutes }} 分钟阅读</span>
-                  <span>{{ post.viewCount }} 浏览</span>
-                </div>
               </div>
             </NuxtLink>
           </div>
@@ -786,7 +779,7 @@ function getTopicLink(slug: string) {
 
       <section v-if="showFeaturedSection" class="border-t border-slate-200/80 pt-16 dark:border-white/10">
         <YunyuSectionTitle
-          eyebrow="Selected"
+          eyebrow="Recommended"
           :title="homepageConfig?.featuredSectionTitle || '推荐'"
           link-label="查看全部"
           link-to="/posts"

@@ -13,7 +13,7 @@ public class SiteHomeResponse {
     private SiteBaseInfoResponse siteInfo;
     private SiteHomepageConfigResponse homepageConfig;
     private SiteHeroVisualResponse heroVisual;
-    private List<SitePostSummaryResponse> featuredPosts;
+    private List<SitePostSummaryResponse> recommendedPosts;
     private List<SitePostSummaryResponse> latestPosts;
     private List<SiteCategoryItemResponse> categories;
     private List<SiteTopicItemResponse> topics;
