@@ -604,8 +604,7 @@ VALUES
     '站点SEO配置',
     JSON_OBJECT(
       'defaultTitle', '云屿 Yunyu - 动漫内容站演示',
-      'defaultDescription', '聚焦新番观察、场景美学、角色成长与专题化内容组织的动漫风格内容站。',
-      'defaultShareImage', 'https://image.pollinations.ai/prompt/anime%20homepage%20hero%20cover?width=1200&height=675&seed=5103&nologo=true'
+      'defaultDescription', '聚焦新番观察、场景美学、角色成长与专题化内容组织的动漫风格内容站。'
     ),
     '动漫内容站演示数据'
   ),
@@ -614,8 +613,7 @@ VALUES
     '站点主题配置',
     JSON_OBJECT(
       'primaryColor', '#38bdf8',
-      'secondaryColor', '#f97316',
-      'homeStyle', 'anime-editorial'
+      'secondaryColor', '#f97316'
     ),
     '动漫内容站演示数据'
   ),

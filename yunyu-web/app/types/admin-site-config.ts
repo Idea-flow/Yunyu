@@ -10,10 +10,8 @@ export interface AdminSiteConfigForm {
   faviconUrl: string
   defaultTitle: string
   defaultDescription: string
-  defaultShareImage: string
   primaryColor: string
   secondaryColor: string
-  homeStyle: string
 }
 
 /**

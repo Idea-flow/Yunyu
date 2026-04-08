@@ -16,8 +16,6 @@ public class SiteBaseInfoResponse {
     private String faviconUrl;
     private String defaultTitle;
     private String defaultDescription;
-    private String defaultShareImage;
     private String primaryColor;
     private String secondaryColor;
-    private String homeStyle;
 }

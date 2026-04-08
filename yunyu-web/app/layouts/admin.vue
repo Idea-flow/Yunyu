@@ -7,7 +7,7 @@ interface AdminNavigationItem {
   label: string
   icon: string
   to: string
-  matchStatus?: string
+  badgeType?: 'pending-comments'
 }
 
 /**
@@ -17,8 +17,11 @@ interface AdminNavigationItem {
  */
 const route = useRoute()
 const auth = useAuth()
+const adminComments = useAdminComments()
 const systemSlogan = '记录热爱，沉淀表达'
 const sidebarCollapsed = useState('admin-sidebar-collapsed', () => false)
+const pendingCommentTotal = ref<number | null>(null)
+const isPendingCommentTotalLoading = ref(false)
 
 const navigationItems: AdminNavigationItem[] = [
   {
@@ -49,13 +52,8 @@ const navigationItems: AdminNavigationItem[] = [
   {
     label: '评论管理',
     icon: 'i-lucide-messages-square',
-    to: '/admin/comments'
-  },
-  {
-    label: '待审核评论',
-    icon: 'i-lucide-message-circle-warning',
-    to: '/admin/comments?status=PENDING',
-    matchStatus: 'PENDING'
+    to: '/admin/comments',
+    badgeType: 'pending-comments'
   },
   {
     label: '用户管理',
@@ -84,6 +82,8 @@ onMounted(() => {
   if (storedValue !== null) {
     sidebarCollapsed.value = storedValue === 'true'
   }
+
+  loadPendingCommentTotal()
 })
 
 /**
@@ -94,6 +94,17 @@ watch(sidebarCollapsed, (value) => {
   localStorage.setItem('yunyu-admin-sidebar-collapsed', String(value))
 })
 
+watch(
+  () => route.fullPath,
+  async () => {
+    if (!route.path.startsWith('/admin/comments')) {
+      return
+    }
+
+    await loadPendingCommentTotal()
+  }
+)
+
 /**
  * 判断当前导航项是否处于激活状态。
  *
@@ -101,19 +112,55 @@ watch(sidebarCollapsed, (value) => {
  * @returns 是否为当前激活路由
  */
 function isActiveItem(item: AdminNavigationItem) {
-  if (item.matchStatus) {
-    return route.path === '/admin/comments' && route.query.status === item.matchStatus
-  }
-
   if (item.to === '/admin') {
     return route.path === '/admin'
   }
 
-  if (item.to === '/admin/comments') {
-    return route.path === '/admin/comments' && !route.query.status
+  return route.path.startsWith(item.to)
+}
+
+/**
+ * 加载待审核评论数量。
+ * 作用：为后台侧边栏中的“评论管理”入口提供真实待审核数量徽标，帮助站长快速感知待处理积压。
+ */
+async function loadPendingCommentTotal() {
+  if (isPendingCommentTotalLoading.value) {
+    return
   }
 
-  return route.path.startsWith(item.to)
+  isPendingCommentTotalLoading.value = true
+
+  try {
+    const response = await adminComments.listComments({
+      status: 'PENDING',
+      pageNo: 1,
+      pageSize: 1
+    })
+    pendingCommentTotal.value = response.total
+  } catch {
+    pendingCommentTotal.value = null
+  } finally {
+    isPendingCommentTotalLoading.value = false
+  }
+}
+
+/**
+ * 解析导航项徽标文本。
+ * 作用：统一处理后台侧边栏不同入口的徽标显示规则，避免模板层散落条件判断。
+ *
+ * @param item 导航项
+ * @returns 当前导航项需要展示的徽标文本
+ */
+function resolveNavigationBadge(item: AdminNavigationItem) {
+  if (item.badgeType !== 'pending-comments') {
+    return ''
+  }
+
+  if (pendingCommentTotal.value === null || pendingCommentTotal.value <= 0) {
+    return ''
+  }
+
+  return pendingCommentTotal.value > 99 ? '99+' : String(pendingCommentTotal.value)
 }
 
 /**
@@ -190,6 +237,13 @@ async function handleLogout() {
             <div v-if="!sidebarCollapsed" class="min-w-0 flex-1">
               <p class="text-[13px] font-semibold leading-5 text-slate-900 dark:text-slate-50">{{ item.label }}</p>
             </div>
+
+            <span
+              v-if="!sidebarCollapsed && resolveNavigationBadge(item)"
+              class="ms-auto inline-flex min-w-[1.5rem] items-center justify-center rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-semibold leading-none text-sky-700 dark:bg-sky-500/14 dark:text-sky-200"
+            >
+              {{ resolveNavigationBadge(item) }}
+            </span>
           </NuxtLink>
         </nav>
 

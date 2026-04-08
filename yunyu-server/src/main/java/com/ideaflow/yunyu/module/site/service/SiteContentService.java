@@ -113,7 +113,7 @@ public class SiteContentService {
     public SiteHomeResponse getHome() {
         SiteHomeResponse response = new SiteHomeResponse();
         SiteHomepageConfigResponse homepageConfig = homepageConfigService.getSiteHomepageConfig();
-        response.setSiteInfo(buildSiteBaseInfo());
+        response.setSiteInfo(getSiteBaseInfo());
         response.setHomepageConfig(homepageConfig);
         response.setHeroVisual(buildHeroVisual(homepageConfig));
         response.setFeaturedPosts(listRecommendedPosts());
@@ -121,6 +121,15 @@ public class SiteContentService {
         response.setCategories(listCategories());
         response.setTopics(listTopics());
         return response;
+    }
+
+    /**
+     * 获取前台站点基础配置。
+     *
+     * @return 站点基础配置
+     */
+    public SiteBaseInfoResponse getSiteBaseInfo() {
+        return buildSiteBaseInfo();
     }
 
     /**
@@ -302,10 +311,8 @@ public class SiteContentService {
         response.setFaviconUrl(readJsonText(baseNode, "faviconUrl", ""));
         response.setDefaultTitle(readJsonText(seoNode, "defaultTitle", response.getSiteName()));
         response.setDefaultDescription(readJsonText(seoNode, "defaultDescription", response.getSiteSubTitle()));
-        response.setDefaultShareImage(readJsonText(seoNode, "defaultShareImage", ""));
         response.setPrimaryColor(readJsonText(themeNode, "primaryColor", "#38bdf8"));
         response.setSecondaryColor(readJsonText(themeNode, "secondaryColor", "#fb923c"));
-        response.setHomeStyle(readJsonText(themeNode, "homeStyle", "default"));
         return response;
     }
 

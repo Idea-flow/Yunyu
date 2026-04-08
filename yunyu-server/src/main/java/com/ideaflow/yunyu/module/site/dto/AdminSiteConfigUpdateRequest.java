@@ -35,18 +35,11 @@ public class AdminSiteConfigUpdateRequest {
     @Size(max = 255, message = "默认描述长度不能超过255个字符")
     private String defaultDescription;
 
-    @Size(max = 255, message = "默认分享图地址长度不能超过255个字符")
-    private String defaultShareImage;
-
     @Pattern(regexp = "^#([A-Fa-f0-9]{6})$", message = "主色需为 #RRGGBB 格式")
     private String primaryColor;
 
     @Pattern(regexp = "^#([A-Fa-f0-9]{6})$", message = "辅助色需为 #RRGGBB 格式")
     private String secondaryColor;
-
-    @NotBlank(message = "首页风格不能为空")
-    @Size(max = 32, message = "首页风格长度不能超过32个字符")
-    private String homeStyle;
 
     /**
      * 获取站点名称。
@@ -175,24 +168,6 @@ public class AdminSiteConfigUpdateRequest {
     }
 
     /**
-     * 获取默认分享图地址。
-     *
-     * @return 默认分享图地址
-     */
-    public String getDefaultShareImage() {
-        return defaultShareImage;
-    }
-
-    /**
-     * 设置默认分享图地址。
-     *
-     * @param defaultShareImage 默认分享图地址
-     */
-    public void setDefaultShareImage(String defaultShareImage) {
-        this.defaultShareImage = defaultShareImage;
-    }
-
-    /**
      * 获取主色。
      *
      * @return 主色
@@ -228,21 +203,4 @@ public class AdminSiteConfigUpdateRequest {
         this.secondaryColor = secondaryColor;
     }
 
-    /**
-     * 获取首页风格。
-     *
-     * @return 首页风格
-     */
-    public String getHomeStyle() {
-        return homeStyle;
-    }
-
-    /**
-     * 设置首页风格。
-     *
-     * @param homeStyle 首页风格
-     */
-    public void setHomeStyle(String homeStyle) {
-        this.homeStyle = homeStyle;
-    }
 }

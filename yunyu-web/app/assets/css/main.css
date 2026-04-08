@@ -19,7 +19,9 @@
 :root {
   --ui-radius: 0.75rem;
   --ui-container: 80rem;
-  --ui-primary: var(--ui-color-sky-500);
+  --site-primary-color: #38BDF8;
+  --site-secondary-color: #FB923C;
+  --ui-primary: var(--site-primary-color);
   --front-atlas-shell-border: rgb(255 255 255 / 0.72);
   --front-atlas-shell-shadow: 0 26px 60px -42px rgba(148, 163, 184, 0.34);
   --front-atlas-card-shadow: 0 24px 52px -44px rgba(148, 163, 184, 0.32);
@@ -27,7 +29,7 @@
 }
 
 .dark {
-  --ui-primary: var(--ui-color-sky-400);
+  --ui-primary: var(--site-primary-color);
   color-scheme: dark;
 }
 

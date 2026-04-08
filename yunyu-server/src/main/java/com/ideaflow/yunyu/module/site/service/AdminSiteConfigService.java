@@ -63,10 +63,8 @@ public class AdminSiteConfigService {
         response.setFaviconUrl(readJsonText(baseNode, "faviconUrl", ""));
         response.setDefaultTitle(readJsonText(seoNode, "defaultTitle", response.getSiteName()));
         response.setDefaultDescription(readJsonText(seoNode, "defaultDescription", response.getSiteSubTitle()));
-        response.setDefaultShareImage(readJsonText(seoNode, "defaultShareImage", ""));
         response.setPrimaryColor(readJsonText(themeNode, "primaryColor", "#38BDF8"));
         response.setSecondaryColor(readJsonText(themeNode, "secondaryColor", "#FB923C"));
-        response.setHomeStyle(readJsonText(themeNode, "homeStyle", "default"));
         return response;
     }
 
@@ -111,7 +109,6 @@ public class AdminSiteConfigService {
         ObjectNode jsonNode = objectMapper.createObjectNode();
         jsonNode.put("defaultTitle", normalizeText(request.getDefaultTitle()));
         jsonNode.put("defaultDescription", normalizeText(request.getDefaultDescription()));
-        jsonNode.put("defaultShareImage", normalizeText(request.getDefaultShareImage()));
         return writeJson(jsonNode);
     }
 
@@ -125,7 +122,6 @@ public class AdminSiteConfigService {
         ObjectNode jsonNode = objectMapper.createObjectNode();
         jsonNode.put("primaryColor", normalizeText(request.getPrimaryColor()));
         jsonNode.put("secondaryColor", normalizeText(request.getSecondaryColor()));
-        jsonNode.put("homeStyle", normalizeText(request.getHomeStyle()));
         return writeJson(jsonNode);
     }
 

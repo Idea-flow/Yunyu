@@ -12,10 +12,8 @@ export interface SiteBaseInfo {
   faviconUrl: string
   defaultTitle: string
   defaultDescription: string
-  defaultShareImage: string
   primaryColor: string
   secondaryColor: string
-  homeStyle: string
 }
 
 /**

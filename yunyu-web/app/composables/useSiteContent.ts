@@ -1,4 +1,5 @@
 import type {
+  SiteBaseInfo,
   SiteCategoryDetail,
   SiteCategoryItem,
   SiteHomeResponse,
@@ -31,6 +32,15 @@ export function useSiteContent() {
    */
   async function getHome() {
     return await apiClient.request<SiteHomeResponse>('/api/site/home')
+  }
+
+  /**
+   * 获取站点基础配置。
+   *
+   * @returns 站点基础配置
+   */
+  async function getSiteConfig() {
+    return await apiClient.request<SiteBaseInfo>('/api/site/config')
   }
 
   /**
@@ -150,6 +160,7 @@ export function useSiteContent() {
   }
 
   return {
+    getSiteConfig,
     getHome,
     listPosts,
     getPostDetail,

@@ -177,8 +177,8 @@ CREATE TABLE IF NOT EXISTS `site_config` (
 INSERT INTO `site_config` (`config_key`, `config_name`, `config_json`, `remark`)
 VALUES
   ('site.base', '站点基础配置', JSON_OBJECT('siteName', '', 'siteSubTitle', '', 'logoUrl', '', 'faviconUrl', '', 'footerText', ''), '初始化占位配置'),
-  ('site.seo', '站点SEO配置', JSON_OBJECT('defaultTitle', '', 'defaultDescription', '', 'defaultShareImage', ''), '初始化占位配置'),
-  ('site.theme', '站点主题配置', JSON_OBJECT('primaryColor', '', 'secondaryColor', '', 'homeStyle', 'default'), '初始化占位配置'),
+  ('site.seo', '站点SEO配置', JSON_OBJECT('defaultTitle', '', 'defaultDescription', ''), '初始化占位配置'),
+  ('site.theme', '站点主题配置', JSON_OBJECT('primaryColor', '', 'secondaryColor', ''), '初始化占位配置'),
   ('site.feature', '站点功能开关', JSON_OBJECT('allowRegister', false, 'allowComment', true, 'enableSearch', false, 'enableSubscribe', false), '初始化占位配置')
 ON DUPLICATE KEY UPDATE
   `config_name` = VALUES(`config_name`),
@@ -187,4 +187,3 @@ ON DUPLICATE KEY UPDATE
   `updated_time` = CURRENT_TIMESTAMP;
 
 SET FOREIGN_KEY_CHECKS = 1;
-

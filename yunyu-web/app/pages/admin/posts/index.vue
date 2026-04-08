@@ -11,6 +11,8 @@ definePageMeta({
   middleware: 'admin'
 })
 
+const route = useRoute()
+const router = useRouter()
 const toast = useToast()
 const adminPosts = useAdminPosts()
 const adminTaxonomy = useAdminTaxonomy()
@@ -72,6 +74,124 @@ const allowCommentOptions = [
   { label: '允许评论', value: 1 },
   { label: '禁止评论', value: 0 }
 ] as const
+
+/**
+ * 解析路由中的文章状态筛选值。
+ * 作用：让后台文章页支持通过 URL 直接进入草稿、已发布等指定筛选视图。
+ *
+ * @param value 路由中的状态查询参数
+ * @returns 合法的文章状态筛选值
+ */
+function resolveRouteStatus(value: unknown): PostStatusFilter {
+  if (value === 'DRAFT' || value === 'PUBLISHED' || value === 'OFFLINE') {
+    return value
+  }
+
+  return 'ALL'
+}
+
+/**
+ * 解析路由中的二元开关筛选值。
+ * 作用：统一处理置顶、推荐、评论开关在 URL 中的筛选恢复逻辑。
+ *
+ * @param value 路由中的查询参数
+ * @returns 合法的布尔筛选值
+ */
+function resolveRouteFlag(value: unknown): PostFlagFilter {
+  if (value === '1' || value === 1) {
+    return 1
+  }
+
+  if (value === '0' || value === 0) {
+    return 0
+  }
+
+  return 'ALL'
+}
+
+/**
+ * 解析路由中的内容编排筛选值。
+ * 作用：统一恢复分类、标签、专题等数字筛选参数，避免非法值污染列表请求。
+ *
+ * @param value 路由中的查询参数
+ * @returns 合法的内容编排筛选值
+ */
+function resolveRouteTaxonomyValue(value: unknown): PostTaxonomyFilter {
+  if (typeof value !== 'string' || !value.trim()) {
+    return 'ALL'
+  }
+
+  const parsedValue = Number(value)
+
+  return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : 'ALL'
+}
+
+/**
+ * 根据当前路由恢复文章筛选条件。
+ * 作用：让后台首页或其他入口通过 URL 查询参数直达指定文章筛选视图。
+ */
+function hydrateFiltersFromRoute() {
+  searchKeyword.value = typeof route.query.keyword === 'string' ? route.query.keyword : ''
+  activeStatus.value = resolveRouteStatus(route.query.status)
+  activeCategoryId.value = resolveRouteTaxonomyValue(route.query.categoryId)
+  activeTagId.value = resolveRouteTaxonomyValue(route.query.tagId)
+  activeTopicId.value = resolveRouteTaxonomyValue(route.query.topicId)
+  activeIsTop.value = resolveRouteFlag(route.query.isTop)
+  activeIsRecommend.value = resolveRouteFlag(route.query.isRecommend)
+  activeAllowComment.value = resolveRouteFlag(route.query.allowComment)
+
+  const routePageNo = Number(route.query.pageNo || 1)
+  currentPage.value = Number.isFinite(routePageNo) && routePageNo > 0 ? routePageNo : 1
+}
+
+/**
+ * 将当前筛选条件同步到路由。
+ * 作用：让文章管理页的筛选结果支持刷新保留和入口直达，便于在后台不同页面间往返。
+ */
+async function syncRouteQuery() {
+  const nextQuery: Record<string, string> = {}
+
+  if (searchKeyword.value.trim()) {
+    nextQuery.keyword = searchKeyword.value.trim()
+  }
+
+  if (activeStatus.value !== 'ALL') {
+    nextQuery.status = activeStatus.value
+  }
+
+  if (activeCategoryId.value !== 'ALL') {
+    nextQuery.categoryId = String(activeCategoryId.value)
+  }
+
+  if (activeTagId.value !== 'ALL') {
+    nextQuery.tagId = String(activeTagId.value)
+  }
+
+  if (activeTopicId.value !== 'ALL') {
+    nextQuery.topicId = String(activeTopicId.value)
+  }
+
+  if (activeIsTop.value !== 'ALL') {
+    nextQuery.isTop = String(activeIsTop.value)
+  }
+
+  if (activeIsRecommend.value !== 'ALL') {
+    nextQuery.isRecommend = String(activeIsRecommend.value)
+  }
+
+  if (activeAllowComment.value !== 'ALL') {
+    nextQuery.allowComment = String(activeAllowComment.value)
+  }
+
+  if (currentPage.value > 1) {
+    nextQuery.pageNo = String(currentPage.value)
+  }
+
+  await router.replace({
+    path: '/admin/posts',
+    query: nextQuery
+  })
+}
 
 /**
  * 加载文章列表。
@@ -206,6 +326,7 @@ async function confirmDelete() {
  */
 async function handleSearch() {
   currentPage.value = 1
+  await syncRouteQuery()
   await loadPosts()
 }
 
@@ -223,6 +344,7 @@ async function handleResetFilters() {
   activeIsRecommend.value = 'ALL'
   activeAllowComment.value = 'ALL'
   currentPage.value = 1
+  await syncRouteQuery()
   await loadPosts()
 }
 
@@ -237,6 +359,7 @@ async function handlePageChange(page: number) {
   }
 
   currentPage.value = page
+  await syncRouteQuery()
   await loadPosts()
 }
 
@@ -252,6 +375,7 @@ async function handlePageSizeChange(nextPageSize: number) {
 
   pageSize.value = nextPageSize
   currentPage.value = 1
+  await syncRouteQuery()
   await loadPosts()
 }
 
@@ -390,6 +514,16 @@ function resolvePostMetaFullSummary(post: AdminPostItem) {
 
   return sections.join('\n')
 }
+
+watch(
+  () => route.fullPath,
+  async () => {
+    hydrateFiltersFromRoute()
+    await loadPosts()
+  }
+)
+
+hydrateFiltersFromRoute()
 
 await Promise.all([
   loadFilterOptions(),

@@ -13,10 +13,8 @@ public class AdminSiteConfigResponse {
     private String faviconUrl;
     private String defaultTitle;
     private String defaultDescription;
-    private String defaultShareImage;
     private String primaryColor;
     private String secondaryColor;
-    private String homeStyle;
 
     /**
      * 获取站点名称。
@@ -145,24 +143,6 @@ public class AdminSiteConfigResponse {
     }
 
     /**
-     * 获取默认分享图地址。
-     *
-     * @return 默认分享图地址
-     */
-    public String getDefaultShareImage() {
-        return defaultShareImage;
-    }
-
-    /**
-     * 设置默认分享图地址。
-     *
-     * @param defaultShareImage 默认分享图地址
-     */
-    public void setDefaultShareImage(String defaultShareImage) {
-        this.defaultShareImage = defaultShareImage;
-    }
-
-    /**
      * 获取主色。
      *
      * @return 主色
@@ -198,21 +178,4 @@ public class AdminSiteConfigResponse {
         this.secondaryColor = secondaryColor;
     }
 
-    /**
-     * 获取首页风格。
-     *
-     * @return 首页风格
-     */
-    public String getHomeStyle() {
-        return homeStyle;
-    }
-
-    /**
-     * 设置首页风格。
-     *
-     * @param homeStyle 首页风格
-     */
-    public void setHomeStyle(String homeStyle) {
-        this.homeStyle = homeStyle;
-    }
 }

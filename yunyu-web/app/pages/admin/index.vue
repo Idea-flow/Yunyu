@@ -206,7 +206,7 @@ const pendingItems = computed<AdminDashboardPendingItem[]>(() => {
       description: latestDraftPost
         ? `最近草稿：${latestDraftPost.title}`
         : '当前草稿箱为空，可以直接开始创作新文章。',
-      to: '/admin/posts',
+      to: '/admin/posts?status=DRAFT',
       icon: 'i-lucide-file-pen-line'
     },
     {

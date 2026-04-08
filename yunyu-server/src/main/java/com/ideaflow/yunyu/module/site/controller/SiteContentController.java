@@ -4,6 +4,7 @@ import com.ideaflow.yunyu.common.response.ApiResponse;
 import com.ideaflow.yunyu.module.site.dto.SitePostQueryRequest;
 import com.ideaflow.yunyu.module.site.service.SiteContentService;
 import com.ideaflow.yunyu.module.site.service.SiteVersionService;
+import com.ideaflow.yunyu.module.site.vo.SiteBaseInfoResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteCategoryDetailResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteCategoryItemResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteHomeResponse;
@@ -55,6 +56,17 @@ public class SiteContentController {
     @GetMapping("/version")
     public ApiResponse<SiteVersionResponse> getVersion() {
         return ApiResponse.success(siteVersionService.getVersion());
+    }
+
+    /**
+     * 获取前台站点基础配置。
+     *
+     * @return 站点基础配置
+     */
+    @Operation(summary = "获取前台站点基础配置")
+    @GetMapping("/config")
+    public ApiResponse<SiteBaseInfoResponse> getSiteConfig() {
+        return ApiResponse.success(siteContentService.getSiteBaseInfo());
     }
 
     /**

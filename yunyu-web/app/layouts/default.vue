@@ -8,6 +8,10 @@ import YunyuDropdownMenu from '~/components/common/YunyuDropdownMenu.vue'
  */
 const route = useRoute()
 const auth = useAuth()
+const siteContent = useSiteContent()
+const { data: siteConfigData } = await useAsyncData('site-base-info', async () => {
+  return await siteContent.getSiteConfig()
+})
 const NAV_SCROLL_ENTER_THRESHOLD = 56
 const NAV_SCROLL_EXIT_THRESHOLD = 20
 const navigationItems = [
@@ -26,6 +30,18 @@ const currentUserDisplayName = computed(() => {
   return auth.currentUser.value?.userName || auth.currentUser.value?.email || '已登录用户'
 })
 const currentUserInitial = computed(() => currentUserDisplayName.value.slice(0, 1).toUpperCase())
+const siteConfig = computed(() => siteConfigData.value)
+const brandName = computed(() => siteConfig.value?.siteName?.trim() || '云屿')
+const brandSubtitle = computed(() => siteConfig.value?.siteSubTitle?.trim() || 'Yunyu')
+const footerText = computed(() => siteConfig.value?.footerText?.trim() || '云屿 Yunyu · 把二次元内容整理成更适合阅读的节奏。')
+const logoUrl = computed(() => siteConfig.value?.logoUrl?.trim() || '/icon-512-maskable.png')
+const primaryColor = computed(() => siteConfig.value?.primaryColor?.trim() || '#38BDF8')
+const secondaryColor = computed(() => siteConfig.value?.secondaryColor?.trim() || '#FB923C')
+const brandGradientStyle = computed(() => {
+  return {
+    backgroundImage: `linear-gradient(135deg, ${primaryColor.value}, ${secondaryColor.value})`
+  }
+})
 
 /**
  * 判断当前页面是否需要启用文章首屏覆盖式导航。
@@ -375,14 +391,14 @@ async function handleUserMenuSelect(item: { key: string }) {
                 class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl shadow-[0_12px_28px_-18px_rgba(15,23,42,0.18)]"
               >
                 <img
-                  src="/icon-512-maskable.png"
-                  alt="云屿图标"
+                  :src="logoUrl"
+                  :alt="`${brandName} 图标`"
                   class="h-full w-full object-cover"
                 >
               </div>
               <div class="min-w-0">
-                <p class="text-[clamp(1.25rem,1.05rem+0.75vw,1.7rem)] font-semibold leading-[0.96] tracking-[-0.05em] [font-family:var(--font-display)]" :class="brandTitleClassName">云屿</p>
-                <p class="mt-1 text-[0.66rem] uppercase tracking-[0.14em]" :class="brandSubtitleClassName">Yunyu</p>
+                <p class="text-[clamp(1.25rem,1.05rem+0.75vw,1.7rem)] font-semibold leading-[0.96] tracking-[-0.05em] [font-family:var(--font-display)]" :class="brandTitleClassName">{{ brandName }}</p>
+                <p class="mt-1 line-clamp-1 max-w-[18rem] text-[0.66rem] tracking-[0.08em]" :class="brandSubtitleClassName">{{ brandSubtitle }}</p>
               </div>
             </NuxtLink>
 
@@ -421,7 +437,7 @@ async function handleUserMenuSelect(item: { key: string }) {
                   :aria-label="`${currentUserDisplayName} 的用户菜单`"
                   :title="currentUserDisplayName"
                 >
-                  <div class="flex h-9 w-9 items-center justify-center rounded-full bg-[linear-gradient(135deg,#38bdf8,#fb923c)] text-sm font-semibold text-white shadow-[0_10px_24px_-14px_rgba(56,189,248,0.68)]">
+                  <div class="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-white shadow-[0_10px_24px_-14px_rgba(56,189,248,0.68)]" :style="brandGradientStyle">
                     {{ currentUserInitial }}
                   </div>
                 </button>
@@ -445,7 +461,7 @@ async function handleUserMenuSelect(item: { key: string }) {
 
     <footer class="border-t border-white/60 bg-white/72 dark:border-white/10 dark:bg-slate-950/70">
       <div class="mx-auto flex max-w-[1360px] flex-col gap-3 px-5 py-8 text-sm text-slate-500 sm:px-8 lg:px-10 dark:text-slate-400 md:flex-row md:items-center md:justify-between">
-        <p>云屿 Yunyu · 把二次元内容整理成更适合阅读的节奏。</p>
+        <p>{{ footerText }}</p>
         <div class="flex items-center gap-4">
           <NuxtLink to="/posts" class="hover:text-slate-900 dark:hover:text-slate-50">文章</NuxtLink>
           <NuxtLink to="/categories" class="hover:text-slate-900 dark:hover:text-slate-50">分类</NuxtLink>

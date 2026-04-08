@@ -46,6 +46,32 @@ const isLoadingHeroVisualOptions = ref(false)
 const heroVisualOptions = ref<AdminPostItem[]>([])
 const selectedHeroVisualPost = ref<AdminPostItem | null>(null)
 let heroVisualSearchTimer: ReturnType<typeof setTimeout> | null = null
+const DEFAULT_PRIMARY_COLOR = '#38BDF8'
+const DEFAULT_SECONDARY_COLOR = '#FB923C'
+const primaryColorPresets = [
+  '#38BDF8',
+  '#0EA5E9',
+  '#22C55E',
+  '#14B8A6',
+  '#6366F1',
+  '#EC4899',
+  '#F97316',
+  '#F59E0B',
+  '#EF4444',
+  '#64748B'
+] as const
+const secondaryColorPresets = [
+  '#FB923C',
+  '#F97316',
+  '#F59E0B',
+  '#EAB308',
+  '#A855F7',
+  '#8B5CF6',
+  '#10B981',
+  '#06B6D4',
+  '#F43F5E',
+  '#94A3B8'
+] as const
 
 /**
  * 站点设置表单状态。
@@ -59,10 +85,8 @@ const siteFormState = reactive<AdminSiteConfigForm>({
   faviconUrl: '',
   defaultTitle: '',
   defaultDescription: '',
-  defaultShareImage: '',
-  primaryColor: '#38BDF8',
-  secondaryColor: '#FB923C',
-  homeStyle: 'default'
+  primaryColor: DEFAULT_PRIMARY_COLOR,
+  secondaryColor: DEFAULT_SECONDARY_COLOR
 })
 
 /**
@@ -99,12 +123,6 @@ const homepageFormState = reactive<AdminHomepageConfigForm>({
   showTopicSection: true,
   topicSectionTitle: '专题'
 })
-
-const homeStyleOptions = [
-  { label: '默认风格', value: 'default' },
-  { label: 'Editorial 风格', value: 'editorial' },
-  { label: 'Minimal 风格', value: 'minimal' }
-] as const
 
 const homepageBackgroundOptions = [
   { label: '网格渐变', value: 'gradient-grid' },
@@ -246,10 +264,8 @@ function assignSiteFormState(data: AdminSiteConfigForm) {
   siteFormState.faviconUrl = data.faviconUrl || ''
   siteFormState.defaultTitle = data.defaultTitle || ''
   siteFormState.defaultDescription = data.defaultDescription || ''
-  siteFormState.defaultShareImage = data.defaultShareImage || ''
-  siteFormState.primaryColor = data.primaryColor || '#38BDF8'
-  siteFormState.secondaryColor = data.secondaryColor || '#FB923C'
-  siteFormState.homeStyle = data.homeStyle || 'default'
+  siteFormState.primaryColor = data.primaryColor || DEFAULT_PRIMARY_COLOR
+  siteFormState.secondaryColor = data.secondaryColor || DEFAULT_SECONDARY_COLOR
 }
 
 /**
@@ -303,10 +319,8 @@ function serializeSiteFormState(data: AdminSiteConfigForm) {
     faviconUrl: data.faviconUrl.trim(),
     defaultTitle: data.defaultTitle.trim(),
     defaultDescription: data.defaultDescription.trim(),
-    defaultShareImage: data.defaultShareImage.trim(),
     primaryColor: data.primaryColor.trim(),
-    secondaryColor: data.secondaryColor.trim(),
-    homeStyle: data.homeStyle.trim()
+    secondaryColor: data.secondaryColor.trim()
   })
 }
 
@@ -401,6 +415,15 @@ function validateSiteForm() {
   }
 
   return true
+}
+
+/**
+ * 恢复视觉风格默认配色。
+ * 作用：让站长在试过多套颜色后，可以一键回到当前系统约定的默认品牌色。
+ */
+function resetThemeColors() {
+  siteFormState.primaryColor = DEFAULT_PRIMARY_COLOR
+  siteFormState.secondaryColor = DEFAULT_SECONDARY_COLOR
 }
 
 /**
@@ -632,10 +655,8 @@ async function saveSiteConfig() {
     faviconUrl: siteFormState.faviconUrl.trim(),
     defaultTitle: siteFormState.defaultTitle.trim(),
     defaultDescription: siteFormState.defaultDescription.trim(),
-    defaultShareImage: siteFormState.defaultShareImage.trim(),
     primaryColor: siteFormState.primaryColor.trim(),
-    secondaryColor: siteFormState.secondaryColor.trim(),
-    homeStyle: siteFormState.homeStyle.trim()
+    secondaryColor: siteFormState.secondaryColor.trim()
   })
 
   assignSiteFormState(response)
@@ -820,40 +841,57 @@ onMounted(async () => {
             <AdminTextarea v-model="siteFormState.defaultDescription" :rows="5" placeholder="默认描述" />
           </div>
 
-          <div class="space-y-2">
-            <p class="text-sm font-medium text-slate-700 dark:text-slate-300">默认分享图地址</p>
-            <AdminInput v-model="siteFormState.defaultShareImage" placeholder="默认分享图地址" />
-          </div>
         </div>
 
-        <div v-else-if="activeTab === 'theme'" class="grid gap-4 md:grid-cols-2">
-          <div class="space-y-2">
-            <p class="text-sm font-medium text-slate-700 dark:text-slate-300">主色</p>
-            <div class="flex items-center gap-3">
-              <input
-                v-model="siteFormState.primaryColor"
-                type="color"
-                class="h-12 w-16 cursor-pointer rounded-[10px] border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-950"
+        <div v-else-if="activeTab === 'theme'" class="space-y-4">
+          <div class="flex flex-col gap-3 rounded-[16px] border border-slate-200/80 bg-white/72 p-4 dark:border-white/10 dark:bg-white/4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-50">品牌配色</h2>
+              <p class="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                主色与辅助色会同步影响前台全局主题色、导航品牌渐变和站点基础氛围。未配置时仍会自动回退到当前默认配色。
+              </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3">
+              <div class="flex items-center gap-2 rounded-full border border-white/80 bg-white/92 px-3 py-2 shadow-[0_12px_24px_-22px_rgba(15,23,42,0.24)] dark:border-white/10 dark:bg-white/6">
+                <span
+                  class="h-6 w-6 rounded-full border border-white/90 shadow-sm dark:border-white/10"
+                  :style="{ backgroundColor: siteFormState.primaryColor }"
+                />
+                <span
+                  class="-ml-2 h-6 w-6 rounded-full border border-white/90 shadow-sm dark:border-white/10"
+                  :style="{ backgroundColor: siteFormState.secondaryColor }"
+                />
+                <span class="ml-1 text-xs font-medium text-slate-500 dark:text-slate-400">当前配色</span>
+              </div>
+
+              <UButton
+                icon="i-lucide-rotate-ccw"
+                label="恢复默认"
+                color="neutral"
+                variant="outline"
+                class="rounded-[12px]"
+                @click="resetThemeColors"
               />
-              <AdminInput v-model="siteFormState.primaryColor" placeholder="#38BDF8" />
             </div>
           </div>
 
-          <div class="space-y-2">
-            <p class="text-sm font-medium text-slate-700 dark:text-slate-300">辅助色</p>
-            <div class="flex items-center gap-3">
-              <input
-                v-model="siteFormState.secondaryColor"
-                type="color"
-                class="h-12 w-16 cursor-pointer rounded-[10px] border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-950"
-              />
-              <AdminInput v-model="siteFormState.secondaryColor" placeholder="#FB923C" />
-            </div>
-          </div>
+          <div class="grid gap-4 lg:grid-cols-2">
+            <AdminColorPicker
+              v-model="siteFormState.primaryColor"
+              label="主色"
+              description="用于前台品牌强调、主操作色和整体主题倾向。"
+              :presets="[...primaryColorPresets]"
+              :placeholder="DEFAULT_PRIMARY_COLOR"
+            />
 
-          <div class="space-y-2 md:col-span-2">
-            <p class="text-sm font-medium text-slate-700 dark:text-slate-300">首页风格</p>
-            <AdminSelect v-model="siteFormState.homeStyle" :items="homeStyleOptions" placeholder="首页风格" />
+            <AdminColorPicker
+              v-model="siteFormState.secondaryColor"
+              label="辅助色"
+              description="用于品牌渐变、辅助强调和部分氛围色过渡。"
+              :presets="[...secondaryColorPresets]"
+              :placeholder="DEFAULT_SECONDARY_COLOR"
+            />
           </div>
         </div>
 
