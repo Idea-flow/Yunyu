@@ -62,18 +62,18 @@ async function changePage(nextPage: number) {
     <YunyuHero
       :src="data.topic.coverUrl"
       :alt="data.topic.name"
-      min-height-class="min-h-[42svh] sm:min-h-[48svh] lg:min-h-[54svh]"
-      content-padding-class="px-5 pb-8 sm:px-8 sm:pb-10 lg:px-10 lg:pb-12"
+      min-height-class="h-[100svh] min-h-[36rem] sm:h-[100svh] sm:min-h-[40rem] lg:h-[100svh] lg:min-h-[44rem]"
+      content-padding-class="px-5 pb-6 sm:px-8 sm:pb-8 lg:px-10 lg:pb-10"
       content-width-class="max-w-5xl"
     >
       <p class="text-[0.72rem] font-semibold uppercase tracking-[0.34em] text-sky-200">专题页</p>
-      <h1 class="mt-4 text-[clamp(2.55rem,1.85rem+2.5vw,4.8rem)] font-semibold leading-[0.98] tracking-[-0.045em] [font-family:var(--font-display)] [text-wrap:balance] text-white drop-shadow-lg">
+      <h1 class="mt-3 text-[clamp(2rem,1.55rem+1.85vw,3.55rem)] font-semibold leading-[1.02] tracking-[-0.04em] [font-family:var(--font-display)] [text-wrap:balance] text-white drop-shadow-lg">
         {{ data.topic.name }}
       </h1>
-      <p class="mt-4 max-w-3xl text-sm leading-7 text-white/86 drop-shadow-md sm:text-base sm:leading-8">
+      <p class="mt-3 max-w-3xl line-clamp-2 text-sm leading-7 text-white/86 drop-shadow-md sm:text-[0.95rem] sm:leading-7">
         {{ data.topic.summary }}
       </p>
-      <div class="mt-6 inline-flex items-center rounded-full border border-white/18 bg-white/10 px-4 py-2 text-sm font-medium text-white/90 backdrop-blur-sm">
+      <div class="mt-4 inline-flex items-center rounded-full border border-white/18 bg-white/10 px-4 py-2 text-sm font-medium text-white/90 backdrop-blur-sm">
         当前共有 {{ data.topic.articleCount }} 篇文章
       </div>
     </YunyuHero>

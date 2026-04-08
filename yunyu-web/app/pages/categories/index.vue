@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import YunyuHero from '~/components/common/YunyuHero.vue'
 import YunyuImage from '~/components/common/YunyuImage.vue'
+import YunyuPoetryTypewriter from '~/components/common/YunyuPoetryTypewriter.vue'
 
 /**
  * 前台分类列表页。
@@ -53,6 +54,10 @@ useSeoMeta({
       content-padding-class="px-5 pb-8 sm:px-8 sm:pb-10 lg:px-10 lg:pb-12"
       content-width-class="max-w-5xl"
     >
+      <template #center>
+        <YunyuPoetryTypewriter variant="orange" />
+      </template>
+
       <div class="inline-flex items-center rounded-full border border-white/16 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-white/90 backdrop-blur-md">
         Category Archive
       </div>

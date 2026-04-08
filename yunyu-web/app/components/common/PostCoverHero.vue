@@ -49,6 +49,17 @@ withDefaults(defineProps<{
         <div class="pointer-events-none absolute inset-0" :class="overlayClass" />
       </div>
 
+      <div
+        v-if="$slots.center"
+        class="pointer-events-none absolute inset-x-0 top-1/2 z-[9] -translate-y-1/2"
+      >
+        <div class="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-10">
+          <div class="pointer-events-auto mx-auto w-full max-w-4xl">
+            <slot name="center" />
+          </div>
+        </div>
+      </div>
+
       <div :class="contentWrapperClass">
         <div :class="contentContainerClass">
           <slot />

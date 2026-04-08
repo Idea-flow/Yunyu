@@ -7,6 +7,7 @@ import ArticleCommentPanel from '../../components/content/ArticleCommentPanel.vu
 import ArticleTocTree from '../../components/content/ArticleTocTree.vue'
 import PostCoverHero from '~/components/common/PostCoverHero.vue'
 import YunyuImage from '~/components/common/YunyuImage.vue'
+import YunyuPoetryTypewriter from '~/components/common/YunyuPoetryTypewriter.vue'
 import YunyuSectionTitle from '~/components/common/YunyuSectionTitle.vue'
 
 type ArticleContentTheme = 'editorial' | 'documentation' | 'minimal'
@@ -578,6 +579,10 @@ onBeforeUnmount(() => {
         :src="post.coverUrl"
         :alt="post.title"
       >
+        <template #center>
+          <YunyuPoetryTypewriter variant="sky" />
+        </template>
+
         <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end lg:gap-8">
           <div class="max-w-[44rem] min-w-0">
             <div class="flex flex-wrap gap-2">

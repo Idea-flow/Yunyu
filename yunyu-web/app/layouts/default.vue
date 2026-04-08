@@ -57,14 +57,10 @@ const isOverlayPage = computed(() => {
 
 /**
  * 判断导航栏当前是否应进入实底玻璃态。
- * 作用：首页默认直接使用可读性更强的玻璃实底样式，
- * 其他覆盖页仍按滚动状态切换，避免首页首屏和滚动后出现两套导航视觉。
+ * 作用：覆盖式页面统一按滚动进度在深色覆盖态与实底玻璃态之间切换，
+ * 让首页与文章页保持一致的导航进入节奏。
  */
 const isSolidNav = computed(() => {
-  if (route.path === '/') {
-    return true
-  }
-
   if (isOverlayPage.value) {
     return navTransitionProgress.value >= 0.64
   }
@@ -100,6 +96,18 @@ const navPanelClassName = computed(() => {
   }
 
   return 'border border-slate-300/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(244,246,250,0.88))] shadow-[0_24px_52px_-34px_rgba(15,23,42,0.22)] backdrop-blur-[24px] dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.82),rgba(2,6,23,0.72))]'
+})
+
+/**
+ * 计算覆盖式导航进入实底后的玻璃层样式。
+ * 作用：首页采用更轻盈、更通透的玻璃层，其他覆盖页保持更稳重的实底过渡。
+ */
+const overlaySolidLayerClassName = computed(() => {
+  if (route.path === '/') {
+    return 'absolute inset-0 rounded-[inherit] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(248,250,252,0.68))] shadow-[0_20px_44px_-34px_rgba(15,23,42,0.16)] backdrop-blur-[20px] transition-opacity duration-300 ease-out dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.58),rgba(2,6,23,0.46))] motion-reduce:transition-none'
+  }
+
+  return 'absolute inset-0 rounded-[inherit] border border-slate-300/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(244,246,250,0.88))] shadow-[0_24px_52px_-34px_rgba(15,23,42,0.22)] transition-opacity duration-300 ease-out dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.82),rgba(2,6,23,0.72))] motion-reduce:transition-none'
 })
 
 /**
@@ -151,7 +159,7 @@ const brandSubtitleClassName = computed(() => {
 const navLinkClassName = computed(() => {
   return !isSolidNav.value
     ? 'rounded-full px-4 py-2 text-sm font-medium text-white/88 transition-[background-color,color,transform] duration-200 ease-out hover:bg-white/10 hover:text-white motion-reduce:transition-none'
-    : 'rounded-full px-4 py-2 text-sm font-medium text-slate-700 transition-[background-color,color,transform,box-shadow] duration-200 ease-out hover:bg-white/80 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/8 dark:hover:text-sky-200 motion-reduce:transition-none'
+    : 'rounded-full px-4 py-2 text-sm font-medium text-slate-700 transition-[background-color,color,transform,box-shadow] duration-200 ease-out hover:bg-white/62 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/8 dark:hover:text-sky-200 motion-reduce:transition-none'
 })
 
 /**
@@ -161,7 +169,7 @@ const navLinkClassName = computed(() => {
 const navLinkActiveClassName = computed(() => {
   return !isSolidNav.value
     ? 'bg-white/12 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
-    : 'border border-white/85 bg-white/96 text-slate-950 shadow-[0_14px_30px_-22px_rgba(15,23,42,0.22)] dark:border-white/10 dark:bg-white/12 dark:text-sky-100'
+    : 'border border-white/76 bg-white/80 text-slate-950 shadow-[0_12px_26px_-24px_rgba(15,23,42,0.16)] dark:border-white/10 dark:bg-white/12 dark:text-sky-100'
 })
 
 /**
@@ -381,7 +389,7 @@ async function handleUserMenuSelect(item: { key: string }) {
               :style="postDetailOverlayLayerStyle"
             />
             <div
-              class="absolute inset-0 rounded-[inherit] border border-slate-300/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(244,246,250,0.88))] shadow-[0_24px_52px_-34px_rgba(15,23,42,0.22)] transition-opacity duration-300 ease-out dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.82),rgba(2,6,23,0.72))] motion-reduce:transition-none"
+              :class="overlaySolidLayerClassName"
               :style="postDetailSolidLayerStyle"
             />
           </div>
