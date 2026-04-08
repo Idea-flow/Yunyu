@@ -248,9 +248,7 @@ public class HomepageConfigService {
                     break;
                 }
             }
-        }
 
-        if (!keywords.isEmpty()) {
             return keywords;
         }
 

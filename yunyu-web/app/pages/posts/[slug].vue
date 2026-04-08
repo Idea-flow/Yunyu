@@ -719,7 +719,7 @@ onBeforeUnmount(() => {
             :content-theme="articleContentTheme"
             :code-theme="articleCodeTheme"
             :code-default-expanded="false"
-            container-class="relative overflow-hidden rounded-[24px] border border-white/55 bg-white/84 px-1.5 py-4 shadow-[0_24px_60px_-44px_rgba(15,23,42,0.24)] backdrop-blur-xl before:pointer-events-none before:absolute before:inset-x-8 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-sky-200/90 before:to-transparent sm:rounded-[30px] sm:px-2 sm:py-5 sm:shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)] lg:rounded-[38px] dark:border-white/10 dark:bg-slate-950/70 dark:before:via-sky-400/30"
+            container-class="relative overflow-hidden rounded-[24px] px-1.5 py-4 shadow-[0_18px_48px_-42px_rgba(15,23,42,0.14)] sm:rounded-[30px] sm:px-2 sm:py-5 sm:shadow-[0_24px_72px_-50px_rgba(15,23,42,0.16)] lg:rounded-[38px] dark:shadow-[0_24px_72px_-54px_rgba(2,6,23,0.52)]"
             body-class="px-3.5 sm:px-6 lg:px-12"
           />
 
