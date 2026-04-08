@@ -601,7 +601,7 @@ onBeforeUnmount(() => {
       />
     </div>
 
-    <section v-if="post" class="relative overflow-hidden">
+    <section v-if="post" data-post-cover-hero class="relative overflow-hidden">
       <div class="relative h-[34svh] min-h-[280px] w-full sm:h-[42svh] sm:min-h-[340px] lg:h-[54svh]">
         <div class="absolute inset-0">
           <YunyuImage

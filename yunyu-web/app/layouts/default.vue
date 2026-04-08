@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import YunyuDropdownMenu from '~/components/common/YunyuDropdownMenu.vue'
 
 /**
@@ -8,6 +8,8 @@ import YunyuDropdownMenu from '~/components/common/YunyuDropdownMenu.vue'
  */
 const route = useRoute()
 const auth = useAuth()
+const NAV_SCROLL_ENTER_THRESHOLD = 56
+const NAV_SCROLL_EXIT_THRESHOLD = 20
 const navigationItems = [
   { label: '首页', to: '/' },
   { label: '文章', to: '/posts' },
@@ -17,6 +19,7 @@ const navigationItems = [
 ]
 
 const isScrolled = ref(false)
+const navTransitionProgress = ref(0)
 const isPostDetailPage = computed(() => route.path.startsWith('/posts/'))
 const isLoggedIn = computed(() => Boolean(auth.currentUser.value))
 const canAccessAdmin = computed(() => auth.currentUser.value?.role === 'SUPER_ADMIN')
@@ -47,6 +50,10 @@ const isSolidNav = computed(() => {
     return true
   }
 
+  if (isPostDetailPage.value && isOverlayPage.value) {
+    return navTransitionProgress.value >= 0.64
+  }
+
   return !isOverlayPage.value || isScrolled.value
 })
 
@@ -65,15 +72,41 @@ const headerClassName = computed(() => {
  * 作用：统一控制覆盖态与滚动态下导航条的背景、边框和阴影层级。
  */
 const navPanelClassName = computed(() => {
-  if (!isSolidNav.value) {
-    if (isPostDetailPage.value) {
-      return 'border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.18)_0%,rgba(15,23,42,0.08)_100%)] shadow-[0_12px_34px_-28px_rgba(15,23,42,0.2)] backdrop-blur-[10px]'
-    }
-
-    return 'border-white/12 bg-[linear-gradient(180deg,rgba(15,23,42,0.14)_0%,rgba(15,23,42,0.1)_100%)] shadow-none backdrop-blur-[14px]'
+  if (isPostDetailPage.value && isOverlayPage.value) {
+    return 'border border-transparent bg-transparent shadow-none backdrop-blur-[12px] sm:backdrop-blur-[14px]'
   }
 
-  return 'border border-white/55 bg-[linear-gradient(180deg,rgba(245,248,252,0.54)_0%,rgba(239,246,255,0.42)_100%)] shadow-[0_18px_36px_-30px_rgba(15,23,42,0.1)] backdrop-blur-[18px] dark:border-white/8 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.42)_0%,rgba(15,23,42,0.3)_100%)]'
+  if (!isSolidNav.value) {
+    if (isPostDetailPage.value) {
+      return 'border border-white/8 bg-slate-950/12 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.18)] backdrop-blur-[10px] dark:border-white/10 dark:bg-slate-950/16'
+    }
+
+    return 'border border-white/10 bg-slate-950/10 shadow-none backdrop-blur-[14px] dark:border-white/10 dark:bg-slate-950/14'
+  }
+
+  return 'border border-slate-200/58 bg-white/68 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.12)] backdrop-blur-[18px] dark:border-white/8 dark:bg-slate-950/52'
+})
+
+/**
+ * 计算详情页导航浮层的暗态层透明度。
+ * 作用：让封面仍在可视区时，导航优先保持轻薄覆盖态，
+ * 随着封面接近离场再逐步淡出，避免边框和背景突然跳变。
+ */
+const postDetailOverlayLayerStyle = computed(() => {
+  return {
+    opacity: `${1 - navTransitionProgress.value}`
+  }
+})
+
+/**
+ * 计算详情页导航浮层的实底层透明度。
+ * 作用：让导航在封面即将离开时提前出现一层更轻的实底玻璃，
+ * 当封面完全离场后自然落到稳定状态。
+ */
+const postDetailSolidLayerStyle = computed(() => {
+  return {
+    opacity: `${navTransitionProgress.value}`
+  }
 })
 
 /**
@@ -82,8 +115,8 @@ const navPanelClassName = computed(() => {
  */
 const brandTitleClassName = computed(() => {
   return !isSolidNav.value
-    ? 'text-white'
-    : 'text-slate-900 dark:text-slate-50'
+    ? 'text-white transition-colors duration-300 ease-out motion-reduce:transition-none'
+    : 'text-slate-900 transition-colors duration-300 ease-out dark:text-slate-50 motion-reduce:transition-none'
 })
 
 /**
@@ -92,8 +125,8 @@ const brandTitleClassName = computed(() => {
  */
 const brandSubtitleClassName = computed(() => {
   return !isSolidNav.value
-    ? 'text-white/72'
-    : 'text-slate-500 dark:text-slate-400'
+    ? 'text-white/72 transition-colors duration-300 ease-out motion-reduce:transition-none'
+    : 'text-slate-500 transition-colors duration-300 ease-out dark:text-slate-400 motion-reduce:transition-none'
 })
 
 /**
@@ -102,8 +135,8 @@ const brandSubtitleClassName = computed(() => {
  */
 const navLinkClassName = computed(() => {
   return !isSolidNav.value
-    ? 'rounded-full px-4 py-2 text-sm font-medium text-white/88 transition hover:bg-white/12 hover:text-white'
-    : 'rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-white/42 hover:text-sky-700 dark:text-slate-300 dark:hover:bg-white/8 dark:hover:text-sky-200'
+    ? 'rounded-full px-4 py-2 text-sm font-medium text-white/88 transition-[background-color,color,transform] duration-200 ease-out hover:bg-white/10 hover:text-white motion-reduce:transition-none'
+    : 'rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition-[background-color,color,transform,box-shadow] duration-200 ease-out hover:bg-slate-100/88 hover:text-sky-700 dark:text-slate-300 dark:hover:bg-white/8 dark:hover:text-sky-200 motion-reduce:transition-none'
 })
 
 /**
@@ -112,8 +145,8 @@ const navLinkClassName = computed(() => {
  */
 const navLinkActiveClassName = computed(() => {
   return !isSolidNav.value
-    ? 'bg-white/14 text-white'
-    : 'bg-white/58 text-sky-700 shadow-[0_8px_20px_-18px_rgba(14,165,233,0.26)] dark:bg-white/10 dark:text-sky-200'
+    ? 'bg-white/12 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+    : 'bg-white/72 text-sky-700 shadow-[0_10px_24px_-20px_rgba(14,165,233,0.22)] dark:bg-white/10 dark:text-sky-200'
 })
 
 /**
@@ -135,7 +168,7 @@ const headerInnerClassName = computed(() => {
  * 让导航像浮在封面上的一层细玻璃，而不是独立的大块容器。
  */
 const navPanelLayoutClassName = computed(() => {
-  if (isOverlayPage.value && isPostDetailPage.value && !isSolidNav.value) {
+  if (isOverlayPage.value && isPostDetailPage.value) {
     return 'rounded-[24px] px-4 py-2.5 sm:px-5'
   }
 
@@ -148,8 +181,8 @@ const navPanelLayoutClassName = computed(() => {
  */
 const authActionClassName = computed(() => {
   return !isSolidNav.value
-    ? 'inline-flex h-10 items-center justify-center rounded-full border border-white/16 bg-white/10 px-4 text-sm font-medium text-white transition hover:bg-white/16'
-    : 'inline-flex h-10 items-center justify-center rounded-full border border-slate-200/80 bg-white/72 px-4 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-950 dark:border-white/10 dark:bg-white/6 dark:text-slate-100 dark:hover:bg-white/10'
+    ? 'inline-flex h-10 items-center justify-center rounded-full border border-white/16 bg-white/10 px-4 text-sm font-medium text-white transition-[background-color,border-color,color,box-shadow] duration-200 ease-out hover:bg-white/16 motion-reduce:transition-none'
+    : 'inline-flex h-10 items-center justify-center rounded-full border border-slate-200/78 bg-white/72 px-4 text-sm font-medium text-slate-700 transition-[background-color,border-color,color,box-shadow] duration-200 ease-out hover:border-slate-300/88 hover:text-slate-950 dark:border-white/10 dark:bg-white/6 dark:text-slate-100 dark:hover:bg-white/10 motion-reduce:transition-none'
 })
 
 /**
@@ -158,8 +191,8 @@ const authActionClassName = computed(() => {
  */
 const userDropdownTriggerClassName = computed(() => {
   return !isSolidNav.value
-    ? 'inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/14 bg-white/10 text-white transition hover:bg-white/16'
-    : 'inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200/80 bg-white/72 text-slate-800 transition hover:border-slate-300 hover:bg-white/82 dark:border-white/10 dark:bg-white/6 dark:text-slate-100 dark:hover:bg-white/10'
+    ? 'inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/14 bg-white/10 text-white transition-[background-color,border-color,color,box-shadow] duration-200 ease-out hover:bg-white/16 motion-reduce:transition-none'
+    : 'inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200/78 bg-white/72 text-slate-800 transition-[background-color,border-color,color,box-shadow] duration-200 ease-out hover:border-slate-300/88 hover:bg-white/82 dark:border-white/10 dark:bg-white/6 dark:text-slate-100 dark:hover:bg-white/10 motion-reduce:transition-none'
 })
 
 /**
@@ -199,15 +232,61 @@ const userMenuItems = computed(() => {
 })
 
 /**
+ * 读取文章详情封面区域底部位置。
+ * 作用：让详情页导航的切换时机跟随封面区域，而不是依赖固定滚动值，
+ * 避免在封面还未完全离开导航区域时就提前切换成实底样式。
+ *
+ * @returns 封面区域相对视口的底部位置；如果当前不存在封面区域则返回 `null`
+ */
+function getPostDetailHeroBottom() {
+  if (!import.meta.client) {
+    return null
+  }
+
+  const heroElement = document.querySelector<HTMLElement>('[data-post-cover-hero]')
+
+  if (!(heroElement instanceof HTMLElement)) {
+    return null
+  }
+
+  return heroElement.getBoundingClientRect().bottom
+}
+
+/**
  * 同步页面滚动状态。
- * 作用：根据滚动距离切换导航栏是否进入实底玻璃态。
+ * 作用：根据封面区域或滚动距离切换导航栏是否进入实底玻璃态。
  */
 function syncScrollState() {
   if (!import.meta.client) {
     return
   }
 
-  isScrolled.value = window.scrollY > 36
+  if (isPostDetailPage.value) {
+    const heroBottom = getPostDetailHeroBottom()
+    const headerElement = document.querySelector('header')
+    const headerHeight = headerElement instanceof HTMLElement ? headerElement.getBoundingClientRect().height : 0
+
+    if (heroBottom !== null) {
+      const transitionStart = Math.max(headerHeight + 116, 164)
+      const transitionEnd = Math.max(headerHeight + 12, 76)
+      const progress = Math.min(Math.max((transitionStart - heroBottom) / Math.max(transitionStart - transitionEnd, 1), 0), 1)
+
+      navTransitionProgress.value = progress
+      isScrolled.value = progress >= 0.995
+      return
+    }
+  }
+
+  const currentScrollTop = window.scrollY || window.pageYOffset || 0
+
+  if (isScrolled.value) {
+    isScrolled.value = currentScrollTop > NAV_SCROLL_EXIT_THRESHOLD
+    navTransitionProgress.value = isScrolled.value ? 1 : 0
+    return
+  }
+
+  isScrolled.value = currentScrollTop > NAV_SCROLL_ENTER_THRESHOLD
+  navTransitionProgress.value = isScrolled.value ? 1 : 0
 }
 
 onMounted(() => {
@@ -217,12 +296,17 @@ onMounted(() => {
 
   auth.hydratePersistedUser()
   void auth.fetchCurrentUser()
-  syncScrollState()
+  void nextTick(() => {
+    syncScrollState()
+  })
   window.addEventListener('scroll', syncScrollState, { passive: true })
+  window.addEventListener('resize', syncScrollState, { passive: true })
 })
 
 watch(() => route.fullPath, () => {
-  syncScrollState()
+  void nextTick(() => {
+    syncScrollState()
+  })
 })
 
 onBeforeUnmount(() => {
@@ -231,6 +315,7 @@ onBeforeUnmount(() => {
   }
 
   window.removeEventListener('scroll', syncScrollState)
+  window.removeEventListener('resize', syncScrollState)
 })
 
 /**
@@ -268,10 +353,25 @@ async function handleUserMenuSelect(item: { key: string }) {
     <header :class="headerClassName">
       <div :class="headerInnerClassName">
         <div
-          class="flex items-center justify-between gap-4 transition-all duration-300"
+          class="relative overflow-hidden flex items-center justify-between gap-4 will-change-[background-color,border-color,box-shadow,backdrop-filter] transition-[background-color,border-color,box-shadow,backdrop-filter,border-radius,padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
           :class="[navPanelClassName, navPanelLayoutClassName]"
         >
-          <div class="flex min-w-0 items-center gap-3 sm:gap-4">
+          <div
+            v-if="isPostDetailPage && isOverlayPage"
+            aria-hidden="true"
+            class="pointer-events-none absolute inset-0"
+          >
+            <div
+              class="absolute inset-0 rounded-[inherit] border border-white/8 bg-slate-950/12 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.18)] transition-opacity duration-300 ease-out dark:border-white/10 dark:bg-slate-950/16 motion-reduce:transition-none"
+              :style="postDetailOverlayLayerStyle"
+            />
+            <div
+              class="absolute inset-0 rounded-[inherit] border border-slate-200/58 bg-white/68 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.12)] transition-opacity duration-300 ease-out dark:border-white/8 dark:bg-slate-950/52 motion-reduce:transition-none"
+              :style="postDetailSolidLayerStyle"
+            />
+          </div>
+
+          <div class="relative z-10 flex min-w-0 items-center gap-3 sm:gap-4">
             <NuxtLink to="/" class="flex shrink-0 items-center gap-3">
               <div
                 class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl shadow-[0_12px_28px_-18px_rgba(15,23,42,0.18)]"
@@ -289,7 +389,7 @@ async function handleUserMenuSelect(item: { key: string }) {
             </NuxtLink>
 
             <div
-              class="hidden h-8 w-px md:block"
+              class="hidden h-8 w-px transition-colors duration-300 ease-out motion-reduce:transition-none md:block"
               :class="!isSolidNav ? 'bg-white/14' : 'bg-slate-200/60 dark:bg-white/10'"
             />
 
@@ -306,7 +406,7 @@ async function handleUserMenuSelect(item: { key: string }) {
             </nav>
           </div>
 
-          <div class="flex shrink-0 items-center gap-2">
+          <div class="relative z-10 flex shrink-0 items-center gap-2">
             <ThemeModeSwitch variant="icon" />
 
             <YunyuDropdownMenu
