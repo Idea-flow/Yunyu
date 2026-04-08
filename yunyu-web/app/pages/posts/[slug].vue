@@ -9,8 +9,7 @@ import YunyuImage from '~/components/common/YunyuImage.vue'
 import YunyuSectionTitle from '~/components/common/YunyuSectionTitle.vue'
 
 type ArticleContentTheme = 'editorial' | 'documentation' | 'minimal'
-type ArticleCodeThemeFamily = 'github' | 'vitesse'
-type ArticleCodeTheme = 'github-light' | 'github-dark' | 'vitesse-light' | 'vitesse-dark'
+type ArticleCodeTheme = 'github-light' | 'github-dark'
 
 /**
  * 前台文章详情页。
@@ -30,18 +29,12 @@ const tocScrollContainerRef = ref<HTMLElement | null>(null)
 let tocObserver: IntersectionObserver | null = null
 let tocManualScrollTimer: number | null = null
 const ARTICLE_CONTENT_THEME_STORAGE_KEY = 'yunyu-post-content-theme'
-const ARTICLE_CODE_THEME_STORAGE_KEY = 'yunyu-post-code-theme-family'
 const articleContentThemeOptions: Array<{ value: ArticleContentTheme, label: string, hint: string }> = [
   { value: 'editorial', label: '杂志感', hint: '更有内容阅读氛围' },
   { value: 'documentation', label: '文档感', hint: '结构更规整清楚' },
   { value: 'minimal', label: '极简', hint: '更轻更紧凑' }
 ]
-const articleCodeThemeFamilyOptions: Array<{ value: ArticleCodeThemeFamily, label: string, hint: string }> = [
-  { value: 'github', label: 'GitHub', hint: '稳定克制' },
-  { value: 'vitesse', label: 'Vitesse', hint: '技术感更强' }
-]
 const selectedArticleContentTheme = ref<ArticleContentTheme>('editorial')
-const selectedArticleCodeThemeFamily = ref<ArticleCodeThemeFamily>('github')
 
 const { data, error } = await useAsyncData(`site-post-${route.params.slug}`, async () => {
   return await siteContent.getPostDetail(String(route.params.slug || ''))
@@ -70,10 +63,6 @@ const postTagItems = computed(() => post.value?.tagItems || [])
 const heroTags = computed(() => post.value?.tagItems?.slice(0, 4) || [])
 const articleContentTheme = computed(() => selectedArticleContentTheme.value)
 const articleCodeTheme = computed<ArticleCodeTheme>(() => {
-  if (selectedArticleCodeThemeFamily.value === 'vitesse') {
-    return colorMode.value === 'dark' ? 'vitesse-dark' : 'vitesse-light'
-  }
-
   return colorMode.value === 'dark' ? 'github-dark' : 'github-light'
 })
 const relatedCompactPosts = computed(() => post.value?.relatedPosts?.slice(0, 2) || [])
@@ -86,10 +75,6 @@ const hasRelatedPosts = computed(() => (post.value?.relatedPosts?.length || 0) >
 
 const currentArticleContentThemeLabel = computed(() => {
   return articleContentThemeOptions.find(item => item.value === selectedArticleContentTheme.value)?.label || '杂志感'
-})
-const currentArticleCodeThemeLabel = computed(() => {
-  const familyLabel = articleCodeThemeFamilyOptions.find(item => item.value === selectedArticleCodeThemeFamily.value)?.label || 'GitHub'
-  return `${familyLabel} · ${colorMode.value === 'dark' ? '暗色' : '亮色'}`
 })
 
 /**
@@ -203,14 +188,6 @@ watch(selectedArticleContentTheme, value => {
   window.localStorage.setItem(ARTICLE_CONTENT_THEME_STORAGE_KEY, value)
 })
 
-watch(selectedArticleCodeThemeFamily, value => {
-  if (!import.meta.client) {
-    return
-  }
-
-  window.localStorage.setItem(ARTICLE_CODE_THEME_STORAGE_KEY, value)
-})
-
 watch(tocItems, value => {
   activeTocId.value = value[0]?.id || ''
 }, { immediate: true })
@@ -304,18 +281,8 @@ function switchArticleContentTheme(theme: ArticleContentTheme) {
 }
 
 /**
- * 切换详情页代码主题家族。
- * 作用：只切换代码主题风格家族，具体明暗版本由当前系统主题自动映射。
- *
- * @param family 目标代码主题家族
- */
-function switchArticleCodeThemeFamily(family: ArticleCodeThemeFamily) {
-  selectedArticleCodeThemeFamily.value = family
-}
-
-/**
  * 恢复详情页主题偏好。
- * 作用：首次进入文章详情页时，从本地缓存中读取用户上一次选择的正文主题和代码主题。
+ * 作用：首次进入文章详情页时，从本地缓存中读取用户上一次选择的正文排版主题。
  */
 function hydrateArticleThemePreference() {
   if (!import.meta.client) {
@@ -323,14 +290,9 @@ function hydrateArticleThemePreference() {
   }
 
   const savedContentTheme = window.localStorage.getItem(ARTICLE_CONTENT_THEME_STORAGE_KEY)
-  const savedCodeThemeFamily = window.localStorage.getItem(ARTICLE_CODE_THEME_STORAGE_KEY)
 
   if (savedContentTheme === 'editorial' || savedContentTheme === 'documentation' || savedContentTheme === 'minimal') {
     selectedArticleContentTheme.value = savedContentTheme
-  }
-
-  if (savedCodeThemeFamily === 'github' || savedCodeThemeFamily === 'vitesse') {
-    selectedArticleCodeThemeFamily.value = savedCodeThemeFamily
   }
 }
 
@@ -651,7 +613,7 @@ onBeforeUnmount(() => {
                   <div class="mt-3 space-y-3">
                     <div>
                       <div class="flex items-center justify-between gap-3">
-                        <p class="text-[0.68rem] font-medium text-white/74">排版</p>
+                        <p class="text-[0.68rem] font-medium text-white/74">主题</p>
                         <span class="text-[0.66rem] text-white/52">{{ currentArticleContentThemeLabel }}</span>
                       </div>
                       <div class="mt-1.5 flex flex-wrap gap-1.5">
@@ -665,28 +627,6 @@ onBeforeUnmount(() => {
                             : 'border-white/8 bg-transparent text-white/64 hover:border-white/16 hover:bg-white/[0.06] hover:text-white/88'"
                           :title="theme.hint"
                           @click="switchArticleContentTheme(theme.value)"
-                        >
-                          {{ theme.label }}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div class="flex items-center justify-between gap-3">
-                        <p class="text-[0.68rem] font-medium text-white/74">代码</p>
-                        <span class="text-[0.66rem] text-white/52">{{ currentArticleCodeThemeLabel }}</span>
-                      </div>
-                      <div class="mt-1.5 flex flex-wrap gap-1.5">
-                        <button
-                          v-for="theme in articleCodeThemeFamilyOptions"
-                          :key="theme.value"
-                          type="button"
-                          class="inline-flex cursor-pointer items-center rounded-full border px-2.5 py-1 text-[0.68rem] font-medium transition"
-                          :class="selectedArticleCodeThemeFamily === theme.value
-                            ? 'border-sky-300/22 bg-sky-300/12 text-white'
-                            : 'border-white/8 bg-transparent text-white/64 hover:border-white/16 hover:bg-white/[0.06] hover:text-white/88'"
-                          :title="`${theme.hint}，会随当前明暗模式自动切换`"
-                          @click="switchArticleCodeThemeFamily(theme.value)"
                         >
                           {{ theme.label }}
                         </button>
@@ -728,7 +668,7 @@ onBeforeUnmount(() => {
             <div class="mt-3 space-y-3">
               <div>
                 <div class="flex items-center justify-between gap-3">
-                  <p class="text-[0.7rem] font-medium text-slate-600 dark:text-slate-300">排版</p>
+                  <p class="text-[0.7rem] font-medium text-slate-600 dark:text-slate-300">主题</p>
                   <span class="text-[0.66rem] text-slate-400 dark:text-slate-500">{{ currentArticleContentThemeLabel }}</span>
                 </div>
                 <div class="mt-1.5 flex flex-wrap gap-1.5">
@@ -742,28 +682,6 @@ onBeforeUnmount(() => {
                       : 'border-slate-200/80 bg-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900 dark:border-white/10 dark:text-slate-300 dark:hover:border-white/14 dark:hover:text-slate-50'"
                     :title="theme.hint"
                     @click="switchArticleContentTheme(theme.value)"
-                  >
-                    {{ theme.label }}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <div class="flex items-center justify-between gap-3">
-                  <p class="text-[0.7rem] font-medium text-slate-600 dark:text-slate-300">代码</p>
-                  <span class="text-[0.66rem] text-slate-400 dark:text-slate-500">{{ currentArticleCodeThemeLabel }}</span>
-                </div>
-                <div class="mt-1.5 flex flex-wrap gap-1.5">
-                  <button
-                    v-for="theme in articleCodeThemeFamilyOptions"
-                    :key="theme.value"
-                    type="button"
-                    class="inline-flex cursor-pointer items-center rounded-full border px-2.5 py-1 text-[0.68rem] font-medium transition"
-                    :class="selectedArticleCodeThemeFamily === theme.value
-                      ? 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-400/20 dark:bg-sky-400/12 dark:text-sky-200'
-                      : 'border-slate-200/80 bg-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900 dark:border-white/10 dark:text-slate-300 dark:hover:border-white/14 dark:hover:text-slate-50'"
-                    :title="`${theme.hint}，会随当前明暗模式自动切换`"
-                    @click="switchArticleCodeThemeFamily(theme.value)"
                   >
                     {{ theme.label }}
                   </button>
@@ -815,54 +733,64 @@ onBeforeUnmount(() => {
 
           <section
             v-if="hasRelatedPosts"
-            class="relative overflow-hidden rounded-[28px] border border-white/65 bg-white/88 p-4 shadow-[0_28px_76px_-48px_rgba(15,23,42,0.22)] before:pointer-events-none before:absolute before:-left-16 before:top-8 before:h-40 before:w-40 before:rounded-full before:bg-sky-200/26 before:blur-3xl after:pointer-events-none after:absolute after:-right-12 after:bottom-0 after:h-44 after:w-44 after:rounded-full after:bg-orange-200/26 after:blur-3xl dark:border-white/10 dark:bg-slate-950/76 dark:before:bg-sky-500/12 dark:after:bg-orange-400/10 sm:rounded-[36px] sm:p-6 sm:shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)]"
+            class="relative"
           >
-            <div class="relative">
-              <div class="border-b border-slate-200/70 pb-4 dark:border-white/10 sm:pb-5">
-                <p class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-sky-600 dark:text-sky-300">
-                  继续阅读
-                </p>
-              </div>
+            <div class="border-b border-slate-200/70 pb-4 dark:border-white/10 sm:pb-5">
+              <p class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-sky-600 dark:text-sky-300">
+                继续阅读
+              </p>
+            </div>
 
-              <div class="mt-5 grid min-w-0 gap-4 sm:mt-6 lg:grid-cols-2">
-                <NuxtLink
-                  v-for="item in relatedCompactPosts"
-                  :key="item.slug"
-                  :to="`/posts/${item.slug}`"
-                  class="group relative min-w-0 cursor-pointer overflow-hidden rounded-[22px] border border-slate-200/80 bg-white/90 p-4 transition duration-300 hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-[0_24px_54px_-40px_rgba(14,165,233,0.34)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-slate-800 dark:bg-slate-900/82 dark:hover:border-sky-900 dark:focus-visible:ring-sky-400/70 dark:focus-visible:ring-offset-slate-950 sm:rounded-[26px] sm:p-5"
+            <div class="mt-5 grid min-w-0 gap-5 sm:mt-6 lg:grid-cols-2 lg:gap-6">
+              <NuxtLink
+                v-for="item in relatedCompactPosts"
+                :key="item.slug"
+                :to="`/posts/${item.slug}`"
+                class="group relative min-w-0 cursor-pointer rounded-[20px] p-1.5 transition duration-300 hover:bg-slate-50/78 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:hover:bg-white/[0.03] dark:focus-visible:ring-sky-400/70 dark:focus-visible:ring-offset-slate-950 sm:rounded-[24px] sm:p-2"
+              >
+                <div
+                  v-if="item.coverUrl"
+                  class="relative overflow-hidden rounded-[18px] border border-slate-200/75 bg-slate-100/80 dark:border-white/10 dark:bg-slate-900/78 sm:rounded-[22px]"
                 >
-                  <div class="pointer-events-none absolute inset-y-5 left-0 w-px bg-gradient-to-b from-transparent via-sky-200 to-transparent dark:via-sky-400/35" />
+                  <YunyuImage
+                    :src="item.coverUrl"
+                    :alt="item.title"
+                    wrapper-class="aspect-[16/9] h-full w-full"
+                    image-class="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.02]"
+                    rounded-class="rounded-none"
+                  />
+                  <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.04)_0%,rgba(15,23,42,0.02)_40%,rgba(15,23,42,0.18)_100%)] dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.02)_0%,rgba(2,6,23,0.06)_38%,rgba(2,6,23,0.3)_100%)]" />
+                </div>
 
-                  <div class="flex items-start justify-between gap-3">
-                    <div>
-                      <p class="text-[0.72rem] font-medium text-slate-500 dark:text-slate-400">{{ item.categoryName }}</p>
-                    </div>
-
-                    <div class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200/80 bg-slate-50 text-slate-400 transition group-hover:border-sky-200 group-hover:text-sky-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-500 dark:group-hover:border-sky-800 dark:group-hover:text-sky-200">
-                      <UIcon name="i-lucide-arrow-up-right" class="size-4" />
-                    </div>
+                <div class="mt-4 flex items-start justify-between gap-3">
+                  <div>
+                    <p class="text-[0.72rem] font-medium text-slate-500 dark:text-slate-400">{{ item.categoryName }}</p>
                   </div>
 
-                  <h3 class="mt-4 text-[clamp(1.06rem,3.8vw,1.38rem)] font-semibold leading-7 tracking-[-0.03em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 transition group-hover:text-sky-700 dark:text-slate-50 dark:group-hover:text-sky-200">
-                    {{ item.title }}
-                  </h3>
-
-                  <p class="mt-3 line-clamp-3 text-[0.9rem] leading-7 text-slate-500 dark:text-slate-400">
-                    {{ item.summary }}
-                  </p>
-
-                  <div class="mt-5 flex flex-wrap gap-2.5 text-[0.72rem] text-slate-400 dark:text-slate-500">
-                    <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-slate-50/92 px-3 py-1.5 dark:border-white/10 dark:bg-white/[0.04]">
-                      <UIcon name="i-lucide-calendar-days" class="size-3.5" />
-                      <span>{{ formatChineseDate(item.publishedAt) }}</span>
-                    </span>
-                    <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-slate-50/92 px-3 py-1.5 dark:border-white/10 dark:bg-white/[0.04]">
-                      <UIcon name="i-lucide-clock-3" class="size-3.5" />
-                      <span>{{ item.readingMinutes }} 分钟阅读</span>
-                    </span>
+                  <div class="inline-flex h-9 w-9 shrink-0 items-center justify-center text-slate-400 transition group-hover:text-sky-700 dark:text-slate-500 dark:group-hover:text-sky-200">
+                    <UIcon name="i-lucide-arrow-up-right" class="size-4" />
                   </div>
-                </NuxtLink>
-              </div>
+                </div>
+
+                <h3 class="mt-4 text-[clamp(1.06rem,3.8vw,1.38rem)] font-semibold leading-7 tracking-[-0.03em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 transition group-hover:text-sky-700 dark:text-slate-50 dark:group-hover:text-sky-200">
+                  {{ item.title }}
+                </h3>
+
+                <p class="mt-3 line-clamp-3 text-[0.9rem] leading-7 text-slate-500 dark:text-slate-400">
+                  {{ item.summary }}
+                </p>
+
+                <div class="mt-5 flex flex-wrap gap-2.5 text-[0.72rem] text-slate-400 dark:text-slate-500">
+                  <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200/75 bg-slate-50/88 px-3 py-1.5 dark:border-white/10 dark:bg-white/[0.04]">
+                    <UIcon name="i-lucide-calendar-days" class="size-3.5" />
+                    <span>{{ formatChineseDate(item.publishedAt) }}</span>
+                  </span>
+                  <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200/75 bg-slate-50/88 px-3 py-1.5 dark:border-white/10 dark:bg-white/[0.04]">
+                    <UIcon name="i-lucide-clock-3" class="size-3.5" />
+                    <span>{{ item.readingMinutes }} 分钟阅读</span>
+                  </span>
+                </div>
+              </NuxtLink>
             </div>
           </section>
         </div>
