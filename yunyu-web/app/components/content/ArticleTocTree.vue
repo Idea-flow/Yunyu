@@ -41,7 +41,7 @@ function getIndentStyle(level: number) {
  */
 function getItemClass(item: ArticleTocItem) {
   return props.activeId === item.id
-    ? 'rounded-[999px] bg-[linear-gradient(90deg,rgba(224,242,254,0.98),rgba(240,249,255,0.74))] text-sky-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] ring-1 ring-sky-100/80 dark:bg-[linear-gradient(90deg,rgba(14,116,144,0.4),rgba(8,47,73,0.22))] dark:text-sky-50 dark:ring-sky-400/18 dark:shadow-none'
+    ? 'rounded-[1.35rem] bg-[linear-gradient(90deg,rgba(224,242,254,0.98),rgba(240,249,255,0.74))] text-sky-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] ring-1 ring-sky-100/80 dark:bg-[linear-gradient(90deg,rgba(14,116,144,0.4),rgba(8,47,73,0.22))] dark:text-sky-50 dark:ring-sky-400/18 dark:shadow-none'
     : 'text-slate-500 hover:text-slate-900 dark:text-slate-400/82 dark:hover:text-slate-100'
 }
 
