@@ -122,6 +122,18 @@ const heroVisualCaption = computed(() => {
 })
 
 /**
+ * 首页首屏关键词。
+ * 作用：统一读取后台配置的关键词，并控制首屏底部辅助信息的摆放策略。
+ */
+const heroKeywords = computed(() => {
+  if (!homepageConfig.value?.showHeroKeywords) {
+    return []
+  }
+
+  return (homepageConfig.value?.heroKeywords || []).slice(0, 5)
+})
+
+/**
  * 首页首屏统计项。
  * 作用：当后台开启轻量统计时，在首屏底部展示少量站点规模信息。
  */
@@ -141,6 +153,15 @@ const heroRecentPosts = computed(() => {
   const preferredPosts = latestDisplayPosts.value.length > 0 ? latestDisplayPosts.value : featuredPosts.value
 
   return preferredPosts.slice(0, 2)
+})
+
+/**
+ * 首页首屏统计是否贴近左侧主内容区展示。
+ * 作用：当首页首屏关键词未展示时，将内容概览直接放在左下区域，
+ * 让原本会显得空掉的位置继续承接信息，同时保持阅读动线集中在左侧。
+ */
+const showHeroStatsUnderPrimaryContent = computed(() => {
+  return heroStatItems.value.length > 0 && heroKeywords.value.length === 0
 })
 
 /**
@@ -450,6 +471,26 @@ function getTopicLink(slug: string) {
                   </NuxtLink>
                 </div>
               </div>
+
+              <div v-if="showHeroStatsUnderPrimaryContent" class="mt-8 max-w-[34rem]">
+                <p class="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">
+                  内容概览
+                </p>
+                <dl class="mt-3 flex flex-wrap gap-x-6 gap-y-3">
+                  <div
+                    v-for="stat in heroStatItems"
+                    :key="`${stat.label}-${stat.value}`"
+                    class="min-w-[4.5rem]"
+                  >
+                    <dt class="text-[0.68rem] uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                      {{ stat.label }}
+                    </dt>
+                    <dd class="mt-1.5 text-[1.05rem] font-semibold tracking-[-0.04em] text-slate-950 dark:text-white">
+                      {{ stat.value }}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
             </div>
 
             <div
@@ -527,15 +568,15 @@ function getTopicLink(slug: string) {
                 </div>
               </div>
 
-              <div class="mt-3 flex items-center justify-between gap-3 px-1 text-[0.68rem] uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                <span>视觉片段</span>
+              <div class="mt-3 flex justify-end px-1 text-[0.68rem] uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
                 <span class="truncate text-right">{{ heroVisualCaption }}</span>
               </div>
+
             </div>
 
           </div>
 
-          <div v-if="heroStatItems.length > 0" class="mt-10 lg:mt-12">
+          <div v-if="heroStatItems.length > 0 && !showHeroStatsUnderPrimaryContent" class="mt-10 lg:mt-12">
             <div class="flex justify-start lg:justify-end">
               <div>
                 <p class="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">
@@ -587,7 +628,6 @@ function getTopicLink(slug: string) {
         <YunyuSectionTitle
           eyebrow="Latest"
           :title="homepageConfig?.latestSectionTitle || '最新文章'"
-          description="从最近一次更新开始进入阅读，首页只保留最值得先看到的几篇。"
           link-label="查看全部"
           link-to="/posts"
           size="compact"
@@ -625,11 +665,7 @@ function getTopicLink(slug: string) {
                 {{ editorialLeadPost.title }}
               </h2>
 
-              <p class="mt-4 max-w-[40rem] text-[0.95rem] leading-8 text-slate-600 dark:text-slate-300">
-                {{ editorialLeadPost.summary }}
-              </p>
-
-              <div class="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[0.7rem] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              <div class="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[0.7rem] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                 <span>{{ editorialLeadPost.authorName }}</span>
                 <span>{{ formatChineseDate(editorialLeadPost.publishedAt) }}</span>
                 <span>{{ editorialLeadPost.readingMinutes }} 分钟阅读</span>
@@ -663,11 +699,7 @@ function getTopicLink(slug: string) {
                   {{ post.title }}
                 </h3>
 
-                <p class="mt-2 line-clamp-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                  {{ post.summary }}
-                </p>
-
-                <div class="mt-4 flex items-center gap-4 text-[0.72rem] text-slate-500 dark:text-slate-400">
+                <div class="mt-3 flex items-center gap-4 text-[0.72rem] text-slate-500 dark:text-slate-400">
                   <span>{{ post.readingMinutes }} 分钟阅读</span>
                   <span>{{ post.viewCount }} 浏览</span>
                 </div>
@@ -680,8 +712,7 @@ function getTopicLink(slug: string) {
       <section v-if="showCategorySection || showTopicSection" id="explore" class="border-t border-slate-200/80 pt-16 dark:border-white/10">
         <YunyuSectionTitle
           eyebrow="Explore"
-          title="从结构继续进入"
-          description="当你不想按时间浏览时，可以直接从分类与专题进入更稳定的内容线索。"
+          title="分类与专题"
           size="compact"
           tone="slate"
         />
