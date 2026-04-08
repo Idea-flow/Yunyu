@@ -39,6 +39,12 @@ public class AdminPostUpdateRequest {
     @Pattern(regexp = "DRAFT|PUBLISHED|OFFLINE", message = "状态不合法")
     private String status;
 
+    private Boolean isTop;
+
+    private Boolean isRecommend;
+
+    private Boolean allowComment;
+
     @Size(max = 255, message = "SEO标题长度不能超过255个字符")
     private String seoTitle;
 

@@ -131,13 +131,13 @@ const showSortColumn = computed(() => props.config.hasSortField)
 const tableGridTemplate = computed(() => {
   if (showCoverColumn.value) {
     return showSortColumn.value
-      ? '6rem 5rem minmax(0,1.25fr) 0.7fr 0.7fr 0.7fr 0.9fr 5.5rem'
-      : '6rem 5rem minmax(0,1.45fr) 0.7fr 0.8fr 0.9fr 5.5rem'
+      ? '3.25rem 5rem minmax(0,1.25fr) 0.7fr 0.7fr 0.7fr 0.9fr 5.5rem'
+      : '3.25rem 5rem minmax(0,1.45fr) 0.7fr 0.8fr 0.9fr 5.5rem'
   }
 
   return showSortColumn.value
-    ? '6rem minmax(0,1.45fr) 0.7fr 0.7fr 0.7fr 0.9fr 5.5rem'
-    : '6rem minmax(0,1.6fr) 0.8fr 0.8fr 0.9fr 5.5rem'
+    ? '3.25rem minmax(0,1.45fr) 0.7fr 0.7fr 0.7fr 0.9fr 5.5rem'
+    : '3.25rem minmax(0,1.6fr) 0.8fr 0.8fr 0.9fr 5.5rem'
 })
 
 /**

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import YunyuHero from '~/components/common/YunyuHero.vue'
-import FrontPaginationBar from '../../components/content/FrontPaginationBar.vue'
+import YunyuPagination from '../../components/common/YunyuPagination.vue'
 import FrontPostCard from '../../components/content/FrontPostCard.vue'
 
 /**
@@ -90,7 +90,7 @@ async function changePage(nextPage: number) {
         />
       </div>
 
-      <FrontPaginationBar
+      <YunyuPagination
         class="mt-8"
         :page-no="data.posts.pageNo"
         :total-pages="data.posts.totalPages"

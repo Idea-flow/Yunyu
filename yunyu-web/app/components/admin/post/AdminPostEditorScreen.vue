@@ -44,6 +44,9 @@ const formState = reactive<AdminPostForm>({
   tagIds: [],
   topicIds: [],
   status: 'DRAFT',
+  isTop: false,
+  isRecommend: false,
+  allowComment: true,
   seoTitle: '',
   seoDescription: '',
   contentMarkdown: '',
@@ -171,6 +174,9 @@ async function loadPostDetail() {
     formState.tagIds = detail.tagIds || []
     formState.topicIds = detail.topicIds || []
     formState.status = detail.status
+    formState.isTop = detail.isTop ?? false
+    formState.isRecommend = detail.isRecommend ?? false
+    formState.allowComment = detail.allowComment ?? true
     formState.seoTitle = detail.seoTitle || ''
     formState.seoDescription = detail.seoDescription || ''
     formState.contentMarkdown = detail.contentMarkdown || ''
@@ -257,6 +263,9 @@ async function handleSubmit() {
       tagIds: [...formState.tagIds],
       topicIds: [...formState.topicIds],
       status: formState.status,
+      isTop: formState.isTop,
+      isRecommend: formState.isRecommend,
+      allowComment: formState.allowComment,
       seoTitle: formState.seoTitle.trim(),
       seoDescription: formState.seoDescription.trim(),
       contentMarkdown: formState.contentMarkdown,
@@ -499,6 +508,39 @@ await Promise.all([
                       :items="statusOptions"
                     />
                   </UFormField>
+                </div>
+              </div>
+
+              <div :class="workspaceSurfaceClass">
+                <p class="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-50">发布设置</p>
+
+                <div class="space-y-3">
+                  <AdminSwitchField
+                    v-model="formState.isTop"
+                    label="置顶展示"
+                    description="开启后会在前台列表中优先展示这篇文章。"
+                    color="primary"
+                    active-text="已置顶"
+                    inactive-text="未置顶"
+                  />
+
+                  <AdminSwitchField
+                    v-model="formState.isRecommend"
+                    label="推荐文章"
+                    description="开启后可参与前台推荐位和相关文章推荐。"
+                    color="primary"
+                    active-text="已推荐"
+                    inactive-text="未推荐"
+                  />
+
+                  <AdminSwitchField
+                    v-model="formState.allowComment"
+                    label="允许评论"
+                    description="关闭后前台详情页将不再开放评论互动。"
+                    color="primary"
+                    active-text="可评论"
+                    inactive-text="已关闭"
+                  />
                 </div>
               </div>
             </div>

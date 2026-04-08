@@ -25,6 +25,9 @@ public class AdminPostItemResponse {
     private List<String> topicNames;
     private String topic;
     private String status;
+    private Boolean isTop;
+    private Boolean isRecommend;
+    private Boolean allowComment;
     private String seoTitle;
     private String seoDescription;
     private Boolean coverReady;

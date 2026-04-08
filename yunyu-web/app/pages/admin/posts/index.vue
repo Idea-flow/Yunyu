@@ -17,6 +17,7 @@ const adminTaxonomy = useAdminTaxonomy()
 
 type PostStatusFilter = 'ALL' | 'DRAFT' | 'PUBLISHED' | 'OFFLINE'
 type PostTaxonomyFilter = 'ALL' | number
+type PostFlagFilter = 'ALL' | 1 | 0
 
 const isLoading = ref(false)
 const isLoadingFilters = ref(false)
@@ -26,6 +27,9 @@ const activeStatus = ref<PostStatusFilter>('ALL')
 const activeCategoryId = ref<PostTaxonomyFilter>('ALL')
 const activeTagId = ref<PostTaxonomyFilter>('ALL')
 const activeTopicId = ref<PostTaxonomyFilter>('ALL')
+const activeIsTop = ref<PostFlagFilter>('ALL')
+const activeIsRecommend = ref<PostFlagFilter>('ALL')
+const activeAllowComment = ref<PostFlagFilter>('ALL')
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
@@ -51,6 +55,24 @@ const statusOptions = [
   { label: '已下线', value: 'OFFLINE' }
 ] as const
 
+const topOptions = [
+  { label: '全部置顶状态', value: 'ALL' },
+  { label: '已置顶', value: 1 },
+  { label: '未置顶', value: 0 }
+] as const
+
+const recommendOptions = [
+  { label: '全部推荐状态', value: 'ALL' },
+  { label: '已推荐', value: 1 },
+  { label: '未推荐', value: 0 }
+] as const
+
+const allowCommentOptions = [
+  { label: '全部评论状态', value: 'ALL' },
+  { label: '允许评论', value: 1 },
+  { label: '禁止评论', value: 0 }
+] as const
+
 /**
  * 加载文章列表。
  * 会根据当前筛选条件和分页参数请求后台文章接口。
@@ -65,6 +87,9 @@ async function loadPosts() {
       categoryId: activeCategoryId.value === 'ALL' ? undefined : activeCategoryId.value,
       tagId: activeTagId.value === 'ALL' ? undefined : activeTagId.value,
       topicId: activeTopicId.value === 'ALL' ? undefined : activeTopicId.value,
+      isTop: activeIsTop.value === 'ALL' ? undefined : activeIsTop.value,
+      isRecommend: activeIsRecommend.value === 'ALL' ? undefined : activeIsRecommend.value,
+      allowComment: activeAllowComment.value === 'ALL' ? undefined : activeAllowComment.value,
       pageNo: currentPage.value,
       pageSize: pageSize.value
     })
@@ -194,6 +219,9 @@ async function handleResetFilters() {
   activeCategoryId.value = 'ALL'
   activeTagId.value = 'ALL'
   activeTopicId.value = 'ALL'
+  activeIsTop.value = 'ALL'
+  activeIsRecommend.value = 'ALL'
+  activeAllowComment.value = 'ALL'
   currentPage.value = 1
   await loadPosts()
 }
@@ -262,28 +290,55 @@ function resolveStatusLabel(status: AdminPostItem['status']) {
 }
 
 /**
- * 解析文章状态颜色。
+ * 解析文章状态徽标样式。
  *
  * @param status 状态值
- * @returns Nuxt UI 颜色名
+ * @returns 徽标样式
  */
-function resolveStatusColor(status: AdminPostItem['status']) {
-  switch (status) {
-    case 'PUBLISHED':
-      return 'primary' as const
-    case 'OFFLINE':
-      return 'warning' as const
+function resolveStatusBadgeClass(status: AdminPostItem['status']) {
+  return status === 'PUBLISHED'
+    ? 'border-sky-200/90 bg-sky-100/90 text-sky-700 dark:border-sky-400/25 dark:bg-sky-400/12 dark:text-sky-200'
+    : 'border-slate-200/90 bg-slate-100/92 text-slate-600 dark:border-slate-700/80 dark:bg-slate-800/88 dark:text-slate-300'
+}
+
+/**
+ * 解析文章布尔状态徽标文案。
+ * 作用：统一生成置顶、推荐和评论开关在列表中的短标签文案，方便快速扫读。
+ *
+ * @param flag 状态字段
+ * @param enabled 是否开启
+ * @returns 徽标文案
+ */
+function resolvePostFlagLabel(flag: 'isTop' | 'isRecommend' | 'allowComment', enabled: boolean) {
+  switch (flag) {
+    case 'isTop':
+      return enabled ? '已置顶' : '未置顶'
+    case 'isRecommend':
+      return enabled ? '已推荐' : '未推荐'
     default:
-      return 'neutral' as const
+      return enabled ? '可评论' : '已禁评'
   }
 }
 
 /**
- * 解析文章归属摘要。
- * 用于在文章列表中同时展示分类、标签和专题信息，让内容归档关系更直观。
+ * 解析文章布尔状态徽标样式。
+ * 作用：统一控制开启态浅蓝、关闭态灰色的视觉反馈，让四个状态保持一致。
+ *
+ * @param enabled 是否开启
+ * @returns 徽标样式
+ */
+function resolvePostFlagBadgeClass(enabled: boolean) {
+  return enabled
+    ? 'border-sky-200/90 bg-sky-100/90 text-sky-700 dark:border-sky-400/25 dark:bg-sky-400/12 dark:text-sky-200'
+    : 'border-slate-200/90 bg-slate-100/92 text-slate-600 dark:border-slate-700/80 dark:bg-slate-800/88 dark:text-slate-300'
+}
+
+/**
+ * 解析文章归属预览摘要。
+ * 用于在表格中保持单行简洁展示，避免分类、标签和专题过长时挤压列表布局。
  *
  * @param post 当前文章
- * @returns 归属摘要
+ * @returns 归属预览文案
  */
 function resolvePostMetaSummary(post: AdminPostItem) {
   const sections: string[] = []
@@ -307,6 +362,35 @@ function resolvePostMetaSummary(post: AdminPostItem) {
   return sections.join('  ·  ')
 }
 
+/**
+ * 解析文章归属完整摘要。
+ * 用于鼠标悬浮时展示分类、标签和专题的全部内容，让长归属信息也能完整查看。
+ *
+ * @param post 当前文章
+ * @returns 归属完整文案
+ */
+function resolvePostMetaFullSummary(post: AdminPostItem) {
+  const sections: string[] = []
+
+  if (post.categoryName) {
+    sections.push(`分类：${post.categoryName}`)
+  }
+
+  if (post.tagNames?.length) {
+    sections.push(`标签：${post.tagNames.join(' / ')}`)
+  }
+
+  if (post.topicNames?.length) {
+    sections.push(`专题：${post.topicNames.join(' / ')}`)
+  }
+
+  if (!sections.length) {
+    return '暂未设置分类、标签或专题'
+  }
+
+  return sections.join('\n')
+}
+
 await Promise.all([
   loadFilterOptions(),
   loadPosts()
@@ -322,58 +406,83 @@ await Promise.all([
     </AdminListPageHeader>
 
     <div class="space-y-4">
-      <AdminListFilterBar>
+      <AdminFilterPanel>
         <template #search>
-            <AdminInput
-              v-model="searchKeyword"
-              icon="i-lucide-search"
-              class="w-full lg:flex-1"
-              placeholder="搜索标题或 Slug"
-            />
+          <AdminInput
+            v-model="searchKeyword"
+            icon="i-lucide-search"
+            class="w-full"
+            placeholder="搜索标题或 Slug"
+          />
         </template>
 
-        <template #filters>
-            <div class="min-w-[9.5rem] flex-1 sm:max-w-[calc(50%-0.375rem)] lg:w-[10rem] lg:flex-none">
-              <AdminSelect
-                v-model="activeStatus"
-                :items="statusOptions"
-                class="w-full"
-                placeholder="状态"
-              />
-            </div>
+        <div class="min-w-[10rem] flex-1 sm:max-w-[calc(50%-0.375rem)] xl:w-[10rem] xl:flex-none">
+          <AdminSelect
+            v-model="activeStatus"
+            :items="statusOptions"
+            class="w-full"
+            placeholder="状态"
+          />
+        </div>
 
-            <div class="min-w-[9.5rem] flex-1 sm:max-w-[calc(50%-0.375rem)] lg:w-[10rem] lg:flex-none">
-              <AdminSelect
-                v-model="activeCategoryId"
-                :items="categoryOptions"
-                class="w-full"
-                :disabled="isLoadingFilters"
-                placeholder="分类"
-              />
-            </div>
+        <div class="min-w-[10rem] flex-1 sm:max-w-[calc(50%-0.375rem)] xl:w-[10rem] xl:flex-none">
+          <AdminSelect
+            v-model="activeCategoryId"
+            :items="categoryOptions"
+            class="w-full"
+            :disabled="isLoadingFilters"
+            placeholder="分类"
+          />
+        </div>
 
-            <div class="min-w-[9.5rem] flex-1 sm:max-w-[calc(50%-0.375rem)] lg:w-[10rem] lg:flex-none">
-              <AdminSelect
-                v-model="activeTagId"
-                :items="tagOptions"
-                class="w-full"
-                :disabled="isLoadingFilters"
-                placeholder="标签"
-              />
-            </div>
+        <div class="min-w-[10rem] flex-1 sm:max-w-[calc(50%-0.375rem)] xl:w-[10rem] xl:flex-none">
+          <AdminSelect
+            v-model="activeTagId"
+            :items="tagOptions"
+            class="w-full"
+            :disabled="isLoadingFilters"
+            placeholder="标签"
+          />
+        </div>
 
-            <div class="min-w-[9.5rem] flex-1 sm:max-w-[calc(50%-0.375rem)] lg:w-[10rem] lg:flex-none">
-              <AdminSelect
-                v-model="activeTopicId"
-                :items="topicOptions"
-                class="w-full"
-                :disabled="isLoadingFilters"
-                placeholder="专题"
-              />
-            </div>
-        </template>
+        <div class="min-w-[10rem] flex-1 sm:max-w-[calc(50%-0.375rem)] xl:w-[10rem] xl:flex-none">
+          <AdminSelect
+            v-model="activeTopicId"
+            :items="topicOptions"
+            class="w-full"
+            :disabled="isLoadingFilters"
+            placeholder="专题"
+          />
+        </div>
 
-        <template #actions>
+        <div class="min-w-[10rem] flex-1 sm:max-w-[calc(50%-0.375rem)] xl:w-[10rem] xl:flex-none">
+          <AdminSelect
+            v-model="activeIsTop"
+            :items="topOptions"
+            class="w-full"
+            placeholder="置顶"
+          />
+        </div>
+
+        <div class="min-w-[10rem] flex-1 sm:max-w-[calc(50%-0.375rem)] xl:w-[10rem] xl:flex-none">
+          <AdminSelect
+            v-model="activeIsRecommend"
+            :items="recommendOptions"
+            class="w-full"
+            placeholder="推荐"
+          />
+        </div>
+
+        <div class="min-w-[10rem] flex-1 sm:max-w-[calc(50%-0.375rem)] xl:w-[10rem] xl:flex-none">
+          <AdminSelect
+            v-model="activeAllowComment"
+            :items="allowCommentOptions"
+            class="w-full"
+            placeholder="评论"
+          />
+        </div>
+
+        <div class="flex w-full flex-wrap items-center justify-end gap-2 xl:ml-auto xl:w-auto">
           <UButton
             label="重置"
             color="neutral"
@@ -382,20 +491,20 @@ await Promise.all([
             @click="handleResetFilters"
           />
           <AdminPrimaryButton label="搜索" icon="i-lucide-search" @click="handleSearch" />
-        </template>
-      </AdminListFilterBar>
+        </div>
+      </AdminFilterPanel>
 
         <AdminTableCard title="文章列表">
           <AdminDataTable
             :is-loading="isLoading"
             :has-data="posts.length > 0"
-            min-width="1080px"
-            header-class="grid-cols-[6rem_5rem_minmax(0,1.5fr)_0.7fr_1fr_0.8fr_0.7fr]"
+            min-width="1020px"
+            header-class="grid-cols-[3.25rem_5rem_minmax(0,1.58fr)_1fr_1fr_0.8fr_0.7fr]"
             empty-title="没有找到匹配的文章"
             empty-icon="i-lucide-file-search"
           >
             <template #header>
-              <p>ID</p>
+              <p class="text-center">ID</p>
               <p>封面</p>
               <p>标题</p>
               <p>状态</p>
@@ -408,9 +517,9 @@ await Promise.all([
             v-for="post in posts"
             :key="post.id"
             class="grid items-center gap-4 px-4 py-3.5 transition duration-200 hover:bg-white/60 dark:hover:bg-white/5"
-            :class="'grid-cols-[6rem_5rem_minmax(0,1.5fr)_0.7fr_1fr_0.8fr_0.7fr]'"
+            :class="'grid-cols-[3.25rem_5rem_minmax(0,1.58fr)_1fr_1fr_0.8fr_0.7fr]'"
           >
-            <div class="min-w-0">
+            <div class="min-w-0 text-center">
                 <p class="truncate text-sm font-medium text-toned">{{ post.id }}</p>
             </div>
 
@@ -446,16 +555,101 @@ await Promise.all([
                 </div>
               </div>
 
-              <div>
-                <UBadge :color="resolveStatusColor(post.status)" variant="soft">
+              <div class="grid grid-cols-2 gap-1.5">
+                <span
+                  class="inline-flex items-center justify-center rounded-full border px-2 py-1 text-center text-xs font-medium"
+                  :class="resolveStatusBadgeClass(post.status)"
+                >
                   {{ resolveStatusLabel(post.status) }}
-                </UBadge>
+                </span>
+                <span
+                  class="inline-flex items-center justify-center rounded-full border px-2 py-1 text-center text-xs font-medium"
+                  :class="resolvePostFlagBadgeClass(post.isTop === true)"
+                >
+                  {{ resolvePostFlagLabel('isTop', post.isTop === true) }}
+                </span>
+                <span
+                  class="inline-flex items-center justify-center rounded-full border px-2 py-1 text-center text-xs font-medium"
+                  :class="resolvePostFlagBadgeClass(post.isRecommend === true)"
+                >
+                  {{ resolvePostFlagLabel('isRecommend', post.isRecommend === true) }}
+                </span>
+                <span
+                  class="inline-flex items-center justify-center rounded-full border px-2 py-1 text-center text-xs font-medium"
+                  :class="resolvePostFlagBadgeClass(post.allowComment !== false)"
+                >
+                  {{ resolvePostFlagLabel('allowComment', post.allowComment !== false) }}
+                </span>
               </div>
 
               <div class="min-w-0">
-                <p class="truncate text-sm text-toned">
-                  {{ resolvePostMetaSummary(post) }}
-                </p>
+                <UPopover
+                  mode="hover"
+                  :arrow="true"
+                  :open-delay="20"
+                  :close-delay="50"
+                  :content="{
+                    side: 'top',
+                    align: 'start',
+                    sideOffset: 10
+                  }"
+                  :ui="{
+                    content: 'max-w-[17rem] rounded-2xl border border-slate-200/80 bg-white/98 px-3 py-2.5 text-xs leading-6 text-slate-700 shadow-[0_18px_40px_-26px_rgba(15,23,42,0.28)] dark:border-slate-700/75 dark:bg-slate-900/98 dark:text-slate-200 dark:shadow-[0_18px_42px_-24px_rgba(0,0,0,0.48)]'
+                  }"
+                  class="hidden md:block"
+                >
+                  <button
+                    type="button"
+                    class="group flex w-full items-center gap-1.5 truncate rounded-xl bg-transparent text-left text-sm text-toned outline-none transition-colors duration-200 hover:text-sky-700 dark:hover:text-sky-300"
+                  >
+                    <span class="min-w-0 flex-1 truncate">
+                      {{ resolvePostMetaSummary(post) }}
+                    </span>
+                    <UIcon
+                      name="i-lucide-chevrons-up"
+                      class="size-3.5 shrink-0 text-slate-300 opacity-0 transition duration-200 group-hover:opacity-100 dark:text-slate-600"
+                    />
+                  </button>
+
+                  <template #content>
+                    <p class="whitespace-pre-line text-xs leading-6 text-slate-700 dark:text-slate-200">
+                      {{ resolvePostMetaFullSummary(post) }}
+                    </p>
+                  </template>
+                </UPopover>
+
+                <UPopover
+                  mode="click"
+                  :arrow="true"
+                  :content="{
+                    side: 'top',
+                    align: 'start',
+                    sideOffset: 10
+                  }"
+                  :ui="{
+                    content: 'max-w-[17rem] rounded-2xl border border-slate-200/80 bg-white/98 px-3 py-2.5 text-xs leading-6 text-slate-700 shadow-[0_18px_40px_-26px_rgba(15,23,42,0.28)] dark:border-slate-700/75 dark:bg-slate-900/98 dark:text-slate-200 dark:shadow-[0_18px_42px_-24px_rgba(0,0,0,0.48)]'
+                  }"
+                  class="md:hidden"
+                >
+                  <button
+                    type="button"
+                    class="flex w-full items-center gap-1.5 truncate rounded-xl bg-transparent text-left text-sm text-toned outline-none transition-colors duration-200 active:text-sky-700 dark:active:text-sky-300"
+                  >
+                    <span class="min-w-0 flex-1 truncate">
+                      {{ resolvePostMetaSummary(post) }}
+                    </span>
+                    <UIcon
+                      name="i-lucide-chevrons-up"
+                      class="size-3.5 shrink-0 text-slate-300 dark:text-slate-600"
+                    />
+                  </button>
+
+                  <template #content>
+                    <p class="whitespace-pre-line text-xs leading-6 text-slate-700 dark:text-slate-200">
+                      {{ resolvePostMetaFullSummary(post) }}
+                    </p>
+                  </template>
+                </UPopover>
               </div>
 
               <div class="text-sm text-toned">

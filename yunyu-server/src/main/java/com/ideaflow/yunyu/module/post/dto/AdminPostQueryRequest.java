@@ -14,6 +14,9 @@ public class AdminPostQueryRequest {
     private Long categoryId;
     private Long tagId;
     private Long topicId;
+    private Integer isTop;
+    private Integer isRecommend;
+    private Integer allowComment;
     private Integer pageNo = 1;
     private Integer pageSize = 10;
 }

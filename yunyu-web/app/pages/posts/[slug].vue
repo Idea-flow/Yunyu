@@ -5,7 +5,7 @@ import type { ArticleTocItem } from '../../types/post'
 import ArticleContentRenderer from '../../components/content/ArticleContentRenderer.vue'
 import ArticleCommentPanel from '../../components/content/ArticleCommentPanel.vue'
 import ArticleTocTree from '../../components/content/ArticleTocTree.vue'
-import YunyuImage from '~/components/common/YunyuImage.vue'
+import PostCoverHero from '~/components/common/PostCoverHero.vue'
 import YunyuSectionTitle from '~/components/common/YunyuSectionTitle.vue'
 
 type ArticleContentTheme = 'editorial' | 'documentation' | 'minimal'
@@ -563,84 +563,71 @@ onBeforeUnmount(() => {
       />
     </div>
 
-    <section v-if="post" data-post-cover-hero class="relative overflow-hidden">
-      <div class="relative h-[34svh] min-h-[280px] w-full sm:h-[42svh] sm:min-h-[340px] lg:h-[54svh]">
-        <div class="absolute inset-0">
-          <YunyuImage
-            :src="post.coverUrl"
-            :alt="post.title"
-            wrapper-class="absolute inset-0 h-full w-full"
-            image-class="h-full w-full"
-            rounded-class="rounded-none"
-          />
-          <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.18)_0%,rgba(15,23,42,0.18)_18%,rgba(15,23,42,0.22)_42%,rgba(15,23,42,0.62)_100%)] dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.1)_0%,rgba(2,6,23,0.14)_20%,rgba(2,6,23,0.26)_44%,rgba(2,6,23,0.72)_100%)]" />
+    <PostCoverHero
+      v-if="post"
+      :src="post.coverUrl"
+      :alt="post.title"
+    >
+      <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end lg:gap-8">
+        <div class="max-w-[44rem] min-w-0">
+          <div class="flex flex-wrap gap-2">
+            <NuxtLink :to="`/categories/${post.categorySlug}`">
+              <UBadge color="neutral" variant="soft" size="lg" class="backdrop-blur-md">
+                {{ post.categoryName }}
+              </UBadge>
+            </NuxtLink>
+            <NuxtLink
+              v-for="topic in post.topicItems"
+              :key="`${post.slug}-${topic.slug}`"
+              :to="`/topics/${topic.slug}`"
+            >
+              <UBadge color="primary" variant="soft" size="lg" class="backdrop-blur-md">
+                {{ topic.name }}
+              </UBadge>
+            </NuxtLink>
+          </div>
+
+          <h1 class="mt-4 max-w-[36rem] text-[clamp(1.16rem,4.9vw,2.08rem)] font-semibold leading-[1.1] tracking-[-0.032em] [font-family:var(--font-display)] [text-wrap:balance] text-white drop-shadow-[0_14px_32px_rgba(15,23,42,0.3)] sm:mt-5 sm:text-[clamp(1.34rem,1.18rem+0.82vw,2.08rem)] sm:leading-[1.08]">
+            {{ post.title }}
+          </h1>
         </div>
-        <div class="absolute inset-x-0 bottom-0 z-10">
-          <div class="mx-auto max-w-[1440px] px-5 pb-8 sm:px-8 sm:pb-12 lg:px-10 lg:pb-14">
-            <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end lg:gap-8">
-              <div class="max-w-[44rem] min-w-0">
-                <div class="flex flex-wrap gap-2">
-                  <NuxtLink :to="`/categories/${post.categorySlug}`">
-                    <UBadge color="neutral" variant="soft" size="lg" class="backdrop-blur-md">
-                      {{ post.categoryName }}
-                    </UBadge>
-                  </NuxtLink>
-                  <NuxtLink
-                    v-for="topic in post.topicItems"
-                    :key="`${post.slug}-${topic.slug}`"
-                    :to="`/topics/${topic.slug}`"
+
+        <section class="hidden justify-self-end lg:block lg:w-full lg:max-w-[320px]">
+          <div class="rounded-[18px] border border-white/12 bg-black/12 px-4 py-3 text-white/88 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.34)] backdrop-blur-[14px]">
+            <div class="flex items-center justify-between gap-3">
+              <p class="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-white/56">阅读主题</p>
+              <span class="text-[0.66rem] text-white/58">
+                {{ colorMode.value === 'dark' ? '暗色模式' : '亮色模式' }}
+              </span>
+            </div>
+
+            <div class="mt-3 space-y-3">
+              <div>
+                <div class="flex items-center justify-between gap-3">
+                  <p class="text-[0.68rem] font-medium text-white/74">主题</p>
+                  <span class="text-[0.66rem] text-white/52">{{ currentArticleContentThemeLabel }}</span>
+                </div>
+                <div class="mt-1.5 flex flex-wrap gap-1.5">
+                  <button
+                    v-for="theme in articleContentThemeOptions"
+                    :key="theme.value"
+                    type="button"
+                    class="inline-flex cursor-pointer items-center rounded-full border px-2.5 py-1 text-[0.68rem] font-medium transition"
+                    :class="selectedArticleContentTheme === theme.value
+                      ? 'border-white/22 bg-white/14 text-white'
+                      : 'border-white/8 bg-transparent text-white/64 hover:border-white/16 hover:bg-white/[0.06] hover:text-white/88'"
+                    :title="theme.hint"
+                    @click="switchArticleContentTheme(theme.value)"
                   >
-                    <UBadge color="primary" variant="soft" size="lg" class="backdrop-blur-md">
-                      {{ topic.name }}
-                    </UBadge>
-                  </NuxtLink>
+                    {{ theme.label }}
+                  </button>
                 </div>
-
-                <h1 class="mt-4 max-w-[36rem] text-[clamp(1.16rem,4.9vw,2.08rem)] font-semibold leading-[1.1] tracking-[-0.032em] [font-family:var(--font-display)] [text-wrap:balance] text-white drop-shadow-[0_14px_32px_rgba(15,23,42,0.3)] sm:mt-5 sm:text-[clamp(1.34rem,1.18rem+0.82vw,2.08rem)] sm:leading-[1.08]">
-                  {{ post.title }}
-                </h1>
               </div>
-
-              <section class="hidden justify-self-end lg:block lg:w-full lg:max-w-[320px]">
-                <div class="rounded-[18px] border border-white/12 bg-black/12 px-4 py-3 text-white/88 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.34)] backdrop-blur-[14px]">
-                  <div class="flex items-center justify-between gap-3">
-                    <p class="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-white/56">阅读主题</p>
-                    <span class="text-[0.66rem] text-white/58">
-                      {{ colorMode.value === 'dark' ? '暗色模式' : '亮色模式' }}
-                    </span>
-                  </div>
-
-                  <div class="mt-3 space-y-3">
-                    <div>
-                      <div class="flex items-center justify-between gap-3">
-                        <p class="text-[0.68rem] font-medium text-white/74">主题</p>
-                        <span class="text-[0.66rem] text-white/52">{{ currentArticleContentThemeLabel }}</span>
-                      </div>
-                      <div class="mt-1.5 flex flex-wrap gap-1.5">
-                        <button
-                          v-for="theme in articleContentThemeOptions"
-                          :key="theme.value"
-                          type="button"
-                          class="inline-flex cursor-pointer items-center rounded-full border px-2.5 py-1 text-[0.68rem] font-medium transition"
-                          :class="selectedArticleContentTheme === theme.value
-                            ? 'border-white/22 bg-white/14 text-white'
-                            : 'border-white/8 bg-transparent text-white/64 hover:border-white/16 hover:bg-white/[0.06] hover:text-white/88'"
-                          :title="theme.hint"
-                          @click="switchArticleContentTheme(theme.value)"
-                        >
-                          {{ theme.label }}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </section>
             </div>
           </div>
-        </div>
-        <div class="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(244,248,255,0.9)_100%)] dark:bg-[linear-gradient(180deg,rgba(2,6,23,0)_0%,rgba(2,6,23,0.96)_100%)]" />
+        </section>
       </div>
-    </section>
+    </PostCoverHero>
 
     <section v-if="post" class="relative z-10 mx-auto -mt-4 max-w-[1440px] px-4 pb-14 sm:-mt-8 sm:px-8 lg:-mt-10 lg:px-10 lg:pb-24">
       <div class="grid min-w-0 gap-6 sm:gap-8 lg:items-start" :class="showArticleSidebar ? 'lg:grid-cols-[minmax(0,1fr)_340px]' : ''">

@@ -29,15 +29,14 @@ const currentUserDisplayName = computed(() => {
 const currentUserInitial = computed(() => currentUserDisplayName.value.slice(0, 1).toUpperCase())
 
 /**
- * 判断当前页面是否需要导航栏覆盖首屏区域。
- * 作用：让首页与文章详情页的导航栏直接叠在首屏大图之上，避免导航区和首屏内容被硬切开。
+ * 判断当前页面是否需要启用文章首屏覆盖式导航。
+ * 作用：统一收口文章列表页、文章详情页等封面首屏场景，后续若有其他页面复用同类交互，只需要维护这一个判断。
  */
 const isOverlayPage = computed(() => {
-  return route.path === '/'
-    || route.path === '/topics'
-    || route.path.startsWith('/posts/')
-    || route.path.startsWith('/topics/')
-    || route.path.startsWith('/categories/')
+  return route.path === '/posts'
+    || route.path.startsWith('/posts/') || route.path === '/'
+  || route.path === '/topics' || route.path.startsWith('/topics/')
+      || route.path.startsWith('/categories/')
 })
 
 /**
@@ -50,7 +49,7 @@ const isSolidNav = computed(() => {
     return true
   }
 
-  if (isPostDetailPage.value && isOverlayPage.value) {
+  if (isOverlayPage.value) {
     return navTransitionProgress.value >= 0.64
   }
 
@@ -72,12 +71,12 @@ const headerClassName = computed(() => {
  * 作用：统一控制覆盖态与滚动态下导航条的背景、边框和阴影层级。
  */
 const navPanelClassName = computed(() => {
-  if (isPostDetailPage.value && isOverlayPage.value) {
+  if (isOverlayPage.value) {
     return 'border border-transparent bg-transparent shadow-none backdrop-blur-[12px] sm:backdrop-blur-[14px]'
   }
 
   if (!isSolidNav.value) {
-    if (isPostDetailPage.value) {
+    if (isOverlayPage.value) {
       return 'border border-white/8 bg-slate-950/12 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.18)] backdrop-blur-[10px] dark:border-white/10 dark:bg-slate-950/16'
     }
 
@@ -155,7 +154,7 @@ const navLinkActiveClassName = computed(() => {
  * 避免顶部留白破坏整张封面的连续感。
  */
 const headerInnerClassName = computed(() => {
-  if (isOverlayPage.value && isPostDetailPage.value) {
+  if (isOverlayPage.value) {
     return 'mx-auto max-w-[1360px] px-5 pt-2 pb-3 sm:px-8 sm:pt-3 lg:px-10'
   }
 
@@ -168,7 +167,7 @@ const headerInnerClassName = computed(() => {
  * 让导航像浮在封面上的一层细玻璃，而不是独立的大块容器。
  */
 const navPanelLayoutClassName = computed(() => {
-  if (isOverlayPage.value && isPostDetailPage.value) {
+  if (isOverlayPage.value) {
     return 'rounded-[24px] px-4 py-2.5 sm:px-5'
   }
 
@@ -357,7 +356,7 @@ async function handleUserMenuSelect(item: { key: string }) {
           :class="[navPanelClassName, navPanelLayoutClassName]"
         >
           <div
-            v-if="isPostDetailPage && isOverlayPage"
+            v-if="isOverlayPage"
             aria-hidden="true"
             class="pointer-events-none absolute inset-0"
           >

@@ -17,6 +17,9 @@ export interface AdminPostItem {
   topicNames?: string[]
   topic: string
   status: 'DRAFT' | 'PUBLISHED' | 'OFFLINE'
+  isTop?: boolean
+  isRecommend?: boolean
+  allowComment?: boolean
   seoTitle?: string | null
   seoDescription?: string | null
   coverReady: boolean
@@ -51,6 +54,9 @@ export interface AdminPostQuery {
   categoryId?: number
   tagId?: number
   topicId?: number
+  isTop?: 0 | 1
+  isRecommend?: 0 | 1
+  allowComment?: 0 | 1
   pageNo?: number
   pageSize?: number
 }
@@ -79,6 +85,9 @@ export interface AdminPostForm {
   tagIds: number[]
   topicIds: number[]
   status: 'DRAFT' | 'PUBLISHED' | 'OFFLINE'
+  isTop: boolean
+  isRecommend: boolean
+  allowComment: boolean
   seoTitle: string
   seoDescription: string
   contentMarkdown: string

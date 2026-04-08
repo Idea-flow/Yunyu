@@ -415,7 +415,7 @@ await loadUsers()
           :is-loading="isLoading"
           :has-data="users.length > 0"
           min-width="1140px"
-          header-class="grid-cols-[6rem_5rem_minmax(0,1.35fr)_0.72fr_0.72fr_0.9fr_0.8fr]"
+          header-class="grid-cols-[3.25rem_5rem_minmax(0,1.35fr)_0.72fr_0.72fr_0.9fr_0.8fr]"
           empty-title="没有找到匹配的用户"
         >
           <template #header>
@@ -432,7 +432,7 @@ await loadUsers()
             v-for="user in users"
             :key="user.id"
             class="grid items-center gap-4 px-4 py-3.5 transition duration-200 hover:bg-white/60 dark:hover:bg-white/5"
-            :class="'grid-cols-[6rem_5rem_minmax(0,1.35fr)_0.72fr_0.72fr_0.9fr_0.8fr]'"
+            :class="'grid-cols-[3.25rem_5rem_minmax(0,1.35fr)_0.72fr_0.72fr_0.9fr_0.8fr]'"
           >
             <div class="min-w-0">
               <p class="truncate text-sm font-medium text-toned">{{ user.id }}</p>

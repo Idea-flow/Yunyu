@@ -125,10 +125,10 @@ public class AdminPostService {
         postEntity.setSeoDescription(normalizeOptionalValue(request.getSeoDescription()));
         postEntity.setUserId(SecurityUtils.getCurrentUser().getUserId());
         postEntity.setStatus(resolveStatus(request.getStatus()));
-        postEntity.setIsTop(0);
-        postEntity.setIsRecommend(0);
+        postEntity.setIsTop(resolveFlagValue(request.getIsTop(), false));
+        postEntity.setIsRecommend(resolveFlagValue(request.getIsRecommend(), false));
         postEntity.setHasVideo(hasVideo(request.getVideoUrl()) ? 1 : 0);
-        postEntity.setAllowComment(1);
+        postEntity.setAllowComment(resolveFlagValue(request.getAllowComment(), true));
         postEntity.setSortOrder(0);
         postEntity.setViewCount(0L);
         postEntity.setLikeCount(0L);
@@ -168,6 +168,9 @@ public class AdminPostService {
         postEntity.setSeoTitle(normalizeOptionalValue(request.getSeoTitle()));
         postEntity.setSeoDescription(normalizeOptionalValue(request.getSeoDescription()));
         postEntity.setHasVideo(hasVideo(request.getVideoUrl()) ? 1 : 0);
+        postEntity.setIsTop(resolveFlagValue(request.getIsTop(), postEntity.getIsTop() != null && postEntity.getIsTop() == 1));
+        postEntity.setIsRecommend(resolveFlagValue(request.getIsRecommend(), postEntity.getIsRecommend() != null && postEntity.getIsRecommend() == 1));
+        postEntity.setAllowComment(resolveFlagValue(request.getAllowComment(), postEntity.getAllowComment() == null || postEntity.getAllowComment() == 1));
         String nextStatus = resolveStatus(request.getStatus());
         postEntity.setStatus(nextStatus);
         postEntity.setUpdatedTime(LocalDateTime.now());
@@ -236,6 +239,18 @@ public class AdminPostService {
         if (request.getTopicId() != null && request.getTopicId() > 0) {
             queryWrapper.inSql(PostEntity::getId,
                     "SELECT post_id FROM topic_post WHERE topic_id = " + request.getTopicId());
+        }
+
+        if (request.getIsTop() != null) {
+            queryWrapper.eq(PostEntity::getIsTop, request.getIsTop());
+        }
+
+        if (request.getIsRecommend() != null) {
+            queryWrapper.eq(PostEntity::getIsRecommend, request.getIsRecommend());
+        }
+
+        if (request.getAllowComment() != null) {
+            queryWrapper.eq(PostEntity::getAllowComment, request.getAllowComment());
         }
 
         return queryWrapper;
@@ -546,6 +561,9 @@ public class AdminPostService {
         response.setTopicNames(topicNames == null ? List.of() : topicNames);
         response.setTopic(topicNames == null || topicNames.isEmpty() ? "未设置专题" : String.join(" / ", topicNames));
         response.setStatus(postEntity.getStatus());
+        response.setIsTop(postEntity.getIsTop() != null && postEntity.getIsTop() == 1);
+        response.setIsRecommend(postEntity.getIsRecommend() != null && postEntity.getIsRecommend() == 1);
+        response.setAllowComment(postEntity.getAllowComment() == null || postEntity.getAllowComment() == 1);
         response.setSeoTitle(postEntity.getSeoTitle());
         response.setSeoDescription(postEntity.getSeoDescription());
         response.setCoverReady(postEntity.getCoverUrl() != null && !postEntity.getCoverUrl().isBlank());
@@ -570,5 +588,18 @@ public class AdminPostService {
      */
     private boolean hasVideo(String videoUrl) {
         return normalizeOptionalValue(videoUrl) != null;
+    }
+
+    /**
+     * 将布尔开关转换为数据库中的 0/1 标记。
+     * 作用：统一处理后台请求中的布尔配置，并在缺省时回落到业务默认值。
+     *
+     * @param value 原始布尔值
+     * @param defaultValue 默认值
+     * @return 数据库存储标记
+     */
+    private Integer resolveFlagValue(Boolean value, boolean defaultValue) {
+        boolean resolvedValue = value == null ? defaultValue : value;
+        return resolvedValue ? 1 : 0;
     }
 }
