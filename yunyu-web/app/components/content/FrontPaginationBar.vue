@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import YunyuPagination from '../common/YunyuPagination.vue'
+
 /**
  * 前台分页条兼容组件。
  * 作用：兼容旧引用路径，内部统一转发到前台公共分页组件，避免存量页面或历史代码失效。

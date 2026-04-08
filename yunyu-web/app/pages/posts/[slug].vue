@@ -6,6 +6,7 @@ import ArticleContentRenderer from '../../components/content/ArticleContentRende
 import ArticleCommentPanel from '../../components/content/ArticleCommentPanel.vue'
 import ArticleTocTree from '../../components/content/ArticleTocTree.vue'
 import PostCoverHero from '~/components/common/PostCoverHero.vue'
+import YunyuImage from '~/components/common/YunyuImage.vue'
 import YunyuSectionTitle from '~/components/common/YunyuSectionTitle.vue'
 
 type ArticleContentTheme = 'editorial' | 'documentation' | 'minimal'
