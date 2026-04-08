@@ -565,7 +565,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <main class="min-h-screen overflow-x-clip bg-[linear-gradient(180deg,#f4f8ff_0%,#ffffff_34%,#f8fbff_100%)] text-slate-900 dark:bg-[linear-gradient(180deg,#020617_0%,#071120_40%,#020617_100%)] dark:text-slate-100">
+  <main class="min-h-screen overflow-x-clip bg-white text-slate-900 dark:bg-[#020617] dark:text-slate-100">
     <div class="fixed inset-x-0 top-0 z-40 h-1.5 bg-transparent">
       <div
         class="h-full rounded-r-full bg-[linear-gradient(90deg,rgba(125,211,252,0.96)_0%,rgba(96,165,250,0.92)_52%,rgba(196,181,253,0.88)_100%)] shadow-[0_10px_24px_-14px_rgba(96,165,250,0.42)] transition-[width] duration-300 ease-out dark:bg-[linear-gradient(90deg,rgba(56,189,248,0.9)_0%,rgba(96,165,250,0.86)_54%,rgba(129,140,248,0.74)_100%)] dark:shadow-[0_10px_24px_-14px_rgba(56,189,248,0.32)]"
@@ -577,6 +577,7 @@ onBeforeUnmount(() => {
       v-if="post"
       :src="post.coverUrl"
       :alt="post.title"
+      bottom-fade-class="bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.96)_100%)] dark:bg-[linear-gradient(180deg,rgba(2,6,23,0)_0%,rgba(2,6,23,0.96)_100%)]"
     >
       <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end lg:gap-8">
         <div class="max-w-[44rem] min-w-0">
@@ -719,7 +720,7 @@ onBeforeUnmount(() => {
             :content-theme="articleContentTheme"
             :code-theme="articleCodeTheme"
             :code-default-expanded="false"
-            container-class="relative overflow-hidden rounded-[24px] px-1.5 py-4 shadow-[0_18px_48px_-42px_rgba(15,23,42,0.14)] sm:rounded-[30px] sm:px-2 sm:py-5 sm:shadow-[0_24px_72px_-50px_rgba(15,23,42,0.16)] lg:rounded-[38px] dark:shadow-[0_24px_72px_-54px_rgba(2,6,23,0.52)]"
+            container-class="min-h-0 border-0 bg-transparent p-0 shadow-none"
             body-class="px-3.5 sm:px-6 lg:px-12"
           />
 

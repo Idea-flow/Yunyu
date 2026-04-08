@@ -531,39 +531,9 @@ function getTopicLink(slug: string) {
             </div>
           </div>
 
-          <div class="mt-10 lg:mt-12">
-            <div
-              class="grid gap-6"
-              :class="heroStatItems.length > 0 ? 'lg:grid-cols-[minmax(0,1.12fr)_minmax(0,0.9fr)_auto]' : 'lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]'"
-            >
+          <div v-if="heroStatItems.length > 0" class="mt-10 lg:mt-12">
+            <div class="flex justify-start lg:justify-end">
               <div>
-                <p class="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">
-                  内容方向
-                </p>
-                <div v-if="heroKeywords.length > 0" class="mt-3 flex flex-wrap gap-2">
-                  <span
-                    v-for="keyword in heroKeywords"
-                    :key="keyword"
-                    class="rounded-full border border-slate-200/90 bg-white/78 px-3 py-1.5 text-[0.72rem] font-medium text-slate-600 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-300"
-                  >
-                    {{ keyword }}
-                  </span>
-                </div>
-                <p v-else class="mt-3 max-w-[26rem] text-sm leading-7 text-slate-600 dark:text-slate-300">
-                  围绕写作、技术、产品与长期观察，持续整理值得慢慢读的内容。
-                </p>
-              </div>
-
-              <div>
-                <p class="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">
-                  阅读方式
-                </p>
-                <p class="mt-3 max-w-[22rem] text-sm leading-7 text-slate-600 dark:text-slate-300">
-                  从最近更新开始，再按分类与专题进入自己感兴趣的内容线索。
-                </p>
-              </div>
-
-              <div v-if="heroStatItems.length > 0">
                 <p class="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">
                   站点体量
                 </p>
