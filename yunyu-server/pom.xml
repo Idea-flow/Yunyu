@@ -26,15 +26,19 @@
 		<tag/>
 		<url/>
 	</scm>
-	<properties>
-		<java.version>25</java.version>
-		<yunyu.native.applicationClass>com.ideaflow.yunyu.YunyuServerApplication</yunyu.native.applicationClass>
-		<yunyu.native.scan.packages></yunyu.native.scan.packages>
-		<mybatis.plus.version>3.5.15</mybatis.plus.version>
-		<springdoc.version>3.0.0</springdoc.version>
-		<graalvm.native.buildtools.version>0.11.1</graalvm.native.buildtools.version>
-		<yunyu.native.support.version>0.0.1-SNAPSHOT</yunyu.native.support.version>
-	</properties>
+		<properties>
+			<java.version>25</java.version>
+			<!-- Native 构建期传递给 GraalVM Feature 的启动类全限定名，用于推导默认扫描主包。 -->
+			<yunyu.native.applicationClass>com.ideaflow.yunyu.YunyuServerApplication</yunyu.native.applicationClass>
+			<!-- 预留的额外扫描包配置：当前默认留空，表示仅扫描启动类主包及其子包。 -->
+			<yunyu.native.scan.packages></yunyu.native.scan.packages>
+			<mybatis.plus.version>3.5.15</mybatis.plus.version>
+			<springdoc.version>3.0.0</springdoc.version>
+			<!-- GraalVM Native Build Tools 插件版本：统一控制 Native Maven 插件版本。 -->
+			<graalvm.native.buildtools.version>0.11.1</graalvm.native.buildtools.version>
+			<!-- Yunyu Native Support 组件版本：统一控制 starter、core、lambda-override 的版本。 -->
+			<yunyu.native.support.version>0.0.1-SNAPSHOT</yunyu.native.support.version>
+		</properties>
 	<dependencies>
 		<!-- 提供健康检查、监控指标与运行状态暴露，用于项目运维与可观测性。 -->
 		<dependency>
@@ -190,72 +194,93 @@
 		</plugins>
 	</build>
 
-	<profiles>
-		<profile>
-			<id>native</id>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-dependency-plugin</artifactId>
-						<executions>
-							<execution>
-								<id>unpack-native-lambda-override</id>
-								<phase>process-classes</phase>
-								<goals>
-									<goal>unpack</goal>
-								</goals>
-								<configuration>
-									<artifactItems>
-										<artifactItem>
-											<groupId>com.ideaflow.yunyu</groupId>
-											<artifactId>yunyu-native-image-support-lambda-override</artifactId>
-											<version>${yunyu.native.support.version}</version>
-											<outputDirectory>${project.build.outputDirectory}</outputDirectory>
-											<includes>com/baomidou/mybatisplus/core/toolkit/LambdaUtils.class,com/baomidou/mybatisplus/core/toolkit/support/SerializedLambda.class</includes>
-											<overWrite>true</overWrite>
-										</artifactItem>
-									</artifactItems>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<groupId>org.springframework.boot</groupId>
-						<artifactId>spring-boot-maven-plugin</artifactId>
-						<configuration>
-							<systemPropertyVariables>
-								<spring.profiles.active>native</spring.profiles.active>
-							</systemPropertyVariables>
-						</configuration>
-					</plugin>
-					<plugin>
-						<groupId>org.graalvm.buildtools</groupId>
-						<artifactId>native-maven-plugin</artifactId>
-						<version>${graalvm.native.buildtools.version}</version>
-						<extensions>true</extensions>
-						<executions>
-							<execution>
-								<id>build-native</id>
-								<phase>package</phase>
-								<goals>
-									<goal>compile-no-fork</goal>
-								</goals>
-							</execution>
-						</executions>
-						<configuration>
-							<imageName>${project.artifactId}</imageName>
-							<quickBuild>false</quickBuild>
-							<verbose>true</verbose>
-							<buildArgs>
-								<buildArg>--features=com.ideaflow.yunyu.nativeimage.support.core.aot.YunyuNativeRuntimeFeature</buildArg>
-								<buildArg>-Dyunyu.native.applicationClass=${yunyu.native.applicationClass}</buildArg>
-								<buildArg>-Dyunyu.native.scan-packages=${yunyu.native.scan.packages}</buildArg>
-								<buildArg>--no-fallback</buildArg>
-								<buildArg>-Dfile.encoding=UTF-8</buildArg>
-							</buildArgs>
-						</configuration>
-					</plugin>
+		<profiles>
+			<profile>
+				<!-- Native 构建专用 Profile：只有执行 `-Pnative` 时才会启用这一组配置。 -->
+				<id>native</id>
+				<build>
+					<plugins>
+						<plugin>
+							<!-- 依赖解包插件：把 Native 覆盖版 Lambda 类放进当前项目输出目录，覆盖原始依赖中的实现。 -->
+							<groupId>org.apache.maven.plugins</groupId>
+							<artifactId>maven-dependency-plugin</artifactId>
+							<executions>
+								<execution>
+									<!-- 覆盖任务 ID：用于在构建日志中区分这是 Lambda Native Override 的解包步骤。 -->
+									<id>unpack-native-lambda-override</id>
+									<!-- 在 `process-classes` 阶段执行：确保 Native 编译前覆盖类已经进入 `target/classes`。 -->
+									<phase>process-classes</phase>
+									<goals>
+										<!-- 执行解包动作：从指定依赖中提取 class 文件。 -->
+										<goal>unpack</goal>
+									</goals>
+									<configuration>
+										<artifactItems>
+											<artifactItem>
+												<!-- 覆盖类所在依赖的 groupId。 -->
+												<groupId>com.ideaflow.yunyu</groupId>
+												<!-- 覆盖类所在依赖的 artifactId：专门解决 MyBatis-Plus Lambda Native 兼容问题。 -->
+												<artifactId>yunyu-native-image-support-lambda-override</artifactId>
+												<!-- 覆盖类依赖版本：与当前 Native Support Starter 保持一致。 -->
+												<version>${yunyu.native.support.version}</version>
+												<!-- 解包输出目录：直接写入当前项目编译输出目录。 -->
+												<outputDirectory>${project.build.outputDirectory}</outputDirectory>
+												<!-- 仅覆盖两个关键类：避免把整个依赖内容全部铺到输出目录。 -->
+												<includes>com/baomidou/mybatisplus/core/toolkit/LambdaUtils.class,com/baomidou/mybatisplus/core/toolkit/support/SerializedLambda.class</includes>
+												<!-- 允许覆盖已有 class：确保 Native 镜像最终使用覆盖后的实现。 -->
+												<overWrite>true</overWrite>
+											</artifactItem>
+										</artifactItems>
+									</configuration>
+								</execution>
+							</executions>
+						</plugin>
+						<plugin>
+							<!-- Spring Boot 插件：让 AOT / Native 构建阶段按 `native` profile 读取配置。 -->
+							<groupId>org.springframework.boot</groupId>
+							<artifactId>spring-boot-maven-plugin</artifactId>
+							<configuration>
+								<systemPropertyVariables>
+									<!-- 强制使用 `native` profile：避免构建期误用默认配置导致自动装配偏差。 -->
+									<spring.profiles.active>native</spring.profiles.active>
+								</systemPropertyVariables>
+							</configuration>
+						</plugin>
+						<plugin>
+							<!-- GraalVM Native 插件：负责把 Spring AOT 产物编译成最终的 Native 可执行文件。 -->
+							<groupId>org.graalvm.buildtools</groupId>
+							<artifactId>native-maven-plugin</artifactId>
+							<!-- Native Build Tools 版本：统一由属性控制，便于后续整体升级。 -->
+							<version>${graalvm.native.buildtools.version}</version>
+							<!-- 启用 Maven 插件扩展：确保 Native 构建流程正确接入生命周期。 -->
+							<extensions>true</extensions>
+							<executions>
+								<execution>
+									<!-- Native 编译任务 ID：用于标识最终二进制构建步骤。 -->
+									<id>build-native</id>
+									<!-- 绑定到 `package` 阶段：执行 `mvn -Pnative package` 时自动产出 Native 二进制。 -->
+									<phase>package</phase>
+									<goals>
+										<!-- 在当前 Maven 生命周期内完成 Native 编译，不再额外 fork 新构建。 -->
+										<goal>compile-no-fork</goal>
+									</goals>
+								</execution>
+							</executions>
+							<configuration>
+								<!-- Native 可执行文件名：默认与当前 Maven 项目的 artifactId 保持一致。 -->
+								<imageName>${project.artifactId}</imageName>
+								<buildArgs>
+									<!-- 自定义 GraalVM Feature：补齐 Spring AOT 之外 MyBatis-Plus Native 仍缺失的元数据注册。 -->
+									<buildArg>--features=com.ideaflow.yunyu.nativeimage.support.core.aot.YunyuNativeRuntimeFeature</buildArg>
+									<!-- 传递启动类全限定名：让 Feature 在构建期能够推导默认扫描主包。 -->
+									<buildArg>-Dyunyu.native.applicationClass=${yunyu.native.applicationClass}</buildArg>
+									<!-- 禁止生成 fallback JVM 镜像：强制在构建期暴露真实 Native 兼容问题。 -->
+									<buildArg>--no-fallback</buildArg>
+									<!-- 固定文件编码为 UTF-8：避免 SQL、YAML 与中文资源在不同机器上出现编码差异。 -->
+									<buildArg>-Dfile.encoding=UTF-8</buildArg>
+								</buildArgs>
+							</configuration>
+						</plugin>
 				</plugins>
 			</build>
 		</profile>

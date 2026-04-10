@@ -156,17 +156,18 @@ starter 的原则是：
 -Dfile.encoding=UTF-8
 ```
 
-第一版不默认加入的构建参数：
+开发前预估里，第一版原本不默认加入的构建参数如下：
 
 ```text
 --features=...
 -Dyunyu.native.scan-packages=...
 ```
 
-原因：
+但结合本轮实际构建与运行验证，当前结论已经更新为：
 
-1. `scan-packages` 应优先走 starter 配置，不强耦合命令行
-2. `--features` 只有在 `RuntimeHints` 路线不足时才升级启用
+1. `scan-packages` 仍然不建议默认手工传入
+2. `--features` 在当前项目里已经被验证为 **需要启用**
+3. 最终以 [03-yunyu-server-native-image-构建与真机验证说明.md](/Users/wangpenglong/projects/full-stack-project/Yunyu/docs/后端/native-image/03-yunyu-server-native-image-构建与真机验证说明.md) 为准
 
 ### 5.2 配置文件改动项
 

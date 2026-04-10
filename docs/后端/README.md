@@ -11,6 +11,7 @@
 - 接口规范
 - 认证与权限设计
 - 初始化与启动流程
+- Native Image 支持与部署
 
 建议优先补充：
 
@@ -18,3 +19,7 @@
 - `02-接口规范.md`
 - `03-认证与权限设计.md`
 - `04-统一返回结构.md`
+
+当前已补充专题目录：
+
+- [native-image/README.md](/Users/wangpenglong/projects/full-stack-project/Yunyu/docs/后端/native-image/README.md)
