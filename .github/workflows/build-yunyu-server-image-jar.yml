@@ -3,10 +3,13 @@ name: Build Yunyu Server Image
 on:
   push:
     branches:
-      - main
+      - main-native-image
     paths:
       - "yunyu-server/**"
-      - ".github/workflows/build-yunyu-server-image.yml"
+      - "yunyu-native-image-support/**"
+      - "docker/jar/**"
+      - ".dockerignore"
+      - ".github/workflows/build-yunyu-server-image-jar.yml"
   workflow_dispatch:
 
 env:
@@ -49,18 +52,22 @@ jobs:
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
-          context: ./yunyu-server
-          file: ./yunyu-server/Dockerfile
+          context: .
+          file: ./docker/jar/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Output image summary
         run: |
           echo "## Yunyu Server 镜像构建结果" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "- 镜像仓库：\`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Dockerfile：\`docker/jar/Dockerfile\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- 构建上下文：\`.\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "### 实际生成的镜像标签" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
