@@ -254,6 +254,15 @@ async function handleLogout() {
               sidebarCollapsed ? 'flex-col justify-center' : 'justify-end'
             ]"
           >
+            <NuxtLink
+              to="/"
+              title="返回前台首页"
+              aria-label="返回前台首页"
+              class="inline-flex size-10 items-center justify-center rounded-[8px] border border-slate-200 bg-white text-slate-600 transition duration-200 hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-50"
+            >
+              <UIcon name="i-lucide-house" class="size-4" />
+            </NuxtLink>
+
             <button
               type="button"
               :title="sidebarCollapsed ? '展开侧边栏' : '折叠侧边栏'"

@@ -1,35 +1,34 @@
 package com.ideaflow.yunyu.security.jwt;
 
-import com.ideaflow.yunyu.common.constant.ResultCode;
-import com.ideaflow.yunyu.common.exception.BizException;
 import com.ideaflow.yunyu.security.LoginUser;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
 
 /**
  * JWT 令牌服务类。
- * 作用：负责生成、解析与校验当前系统使用的 Bearer Token。
+ * 作用：基于 Spring Security Nimbus 组件统一生成当前系统使用的 Bearer Token。
  */
 @Service
 public class JwtTokenService {
 
+    private final JwtEncoder jwtEncoder;
     private final JwtProperties jwtProperties;
 
     /**
      * 创建 JWT 令牌服务。
      *
+     * @param jwtEncoder JWT 编码器
      * @param jwtProperties JWT 配置属性
      */
-    public JwtTokenService(JwtProperties jwtProperties) {
+    public JwtTokenService(JwtEncoder jwtEncoder, JwtProperties jwtProperties) {
+        this.jwtEncoder = jwtEncoder;
         this.jwtProperties = jwtProperties;
     }
 
@@ -42,33 +41,17 @@ public class JwtTokenService {
     public String generateToken(LoginUser loginUser) {
         Instant now = Instant.now();
         Instant expireAt = now.plus(jwtProperties.getExpireDays(), ChronoUnit.DAYS);
-        return Jwts.builder()
+        JwtClaimsSet claimsSet = JwtClaimsSet.builder()
                 .subject(String.valueOf(loginUser.getUserId()))
+                .issuedAt(now)
+                .expiresAt(expireAt)
                 .claim("email", loginUser.getEmail())
                 .claim("userName", loginUser.getUserName())
                 .claim("role", loginUser.getRole())
-                .issuedAt(Date.from(now))
-                .expiration(Date.from(expireAt))
-                .signWith(buildSecretKey())
-                .compact();
-    }
-
-    /**
-     * 解析 JWT Claims。
-     *
-     * @param token JWT 令牌
-     * @return JWT Claims
-     */
-    public Claims parseToken(String token) {
-        try {
-            return Jwts.parser()
-                    .verifyWith(buildSecretKey())
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
-        } catch (JwtException | IllegalArgumentException exception) {
-            throw new BizException(ResultCode.UNAUTHORIZED, ResultCode.UNAUTHORIZED.getMessage());
-        }
+                .claim("status", loginUser.getStatus())
+                .build();
+        JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS512).type("JWT").build();
+        return jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claimsSet)).getTokenValue();
     }
 
     /**
@@ -78,15 +61,5 @@ public class JwtTokenService {
      */
     public long getExpireSeconds() {
         return jwtProperties.getExpireDays() * 24L * 60L * 60L;
-    }
-
-    /**
-     * 构建 HMAC 签名密钥。
-     *
-     * @return 签名密钥
-     */
-    private SecretKey buildSecretKey() {
-        byte[] keyBytes = jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8);
-        return Keys.hmacShaKeyFor(keyBytes);
     }
 }

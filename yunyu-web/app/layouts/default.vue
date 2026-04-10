@@ -376,13 +376,13 @@ async function handleUserMenuSelect(item: { key: string }) {
     <header :class="headerClassName">
       <div :class="headerInnerClassName">
         <div
-          class="relative overflow-hidden flex items-center justify-between gap-4 will-change-[background-color,border-color,box-shadow,backdrop-filter] transition-[background-color,border-color,box-shadow,backdrop-filter,border-radius,padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+          class="relative flex items-center justify-between gap-4 will-change-[background-color,border-color,box-shadow,backdrop-filter] transition-[background-color,border-color,box-shadow,backdrop-filter,border-radius,padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
           :class="[navPanelClassName, navPanelLayoutClassName]"
         >
           <div
             v-if="isOverlayPage"
             aria-hidden="true"
-            class="pointer-events-none absolute inset-0"
+            class="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]"
           >
             <div
               class="absolute inset-0 rounded-[inherit] border border-white/8 bg-slate-950/12 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.18)] transition-opacity duration-300 ease-out dark:border-white/10 dark:bg-slate-950/16 motion-reduce:transition-none"

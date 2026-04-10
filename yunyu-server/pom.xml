@@ -28,7 +28,6 @@
 	</scm>
 	<properties>
 		<java.version>25</java.version>
-		<jjwt.version>0.13.0</jjwt.version>
 		<mybatis.plus.version>3.5.15</mybatis.plus.version>
 		<springdoc.version>3.0.0</springdoc.version>
 	</properties>
@@ -78,27 +77,16 @@
 			<version>${springdoc.version}</version>
 		</dependency>
 
-		<!-- 提供 JWT 生成与解析 API，用于第一版 Bearer Token 登录认证。 -->
+		<!-- 提供 OAuth2 Resource Server 能力，用于接入 Spring Security 标准 Bearer Token 认证链。 -->
 		<dependency>
-			<groupId>io.jsonwebtoken</groupId>
-			<artifactId>jjwt-api</artifactId>
-			<version>${jjwt.version}</version>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-oauth2-resource-server</artifactId>
 		</dependency>
 
-		<!-- 提供 JWT 运行时实现，用于实际完成 Token 签名与验证。 -->
+		<!-- 提供 Nimbus JOSE/JWT 集成，用于使用 JwtEncoder/JwtDecoder 完成令牌签发与校验。 -->
 		<dependency>
-			<groupId>io.jsonwebtoken</groupId>
-			<artifactId>jjwt-impl</artifactId>
-			<version>${jjwt.version}</version>
-			<scope>runtime</scope>
-		</dependency>
-
-		<!-- 提供 JWT JSON 序列化支持，用于处理 Token Claims 的 JSON 编解码。 -->
-		<dependency>
-			<groupId>io.jsonwebtoken</groupId>
-			<artifactId>jjwt-jackson</artifactId>
-			<version>${jjwt.version}</version>
-			<scope>runtime</scope>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-oauth2-jose</artifactId>
 		</dependency>
 
 		<!-- 提供 MySQL 8 驱动，用于连接 Yunyu 当前阶段使用的 MySQL 数据库。 -->

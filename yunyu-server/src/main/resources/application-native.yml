@@ -1,0 +1,40 @@
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springdoc.webmvc.ui.SwaggerConfig
+      - org.springdoc.core.properties.SwaggerUiConfigProperties
+      - org.springdoc.core.properties.SwaggerUiOAuthProperties
+      - org.springdoc.webmvc.core.configuration.SpringDocWebMvcConfiguration
+      - org.springdoc.webmvc.core.configuration.MultipleOpenApiSupportConfiguration
+      - org.springdoc.core.configuration.SpringDocConfiguration
+      - org.springdoc.core.properties.SpringDocConfigProperties
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/yunyu?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jackson:
+    default-property-inclusion: non_null
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,threaddump
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+yunyu:
+  security:
+    jwt:
+      secret: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      expire-days: 7
