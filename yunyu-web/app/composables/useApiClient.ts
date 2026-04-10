@@ -4,6 +4,15 @@ const SUCCESS_CODE = 0
 const ACCESS_TOKEN_STORAGE_KEY = 'yunyu_access_token'
 
 /**
+ * 前端接口请求选项。
+ * 作用：在保留 `$fetch` 原生能力的基础上，补充是否自动附带访问令牌的控制项，
+ * 便于登录、注册等匿名接口显式跳过 Bearer Token 请求头。
+ */
+interface ApiClientRequestOptions<T> extends Parameters<typeof $fetch<T>>[1] {
+  withAuth?: boolean
+}
+
+/**
  * 前端接口客户端。
  * 作用：为前端页面和业务组合式函数提供统一请求入口，
  * 后续所有业务接口都应优先复用这里，而不是在页面中直接写后端地址或 `$fetch`。
@@ -62,12 +71,14 @@ export function useApiClient() {
    * @param headersInit 原始请求头配置
    * @returns 最终请求头对象
    */
-  function buildHeaders(headersInit?: HeadersInit) {
-    hydratePersistedAccessToken()
+  function buildHeaders(headersInit?: HeadersInit, withAuth = true) {
+    if (withAuth) {
+      hydratePersistedAccessToken()
+    }
 
     const headers = new Headers(headersInit || {})
 
-    if (accessToken.value) {
+    if (withAuth && accessToken.value) {
       headers.set('Authorization', `Bearer ${accessToken.value}`)
     }
 
@@ -81,13 +92,14 @@ export function useApiClient() {
    */
   async function request<T>(
     path: string,
-    options: Parameters<typeof $fetch<T>>[1] = {}
+    options: ApiClientRequestOptions<T> = {}
   ) {
-    const headers = buildHeaders(options.headers)
+    const { withAuth = true, ...fetchOptions } = options
+    const headers = buildHeaders(fetchOptions.headers, withAuth)
 
     try {
       const response = await $fetch<ApiResponse<T>>(`${config.public.apiBase}${path}`, {
-        ...options,
+        ...fetchOptions,
         headers
       })
 
@@ -122,13 +134,14 @@ export function useApiClient() {
    */
   async function rawRequest<T>(
     path: string,
-    options: Parameters<typeof $fetch<T>>[1] = {}
+    options: ApiClientRequestOptions<T> = {}
   ) {
-    const headers = buildHeaders(options.headers)
+    const { withAuth = true, ...fetchOptions } = options
+    const headers = buildHeaders(fetchOptions.headers, withAuth)
 
     try {
       return await $fetch<T>(`${config.public.apiBase}${path}`, {
-        ...options,
+        ...fetchOptions,
         headers
       })
     } catch (error: any) {

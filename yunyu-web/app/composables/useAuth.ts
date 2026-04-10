@@ -117,7 +117,8 @@ export function useAuth() {
   async function login(payload: AuthLoginPayload) {
     const loginResponse = await apiClient.request<AuthLoginResponse>('/api/auth/login', {
       method: 'POST',
-      body: payload
+      body: payload,
+      withAuth: false
     })
 
     apiClient.setAccessToken(loginResponse.accessToken)
@@ -132,7 +133,8 @@ export function useAuth() {
   async function register(payload: AuthRegisterPayload) {
     const registerResponse = await apiClient.request<AuthLoginResponse>('/api/auth/register', {
       method: 'POST',
-      body: payload
+      body: payload,
+      withAuth: false
     })
 
     apiClient.setAccessToken(registerResponse.accessToken)
