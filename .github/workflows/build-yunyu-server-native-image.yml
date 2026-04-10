@@ -14,7 +14,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/yunyu-server-native
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-amd64:
@@ -28,6 +28,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Prepare image name
+        id: image
+        run: |
+          echo "name=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/yunyu-server-native" >> "$GITHUB_OUTPUT"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -42,7 +47,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}
           tags: |
             type=sha
 
@@ -54,8 +59,8 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-amd64
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}-amd64
+            ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest-amd64
+            ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:sha-${{ github.sha }}-amd64
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=native-amd64
           cache-to: type=gha,mode=max,scope=native-amd64
@@ -65,21 +70,21 @@ jobs:
           echo "## Yunyu Server Native amd64 镜像构建结果" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "- 构建分支：\`${{ github.ref_name }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- 镜像仓库：\`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- 镜像仓库：\`${{ env.REGISTRY }}/${{ steps.image.outputs.name }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- 构建平台：\`linux/amd64\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Dockerfile：\`docker/native-image/Dockerfile\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- 部署编排：\`docker/native-image/docker-compose.yml\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "### 实际生成的架构镜像标签" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-amd64\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}-amd64\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest-amd64\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:sha-${{ github.sha }}-amd64\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "### 拉取命令示例" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "\`\`\`bash" >> "$GITHUB_STEP_SUMMARY"
-          echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-amd64" >> "$GITHUB_STEP_SUMMARY"
-          echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}-amd64" >> "$GITHUB_STEP_SUMMARY"
+          echo "docker pull ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest-amd64" >> "$GITHUB_STEP_SUMMARY"
+          echo "docker pull ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:sha-${{ github.sha }}-amd64" >> "$GITHUB_STEP_SUMMARY"
           echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
 
   build-arm64:
@@ -93,6 +98,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Prepare image name
+        id: image
+        run: |
+          echo "name=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/yunyu-server-native" >> "$GITHUB_OUTPUT"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -107,7 +117,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}
           tags: |
             type=sha
 
@@ -119,8 +129,8 @@ jobs:
           push: true
           platforms: linux/arm64
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-arm64
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}-arm64
+            ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest-arm64
+            ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:sha-${{ github.sha }}-arm64
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=native-arm64
           cache-to: type=gha,mode=max,scope=native-arm64
@@ -130,21 +140,21 @@ jobs:
           echo "## Yunyu Server Native arm64 镜像构建结果" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "- 构建分支：\`${{ github.ref_name }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- 镜像仓库：\`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- 镜像仓库：\`${{ env.REGISTRY }}/${{ steps.image.outputs.name }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- 构建平台：\`linux/arm64\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Dockerfile：\`docker/native-image/Dockerfile\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- 部署编排：\`docker/native-image/docker-compose.yml\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "### 实际生成的架构镜像标签" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-arm64\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}-arm64\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest-arm64\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:sha-${{ github.sha }}-arm64\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "### 拉取命令示例" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "\`\`\`bash" >> "$GITHUB_STEP_SUMMARY"
-          echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-arm64" >> "$GITHUB_STEP_SUMMARY"
-          echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}-arm64" >> "$GITHUB_STEP_SUMMARY"
+          echo "docker pull ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest-arm64" >> "$GITHUB_STEP_SUMMARY"
+          echo "docker pull ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:sha-${{ github.sha }}-arm64" >> "$GITHUB_STEP_SUMMARY"
           echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
 
   merge-manifest:
@@ -158,6 +168,11 @@ jobs:
       packages: write
 
     steps:
+      - name: Prepare image name
+        id: image
+        run: |
+          echo "name=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/yunyu-server-native" >> "$GITHUB_OUTPUT"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -171,21 +186,21 @@ jobs:
       - name: Create and push multi-arch manifest
         run: |
           docker buildx imagetools create \
-            --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-            --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }} \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}-amd64 \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}-arm64
+            --tag ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest \
+            --tag ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:sha-${{ github.sha }} \
+            ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:sha-${{ github.sha }}-amd64 \
+            ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:sha-${{ github.sha }}-arm64
 
       - name: Inspect multi-arch manifest
         run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+          docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest
+          docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:sha-${{ github.sha }}
 
       - name: Output manifest summary
         run: |
           echo "## Yunyu Server Native 多架构 Manifest 合并结果" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "- 构建分支：\`${{ github.ref_name }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- 最终标签：\`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- 最终标签：\`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- 最终标签：\`${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- 最终标签：\`${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:sha-${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- 包含架构：\`linux/amd64\`、\`linux/arm64\`" >> "$GITHUB_STEP_SUMMARY"
