@@ -18,12 +18,8 @@ env:
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-#        platform: [linux/amd64, linux/arm64]
-        platform: [linux/arm64]
+    # 优先使用 GitHub 的原生 ARM64 Runner 以大幅提升构建速度
+    runs-on: ubuntu-24.04-arm64
     permissions:
       contents: read
       packages: write
@@ -39,9 +35,7 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
+      # 原生 ARM 环境下不需要 QEMU，但为了兼容性可以保留，或者直接去掉
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -67,7 +61,7 @@ jobs:
           context: .
           file: ./docker/native-image/Dockerfile
           push: true
-          platforms: ${{ matrix.platform }}
+          platforms: linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
