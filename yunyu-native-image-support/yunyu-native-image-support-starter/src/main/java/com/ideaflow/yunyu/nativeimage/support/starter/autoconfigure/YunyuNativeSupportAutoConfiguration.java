@@ -1,10 +1,12 @@
 package com.ideaflow.yunyu.nativeimage.support.starter.autoconfigure;
 
 import com.ideaflow.yunyu.nativeimage.support.core.aot.YunyuNativeBeanFactoryInitializationAotProcessor;
+import com.ideaflow.yunyu.nativeimage.support.core.config.YunyuNativeMapperBeanDefinitionRegistryPostProcessor;
 import com.ideaflow.yunyu.nativeimage.support.core.config.YunyuNativeSupportConfiguration;
 import com.ideaflow.yunyu.nativeimage.support.starter.properties.YunyuNativeProperties;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.springframework.beans.factory.aot.BeanFactoryInitializationAotProcessor;
+import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -32,5 +34,16 @@ public class YunyuNativeSupportAutoConfiguration {
     @Bean
     public static BeanFactoryInitializationAotProcessor yunyuNativeBeanFactoryInitializationAotProcessor() {
         return new YunyuNativeBeanFactoryInitializationAotProcessor();
+    }
+
+    /**
+     * 注册 Mapper BeanDefinition 改写后处理器。
+     * 作用：把标准 MyBatis MapperFactoryBean 定义改写成更适合 Native 运行时的工厂定义。
+     *
+     * @return Mapper BeanDefinition 注册后处理器
+     */
+    @Bean
+    public static BeanDefinitionRegistryPostProcessor yunyuNativeMapperBeanDefinitionRegistryPostProcessor() {
+        return new YunyuNativeMapperBeanDefinitionRegistryPostProcessor();
     }
 }

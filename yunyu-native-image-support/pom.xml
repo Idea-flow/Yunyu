@@ -27,5 +27,6 @@
     <properties>
         <java.version>25</java.version>
         <mybatis.plus.version>3.5.15</mybatis.plus.version>
+        <graalvm.nativeimage.version>25.0.0</graalvm.nativeimage.version>
     </properties>
 </project>

@@ -23,6 +23,12 @@ import java.util.jar.JarFile;
 public class NativeImageClassScanner {
 
     /**
+     * Native support 自身包前缀。
+     * 作用：避免把仅在 GraalVM 构建期使用的 support 类再次当成业务类扫描并注册到运行期元数据中。
+     */
+    private static final String NATIVE_SUPPORT_PACKAGE_PREFIX = "com.ideaflow.yunyu.nativeimage.support";
+
+    /**
      * 当前扫描器使用的类加载器。
      */
     private final ClassLoader classLoader;
@@ -47,7 +53,7 @@ public class NativeImageClassScanner {
         Set<Class<?>> classes = new LinkedHashSet<>();
         try {
             for (String className : findClassNames(basePackage)) {
-                if (className.contains("$$") || className.contains("package-info")) {
+                if (shouldSkipClass(className)) {
                     continue;
                 }
                 Class<?> candidateClass = loadClass(className);
@@ -109,6 +115,21 @@ public class NativeImageClassScanner {
             lambdaCapturingClasses.addAll(collectClasses(scanPackage, this::isLambdaCapturingClass));
         }
         return lambdaCapturingClasses;
+    }
+
+    /**
+     * 扫描业务主包下的全部项目类。
+     * 作用：为 Spring MVC 参数绑定、Jackson 序列化和其他运行期反射场景统一补齐业务类型元数据。
+     *
+     * @param scanPackages 扫描包集合
+     * @return 业务项目类集合
+     */
+    public Set<Class<?>> findProjectClasses(Set<String> scanPackages) {
+        Set<Class<?>> projectClasses = new LinkedHashSet<>();
+        for (String scanPackage : scanPackages) {
+            projectClasses.addAll(collectClasses(scanPackage, candidate -> true));
+        }
+        return projectClasses;
     }
 
     /**
@@ -203,5 +224,18 @@ public class NativeImageClassScanner {
                 classNames.add(packageName + "." + simpleClassName);
             }
         }
+    }
+
+    /**
+     * 判断当前类名是否应该跳过扫描。
+     * 作用：过滤掉 Lambda 合成类、`package-info` 以及 Native support 自身的构建期类，避免污染业务扫描结果。
+     *
+     * @param className 待判断的类名
+     * @return 是否跳过
+     */
+    private boolean shouldSkipClass(String className) {
+        return className.contains("$$")
+                || className.contains("package-info")
+                || className.startsWith(NATIVE_SUPPORT_PACKAGE_PREFIX);
     }
 }

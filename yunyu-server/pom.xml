@@ -28,6 +28,8 @@
 	</scm>
 	<properties>
 		<java.version>25</java.version>
+		<yunyu.native.applicationClass>com.ideaflow.yunyu.YunyuServerApplication</yunyu.native.applicationClass>
+		<yunyu.native.scan.packages></yunyu.native.scan.packages>
 		<mybatis.plus.version>3.5.15</mybatis.plus.version>
 		<springdoc.version>3.0.0</springdoc.version>
 		<graalvm.native.buildtools.version>0.11.1</graalvm.native.buildtools.version>
@@ -194,6 +196,40 @@
 			<build>
 				<plugins>
 					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-dependency-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>unpack-native-lambda-override</id>
+								<phase>process-classes</phase>
+								<goals>
+									<goal>unpack</goal>
+								</goals>
+								<configuration>
+									<artifactItems>
+										<artifactItem>
+											<groupId>com.ideaflow.yunyu</groupId>
+											<artifactId>yunyu-native-image-support-lambda-override</artifactId>
+											<version>${yunyu.native.support.version}</version>
+											<outputDirectory>${project.build.outputDirectory}</outputDirectory>
+											<includes>com/baomidou/mybatisplus/core/toolkit/LambdaUtils.class,com/baomidou/mybatisplus/core/toolkit/support/SerializedLambda.class</includes>
+											<overWrite>true</overWrite>
+										</artifactItem>
+									</artifactItems>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.springframework.boot</groupId>
+						<artifactId>spring-boot-maven-plugin</artifactId>
+						<configuration>
+							<systemPropertyVariables>
+								<spring.profiles.active>native</spring.profiles.active>
+							</systemPropertyVariables>
+						</configuration>
+					</plugin>
+					<plugin>
 						<groupId>org.graalvm.buildtools</groupId>
 						<artifactId>native-maven-plugin</artifactId>
 						<version>${graalvm.native.buildtools.version}</version>
@@ -212,6 +248,9 @@
 							<quickBuild>false</quickBuild>
 							<verbose>true</verbose>
 							<buildArgs>
+								<buildArg>--features=com.ideaflow.yunyu.nativeimage.support.core.aot.YunyuNativeRuntimeFeature</buildArg>
+								<buildArg>-Dyunyu.native.applicationClass=${yunyu.native.applicationClass}</buildArg>
+								<buildArg>-Dyunyu.native.scan-packages=${yunyu.native.scan.packages}</buildArg>
 								<buildArg>--no-fallback</buildArg>
 								<buildArg>-Dfile.encoding=UTF-8</buildArg>
 							</buildArgs>

@@ -21,7 +21,13 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.core.metadata.TableFieldInfo;
 import com.baomidou.mybatisplus.core.metadata.TableInfo;
+import com.baomidou.mybatisplus.core.metadata.MapperProxyMetadata;
+import com.baomidou.mybatisplus.core.override.MybatisMapperMethod;
+import com.baomidou.mybatisplus.core.override.MybatisMapperProxy;
+import com.baomidou.mybatisplus.core.override.MybatisMapperProxyFactory;
 import com.baomidou.mybatisplus.core.toolkit.LambdaUtils;
+import com.baomidou.mybatisplus.core.toolkit.MybatisUtils;
+import com.baomidou.mybatisplus.core.toolkit.PluginUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.core.toolkit.support.ColumnCache;
 import com.baomidou.mybatisplus.core.toolkit.support.IdeaProxyLambdaMeta;
@@ -47,6 +53,13 @@ import org.apache.ibatis.executor.resultset.ResultSetHandler;
 import org.apache.ibatis.executor.statement.StatementHandler;
 import org.apache.ibatis.javassist.util.proxy.ProxyFactory;
 import org.apache.ibatis.javassist.util.proxy.RuntimeSupport;
+import org.apache.ibatis.logging.Log;
+import org.apache.ibatis.logging.commons.JakartaCommonsLoggingImpl;
+import org.apache.ibatis.logging.jdk14.Jdk14LoggingImpl;
+import org.apache.ibatis.logging.log4j2.Log4j2Impl;
+import org.apache.ibatis.logging.nologging.NoLoggingImpl;
+import org.apache.ibatis.logging.slf4j.Slf4jImpl;
+import org.apache.ibatis.logging.stdout.StdOutImpl;
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.ParameterMapping;
 import org.apache.ibatis.reflection.DefaultReflectorFactory;
@@ -99,6 +112,7 @@ public class YunyuNativeRuntimeHintsRegistrar implements RuntimeHintsRegistrar {
         Set<Class<?>> mapperInterfaces = scanner.findMapperInterfaces(settings.getScanPackages());
         Set<Class<?>> entityClasses = scanner.findEntityClasses(mapperInterfaces);
         Set<Class<?>> lambdaCapturingClasses = scanner.findLambdaCapturingClasses(settings.getScanPackages());
+        Set<Class<?>> projectClasses = scanner.findProjectClasses(settings.getScanPackages());
 
         for (Class<?> mapperInterface : mapperInterfaces) {
             hints.reflection().registerType(mapperInterface, MemberCategory.values());
@@ -109,6 +123,9 @@ public class YunyuNativeRuntimeHintsRegistrar implements RuntimeHintsRegistrar {
         }
         for (Class<?> lambdaCapturingClass : lambdaCapturingClasses) {
             hints.reflection().registerType(lambdaCapturingClass, MemberCategory.values());
+        }
+        for (Class<?> projectClass : projectClasses) {
+            hints.reflection().registerType(projectClass, MemberCategory.values());
         }
     }
 
@@ -125,6 +142,13 @@ public class YunyuNativeRuntimeHintsRegistrar implements RuntimeHintsRegistrar {
                 MybatisXMLLanguageDriver.class,
                 RuntimeSupport.class,
                 ProxyFactory.class,
+                Log.class,
+                JakartaCommonsLoggingImpl.class,
+                Jdk14LoggingImpl.class,
+                Log4j2Impl.class,
+                NoLoggingImpl.class,
+                Slf4jImpl.class,
+                StdOutImpl.class,
                 Executor.class,
                 ParameterHandler.class,
                 ResultSetHandler.class,
@@ -150,6 +174,7 @@ public class YunyuNativeRuntimeHintsRegistrar implements RuntimeHintsRegistrar {
                 TableInfo.class,
                 TableFieldInfo.class,
                 LambdaUtils.class,
+                MybatisUtils.class,
                 LambdaMeta.class,
                 ReflectLambdaMeta.class,
                 ShadowLambdaMeta.class,
@@ -157,6 +182,13 @@ public class YunyuNativeRuntimeHintsRegistrar implements RuntimeHintsRegistrar {
                 SerializedLambda.class,
                 ColumnCache.class,
                 SFunction.class,
+                MapperProxyMetadata.class,
+                MybatisMapperMethod.class,
+                MybatisMapperProxy.class,
+                MybatisMapperProxyFactory.class,
+                PluginUtils.class,
+                PluginUtils.MPBoundSql.class,
+                PluginUtils.MPStatementHandler.class,
                 IPage.class,
                 Page.class,
                 PageDTO.class,
@@ -184,6 +216,7 @@ public class YunyuNativeRuntimeHintsRegistrar implements RuntimeHintsRegistrar {
                 MemberCategory.values()
         );
         hints.serialization().registerType(java.lang.invoke.SerializedLambda.class);
+        hints.serialization().registerType(SerializedLambda.class);
         hints.proxies().registerJdkProxy(Executor.class);
         hints.proxies().registerJdkProxy(ParameterHandler.class);
         hints.proxies().registerJdkProxy(ResultSetHandler.class);

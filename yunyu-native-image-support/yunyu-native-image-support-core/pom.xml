@@ -37,5 +37,11 @@
             <artifactId>mybatis-plus-jsqlparser</artifactId>
             <version>${mybatis.plus.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>nativeimage</artifactId>
+            <version>${graalvm.nativeimage.version}</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 </project>
