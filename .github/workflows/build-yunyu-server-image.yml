@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - main-native-image
     paths:
       - "yunyu-server/**"
       - ".github/workflows/build-yunyu-server-image.yml"
