@@ -18,7 +18,7 @@ env:
 
 jobs:
   build-and-push:
-    # 回退到标准的 AMD64 Runner，构建速度较快，但产物不支持在 ARM 机器上原生运行
+    # 使用标准的 ubuntu-latest (AMD64) 并通过 QEMU 模拟构建 linux/arm64
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -34,6 +34,10 @@ jobs:
           java-version: '25'
           distribution: 'temurin'
           cache: 'maven'
+
+      # 必须启用 QEMU 才能在 AMD64 机器上构建 ARM64 镜像
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -60,7 +64,7 @@ jobs:
           context: .
           file: ./docker/native-image/Dockerfile
           push: true
-          platforms: linux/amd64
+          platforms: linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

@@ -17,6 +17,9 @@
 ```bash
 docker compose -f docker/native-image/docker-compose.yml pull
 docker compose -f docker/native-image/docker-compose.yml up -d
+
+
+docker compose up -d
 ```
 
 ## 二、当前镜像说明
