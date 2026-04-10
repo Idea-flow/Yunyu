@@ -1,7 +1,7 @@
 services:
   yunyu-mysql:
     image: mysql:8.4
-    container_name: yunyu-native-mysql
+    container_name: yunyu-mysql
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-yunyu}
@@ -15,9 +15,9 @@ services:
     ports:
       - "${MYSQL_PORT:-3306}:3306"
     volumes:
-      - ../../yunyu_mysql_data:/var/lib/mysql
+      - ../yunyu_mysql_data:/var/lib/mysql
     networks:
-      - yunyu-native-network
+      - yunyu-network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root123456}"]
       interval: 10s
@@ -40,10 +40,10 @@ services:
       YUNYU_JWT_SECRET: ${YUNYU_JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
       TZ: ${TZ:-Asia/Shanghai}
     ports:
-      - "${SERVER_PORT:-20000}:20000"
+      - "${SERVER_PORT:-20001}:20000"
     networks:
-      - yunyu-native-network
+      - yunyu-network
 
 networks:
-  yunyu-native-network:
-    name: yunyu-native-network
+  yunyu-network:
+    name: yunyu-network
