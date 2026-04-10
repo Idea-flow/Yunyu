@@ -34,6 +34,10 @@ management:
         enabled: true
 
 yunyu:
+  native:
+    enabled: true
+    scan-main-package: true
+    scan-packages: []
   security:
     jwt:
       secret: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
