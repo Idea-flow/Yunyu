@@ -270,10 +270,6 @@
 								<!-- Native 可执行文件名：默认与当前 Maven 项目的 artifactId 保持一致。 -->
 								<imageName>${project.artifactId}</imageName>
 								<buildArgs>
-									<!-- 自定义 GraalVM Feature：补齐 Spring AOT 之外 MyBatis-Plus Native 仍缺失的元数据注册。 -->
-									<buildArg>--features=com.ideaflow.yunyu.nativeimage.support.core.aot.YunyuNativeRuntimeFeature</buildArg>
-									<!-- 传递启动类全限定名：让 Feature 在构建期能够推导默认扫描主包。 -->
-									<buildArg>-Dyunyu.native.applicationClass=${yunyu.native.applicationClass}</buildArg>
 									<!-- 禁止生成 fallback JVM 镜像：强制在构建期暴露真实 Native 兼容问题。 -->
 									<buildArg>--no-fallback</buildArg>
 									<!-- 固定文件编码为 UTF-8：避免 SQL、YAML 与中文资源在不同机器上出现编码差异。 -->

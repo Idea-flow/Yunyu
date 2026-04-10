@@ -1,0 +1,23 @@
+services:
+  yunyu-server-native:
+    image: ${YUNYU_SERVER_NATIVE_IMAGE:-ghcr.io/idea-flow/yunyu-server-native:latest}
+    container_name: yunyu-server-native
+    restart: unless-stopped
+    # 注意：由于使用了外部 MySQL 容器，这里不再直接依赖当前文件的服务，
+    # 而是假设 yunyu-mysql 容器已经运行。
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod,native}
+      SPRING_DATASOURCE_URL: jdbc:mysql://yunyu-mysql:3306/${MYSQL_DATABASE:-yunyu}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-yunyu}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-yunyu123456}
+      YUNYU_JWT_SECRET: ${YUNYU_JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "${SERVER_PORT:-20001}:20000"
+    networks:
+      - yunyu-network
+
+networks:
+  yunyu-network:
+    external: true
+    name: yunyu-network

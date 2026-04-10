@@ -117,6 +117,7 @@ docker compose -f docker/native-image/docker-compose.yml logs -f yunyu-server-na
 
 ```bash
 curl http://127.0.0.1:20000/actuator/health
+curl http://yunyu-server-native.ideaflow.top/actuator/health
 ```
 
 ### 2. 登录接口
@@ -131,6 +132,8 @@ curl -i -H 'Content-Type: application/json' \
 
 ```bash
 curl -i 'http://127.0.0.1:20000/api/site/posts?pageNo=1&pageSize=10'
+
+curl -i 'http://yunyu-server-native.ideaflow.top/api/site/posts?pageNo=1&pageSize=10'
 ```
 
 ## 六、与 JVM 版部署的区别
@@ -169,3 +172,27 @@ docker compose -f docker/native-image/docker-compose.yml logs -f yunyu-server-na
 3. 不要误删 `./yunyu_mysql_data`
 4. Native 运行时建议同时启用 `prod,native` 两个 profile
 5. 如果镜像仓库是私有的，请先执行 `docker login ghcr.io`
+
+
+
+## 9、linux 本地构建
+
+
+### 克隆仓库
+git clone https://github.com/idea-flow/Yunyu.git
+
+### 进入项目目录
+cd Yunyu
+
+### 切换到 native-image 相关的分支（根据你的截图是 main-native-image）
+git checkout main-native-image
+
+### 构建镜像并打上标签
+### 注意：最后的那个点 '.' 代表当前目录作为构建上下文
+docker build -t ghcr.io/idea-flow/yunyu-server-native:latest -f ./docker/native-image/Dockerfile .
+
+
+cd docker/native-image
+
+### 启动数据库和 Native 服务
+docker compose up -d
