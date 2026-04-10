@@ -93,7 +93,7 @@
 
 ### 4.3 当前判断下最有把握的方向
 
-最稳妥的设计不是只做一个“空 starter”，而是对外交付 `yunyu-native-image-support-starter`，内部按职责拆分为：
+最稳妥的设计不是只做一个“空 starter”，而是提供一个独立的 Native 支撑工程，对外交付 `yunyu-native-image-support-starter`，内部按职责拆分为：
 
 - `yunyu-native-image-support-core`
 - `yunyu-native-image-support-lambda-override`
@@ -101,8 +101,9 @@
 
 也就是说：
 
-- **对 `yunyu-server` 而言，只引用 starter**
+- **对 `yunyu-server` 而言，只引用 starter 成品依赖**
 - **对实现层而言，建议按 3 个 Maven 模块拆分**
+- **对仓库结构而言，不要求与 `yunyu-server` 做根聚合**
 
 这样既满足你的使用诉求，也更接近已验证 demo 的成功模式。
 
@@ -110,14 +111,15 @@
 
 ### 5.1 目录结构建议
 
-建议把仓库调整为下面的 Maven 结构：
+本期按你的要求，建议采用“独立 Native 支撑工程 + `yunyu-server` 引用已安装依赖”的结构，而不是根目录聚合：
 
 ```text
 Yunyu
-├── pom.xml                                   # 新增：根聚合 pom
-├── yunyu-native-image-support-core
-├── yunyu-native-image-support-lambda-override
-├── yunyu-native-image-support-starter
+├── yunyu-native-image-support
+│   ├── pom.xml                               # 独立父工程 / 聚合工程
+│   ├── yunyu-native-image-support-core
+│   ├── yunyu-native-image-support-lambda-override
+│   └── yunyu-native-image-support-starter
 ├── yunyu-server
 ├── yunyu-web
 └── docs
@@ -125,27 +127,27 @@ Yunyu
 
 说明：
 
-- `yunyu-web` 不参与 Maven 聚合，仅保留在仓库中
-- 根 `pom.xml` 只做聚合，不承载业务依赖
+- `yunyu-native-image-support` 是一个独立 Maven 工程目录，内部再拆分为 3 个模块
+- `yunyu-server` 不并入该工程，也不作为其子模块
 - `yunyu-server` 继续保留当前 `spring-boot-starter-parent` 父工程关系
+- `yunyu-server` 通过正常 Maven 依赖方式引用已经 `install` 的 starter 成品
 
-### 5.2 为什么建议加根聚合 `pom.xml`
+### 5.2 为什么本期不加根聚合 `pom.xml`
 
-如果不加根聚合 `pom.xml`，也可以做，但会有两个问题：
+本期按你的要求，**不在仓库根目录新增聚合 `pom.xml`**，原因和边界如下：
 
-1. `yunyu-native-image-support-starter` 需要先单独 `install`，再让 `yunyu-server` 引用
-2. 后续 native 联调构建链会比较碎，不利于持续迭代
+1. `yunyu-native-image-support` 需要保持为独立工程，避免与 `yunyu-server` 工程结构耦合
+2. 允许先单独 `install`，再由 `yunyu-server` 通过依赖方式接入
+3. 这样更符合“可复用 starter 独立演进”的目标
 
-因此推荐：
+对应的构建链会调整为：
 
-- **仓库根目录增加聚合 `pom.xml`**
-- 把 3 个 Native 支撑模块和 `yunyu-server` 都纳入同一构建链
+1. 先在 `yunyu-native-image-support` 目录下执行 `mvn clean install`
+2. 再在 `yunyu-server` 目录下执行 native 构建
 
-这样后续可以统一执行类似命令：
+这种方式的代价是联调步骤会比根聚合略多，但当前阶段是可以接受的。
 
-```bash
-mvn -pl yunyu-server -am -Pnative clean package
-```
+后续如果将来需要统一 CI/CD，再考虑是否把它升级为更大的聚合工程。
 
 ## 6. 各模块职责设计
 
@@ -232,17 +234,41 @@ yunyu:
 2. 增加 `native` profile
 3. 在 `native` profile 中配置 `org.graalvm.buildtools:native-maven-plugin`
 
-建议的 Native 构建参数方向：
+建议的 Native 构建参数方向需要分成“必须”、“推荐”和“按需”三类看待：
 
 ```text
 --no-fallback
 -Dfile.encoding=UTF-8
--Dyunyu.native.applicationClass=com.ideaflow.yunyu.YunyuServerApplication
--Dyunyu.native.scan-packages=com.ideaflow.yunyu.module,com.ideaflow.yunyu.security,com.ideaflow.yunyu.common
 --features=xxx.YunyuNativeRuntimeFeature
 ```
 
-这里的 `applicationClass` 与 `scan-packages` 主要用于 Native 构建期扫描。
+说明如下：
+
+1. `--no-fallback`
+   - 建议保留
+   - 作用是禁止生成 fallback JVM 镜像，强制我们在构建期把 Native 问题暴露干净
+   - 对做正式 Native 支撑来说，这个参数基本有必要
+
+2. `-Dfile.encoding=UTF-8`
+   - 建议保留，但不是绝对必须
+   - 主要是防止 SQL 脚本、YAML、中文内容在不同构建机上出现编码差异
+
+3. `scan-packages`
+   - **不建议第一版放在 buildArgs 里强制要求**
+   - 默认应该以应用主类所在包 `com.ideaflow.yunyu` 作为根包递归扫描
+   - 只有当 Mapper、实体或其他需要注册的类型放在主包之外时，才需要额外配置
+   - 更合理的放置位置是 starter 的配置项，例如 `application-native.yml`
+
+4. `--features=xxx.YunyuNativeRuntimeFeature`
+   - **不是第一版必须**
+   - 只有当我们最终采用“自定义 GraalVM Feature 做构建期注册”方案时才需要
+   - 如果第一版能够仅通过 Spring AOT + `RuntimeHints` + starter 自动配置完成，就应尽量不暴露这个参数给 `yunyu-server`
+
+因此，本方案修正后更推荐的方向是：
+
+- `scan-packages` 默认扫描启动类主包，不强制写 buildArgs
+- 扩展扫描包通过 starter 配置处理，而不是通过命令行强耦合
+- `--features` 作为预备方案保留，不默认纳入第一版最小接入面
 
 ### 7.2 `application-native.yml` 改动
 
@@ -258,11 +284,14 @@ yunyu:
 yunyu:
   native:
     enabled: true
-    scan-packages:
-      - com.ideaflow.yunyu.module
-      - com.ideaflow.yunyu.security
-      - com.ideaflow.yunyu.common
+    scan-main-package: true
+    scan-packages: []
 ```
+
+说明：
+
+- `scan-main-package: true` 表示默认扫描启动类主包
+- `scan-packages` 默认为空，仅在存在主包之外的补充扫描需求时才配置
 
 ### 7.3 不改动业务源码
 
@@ -350,7 +379,7 @@ yunyu:
 目标：
 
 - 建立 `yunyu-native-image-support-*` 模块
-- 建立根聚合 `pom.xml`
+- 建立独立的 `yunyu-native-image-support/pom.xml`
 - 让 `yunyu-server` 可以编译进入 Native 构建流程
 
 本阶段不追求一次成功产出可运行二进制，先打通工程结构。
@@ -408,18 +437,20 @@ yunyu:
 
 因此这部分建议在开发阶段尽早做最小 POC。
 
-### 11.2 根目录新增聚合 `pom.xml` 属于仓库结构调整
+### 11.2 独立 Native 支撑工程会带来一次额外安装步骤
 
-虽然不改业务代码，但这仍然属于工程结构升级。
+虽然不改业务代码，但这会引入一个额外的本地依赖安装流程。
 
 好处是：
 
 - 后续 Native 支撑模块能长期维护
-- 构建链更完整
+- 与 `yunyu-server` 工程结构解耦
+- 更接近可复用 starter 的独立交付方式
 
 代价是：
 
-- 仓库会从“单后端 Maven 项目”变成“根目录聚合 + 子模块”结构
+- 需要先构建并安装 `yunyu-native-image-support`
+- `yunyu-server` 的联调步骤会多一步
 
 ### 11.3 Java 25 与 GraalVM 版本需要统一验证
 
@@ -437,7 +468,7 @@ yunyu:
 
 1. **方案继续推进**
 2. **采用“对外一个 starter，内部三个模块”的结构**
-3. **在仓库根目录新增聚合 `pom.xml`**
+3. **采用独立 Native 支撑工程，不与 `yunyu-server` 做根聚合**
 4. **`yunyu-server` 只改 `pom.xml` 和 Native 配置**
 5. **优先解决 MyBatis-Plus Lambda Native 兼容问题**
 
@@ -450,7 +481,17 @@ yunyu:
 3. `yunyu-server` 是否允许除了 `pom.xml` 和 `application-native.yml` 之外，再新增少量 Native 专用 `resources` 文件
 4. Native 模式下是否确认继续关闭 Swagger / OpenAPI
 
-如果这 4 点你都认可，就可以进入开发阶段。
+本次你已经明确的决策是：
+
+1. 本期不在仓库根目录新增聚合 `pom.xml`
+2. Native 支撑工程与 `yunyu-server` 保持解耦
+3. 先 `install` starter，再由 `yunyu-server` 引用
+
+剩余只需要在进入开发前继续确认：
+
+1. 是否接受内部拆分为 `core + lambda-override + starter` 三个模块
+2. `yunyu-server` 是否允许除了 `pom.xml` 和 `application-native.yml` 之外，再新增少量 Native 专用 `resources` 文件
+3. Native 模式下是否确认继续关闭 Swagger / OpenAPI
 
 ## 14. 本次方案的判断结论
 
