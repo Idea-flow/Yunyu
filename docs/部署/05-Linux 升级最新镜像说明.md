@@ -19,6 +19,9 @@ docker compose logs -f yunyu-server
 
 ```bash
 docker compose pull yunyu-server && docker compose up -d yunyu-server
+
+
+docker compose pull yunyu-server-native && docker compose up -d yunyu-server-native
 ```
 
 ## 二、当前场景说明
