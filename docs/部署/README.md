@@ -10,3 +10,5 @@
 - `04-Linux 服务器部署说明.md`
 - `05-Linux 升级最新镜像说明.md`
 - `06-Linux 常用运维命令速查.md`
+- `07-Linux Native Image Docker 部署说明.md`
+- `08-Linux Native Image 升级最新镜像说明.md`

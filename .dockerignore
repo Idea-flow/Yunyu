@@ -1,0 +1,18 @@
+# Git 元数据不会参与镜像构建，排除后可减少上下文体积。
+.git
+
+# 本地 IDE 与系统缓存文件无需进入 Docker 构建上下文。
+.idea
+.DS_Store
+
+# Maven / Native 本地产物体积较大，构建时应始终重新生成。
+**/target
+
+# 前端源码与当前 Native 服务镜像构建无关，排除后可减少上传上下文。
+yunyu-web
+
+# 文档、数据库目录和本地部署文件不参与镜像构建。
+docs
+yunyu_mysql_data
+.env
+.env.deploy

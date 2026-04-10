@@ -102,6 +102,12 @@ Yunyu
 -Dyunyu.native.scan-packages=...
 ```
 
+当前状态：
+
+1. 该参数对应的 Maven 属性 `yunyu.native.scan.packages` 在 `pom.xml` 中仍然保留
+2. 当前属于“保留但未启用”状态
+3. 当前实际跑通的构建配置里已经不再传入这一参数
+
 原因：
 
 1. 默认已经以启动类所在主包 `com.ideaflow.yunyu` 为根包递归扫描
@@ -260,6 +266,7 @@ curl -i 'http://127.0.0.1:20000/api/site/posts?pageNo=1&pageSize=10'
 2. 当前验证环境依赖本地 MySQL `127.0.0.1:3306`
 3. 当前数据库 `yunyu` 已存在，因此本次日志表现为“跳过初始化”，这属于预期行为
 4. 当前 Native 支撑已经依赖自定义 GraalVM `Feature`，后续不要再回退为“仅 RuntimeHints”心智
+5. `yunyu.native.scan.packages` 目前只是预留扩展属性，当前保留但未启用，不属于本次跑通链路的必需项
 
 ## 10. 后续建议
 
