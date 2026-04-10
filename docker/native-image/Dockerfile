@@ -1,11 +1,21 @@
 # syntax=docker/dockerfile:1.7
 
+# Maven 提供阶段：直接复用官方 Maven 镜像中的 Maven 安装目录，避免在 GraalVM 镜像内再走系统包管理器。
+FROM maven:3.9.11-eclipse-temurin-25 AS maven
+
 # Native 构建阶段：直接在目标平台容器内构建 `yunyu-native-image-support` 与 `yunyu-server`，
 # 这样无需把 starter 发布到外部 Maven 仓库，也能产出对应架构的 Native 二进制。
 FROM ghcr.io/graalvm/native-image-community:25 AS builder
 
-# 安装 Maven 与 Native 编译依赖：用于在容器内完成 Maven 构建以及 GraalVM 的本地链接步骤。
-RUN microdnf install -y maven findutils tar gzip gcc binutils glibc-devel zlib-devel && microdnf clean all
+# 复制 Maven 运行目录：避免依赖 GraalVM 基础镜像中的 `microdnf` 或系统仓库状态。
+COPY --from=maven /usr/share/maven /usr/share/maven
+
+# 复制 `mvn` 启动脚本：让当前 Builder 镜像可以直接执行 Maven 命令。
+COPY --from=maven /usr/bin/mvn /usr/bin/mvn
+
+# 配置 Maven 环境变量：确保后续 `mvn` 能正确找到自身目录。
+ENV MAVEN_HOME=/usr/share/maven
+ENV PATH="${MAVEN_HOME}/bin:${PATH}"
 
 WORKDIR /workspace
 
