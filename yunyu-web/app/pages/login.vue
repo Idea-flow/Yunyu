@@ -669,23 +669,19 @@ async function handleSubmit() {
 
 <template>
   <main
-    class="login-page relative isolate h-[100svh] overflow-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#eef5ff_52%,#f9fafb_100%)] text-slate-900 dark:bg-[linear-gradient(180deg,#020617_0%,#0f172a_48%,#111827_100%)] dark:text-slate-50"
+    class="login-page relative isolate h-[100svh] overflow-hidden bg-[radial-gradient(circle_at_20%_18%,rgba(255,255,255,0.82),transparent_24%),radial-gradient(circle_at_78%_24%,rgba(255,244,228,0.62),transparent_28%),linear-gradient(135deg,#eef6ff_0%,#edf3ff_44%,#f7f9fc_100%)] text-slate-900 dark:bg-[radial-gradient(circle_at_18%_18%,rgba(56,189,248,0.1),transparent_22%),radial-gradient(circle_at_76%_28%,rgba(251,146,60,0.08),transparent_24%),linear-gradient(135deg,#081120_0%,#0d1729_46%,#101827_100%)] dark:text-slate-50"
     @pointermove="handleScenePointerMove"
     @pointerleave="resetScenePointer"
   >
     <div class="pointer-events-none absolute inset-0 overflow-hidden">
-      <div class="absolute -left-20 top-0 h-72 w-72 rounded-full bg-[color:color-mix(in_srgb,var(--site-primary-color)_22%,white)] blur-3xl dark:bg-[color:color-mix(in_srgb,var(--site-primary-color)_18%,transparent)]" />
-      <div class="absolute right-[-4rem] top-[18%] h-80 w-80 rounded-full bg-[color:color-mix(in_srgb,var(--site-secondary-color)_18%,white)] blur-3xl dark:bg-[color:color-mix(in_srgb,var(--site-secondary-color)_14%,transparent)]" />
-      <div class="absolute bottom-[-4rem] left-1/3 h-72 w-72 rounded-full bg-white/55 blur-3xl dark:bg-white/[0.04]" />
-      <div class="login-orb absolute left-[10%] top-[28%] h-24 w-24 rounded-full border border-white/50 bg-white/40 backdrop-blur-md dark:border-white/10 dark:bg-white/[0.05]" />
-      <div class="login-orb-delayed absolute right-[14%] top-[56%] h-20 w-20 rounded-full border border-white/45 bg-white/36 backdrop-blur-md dark:border-white/10 dark:bg-white/[0.04]" />
+      <div class="absolute -left-24 top-[-4rem] h-80 w-80 rounded-full bg-[color:color-mix(in_srgb,var(--site-primary-color)_12%,white)] blur-3xl dark:bg-[color:color-mix(in_srgb,var(--site-primary-color)_14%,transparent)]" />
+      <div class="absolute right-[-5rem] top-[14%] h-96 w-96 rounded-full bg-[color:color-mix(in_srgb,var(--site-secondary-color)_10%,white)] blur-3xl dark:bg-[color:color-mix(in_srgb,var(--site-secondary-color)_12%,transparent)]" />
+      <div class="absolute bottom-[-6rem] left-[28%] h-80 w-80 rounded-full bg-white/40 blur-3xl dark:bg-white/[0.03]" />
     </div>
 
     <div class="relative mx-auto flex h-[100svh] w-full max-w-[1480px] items-center px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
       <div class="grid h-full w-full lg:grid-cols-[1.08fr_0.92fr]">
         <section class="relative flex min-h-0 flex-col overflow-hidden px-3 py-3 sm:px-4 sm:py-4 lg:px-6 lg:py-5">
-          <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.5),transparent_32%),linear-gradient(135deg,color-mix(in_srgb,var(--site-primary-color)_10%,white),transparent_56%),linear-gradient(180deg,rgba(255,255,255,0.2),transparent)] dark:bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.08),transparent_28%),linear-gradient(135deg,color-mix(in_srgb,var(--site-primary-color)_18%,transparent),transparent_56%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent)]" />
-
           <div class="relative flex items-center justify-between gap-4">
             <NuxtLink to="/" class="flex min-w-0 items-center gap-3">
               <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/65 bg-white/72 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.22)] dark:border-white/10 dark:bg-white/[0.05]">
@@ -712,13 +708,9 @@ async function handleSubmit() {
 
           <div class="relative mt-4 flex flex-1 items-center justify-center lg:mt-0">
             <div
-              class="relative hidden h-full max-h-[760px] min-h-[20rem] w-full overflow-hidden rounded-[36px] lg:block"
+              class="relative hidden h-full max-h-[760px] min-h-[20rem] w-full overflow-hidden lg:block"
             >
-              <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(255,255,255,0.72),transparent_20rem),radial-gradient(circle_at_78%_16%,color-mix(in_srgb,var(--site-secondary-color)_16%,white),transparent_16rem),linear-gradient(180deg,rgba(255,255,255,0.26),transparent)] dark:bg-[radial-gradient(circle_at_20%_18%,rgba(255,255,255,0.08),transparent_18rem),radial-gradient(circle_at_78%_16%,color-mix(in_srgb,var(--site-secondary-color)_12%,transparent),transparent_16rem),linear-gradient(180deg,rgba(255,255,255,0.03),transparent)]" />
               <div class="auth-scene relative h-full">
-                <div class="auth-scene__ripple auth-scene__ripple--one" />
-                <div class="auth-scene__ripple auth-scene__ripple--two" />
-
                 <div class="auth-scene__stage">
                   <div class="auth-character auth-character--purple" :style="purpleCharacterStyle">
                     <div class="auth-eyes auth-eyes--white" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="eyesShiftStyle(purpleSceneVector, isPasswordFocused && !isShowingPassword ? -14 : isShowingPassword && purplePeeking && purplePeekPhase === 'forward' ? 14 : isShowingPassword && purplePeeking && purplePeekPhase === 'return' ? -10 : isIdentityFocused ? 10 : 0, isPasswordFocused && !isShowingPassword ? -12 : isShowingPassword && purplePeeking && purplePeekPhase === 'forward' ? 9 : isShowingPassword && purplePeeking && purplePeekPhase === 'return' ? -5 : isIdentityFocused ? 8 : 0, 5.8, 4.1)">
@@ -770,8 +762,6 @@ async function handleSubmit() {
         </section>
 
         <section class="relative flex min-h-0 items-center px-1 py-3 sm:px-3 sm:py-4 lg:px-6 lg:py-5">
-          <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.18),rgba(248,250,252,0.08))] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))]" />
-
           <div class="relative mx-auto w-full max-w-[430px]">
             <div class="px-3 py-2 sm:px-4">
               <div class="flex items-center justify-end gap-4">
@@ -950,30 +940,6 @@ async function handleSubmit() {
   min-height: 20rem;
 }
 
-.auth-scene__ripple {
-  position: absolute;
-  border-radius: 999px;
-  border: 1px solid rgb(255 255 255 / 0.45);
-  background: rgb(255 255 255 / 0.22);
-  backdrop-filter: blur(8px);
-}
-
-.auth-scene__ripple--one {
-  left: 1.75rem;
-  top: 2rem;
-  height: 5rem;
-  width: 5rem;
-  animation: login-float 10s ease-in-out infinite;
-}
-
-.auth-scene__ripple--two {
-  right: 2rem;
-  top: 4.4rem;
-  height: 4rem;
-  width: 4rem;
-  animation: login-float 12s ease-in-out infinite reverse;
-}
-
 .auth-scene__stage {
   position: absolute;
   left: 50%;
@@ -1135,14 +1101,6 @@ async function handleSubmit() {
   background: #1e293b;
 }
 
-.login-orb {
-  animation: login-float 9s ease-in-out infinite;
-}
-
-.login-orb-delayed {
-  animation: login-float 11s ease-in-out infinite reverse;
-}
-
 .shake-head {
   animation: shakeHead 0.9s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
@@ -1194,10 +1152,7 @@ async function handleSubmit() {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .auth-scene__ripple--one,
-  .auth-scene__ripple--two,
-  .login-orb,
-  .login-orb-delayed {
+  .shake-head {
     animation: none;
   }
 }
