@@ -63,6 +63,14 @@ cd /Users/wangpenglong/projects/full-stack-project/Yunyu/yunyu-server
 mvn -q -Dmaven.repo.local=/Users/wangpenglong/usr/local/mavenRepository/aliRepository -DskipTests -Pnative package
 ```
 
+注意：
+
+1. 当前 Native 构建依赖 `yunyu-server/pom.xml` 中 `native` profile 里的两条关键 buildArgs：
+   - `--features=com.ideaflow.yunyu.nativeimage.support.core.aot.YunyuNativeRuntimeFeature`
+   - `-Dyunyu.native.applicationClass=com.ideaflow.yunyu.YunyuServerApplication`
+2. 这两条参数不能删除
+3. 删除后虽然可能仍能构建并启动，但登录接口与 `LambdaQueryWrapper` 相关接口会在运行时报 `writeReplace()` 相关异常
+
 构建成功后产物位于：
 
 ```bash
@@ -118,6 +126,13 @@ curl -i -H 'Content-Type: application/json' \
 2. `code=0`
 3. 返回 `accessToken`
 
+如果这里报错，优先检查：
+
+1. `yunyu-server/pom.xml` 的 `native` profile 中是否仍然保留：
+   - `--features=com.ideaflow.yunyu.nativeimage.support.core.aot.YunyuNativeRuntimeFeature`
+   - `-Dyunyu.native.applicationClass=${yunyu.native.applicationClass}`
+2. Native 二进制是否是在保留这两条参数的前提下重新构建出来的
+
 ### 5.3 文章分页列表接口
 
 ```bash
@@ -150,6 +165,17 @@ curl -i 'http://127.0.0.1:20000/api/site/posts?pageNo=1&pageSize=10'
 4. MyBatis-Plus Lambda Native 兼容链路
 
 已经基本工作正常。
+
+如果这个接口和登录接口同时失败，且日志里出现：
+
+1. `writeReplace()`
+2. `NoSuchMethodException`
+3. `NoSuchMethodError`
+
+通常可以直接判断为：
+
+1. Native 构建时缺少 `YunyuNativeRuntimeFeature`
+2. 或缺少 `yunyu.native.applicationClass` 传参
 
 ### 5.5 Swagger 检查
 

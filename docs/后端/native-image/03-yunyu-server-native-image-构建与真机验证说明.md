@@ -96,6 +96,36 @@ Yunyu
    - 当前 **是需要的**
    - 作用是让 `Feature` 在 Spring 容器之外也能准确拿到启动类主包，推导默认扫描范围
 
+这两个参数还有一个必须特别强调的结论：
+
+1. `--features=com.ideaflow.yunyu.nativeimage.support.core.aot.YunyuNativeRuntimeFeature`
+2. `-Dyunyu.native.applicationClass=com.ideaflow.yunyu.YunyuServerApplication`
+
+不是“可选优化项”，而是当前项目 **运行时正确性必需项**。
+
+如果误删这两个参数，可能出现的典型现象是：
+
+1. Native 二进制仍然可以成功构建
+2. 服务也可以正常启动
+3. 但一旦调用登录接口或其他 `LambdaQueryWrapper` 相关接口，就会在运行时报错
+4. 典型报错关键字为：
+   - `writeReplace()`
+   - `NoSuchMethodException`
+   - `NoSuchMethodError`
+   - `SerializedLambda.extract`
+
+已验证的具体故障表现为：
+
+1. `POST /api/auth/login` 返回 500
+2. 日志中出现：
+   - `java.lang.NoSuchMethodException: ...$$Lambda...writeReplace()`
+
+根因是：
+
+1. Native 构建阶段没有启用自定义 GraalVM Feature
+2. MyBatis-Plus Lambda Native 所需的注册链没有生效
+3. 运行时又回退到了默认 Lambda 提取路径
+
 当前不要求手工传入的参数：
 
 ```text
@@ -267,6 +297,7 @@ curl -i 'http://127.0.0.1:20000/api/site/posts?pageNo=1&pageSize=10'
 3. 当前数据库 `yunyu` 已存在，因此本次日志表现为“跳过初始化”，这属于预期行为
 4. 当前 Native 支撑已经依赖自定义 GraalVM `Feature`，后续不要再回退为“仅 RuntimeHints”心智
 5. `yunyu.native.scan.packages` 目前只是预留扩展属性，当前保留但未启用，不属于本次跑通链路的必需项
+6. `--features=...YunyuNativeRuntimeFeature` 与 `-Dyunyu.native.applicationClass=...` 禁止删除；删除后可能表现为“能启动但登录接口和 Lambda 查询接口运行时报错”
 
 ## 10. 后续建议
 

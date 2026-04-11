@@ -1,17 +1,28 @@
 <script setup lang="ts">
 /**
- * 共享认证页。
- * 负责承接前台与后台统一的登录、注册入口，并在成功后根据角色或回跳地址进入对应区域，
- * 避免前后台分别维护多套认证页面和交互逻辑。
+ * 前台认证页。
+ * 作用：承接前台与后台统一的登录、注册入口，并通过品牌化展示区强化云屿站点识别，
+ * 同时在移动端收敛为单栏认证体验，保证输入与提交操作足够直接。
  */
+definePageMeta({
+  layout: false
+})
+
 const route = useRoute()
 const toast = useToast()
 const auth = useAuth()
+const siteContent = useSiteContent()
 
 type AuthMode = 'login' | 'register'
+type PasswordField = 'password' | 'confirmPassword'
+type FocusField = 'account' | 'email' | 'password' | 'confirmPassword' | null
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)\S{8,20}$/
+
+const { data: siteConfigData } = await useAsyncData('auth-site-config', async () => {
+  return await siteContent.getSiteConfig()
+})
 
 await auth.fetchCurrentUser()
 
@@ -25,6 +36,206 @@ const formState = reactive({
 })
 
 const isSubmitting = ref(false)
+const focusedField = ref<FocusField>(null)
+const isSceneError = ref(false)
+const purpleBlinking = ref(false)
+const blackBlinking = ref(false)
+const purplePeeking = ref(false)
+const passwordVisibility = reactive<Record<PasswordField, boolean>>({
+  password: false,
+  confirmPassword: false
+})
+const scenePointer = reactive({
+  offsetX: 0,
+  offsetY: 0
+})
+
+let purpleBlinkTimer: ReturnType<typeof setTimeout> | null = null
+let blackBlinkTimer: ReturnType<typeof setTimeout> | null = null
+let purplePeekTimer: ReturnType<typeof setTimeout> | null = null
+let sceneErrorTimer: ReturnType<typeof setTimeout> | null = null
+
+const inputUi = {
+  base: [
+    'w-full rounded-[22px] border border-white/70 bg-white/82 px-4 py-3 text-[15px] text-slate-800 shadow-[0_18px_38px_-30px_rgba(15,23,42,0.18)] backdrop-blur-sm transition',
+    'placeholder:text-slate-400 focus:border-[color:color-mix(in_srgb,var(--site-primary-color)_28%,white)] focus:bg-white focus:ring-4 focus:ring-[color:color-mix(in_srgb,var(--site-primary-color)_12%,transparent)]',
+    'dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-[var(--site-primary-color)] dark:focus:bg-slate-950'
+  ].join(' '),
+  trailing: 'pe-2',
+  leading: 'ps-2'
+}
+
+const siteConfig = computed(() => siteConfigData.value)
+const brandName = computed(() => siteConfig.value?.siteName?.trim() || '云屿')
+const brandSubtitle = computed(() => siteConfig.value?.siteSubTitle?.trim() || 'Yunyu')
+const logoUrl = computed(() => siteConfig.value?.logoUrl?.trim() || '/icon-512-maskable.png')
+const isIdentityFocused = computed(() => focusedField.value === 'account' || focusedField.value === 'email')
+const isPasswordFocused = computed(() => focusedField.value === 'password' || focusedField.value === 'confirmPassword')
+const hasPasswordContent = computed(() => Boolean(formState.password || formState.confirmPassword))
+const isShowingPassword = computed(() => {
+  return hasPasswordContent.value && (passwordVisibility.password || passwordVisibility.confirmPassword)
+})
+
+/**
+ * 将数值限制在指定范围内。
+ *
+ * @param value 原始值
+ * @param min 最小值
+ * @param max 最大值
+ * @return 限制后的值
+ */
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
+}
+
+/**
+ * 计算场景当前的观察向量。
+ * 作用：统一把鼠标跟随、输入框聚焦、密码显隐和报错状态映射成角色朝向，
+ * 避免在模板里分散维护多套条件判断。
+ *
+ * @return 角色朝向向量
+ */
+const sceneVector = computed(() => {
+  if (isSceneError.value) {
+    return { x: -0.7, y: 0.82 }
+  }
+
+  if (isPasswordFocused.value && !isShowingPassword.value) {
+    return { x: -1, y: -0.9 }
+  }
+
+  if (isShowingPassword.value) {
+    return { x: purplePeeking.value ? 0.6 : -0.72, y: purplePeeking.value ? 0.68 : -0.52 }
+  }
+
+  if (isIdentityFocused.value) {
+    return { x: 0.56, y: 0.72 }
+  }
+
+  return {
+    x: scenePointer.offsetX,
+    y: scenePointer.offsetY
+  }
+})
+
+/**
+ * 根据朝向向量计算角色的瞳孔位移。
+ *
+ * @param strength 位移强度
+ * @return 瞳孔位移样式
+ */
+function pupilStyle(strength: number) {
+  return {
+    transform: `translate(${(sceneVector.value.x * strength).toFixed(2)}px, ${(sceneVector.value.y * strength).toFixed(2)}px)`
+  }
+}
+
+/**
+ * 计算左侧紫色角色的主体姿态。
+ *
+ * @return 角色变换样式
+ */
+const purpleCharacterStyle = computed(() => {
+  if (isPasswordFocused.value && !isShowingPassword.value) {
+    return {
+      transform: 'skewX(-13deg) translateX(-16px)',
+      height: '16.4rem'
+    }
+  }
+
+  if (isIdentityFocused.value) {
+    return {
+      transform: `skewX(${(-10 + sceneVector.value.x * 3).toFixed(2)}deg) translateX(14px)`,
+      height: '16rem'
+    }
+  }
+
+  return {
+    transform: `skewX(${(sceneVector.value.x * -5).toFixed(2)}deg) translateX(${(sceneVector.value.x * 4).toFixed(2)}px)`,
+    height: '15.3rem'
+  }
+})
+
+/**
+ * 计算左侧深色角色的主体姿态。
+ *
+ * @return 角色变换样式
+ */
+const inkCharacterStyle = computed(() => {
+  if (isPasswordFocused.value && !isShowingPassword.value) {
+    return {
+      transform: 'skewX(12deg) translateX(-10px)'
+    }
+  }
+
+  if (isIdentityFocused.value) {
+    return {
+      transform: `skewX(${(8 + sceneVector.value.x * 4).toFixed(2)}deg) translateX(12px)`
+    }
+  }
+
+  return {
+    transform: `skewX(${(sceneVector.value.x * -4).toFixed(2)}deg)`
+  }
+})
+
+/**
+ * 计算橙色角色的主体姿态。
+ *
+ * @return 角色变换样式
+ */
+const orangeCharacterStyle = computed(() => {
+  return {
+    transform: isShowingPassword.value
+      ? 'skewX(0deg)'
+      : `skewX(${(sceneVector.value.x * -3.6).toFixed(2)}deg)`
+  }
+})
+
+/**
+ * 计算黄色角色的主体姿态。
+ *
+ * @return 角色变换样式
+ */
+const yellowCharacterStyle = computed(() => {
+  return {
+    transform: isShowingPassword.value
+      ? 'skewX(0deg)'
+      : `skewX(${(sceneVector.value.x * -3.2).toFixed(2)}deg)`
+  }
+})
+
+/**
+ * 计算错误态下的嘴部样式。
+ *
+ * @return 嘴部类名
+ */
+const orangeMouthClassName = computed(() => {
+  return isSceneError.value ? 'auth-scene-mouth auth-scene-mouth--sad visible shake-head' : 'auth-scene-mouth auth-scene-mouth--sad'
+})
+
+/**
+ * 计算黄色角色嘴部样式。
+ *
+ * @return 嘴部变换样式
+ */
+const yellowMouthStyle = computed(() => {
+  if (isSceneError.value) {
+    return {
+      transform: 'translate(-8px, 4px) rotate(-8deg)'
+    }
+  }
+
+  if (isPasswordFocused.value && !isShowingPassword.value) {
+    return {
+      transform: 'translate(-12px, -8px) rotate(0deg)'
+    }
+  }
+
+  return {
+    transform: `translate(${(sceneVector.value.x * 5).toFixed(2)}px, ${(sceneVector.value.y * 4).toFixed(2)}px)`
+  }
+})
 
 /**
  * 计算当前认证模式下的主标题。
@@ -32,7 +243,7 @@ const isSubmitting = ref(false)
  * @return 页面主标题
  */
 const pageTitle = computed(() => {
-  return authMode.value === 'login' ? '欢迎回来' : '创建账户'
+  return authMode.value === 'login' ? '欢迎回到云屿' : '创建你的云屿账户'
 })
 
 /**
@@ -42,8 +253,28 @@ const pageTitle = computed(() => {
  */
 const pageDescription = computed(() => {
   return authMode.value === 'login'
-    ? '登录后即可继续访问你的内容与账户。'
-    : '使用邮箱和密码快速创建新账户，注册成功后将自动登录。'
+    ? '继续阅读、收藏与管理你的内容节奏，一次登录即可同步前台与后台入口。'
+    : '用邮箱快速创建新账户，注册成功后会自动登录并回到你刚才想访问的位置。'
+})
+
+/**
+ * 计算表单区标题。
+ *
+ * @return 表单标题
+ */
+const formTitle = computed(() => {
+  return authMode.value === 'login' ? '登录你的账户' : '注册新账户'
+})
+
+/**
+ * 计算表单区辅助说明。
+ *
+ * @return 表单说明文案
+ */
+const formDescription = computed(() => {
+  return authMode.value === 'login'
+    ? '输入账号与密码，继续访问你的云屿空间。'
+    : '请设置常用邮箱与密码，后续可直接用于登录。'
 })
 
 /**
@@ -56,12 +287,69 @@ const submitButtonText = computed(() => {
     return authMode.value === 'login' ? '登录中...' : '注册中...'
   }
 
-  return authMode.value === 'login' ? '登录' : '注册并进入'
+  return authMode.value === 'login' ? '登录并进入' : '注册并进入'
+})
+
+/**
+ * 计算回跳提示文案。
+ * 作用：当用户是从受保护页面跳转过来时，明确告知登录后会回到原目标页。
+ *
+ * @return 回跳提示
+ */
+const redirectHint = computed(() => {
+  const redirect = route.query.redirect
+
+  if (typeof redirect !== 'string' || !redirect.startsWith('/')) {
+    return ''
+  }
+
+  if (redirect.startsWith('/admin')) {
+    return '登录成功后将继续进入后台管理。'
+  }
+
+  return '登录成功后将返回你刚才访问的页面。'
+})
+
+/**
+ * 计算左侧展示区的特性内容。
+ *
+ * @return 页面展示要点
+ */
+const showcaseItems = computed(() => {
+  return authMode.value === 'login'
+    ? [
+        {
+          title: '同步阅读状态',
+          description: '收藏、评论与浏览记录在同一账户下统一管理。'
+        },
+        {
+          title: '前后台共用身份',
+          description: '站长可直接进入后台，普通用户仍保持前台体验简洁一致。'
+        },
+        {
+          title: '更适合阅读的节奏',
+          description: '围绕文章、专题与内容归档，保持清爽而稳定的访问体验。'
+        }
+      ]
+    : [
+        {
+          title: '注册后自动登录',
+          description: '减少重复操作，创建账户后即可继续当前访问流程。'
+        },
+        {
+          title: '邮箱安全校验',
+          description: '在提交前先完成基础格式与密码强度校验，减少无效请求。'
+        },
+        {
+          title: '移动端同样顺手',
+          description: '单栏表单与清晰触控区域，方便在手机上快速完成认证。'
+        }
+      ]
 })
 
 /**
  * 切换认证模式。
- * 切换时会清空敏感输入，避免用户误把上一个模式的密码内容带入新的提交流程。
+ * 切换时会清空敏感输入并重置密码显示状态，避免上一个模式的输入内容影响当前操作。
  *
  * @param mode 目标认证模式
  */
@@ -73,7 +361,176 @@ function switchAuthMode(mode: AuthMode) {
   authMode.value = mode
   formState.password = ''
   formState.confirmPassword = ''
+  focusedField.value = null
+  passwordVisibility.password = false
+  passwordVisibility.confirmPassword = false
 }
+
+/**
+ * 记录当前聚焦字段。
+ * 作用：把右侧表单交互同步到左侧角色区，形成账号输入和密码输入时的联动反馈。
+ *
+ * @param field 当前聚焦字段
+ */
+function handleFieldFocus(field: Exclude<FocusField, null>) {
+  focusedField.value = field
+}
+
+/**
+ * 清空当前聚焦字段。
+ * 作用：输入框失焦后恢复到鼠标跟随态，避免角色长期停留在输入联动态。
+ *
+ * @param field 当前失焦字段
+ */
+function handleFieldBlur(field: Exclude<FocusField, null>) {
+  if (focusedField.value === field) {
+    focusedField.value = null
+  }
+}
+
+/**
+ * 处理左侧场景内的鼠标移动。
+ * 作用：将鼠标位置归一化为 -1 到 1 的向量，用于驱动角色眼睛与身体轻微跟随。
+ *
+ * @param event 鼠标事件
+ */
+function handleScenePointerMove(event: PointerEvent) {
+  const currentTarget = event.currentTarget as HTMLElement | null
+
+  if (!currentTarget) {
+    return
+  }
+
+  const rect = currentTarget.getBoundingClientRect()
+  const ratioX = (event.clientX - rect.left) / rect.width
+  const ratioY = (event.clientY - rect.top) / rect.height
+
+  scenePointer.offsetX = clamp((ratioX - 0.5) * 2, -1, 1)
+  scenePointer.offsetY = clamp((ratioY - 0.42) * 2, -1, 1)
+}
+
+/**
+ * 重置左侧场景的鼠标观察点。
+ * 作用：在鼠标离开场景后让角色缓慢回到默认姿态。
+ */
+function resetScenePointer() {
+  scenePointer.offsetX = 0
+  scenePointer.offsetY = 0
+}
+
+/**
+ * 切换密码字段的可见状态。
+ * 作用：让用户在登录或注册时按需查看密码内容，减少移动端输入出错概率。
+ *
+ * @param field 目标字段
+ */
+function togglePasswordVisibility(field: PasswordField) {
+  passwordVisibility[field] = !passwordVisibility[field]
+}
+
+/**
+ * 触发左侧角色错误反馈。
+ * 作用：在表单校验失败或登录异常时同步显示角色错误态，让左侧互动区与认证结果联动。
+ */
+function triggerSceneError() {
+  isSceneError.value = true
+
+  if (sceneErrorTimer) {
+    clearTimeout(sceneErrorTimer)
+  }
+
+  sceneErrorTimer = setTimeout(() => {
+    isSceneError.value = false
+    sceneErrorTimer = null
+  }, 2200)
+}
+
+/**
+ * 安排紫色角色的随机眨眼动画。
+ * 作用：为左侧角色区补充生命感，避免静止时显得过于机械。
+ */
+function schedulePurpleBlink() {
+  purpleBlinkTimer = setTimeout(() => {
+    purpleBlinking.value = true
+
+    setTimeout(() => {
+      purpleBlinking.value = false
+      schedulePurpleBlink()
+    }, 160)
+  }, Math.random() * 3200 + 2400)
+}
+
+/**
+ * 安排深色角色的随机眨眼动画。
+ * 作用：与紫色角色错开节奏，形成更自然的双角色状态变化。
+ */
+function scheduleBlackBlink() {
+  blackBlinkTimer = setTimeout(() => {
+    blackBlinking.value = true
+
+    setTimeout(() => {
+      blackBlinking.value = false
+      scheduleBlackBlink()
+    }, 150)
+  }, Math.random() * 3600 + 2600)
+}
+
+/**
+ * 安排密码显隐时的偷看动画。
+ * 作用：当密码可见且已有内容时，让左侧角色偶尔偷看，复用参考页最有记忆点的交互之一。
+ */
+function schedulePurplePeek() {
+  if (!isShowingPassword.value) {
+    purplePeeking.value = false
+    purplePeekTimer = null
+    return
+  }
+
+  purplePeekTimer = setTimeout(() => {
+    purplePeeking.value = true
+
+    setTimeout(() => {
+      purplePeeking.value = false
+      schedulePurplePeek()
+    }, 820)
+  }, Math.random() * 2200 + 1600)
+}
+
+watch(isShowingPassword, (value) => {
+  if (purplePeekTimer) {
+    clearTimeout(purplePeekTimer)
+    purplePeekTimer = null
+  }
+
+  purplePeeking.value = false
+
+  if (value) {
+    schedulePurplePeek()
+  }
+})
+
+onMounted(() => {
+  schedulePurpleBlink()
+  scheduleBlackBlink()
+})
+
+onBeforeUnmount(() => {
+  if (purpleBlinkTimer) {
+    clearTimeout(purpleBlinkTimer)
+  }
+
+  if (blackBlinkTimer) {
+    clearTimeout(blackBlinkTimer)
+  }
+
+  if (purplePeekTimer) {
+    clearTimeout(purplePeekTimer)
+  }
+
+  if (sceneErrorTimer) {
+    clearTimeout(sceneErrorTimer)
+  }
+})
 
 /**
  * 解析认证成功后的回跳地址。
@@ -130,6 +587,7 @@ function validateRegisterForm() {
  */
 async function handleSubmit() {
   if (authMode.value === 'login' && (!formState.account || !formState.password)) {
+    triggerSceneError()
     toast.add({
       title: '请输入账号和密码',
       color: 'warning'
@@ -141,6 +599,7 @@ async function handleSubmit() {
     const validationMessage = validateRegisterForm()
 
     if (validationMessage) {
+      triggerSceneError()
       toast.add({
         title: validationMessage,
         color: 'warning'
@@ -184,6 +643,7 @@ async function handleSubmit() {
 
     await navigateTo(targetPath)
   } catch (error: any) {
+    triggerSceneError()
     toast.add({
       title: authMode.value === 'login' ? '登录失败' : '注册失败',
       description: error?.message || '认证过程中发生错误，请稍后重试。',
@@ -196,140 +656,606 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <main class="min-h-screen bg-default text-default">
-    <div class="mx-auto flex min-h-screen w-full max-w-7xl items-center justify-center px-6 py-12">
-      <div class="w-full max-w-5xl overflow-hidden rounded-[32px] border border-default bg-elevated shadow-2xl shadow-slate-900/5">
-        <div class="grid lg:grid-cols-[1.05fr_0.95fr]">
-          <section class="relative overflow-hidden border-b border-default p-8 lg:border-b-0 lg:border-r lg:p-12">
-            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.14),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.06),transparent)]" />
-            <div class="relative flex h-full flex-col justify-between gap-12">
-              <div class="space-y-6">
-                <div>
-                  <p class="text-sm uppercase tracking-[0.28em] text-primary">Yunyu</p>
-                  <h1 class="mt-4 text-4xl font-semibold leading-tight text-highlighted lg:text-5xl">
-                    {{ pageTitle }}
-                  </h1>
-                </div>
+  <main class="login-page relative isolate min-h-screen overflow-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#eef5ff_52%,#f9fafb_100%)] text-slate-900 dark:bg-[linear-gradient(180deg,#020617_0%,#0f172a_48%,#111827_100%)] dark:text-slate-50">
+    <div class="pointer-events-none absolute inset-0 overflow-hidden">
+      <div class="absolute -left-20 top-0 h-72 w-72 rounded-full bg-[color:color-mix(in_srgb,var(--site-primary-color)_22%,white)] blur-3xl dark:bg-[color:color-mix(in_srgb,var(--site-primary-color)_18%,transparent)]" />
+      <div class="absolute right-[-4rem] top-[18%] h-80 w-80 rounded-full bg-[color:color-mix(in_srgb,var(--site-secondary-color)_18%,white)] blur-3xl dark:bg-[color:color-mix(in_srgb,var(--site-secondary-color)_14%,transparent)]" />
+      <div class="absolute bottom-[-4rem] left-1/3 h-72 w-72 rounded-full bg-white/55 blur-3xl dark:bg-white/[0.04]" />
+      <div class="login-orb absolute left-[10%] top-[28%] h-24 w-24 rounded-full border border-white/50 bg-white/40 backdrop-blur-md dark:border-white/10 dark:bg-white/[0.05]" />
+      <div class="login-orb-delayed absolute right-[14%] top-[56%] h-20 w-20 rounded-full border border-white/45 bg-white/36 backdrop-blur-md dark:border-white/10 dark:bg-white/[0.04]" />
+    </div>
 
-                <p class="max-w-2xl text-base leading-8 text-toned">
-                  {{ pageDescription }}
+    <div class="relative mx-auto flex min-h-screen w-full max-w-[1480px] items-center px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+      <div class="grid min-h-[calc(100svh-2rem)] w-full overflow-hidden rounded-[30px] border border-white/70 bg-white/60 shadow-[0_40px_110px_-58px_rgba(15,23,42,0.38)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] lg:grid-cols-[1.08fr_0.92fr]">
+        <section class="relative flex flex-col overflow-hidden border-b border-white/60 px-5 py-6 sm:px-7 sm:py-8 lg:border-b-0 lg:border-r lg:border-white/50 lg:px-10 lg:py-10 dark:border-white/10">
+          <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.5),transparent_32%),linear-gradient(135deg,color-mix(in_srgb,var(--site-primary-color)_10%,white),transparent_56%),linear-gradient(180deg,rgba(255,255,255,0.2),transparent)] dark:bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.08),transparent_28%),linear-gradient(135deg,color-mix(in_srgb,var(--site-primary-color)_18%,transparent),transparent_56%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent)]" />
+
+          <div class="relative flex items-center justify-between gap-4">
+            <NuxtLink to="/" class="flex min-w-0 items-center gap-3">
+              <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/65 bg-white/72 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.22)] dark:border-white/10 dark:bg-white/[0.05]">
+                <img :src="logoUrl" :alt="`${brandName} 图标`" class="h-full w-full object-cover">
+              </div>
+              <div class="min-w-0">
+                <p class="truncate text-[1.15rem] font-semibold tracking-[-0.05em] text-slate-950 [font-family:var(--font-display)] dark:text-white">
+                  {{ brandName }}
+                </p>
+                <p class="truncate text-[0.7rem] uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
+                  {{ brandSubtitle }}
                 </p>
               </div>
-            </div>
-          </section>
+            </NuxtLink>
 
-          <section class="p-8 lg:p-12">
-            <UCard
-              :ui="{
-                body: 'space-y-6 p-6 sm:p-8'
-              }"
+            <NuxtLink
+              to="/"
+              class="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/70 bg-white/70 px-3 py-2 text-sm text-slate-600 backdrop-blur-sm transition hover:-translate-y-0.5 hover:text-slate-900 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-300 dark:hover:text-white"
             >
-              <template #header>
-                <div class="space-y-2">
-                  <p class="text-xl font-semibold text-highlighted">
-                    {{ authMode === 'login' ? '登录你的账户' : '注册新账户' }}
+              <UIcon name="i-lucide-house" class="size-4" />
+              <span>返回首页</span>
+            </NuxtLink>
+          </div>
+
+          <div class="relative mt-10 flex flex-1 flex-col justify-between gap-8 lg:mt-14">
+            <div class="max-w-[34rem]">
+              <p class="text-[0.72rem] font-semibold uppercase tracking-[0.34em] text-slate-500 dark:text-slate-400">
+                统一认证入口
+              </p>
+              <h1 class="mt-4 max-w-[10ch] text-[clamp(2rem,1.45rem+2vw,4.4rem)] font-semibold leading-[0.95] tracking-[-0.06em] text-slate-950 [font-family:var(--font-display)] dark:text-white">
+                {{ pageTitle }}
+              </h1>
+              <p class="mt-5 max-w-[34rem] text-sm leading-7 text-slate-600 sm:text-[15px] sm:leading-8 dark:text-slate-300">
+                {{ pageDescription }}
+              </p>
+            </div>
+
+            <div
+              class="relative hidden min-h-[20rem] overflow-hidden rounded-[32px] border border-white/75 bg-[linear-gradient(135deg,rgba(255,255,255,0.82),rgba(239,246,255,0.56))] shadow-[0_28px_60px_-42px_rgba(15,23,42,0.26)] backdrop-blur-md lg:block"
+              @pointermove="handleScenePointerMove"
+              @pointerleave="resetScenePointer"
+            >
+              <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(255,255,255,0.72),transparent_20rem),radial-gradient(circle_at_78%_16%,color-mix(in_srgb,var(--site-secondary-color)_16%,white),transparent_16rem),linear-gradient(180deg,rgba(255,255,255,0.26),transparent)] dark:bg-[radial-gradient(circle_at_20%_18%,rgba(255,255,255,0.08),transparent_18rem),radial-gradient(circle_at_78%_16%,color-mix(in_srgb,var(--site-secondary-color)_12%,transparent),transparent_16rem),linear-gradient(180deg,rgba(255,255,255,0.03),transparent)]" />
+              <div class="auth-scene relative h-full">
+                <div class="auth-scene__ripple auth-scene__ripple--one" />
+                <div class="auth-scene__ripple auth-scene__ripple--two" />
+
+                <div class="auth-character auth-character--purple" :style="purpleCharacterStyle">
+                  <div class="auth-eyes auth-eyes--white" :class="{ 'shake-head': isSceneError }">
+                    <div class="auth-eyeball" :class="{ 'auth-eyeball--blink': purpleBlinking }">
+                      <div class="auth-pupil" :style="pupilStyle(5)" />
+                    </div>
+                    <div class="auth-eyeball" :class="{ 'auth-eyeball--blink': purpleBlinking }">
+                      <div class="auth-pupil" :style="pupilStyle(5)" />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="auth-character auth-character--ink" :style="inkCharacterStyle">
+                  <div class="auth-eyes auth-eyes--white" :class="{ 'shake-head': isSceneError }">
+                    <div class="auth-eyeball auth-eyeball--small" :class="{ 'auth-eyeball--blink': blackBlinking }">
+                      <div class="auth-pupil auth-pupil--small" :style="pupilStyle(4)" />
+                    </div>
+                    <div class="auth-eyeball auth-eyeball--small" :class="{ 'auth-eyeball--blink': blackBlinking }">
+                      <div class="auth-pupil auth-pupil--small" :style="pupilStyle(4)" />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="auth-character auth-character--orange" :style="orangeCharacterStyle">
+                  <div class="auth-eyes auth-eyes--bare" :class="{ 'shake-head': isSceneError }">
+                    <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(5)" />
+                    <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(5)" />
+                  </div>
+                  <div :class="orangeMouthClassName" />
+                </div>
+
+                <div class="auth-character auth-character--yellow" :style="yellowCharacterStyle">
+                  <div class="auth-eyes auth-eyes--bare" :class="{ 'shake-head': isSceneError }">
+                    <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(5)" />
+                    <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(5)" />
+                  </div>
+                  <div class="auth-scene-mouth auth-scene-mouth--line" :class="{ 'shake-head': isSceneError }" :style="yellowMouthStyle" />
+                </div>
+
+                <div class="auth-scene__status">
+                  <p class="text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
+                    Live Interaction
+                  </p>
+                  <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                    鼠标移动会被角色捕捉，聚焦账号与密码输入时左侧角色会跟随切换不同姿态。
                   </p>
                 </div>
-              </template>
+              </div>
+            </div>
 
-              <div class="grid grid-cols-2 gap-2 rounded-2xl bg-default/70 p-1">
+            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <article
+                v-for="item in showcaseItems"
+                :key="item.title"
+                class="rounded-[24px] border border-white/70 bg-white/54 p-4 shadow-[0_22px_42px_-34px_rgba(15,23,42,0.25)] backdrop-blur-md dark:border-white/10 dark:bg-white/[0.04]"
+              >
+                <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,color-mix(in_srgb,var(--site-primary-color)_18%,white),color-mix(in_srgb,var(--site-secondary-color)_12%,white))] text-[var(--site-primary-color)] shadow-[0_20px_34px_-26px_rgba(56,189,248,0.55)] dark:bg-[linear-gradient(135deg,color-mix(in_srgb,var(--site-primary-color)_24%,transparent),color-mix(in_srgb,var(--site-secondary-color)_16%,transparent))] dark:text-white"
+                >
+                  <UIcon name="i-lucide-sparkles" class="size-4.5" />
+                </div>
+                <h2 class="text-sm font-semibold tracking-[-0.02em] text-slate-900 dark:text-slate-100">
+                  {{ item.title }}
+                </h2>
+                <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
+                  {{ item.description }}
+                </p>
+              </article>
+            </div>
+
+            <div class="rounded-[28px] border border-white/75 bg-[linear-gradient(135deg,rgba(255,255,255,0.7),rgba(248,250,252,0.56))] p-5 shadow-[0_28px_50px_-40px_rgba(15,23,42,0.26)] backdrop-blur-md dark:border-white/10 dark:bg-[linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))]">
+              <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="max-w-[28rem]">
+                  <p class="text-[0.72rem] font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
+                    Yunyu Account
+                  </p>
+                  <p class="mt-3 text-base font-semibold tracking-[-0.03em] text-slate-900 dark:text-slate-100">
+                    一个账户，连接阅读、收藏、评论与后台管理。
+                  </p>
+                  <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
+                    云屿把内容浏览与身份入口放在同一套体验里，减少切换时的割裂感。
+                  </p>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                  <span class="rounded-full border border-white/80 bg-white/72 px-3 py-1.5 text-xs font-medium text-slate-600 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-300">阅读同步</span>
+                  <span class="rounded-full border border-white/80 bg-white/72 px-3 py-1.5 text-xs font-medium text-slate-600 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-300">统一认证</span>
+                  <span class="rounded-full border border-white/80 bg-white/72 px-3 py-1.5 text-xs font-medium text-slate-600 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-300">移动优先</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="relative flex items-center px-4 py-5 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+          <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.44),rgba(248,250,252,0.22))] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))]" />
+
+          <div class="relative mx-auto w-full max-w-[430px]">
+            <div class="rounded-[30px] border border-white/75 bg-white/78 p-5 shadow-[0_30px_90px_-52px_rgba(15,23,42,0.42)] backdrop-blur-xl sm:p-6 dark:border-white/10 dark:bg-slate-950/58">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <p class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-[var(--site-primary-color)]">
+                    Account Center
+                  </p>
+                  <h2 class="mt-3 text-[1.7rem] font-semibold tracking-[-0.05em] text-slate-950 [font-family:var(--font-display)] dark:text-white">
+                    {{ formTitle }}
+                  </h2>
+                  <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                    {{ formDescription }}
+                  </p>
+                </div>
+
+                <ThemeModeSwitch variant="icon" />
+              </div>
+
+              <div
+                v-if="redirectHint"
+                class="mt-5 rounded-[22px] border border-[color:color-mix(in_srgb,var(--site-primary-color)_16%,white)] bg-[color:color-mix(in_srgb,var(--site-primary-color)_8%,white)] px-4 py-3 text-sm leading-6 text-slate-600 dark:border-[color:color-mix(in_srgb,var(--site-primary-color)_22%,transparent)] dark:bg-[color:color-mix(in_srgb,var(--site-primary-color)_10%,transparent)] dark:text-slate-300"
+              >
+                {{ redirectHint }}
+              </div>
+
+              <div class="mt-6 grid grid-cols-2 gap-2 rounded-[24px] border border-white/80 bg-slate-100/80 p-1.5 dark:border-white/10 dark:bg-white/[0.04]">
                 <button
                   type="button"
-                  class="rounded-2xl px-4 py-3 text-sm font-medium transition"
+                  class="rounded-[18px] px-4 py-3 text-sm font-medium transition"
                   :class="authMode === 'login'
-                    ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20'
-                    : 'text-toned hover:bg-default/80'"
+                    ? 'bg-[linear-gradient(135deg,var(--site-primary-color),color-mix(in_srgb,var(--site-primary-color)_68%,white))] text-white shadow-[0_18px_34px_-24px_rgba(56,189,248,0.72)]'
+                    : 'text-slate-500 hover:bg-white/75 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-white'"
                   @click="switchAuthMode('login')"
                 >
                   登录
                 </button>
                 <button
                   type="button"
-                  class="rounded-2xl px-4 py-3 text-sm font-medium transition"
+                  class="rounded-[18px] px-4 py-3 text-sm font-medium transition"
                   :class="authMode === 'register'
-                    ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20'
-                    : 'text-toned hover:bg-default/80'"
+                    ? 'bg-[linear-gradient(135deg,var(--site-primary-color),color-mix(in_srgb,var(--site-primary-color)_68%,white))] text-white shadow-[0_18px_34px_-24px_rgba(56,189,248,0.72)]'
+                    : 'text-slate-500 hover:bg-white/75 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-white'"
                   @click="switchAuthMode('register')"
                 >
                   注册
                 </button>
               </div>
 
-              <form class="space-y-6" @submit.prevent="handleSubmit">
-                <UFormField v-if="authMode === 'login'" name="account" label="账号">
+              <form class="mt-6 space-y-5" @submit.prevent="handleSubmit">
+                <UFormField
+                  v-if="authMode === 'login'"
+                  name="account"
+                  label="账号"
+                  :ui="{ label: 'mb-2 text-sm font-medium text-slate-700 dark:text-slate-300' }"
+                >
                   <UInput
                     v-model="formState.account"
                     size="xl"
                     placeholder="请输入邮箱或用户名"
                     class="w-full"
-                    :ui="{
-                      base: 'w-full rounded-2xl'
-                    }"
-                  />
+                    :ui="inputUi"
+                    @focus="handleFieldFocus('account')"
+                    @blur="handleFieldBlur('account')"
+                  >
+                    <template #leading>
+                      <UIcon name="i-lucide-user-round" class="size-4 text-slate-400" />
+                    </template>
+                  </UInput>
                 </UFormField>
 
-                <UFormField v-else name="email" label="邮箱">
+                <UFormField
+                  v-else
+                  name="email"
+                  label="邮箱"
+                  :ui="{ label: 'mb-2 text-sm font-medium text-slate-700 dark:text-slate-300' }"
+                >
                   <UInput
                     v-model="formState.email"
                     type="email"
                     size="xl"
                     placeholder="请输入注册邮箱"
                     class="w-full"
-                    :ui="{
-                      base: 'w-full rounded-2xl'
-                    }"
-                  />
+                    :ui="inputUi"
+                    @focus="handleFieldFocus('email')"
+                    @blur="handleFieldBlur('email')"
+                  >
+                    <template #leading>
+                      <UIcon name="i-lucide-mail" class="size-4 text-slate-400" />
+                    </template>
+                  </UInput>
                 </UFormField>
 
-                <UFormField name="password" label="密码">
+                <UFormField
+                  name="password"
+                  label="密码"
+                  :ui="{ label: 'mb-2 text-sm font-medium text-slate-700 dark:text-slate-300' }"
+                >
                   <UInput
                     v-model="formState.password"
-                    type="password"
+                    :type="passwordVisibility.password ? 'text' : 'password'"
                     size="xl"
                     placeholder="请输入密码"
                     class="w-full"
-                    :ui="{
-                      base: 'w-full rounded-2xl'
-                    }"
-                  />
+                    :ui="inputUi"
+                    @focus="handleFieldFocus('password')"
+                    @blur="handleFieldBlur('password')"
+                  >
+                    <template #leading>
+                      <UIcon name="i-lucide-lock-keyhole" class="size-4 text-slate-400" />
+                    </template>
+                    <template #trailing>
+                      <button
+                        type="button"
+                        class="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/[0.06] dark:hover:text-slate-200"
+                        :aria-label="passwordVisibility.password ? '隐藏密码' : '显示密码'"
+                        @click="togglePasswordVisibility('password')"
+                      >
+                        <UIcon :name="passwordVisibility.password ? 'i-lucide-eye-off' : 'i-lucide-eye'" class="size-4" />
+                      </button>
+                    </template>
+                  </UInput>
                 </UFormField>
 
-                <UFormField v-if="authMode === 'register'" name="confirmPassword" label="确认密码">
+                <UFormField
+                  v-if="authMode === 'register'"
+                  name="confirmPassword"
+                  label="确认密码"
+                  :ui="{ label: 'mb-2 text-sm font-medium text-slate-700 dark:text-slate-300' }"
+                >
                   <UInput
                     v-model="formState.confirmPassword"
-                    type="password"
+                    :type="passwordVisibility.confirmPassword ? 'text' : 'password'"
                     size="xl"
                     placeholder="请再次输入密码"
                     class="w-full"
-                    :ui="{
-                      base: 'w-full rounded-2xl'
-                    }"
-                  />
+                    :ui="inputUi"
+                    @focus="handleFieldFocus('confirmPassword')"
+                    @blur="handleFieldBlur('confirmPassword')"
+                  >
+                    <template #leading>
+                      <UIcon name="i-lucide-shield-check" class="size-4 text-slate-400" />
+                    </template>
+                    <template #trailing>
+                      <button
+                        type="button"
+                        class="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/[0.06] dark:hover:text-slate-200"
+                        :aria-label="passwordVisibility.confirmPassword ? '隐藏确认密码' : '显示确认密码'"
+                        @click="togglePasswordVisibility('confirmPassword')"
+                      >
+                        <UIcon :name="passwordVisibility.confirmPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'" class="size-4" />
+                      </button>
+                    </template>
+                  </UInput>
                 </UFormField>
+
+                <div class="flex items-center justify-between gap-3 text-sm">
+                  <p class="text-slate-500 dark:text-slate-400">
+                    {{ authMode === 'login' ? '支持邮箱或用户名登录' : '密码需为8-20位，并包含字母和数字' }}
+                  </p>
+                  <span class="rounded-full border border-white/80 bg-white/72 px-3 py-1 text-xs font-medium text-slate-500 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-400">
+                    {{ authMode === 'login' ? '快捷认证' : '安全校验' }}
+                  </span>
+                </div>
 
                 <button
                   type="submit"
-                  class="inline-flex min-h-14 w-full items-center justify-center rounded-2xl bg-sky-500 px-6 text-base font-semibold text-white shadow-lg shadow-sky-500/20 transition hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-70 dark:bg-sky-400 dark:text-slate-950 dark:shadow-sky-400/10 dark:hover:bg-sky-300 dark:focus:ring-sky-300 dark:focus:ring-offset-slate-950"
+                  class="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-[22px] bg-[linear-gradient(135deg,var(--site-primary-color),color-mix(in_srgb,var(--site-secondary-color)_36%,var(--site-primary-color)))] px-6 text-base font-semibold text-white shadow-[0_22px_44px_-24px_rgba(56,189,248,0.58)] transition hover:-translate-y-0.5 hover:brightness-[1.03] focus:outline-none focus:ring-2 focus:ring-[var(--site-primary-color)] focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-70 dark:text-slate-950 dark:focus:ring-offset-slate-950"
                   :disabled="isSubmitting"
                 >
-                  {{ submitButtonText }}
+                  <UIcon name="i-lucide-arrow-right" class="size-4" />
+                  <span>{{ submitButtonText }}</span>
                 </button>
 
-                <p class="text-center text-sm text-toned">
+                <p class="text-center text-sm leading-6 text-slate-500 dark:text-slate-400">
                   {{ authMode === 'login' ? '还没有账户？' : '已经有账户了？' }}
                   <button
                     type="button"
-                    class="font-semibold text-primary transition hover:opacity-80"
+                    class="font-semibold text-[var(--site-primary-color)] transition hover:opacity-80"
                     @click="switchAuthMode(authMode === 'login' ? 'register' : 'login')"
                   >
                     {{ authMode === 'login' ? '立即注册' : '返回登录' }}
                   </button>
                 </p>
               </form>
-            </UCard>
-          </section>
-        </div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   </main>
 </template>
+
+<style scoped>
+.auth-scene {
+  min-height: 20rem;
+}
+
+.auth-scene__ripple {
+  position: absolute;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.45);
+  background: rgb(255 255 255 / 0.22);
+  backdrop-filter: blur(8px);
+}
+
+.auth-scene__ripple--one {
+  left: 1.75rem;
+  top: 2rem;
+  height: 5rem;
+  width: 5rem;
+  animation: login-float 10s ease-in-out infinite;
+}
+
+.auth-scene__ripple--two {
+  right: 2rem;
+  top: 4.4rem;
+  height: 4rem;
+  width: 4rem;
+  animation: login-float 12s ease-in-out infinite reverse;
+}
+
+.auth-scene__status {
+  position: absolute;
+  left: 1.5rem;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  max-width: 18rem;
+}
+
+.auth-character {
+  position: absolute;
+  bottom: 0;
+  transform-origin: bottom center;
+  transition: transform 0.7s ease, height 0.7s ease;
+}
+
+.auth-character--purple {
+  left: 3.25rem;
+  width: 10rem;
+  height: 15.3rem;
+  border-radius: 1.25rem 1.25rem 0 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--site-primary-color) 76%, white) 0%, color-mix(in srgb, var(--site-primary-color) 88%, #2563eb) 100%);
+  box-shadow: 0 28px 60px -42px rgba(56, 189, 248, 0.55);
+  z-index: 1;
+}
+
+.auth-character--ink {
+  left: 11.8rem;
+  width: 6.4rem;
+  height: 12.5rem;
+  border-radius: 1rem 1rem 0 0;
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.98));
+  box-shadow: 0 22px 50px -42px rgba(15, 23, 42, 0.45);
+  z-index: 2;
+}
+
+.auth-character--orange {
+  left: 1.6rem;
+  width: 12.8rem;
+  height: 9.8rem;
+  border-radius: 999px 999px 0 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--site-secondary-color) 74%, white) 0%, color-mix(in srgb, var(--site-secondary-color) 86%, #fb923c) 100%);
+  z-index: 3;
+}
+
+.auth-character--yellow {
+  left: 15.5rem;
+  width: 7.3rem;
+  height: 10.9rem;
+  border-radius: 999px 999px 0 0;
+  background: linear-gradient(180deg, #fde68a 0%, #facc15 100%);
+  z-index: 4;
+}
+
+.auth-eyes {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: transform 0.6s ease;
+}
+
+.auth-eyes--white {
+  left: 2.1rem;
+  top: 2rem;
+}
+
+.auth-character--ink .auth-eyes--white {
+  left: 1.5rem;
+  top: 1.65rem;
+  gap: 0.8rem;
+}
+
+.auth-eyes--bare {
+  left: 4.6rem;
+  top: 4.1rem;
+}
+
+.auth-character--yellow .auth-eyes--bare {
+  left: 2.6rem;
+  top: 2.15rem;
+  gap: 0.8rem;
+}
+
+.auth-eyeball {
+  display: flex;
+  height: 1.1rem;
+  width: 1.1rem;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 999px;
+  background: white;
+  transition: height 0.15s ease;
+}
+
+.auth-eyeball--small {
+  height: 1rem;
+  width: 1rem;
+}
+
+.auth-eyeball--blink {
+  height: 2px;
+}
+
+.auth-pupil {
+  height: 0.45rem;
+  width: 0.45rem;
+  border-radius: 999px;
+  background: #1e293b;
+  transition: transform 0.14s ease-out;
+}
+
+.auth-pupil--small {
+  height: 0.38rem;
+  width: 0.38rem;
+}
+
+.auth-pupil--bare {
+  height: 0.75rem;
+  width: 0.75rem;
+}
+
+.auth-scene-mouth {
+  position: absolute;
+  transition: transform 0.6s ease, opacity 0.6s ease;
+}
+
+.auth-scene-mouth--sad {
+  left: 5rem;
+  top: 5.8rem;
+  height: 0.85rem;
+  width: 1.8rem;
+  border: 3px solid #1e293b;
+  border-top: none;
+  border-radius: 0 0 999px 999px;
+  opacity: 0;
+}
+
+.auth-scene-mouth--sad.visible {
+  opacity: 1;
+}
+
+.auth-scene-mouth--line {
+  left: 2.1rem;
+  top: 4.7rem;
+  height: 0.25rem;
+  width: 2rem;
+  border-radius: 999px;
+  background: #1e293b;
+}
+
+.login-orb {
+  animation: login-float 9s ease-in-out infinite;
+}
+
+.login-orb-delayed {
+  animation: login-float 11s ease-in-out infinite reverse;
+}
+
+.shake-head {
+  animation: shakeHead 0.8s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes login-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(0, -14px, 0) scale(1.04);
+  }
+}
+
+@keyframes shakeHead {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  10% {
+    translate: -9px 0;
+  }
+
+  20% {
+    translate: 7px 0;
+  }
+
+  30% {
+    translate: -6px 0;
+  }
+
+  40% {
+    translate: 5px 0;
+  }
+
+  50% {
+    translate: -4px 0;
+  }
+
+  60% {
+    translate: 3px 0;
+  }
+
+  70% {
+    translate: -2px 0;
+  }
+
+  80% {
+    translate: 1px 0;
+  }
+
+  90% {
+    translate: -0.5px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-scene__ripple--one,
+  .auth-scene__ripple--two,
+  .login-orb,
+  .login-orb-delayed {
+    animation: none;
+  }
+}
+</style>

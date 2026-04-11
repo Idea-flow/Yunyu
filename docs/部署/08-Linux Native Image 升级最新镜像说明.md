@@ -15,6 +15,10 @@
 ```bash
 docker compose -f docker/native-image/docker-compose.yml pull yunyu-server-native && \
 docker compose -f docker/native-image/docker-compose.yml up -d yunyu-server-native
+
+
+
+docker compose pull yunyu-server-native && docker compose up -d yunyu-server-native
 ```
 
 ## 二、当前场景说明
