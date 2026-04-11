@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import YunyuImage from '~/components/common/YunyuImage.vue'
+import YunyuCloudDrift from '~/components/motion/YunyuCloudDrift.vue'
 import YunyuStarfieldFlow from '~/components/motion/YunyuStarfieldFlow.vue'
 
 /**
@@ -14,6 +15,7 @@ withDefaults(defineProps<{
   contentWrapperClass?: string
   contentContainerClass?: string
   showStarry?: boolean
+  motionMode?: 'starfield' | 'clouds' | 'none'
   starfieldVariant?: 'sky' | 'warm' | 'neutral'
   showHeroMarker?: boolean
 }>(), {
@@ -24,6 +26,7 @@ withDefaults(defineProps<{
   contentWrapperClass: 'absolute inset-x-0 bottom-0 z-10',
   contentContainerClass: 'mx-auto max-w-[1440px] px-5 pb-8 sm:px-8 sm:pb-12 lg:px-10 lg:pb-14',
   showStarry: true,
+  motionMode: 'starfield',
   starfieldVariant: 'sky',
   showHeroMarker: true
 })
@@ -53,7 +56,12 @@ withDefaults(defineProps<{
 
         <div class="pointer-events-none absolute inset-0" :class="overlayClass" />
         <YunyuStarfieldFlow
-          v-if="showStarry"
+          v-if="showStarry && motionMode === 'starfield'"
+          :variant="starfieldVariant"
+          density="soft"
+        />
+        <YunyuCloudDrift
+          v-else-if="showStarry && motionMode === 'clouds'"
           :variant="starfieldVariant"
           density="soft"
         />

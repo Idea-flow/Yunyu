@@ -578,6 +578,7 @@ onBeforeUnmount(() => {
       <PostCoverHero
         :src="post.coverUrl"
         :alt="post.title"
+        motion-mode="clouds"
       >
         <template #center>
           <YunyuPoetryTypewriter variant="sky" />

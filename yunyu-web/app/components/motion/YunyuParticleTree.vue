@@ -29,7 +29,9 @@ interface TreeBranch {
 interface TreeLeaf {
   x: number
   y: number
-  radius: number
+  radiusX: number
+  radiusY: number
+  rotation: number
   revealAt: number
   driftPhase: number
   driftAmplitude: number
@@ -62,6 +64,14 @@ interface TreePalette {
   dust: string
 }
 
+interface TreeCanvasStage {
+  stageWidth: number
+  canvasWidth: number
+  canvasLeft: number
+  paddingLeft: number
+  paddingRight: number
+}
+
 const rootRef = ref<HTMLDivElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const colorMode = useColorMode()
@@ -75,16 +85,23 @@ const props = withDefaults(defineProps<YunyuParticleTreeProps>(), {
 
 const ENTRANCE_DURATION = 5600
 const TREE_SEED = 20260412
+const ENTRANCE_FRAME_INTERVAL = 1000 / 24
+const STEADY_FRAME_INTERVAL = 1000 / 14
 
 let animationFrameId: number | null = null
 let reducedMotionMediaQuery: MediaQueryList | null = null
 let canvasContext: CanvasRenderingContext2D | null = null
 let treeScene: TreeScene | null = null
 let treePalette: TreePalette | null = null
+let cachedTreeCanvas: HTMLCanvasElement | null = null
+let intersectionObserver: IntersectionObserver | null = null
 let sceneWidth = 0
 let sceneHeight = 0
 let animationStartedAt = 0
 let hasPlayedEntrance = false
+let lastFrameTimestamp = 0
+let isTreeVisible = true
+let hasPermanentlyStopped = false
 
 /**
  * 创建可复现的随机数生成器。
@@ -159,18 +176,20 @@ function resolveTreePalette(): TreePalette {
  *
  * @param width 画布宽度
  * @param height 画布高度
+ * @param paddingLeft 画布左侧留白
+ * @param paddingRight 画布右侧留白
  * @returns 树形场景数据
  */
-function createTreeScene(width: number, height: number): TreeScene {
+function createTreeScene(width: number, height: number, paddingLeft: number, paddingRight: number): TreeScene {
   const random = createSeededRandom(TREE_SEED + Math.round(width) * 3 + Math.round(height) * 7)
   const branches: TreeBranch[] = []
   const leaves: TreeLeaf[] = []
   const particles: TreeParticle[] = []
   const maxDepth = width < 520 ? 4 : 5
-  const areaWidth = clamp(width * props.treeAreaRatio, Math.min(props.minTreeWidth, width * 0.8), Math.min(props.maxTreeWidth, width * 0.84))
-  const areaLeft = width * 0.01 + props.anchorOffsetX
+  const areaLeft = paddingLeft
+  const areaWidth = Math.max(width - paddingLeft - paddingRight, 220)
   const originX = areaLeft + areaWidth * 0.04
-  const originY = height * 0.62
+  const originY = height * 0.73
 
   /**
    * 递归添加树枝。
@@ -195,12 +214,12 @@ function createTreeScene(width: number, height: number): TreeScene {
   ) {
     const endX = startX + Math.cos(angle) * length
     const endY = startY + Math.sin(angle) * length
-    const growDuration = clamp(0.19 - depth * 0.018 + random() * 0.03, 0.08, 0.22)
+    const growDuration = clamp(0.18 - depth * 0.018 + random() * 0.024, 0.08, 0.2)
     const midX = startX + (endX - startX) * 0.5
     const midY = startY + (endY - startY) * 0.5
     const normalX = -Math.sin(angle)
     const normalY = Math.cos(angle)
-    const bendOffset = (depth === 0 ? -length * 0.08 : 0) + (random() - 0.5) * length * 0.18
+    const bendOffset = (depth === 0 ? -length * 0.092 : 0) + (random() - 0.5) * length * (depth === 0 ? 0.08 : 0.07)
     const controlX = midX + normalX * bendOffset
     const controlY = midY + normalY * bendOffset
 
@@ -216,41 +235,55 @@ function createTreeScene(width: number, height: number): TreeScene {
       growStart: clamp(startProgress, 0, 0.92),
       growDuration,
       swayPhase: random() * Math.PI * 2,
-      swayAmplitude: Math.max(0.12, (maxDepth - depth + 1) * 0.12)
+      swayAmplitude: Math.max(0.05, (maxDepth - depth + 1) * 0.055)
     })
 
-    if (depth >= maxDepth || length < Math.max(areaWidth * 0.08, 24)) {
-      const clusterCount = width < 520 ? 6 : 9
+    if (depth >= maxDepth || length < Math.max(areaWidth * 0.1, 28)) {
+      const clusterCount = width < 520 ? 2 : 3
 
       for (let index = 0; index < clusterCount; index += 1) {
+        const spreadRatioX = depth <= 2 ? 0.42 : 0.34
+        const spreadRatioY = depth <= 2 ? 0.04 : 0.03
         leaves.push({
-          x: endX + (random() - 0.5) * length * 0.34,
-          y: endY + (random() - 0.5) * length * 0.22,
-          radius: 0.9 + random() * 2,
+          x: endX + (random() - 0.5) * length * spreadRatioX,
+          y: endY + (random() - 0.5) * length * spreadRatioY,
+          radiusX: 2.2 + random() * 2.8,
+          radiusY: 0.26 + random() * 0.26,
+          rotation: angle + (random() - 0.5) * 0.12,
           revealAt: clamp(startProgress + growDuration * 0.72 + random() * 0.08, 0.12, 0.98),
           driftPhase: random() * Math.PI * 2,
-          driftAmplitude: 0.35 + random() * 1.1
+          driftAmplitude: 0.08 + random() * 0.16
         })
       }
 
       return
     }
 
-    const childCount = depth <= 1 ? 3 : (random() > 0.42 ? 3 : 2)
+    const childCount = depth === 0 ? 4 : (depth === 1 ? 3 : 2)
 
     for (let index = 0; index < childCount; index += 1) {
-      const direction = childCount === 2
-        ? (index === 0 ? -1 : 1)
-        : (index === 0 ? -1 : (index === 1 ? 0 : 1))
-      const branchBias = direction < 0
-        ? -(0.36 + random() * 0.18)
-        : (direction > 0 ? 0.22 + random() * 0.12 : -(0.08 + random() * 0.08))
-      const childAngle = angle + branchBias + (random() - 0.5) * 0.14
-      const childLength = length * (0.62 + random() * 0.12)
-      const childWidth = Math.max(lineWidth * (0.64 + random() * 0.06), 0.9)
-      const childStartRatio = depth === 0 ? 0.28 + random() * 0.26 : 0.36 + random() * 0.3
+      const branchBiases = childCount === 4
+        ? [-0.42, -0.24, -0.08, 0.06]
+        : (childCount === 3 ? [-0.14, 0.02, 0.1] : [-0.08, 0.035])
+      const lengthRatios = childCount === 4
+        ? [0.38, 0.56, 0.52, 0.32]
+        : (childCount === 3 ? [0.56, 0.52, 0.46] : [0.5, 0.42])
+      const widthRatios = childCount === 4
+        ? [0.52, 0.62, 0.58, 0.5]
+        : (childCount === 3 ? [0.62, 0.58, 0.54] : [0.62, 0.56])
+      const startRatios = childCount === 4
+        ? [0.14, 0.34, 0.58, 0.79]
+        : (childCount === 3 ? [0.3, 0.54, 0.76] : [0.42, 0.72])
+      const startYOffset = childCount === 4
+        ? [-8, -4, 1.5, 8]
+        : (childCount === 3 ? [-3.5, 1, 5] : [-1.5, 3.2])
+      const branchBias = branchBiases[index] + (random() - 0.5) * (depth === 0 ? 0.032 : 0.026)
+      const childAngle = angle + branchBias
+      const childLength = length * (lengthRatios[index] + random() * (depth === 0 ? 0.035 : 0.03))
+      const childWidth = Math.max(lineWidth * widthRatios[index], 0.82)
+      const childStartRatio = startRatios[index] + random() * (depth === 0 ? 0.018 : 0.03)
       const childStartX = startX + (endX - startX) * childStartRatio
-      const childStartY = startY + (endY - startY) * childStartRatio
+      const childStartY = startY + (endY - startY) * childStartRatio + startYOffset[index]
 
       appendBranch(
         childStartX,
@@ -267,25 +300,25 @@ function createTreeScene(width: number, height: number): TreeScene {
   appendBranch(
     originX,
     originY,
-    Math.min(areaWidth, height) * 0.58,
-    -0.08,
-    Math.max(areaWidth * 0.015, 5),
+    Math.min(areaWidth, height) * 0.7,
+    -0.028,
+    Math.max(areaWidth * 0.024, 7.6),
     0,
     0.02
   )
 
-  const particleCount = width < 520 ? 10 : 16
+  const particleCount = width < 520 ? 3 : 4
 
   for (let index = 0; index < particleCount; index += 1) {
     particles.push({
       x: areaLeft + areaWidth * (0.22 + random() * 0.62),
-      y: height * (0.22 + random() * 0.42),
-      radius: 0.55 + random() * 1.35,
-      alpha: 0.12 + random() * 0.2,
-      driftX: 2 + random() * 8,
-      driftY: 1.5 + random() * 6,
+      y: height * (0.34 + random() * 0.16),
+      radius: 0.4 + random() * 0.8,
+      alpha: 0.04 + random() * 0.05,
+      driftX: 0.8 + random() * 1.8,
+      driftY: 0.6 + random() * 1.4,
       phase: random() * Math.PI * 2,
-      speed: 0.18 + random() * 0.32
+      speed: 0.08 + random() * 0.12
     })
   }
 
@@ -295,6 +328,85 @@ function createTreeScene(width: number, height: number): TreeScene {
     particles,
     areaLeft,
     areaWidth
+  }
+}
+
+/**
+ * 计算粒子树实际绘制画布信息。
+ * 作用：将粒子树限制在首页左侧局部区域，避免整屏 canvas 持续重绘造成额外性能压力。
+ *
+ * @param width 首屏容器宽度
+ * @returns 粒子树画布尺寸与偏移信息
+ */
+function resolveCanvasStage(width: number): TreeCanvasStage {
+  const stageWidth = clamp(
+    width * props.treeAreaRatio,
+    Math.min(props.minTreeWidth, width * 0.8),
+    Math.min(props.maxTreeWidth, width * 0.84)
+  )
+  const paddingLeft = 52
+  const paddingRight = 92
+
+  return {
+    stageWidth,
+    canvasWidth: stageWidth + paddingLeft + paddingRight,
+    canvasLeft: width * 0.01 + props.anchorOffsetX - paddingLeft,
+    paddingLeft,
+    paddingRight
+  }
+}
+
+/**
+ * 构建静态树身缓存画布。
+ * 作用：在入场动画结束后复用缓存树身，只让少量粒子继续运动，减少每帧重复绘制枝叶的开销。
+ *
+ * @param pixelRatio 当前设备像素比
+ */
+function rebuildTreeCache(pixelRatio: number) {
+  if (!import.meta.client || !treeScene || !treePalette) {
+    return
+  }
+
+  const cacheCanvas = document.createElement('canvas')
+  cacheCanvas.width = Math.round(sceneWidth * pixelRatio)
+  cacheCanvas.height = Math.round(sceneHeight * pixelRatio)
+
+  const cacheContext = cacheCanvas.getContext('2d')
+
+  if (!cacheContext) {
+    cachedTreeCanvas = null
+    return
+  }
+
+  cacheContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
+  cacheContext.lineCap = 'round'
+  cacheContext.lineJoin = 'round'
+  cacheContext.clearRect(0, 0, sceneWidth, sceneHeight)
+
+  treeScene.branches.forEach(branch => {
+    drawTreeBranch(cacheContext, branch, 1, 0, false)
+  })
+
+  treeScene.leaves.forEach(leaf => {
+    drawTreeLeaf(cacheContext, leaf, 1, 0, false)
+  })
+
+  cachedTreeCanvas = cacheCanvas
+}
+
+/**
+ * 绘制静态树形。
+ * 作用：在首屏离场后只保留静态树身，彻底停止后续动态效果，同时维持首屏设计完整性。
+ */
+function renderStaticTree() {
+  if (!canvasContext) {
+    return
+  }
+
+  canvasContext.clearRect(0, 0, sceneWidth, sceneHeight)
+
+  if (cachedTreeCanvas) {
+    canvasContext.drawImage(cachedTreeCanvas, 0, 0, sceneWidth, sceneHeight)
   }
 }
 
@@ -313,7 +425,8 @@ function setupTreeScene() {
     return
   }
 
-  const pixelRatio = Math.min(window.devicePixelRatio || 1, 2)
+  const { canvasWidth, canvasLeft, paddingLeft, paddingRight } = resolveCanvasStage(width)
+  const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.25)
   const canvas = canvasRef.value
   const context = canvas.getContext('2d')
 
@@ -321,20 +434,30 @@ function setupTreeScene() {
     return
   }
 
-  canvas.width = Math.round(width * pixelRatio)
+  canvas.width = Math.round(canvasWidth * pixelRatio)
   canvas.height = Math.round(height * pixelRatio)
-  canvas.style.width = `${width}px`
+  canvas.style.width = `${canvasWidth}px`
   canvas.style.height = `${height}px`
+  canvas.style.left = `${canvasLeft}px`
+  canvas.style.top = '0'
 
   context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
   context.lineCap = 'round'
   context.lineJoin = 'round'
 
   canvasContext = context
-  sceneWidth = width
+  sceneWidth = canvasWidth
   sceneHeight = height
   treePalette = resolveTreePalette()
-  treeScene = createTreeScene(width, height)
+  treeScene = createTreeScene(canvasWidth, height, paddingLeft, paddingRight)
+  rebuildTreeCache(pixelRatio)
+  lastFrameTimestamp = 0
+
+  if (hasPermanentlyStopped) {
+    renderStaticTree()
+    stopTreeAnimation()
+    return
+  }
 
   if (!hasPlayedEntrance) {
     animationStartedAt = 0
@@ -366,12 +489,14 @@ function stopTreeAnimation() {
  * @param branch 当前树枝数据
  * @param growthProgress 全局生长进度
  * @param elapsedSeconds 当前已流逝秒数
+ * @param enableOrganicMotion 是否启用持续摆动
  */
 function drawTreeBranch(
   context: CanvasRenderingContext2D,
   branch: TreeBranch,
   growthProgress: number,
-  elapsedSeconds: number
+  elapsedSeconds: number,
+  enableOrganicMotion = true
 ) {
   if (!treePalette) {
     return
@@ -388,7 +513,7 @@ function drawTreeBranch(
   }
 
   const easedProgress = easeOutCubic(localProgress)
-  const swayRatio = growthProgress >= 1 && !prefersReducedMotion.value
+  const swayRatio = enableOrganicMotion && growthProgress >= 1 && !prefersReducedMotion.value
     ? Math.sin(elapsedSeconds * 0.6 + branch.swayPhase) * branch.swayAmplitude * (branch.depth + 1)
     : 0
   const controlSwayRatio = swayRatio * 0.42
@@ -400,10 +525,10 @@ function drawTreeBranch(
   context.beginPath()
   context.moveTo(branch.startX, branch.startY)
   context.quadraticCurveTo(controlX, controlY, tipX, tipY)
-  context.lineWidth = branch.width + 1.4
-  context.strokeStyle = `rgba(${treePalette.branchGlow}, ${0.05 + (maxDepthOpacity(branch.depth) * 0.08)})`
-  context.shadowBlur = 14
-  context.shadowColor = `rgba(${treePalette.branchGlow}, 0.16)`
+  context.lineWidth = branch.width + (branch.depth === 0 ? 2.2 : 0.9)
+  context.strokeStyle = `rgba(${treePalette.branchGlow}, ${0.03 + (maxDepthOpacity(branch.depth) * 0.045)})`
+  context.shadowBlur = branch.depth === 0 ? 12 : 8
+  context.shadowColor = `rgba(${treePalette.branchGlow}, ${branch.depth === 0 ? 0.14 : 0.08})`
   context.stroke()
   context.shadowBlur = 0
 
@@ -411,14 +536,14 @@ function drawTreeBranch(
   context.moveTo(branch.startX, branch.startY)
   context.quadraticCurveTo(controlX, controlY, tipX, tipY)
   context.lineWidth = branch.width
-  context.strokeStyle = `rgba(${treePalette.branch}, ${0.28 + (maxDepthOpacity(branch.depth) * 0.18)})`
+  context.strokeStyle = `rgba(${treePalette.branch}, ${0.34 + (maxDepthOpacity(branch.depth) * 0.22)})`
   context.stroke()
 
   context.beginPath()
   context.moveTo(branch.startX, branch.startY)
   context.quadraticCurveTo(controlX, controlY, tipX, tipY)
-  context.lineWidth = Math.max(branch.width * 0.36, 0.55)
-  context.strokeStyle = 'rgba(255, 255, 255, 0.08)'
+  context.lineWidth = Math.max(branch.width * 0.18, 0.4)
+  context.strokeStyle = 'rgba(255, 255, 255, 0.04)'
   context.stroke()
 }
 
@@ -441,12 +566,14 @@ function maxDepthOpacity(depth: number) {
  * @param leaf 当前叶粒数据
  * @param growthProgress 全局生长进度
  * @param elapsedSeconds 当前已流逝秒数
+ * @param enableOrganicMotion 是否启用持续漂移
  */
 function drawTreeLeaf(
   context: CanvasRenderingContext2D,
   leaf: TreeLeaf,
   growthProgress: number,
-  elapsedSeconds: number
+  elapsedSeconds: number,
+  enableOrganicMotion = true
 ) {
   if (!treePalette) {
     return
@@ -459,31 +586,56 @@ function drawTreeLeaf(
   }
 
   const easedProgress = easeOutCubic(localProgress)
-  const driftX = prefersReducedMotion.value
+  const driftX = prefersReducedMotion.value || !enableOrganicMotion
     ? 0
     : Math.sin(elapsedSeconds * 0.86 + leaf.driftPhase) * leaf.driftAmplitude
-  const driftY = prefersReducedMotion.value
+  const driftY = prefersReducedMotion.value || !enableOrganicMotion
     ? 0
     : Math.cos(elapsedSeconds * 0.72 + leaf.driftPhase) * leaf.driftAmplitude * 0.42
-  const alpha = 0.14 + easedProgress * 0.18
+  const alpha = 0.1 + easedProgress * 0.12
 
   context.beginPath()
   context.fillStyle = `rgba(${treePalette.leaf}, ${alpha})`
   context.ellipse(
     leaf.x + driftX,
     leaf.y + driftY,
-    leaf.radius * (1 + easedProgress * 0.12),
-    leaf.radius * 0.64,
-    Math.PI * 0.18,
+    leaf.radiusX * (1 + easedProgress * 0.08),
+    leaf.radiusY,
+    leaf.rotation,
     0,
     Math.PI * 2
   )
   context.fill()
 
   context.beginPath()
-  context.fillStyle = `rgba(${treePalette.leafSoft}, ${0.1 + easedProgress * 0.14})`
-  context.arc(leaf.x + driftX * 0.7, leaf.y + driftY * 0.7, Math.max(leaf.radius * 0.34, 0.6), 0, Math.PI * 2)
+  context.fillStyle = `rgba(${treePalette.leafSoft}, ${0.05 + easedProgress * 0.07})`
+  context.ellipse(
+    leaf.x + driftX * 0.55,
+    leaf.y + driftY * 0.55,
+    Math.max(leaf.radiusX * 0.32, 0.7),
+    Math.max(leaf.radiusY * 0.5, 0.26),
+    leaf.rotation,
+    0,
+    Math.PI * 2
+  )
   context.fill()
+
+  const axisLength = leaf.radiusX * 0.48
+  const axisCos = Math.cos(leaf.rotation)
+  const axisSin = Math.sin(leaf.rotation)
+
+  context.beginPath()
+  context.moveTo(
+    leaf.x + driftX - axisCos * axisLength,
+    leaf.y + driftY - axisSin * axisLength
+  )
+  context.lineTo(
+    leaf.x + driftX + axisCos * axisLength,
+    leaf.y + driftY + axisSin * axisLength
+  )
+  context.lineWidth = Math.max(leaf.radiusY * 0.42, 0.18)
+  context.strokeStyle = `rgba(255, 255, 255, ${0.035 + easedProgress * 0.03})`
+  context.stroke()
 }
 
 /**
@@ -501,13 +653,13 @@ function drawTreeParticle(
   growthProgress: number,
   elapsedSeconds: number
 ) {
-  if (!treePalette || growthProgress < 0.68) {
+  if (!treePalette || growthProgress < 0.72) {
     return
   }
 
   const visibility = prefersReducedMotion.value
-    ? particle.alpha * 0.58
-    : particle.alpha * (0.65 + Math.sin(elapsedSeconds * particle.speed + particle.phase) * 0.22)
+    ? particle.alpha * 0.56
+    : particle.alpha * (0.58 + Math.sin(elapsedSeconds * particle.speed + particle.phase) * 0.18)
   const x = particle.x + (prefersReducedMotion.value ? 0 : Math.sin(elapsedSeconds * particle.speed + particle.phase) * particle.driftX)
   const y = particle.y + (prefersReducedMotion.value ? 0 : Math.cos(elapsedSeconds * particle.speed * 0.8 + particle.phase) * particle.driftY)
 
@@ -519,12 +671,12 @@ function drawTreeParticle(
 
 /**
  * 绘制当前帧。
- * 作用：统一清空画布、计算进度并依次渲染雾层、树枝、叶粒与漂浮粒子。
+ * 作用：统一清空画布、计算进度并依次渲染树枝、叶粒与漂浮粒子。
  *
  * @param timestamp 当前动画时间戳
  */
 function drawTreeFrame(timestamp: number) {
-  if (!canvasContext || !treeScene) {
+  if (!canvasContext || !treeScene || !isTreeVisible) {
     return
   }
 
@@ -536,6 +688,14 @@ function drawTreeFrame(timestamp: number) {
   const growthProgress = prefersReducedMotion.value || hasPlayedEntrance
     ? 1
     : clamp((timestamp - animationStartedAt) / ENTRANCE_DURATION, 0, 1)
+  const frameInterval = growthProgress >= 1 ? STEADY_FRAME_INTERVAL : ENTRANCE_FRAME_INTERVAL
+
+  if (lastFrameTimestamp && timestamp - lastFrameTimestamp < frameInterval) {
+    animationFrameId = window.requestAnimationFrame(drawTreeFrame)
+    return
+  }
+
+  lastFrameTimestamp = timestamp
 
   if (growthProgress >= 1) {
     hasPlayedEntrance = true
@@ -543,13 +703,17 @@ function drawTreeFrame(timestamp: number) {
 
   canvasContext.clearRect(0, 0, sceneWidth, sceneHeight)
 
-  treeScene.branches.forEach(branch => {
-    drawTreeBranch(canvasContext!, branch, growthProgress, elapsedSeconds)
-  })
+  if (growthProgress >= 1 && cachedTreeCanvas) {
+    canvasContext.drawImage(cachedTreeCanvas, 0, 0, sceneWidth, sceneHeight)
+  } else {
+    treeScene.branches.forEach(branch => {
+      drawTreeBranch(canvasContext!, branch, growthProgress, elapsedSeconds)
+    })
 
-  treeScene.leaves.forEach(leaf => {
-    drawTreeLeaf(canvasContext!, leaf, growthProgress, elapsedSeconds)
-  })
+    treeScene.leaves.forEach(leaf => {
+      drawTreeLeaf(canvasContext!, leaf, growthProgress, elapsedSeconds)
+    })
+  }
 
   treeScene.particles.forEach(particle => {
     drawTreeParticle(canvasContext!, particle, growthProgress, elapsedSeconds)
@@ -587,7 +751,47 @@ function handleReducedMotionChange() {
  */
 function handleDocumentVisibilityChange() {
   if (document.hidden) {
+    isTreeVisible = false
     stopTreeAnimation()
+    return
+  }
+
+  isTreeVisible = true
+
+  if (hasPermanentlyStopped) {
+    renderStaticTree()
+    return
+  }
+
+  setupTreeScene()
+}
+
+/**
+ * 处理首屏可见性变化。
+ * 作用：当首页首屏已经滚出视口时暂停粒子树动画，避免用户阅读正文时仍持续消耗渲染资源。
+ *
+ * @param entries 可见性观察结果
+ */
+function handleTreeIntersection(entries: IntersectionObserverEntry[]) {
+  const [entry] = entries
+
+  if (!entry) {
+    return
+  }
+
+  isTreeVisible = entry.isIntersecting
+
+  if (!isTreeVisible) {
+    hasPermanentlyStopped = true
+    renderStaticTree()
+    stopTreeAnimation()
+    intersectionObserver?.disconnect()
+    intersectionObserver = null
+    return
+  }
+
+  if (hasPermanentlyStopped) {
+    renderStaticTree()
     return
   }
 
@@ -616,6 +820,11 @@ onMounted(() => {
   reducedMotionMediaQuery.addEventListener('change', handleReducedMotionChange)
   window.addEventListener('resize', handleWindowResize, { passive: true })
   document.addEventListener('visibilitychange', handleDocumentVisibilityChange)
+  intersectionObserver = new window.IntersectionObserver(handleTreeIntersection, {
+    root: null,
+    threshold: 0.02
+  })
+  intersectionObserver.observe(rootRef.value)
   setupTreeScene()
 })
 
@@ -624,6 +833,7 @@ onBeforeUnmount(() => {
   reducedMotionMediaQuery?.removeEventListener('change', handleReducedMotionChange)
   window.removeEventListener('resize', handleWindowResize)
   document.removeEventListener('visibilitychange', handleDocumentVisibilityChange)
+  intersectionObserver?.disconnect()
 })
 </script>
 
@@ -636,19 +846,19 @@ onBeforeUnmount(() => {
 <style scoped>
 /**
  * 云屿粒子树组件样式。
- * 作用：为画布补充柔和的雾层、边缘渐隐和主题变量，让树形装饰更好地融入首页首屏。
+ * 作用：为画布补充边缘渐隐和主题变量，让树形装饰更好地融入首页首屏。
  */
 .yunyu-particle-tree {
   position: absolute;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
+  contain: layout paint;
   --yy-tree-branch-rgb: 15, 23, 42;
   --yy-tree-branch-glow-rgb: 56, 189, 248;
   --yy-tree-leaf-rgb: 51, 65, 85;
   --yy-tree-leaf-soft-rgb: 125, 211, 252;
   --yy-tree-dust-rgb: 148, 163, 184;
-  mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.98) 0%, rgba(0, 0, 0, 0.96) 58%, rgba(0, 0, 0, 0.42) 74%, transparent 100%);
 }
 
 :global(.dark) .yunyu-particle-tree {
@@ -661,7 +871,7 @@ onBeforeUnmount(() => {
 
 .yunyu-particle-tree__canvas {
   position: absolute;
-  inset: 0;
+  inset: 0 auto 0 0;
 }
 
 .yunyu-particle-tree__canvas {
