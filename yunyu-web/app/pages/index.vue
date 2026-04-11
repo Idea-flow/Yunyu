@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import YunyuImage from '~/components/common/YunyuImage.vue'
 import YunyuSectionTitle from '~/components/common/YunyuSectionTitle.vue'
+import YunyuParticleTree from '~/components/motion/YunyuParticleTree.vue'
 import { formatChineseDate } from '~/utils/date'
 import type { HomePageConfig, HomePageHeroVisual, SitePostSummary } from '../types/site'
 
@@ -384,6 +385,18 @@ function getTopicLink(slug: string) {
       :class="heroBackgroundClass"
     >
       <div class="pointer-events-none absolute inset-0" :class="heroAccentClass" />
+
+      <div
+        aria-hidden="true"
+        class="pointer-events-none absolute inset-0 hidden md:block"
+      >
+        <YunyuParticleTree
+          :tree-area-ratio="showHeroVisual ? 0.38 : 0.5"
+          :max-tree-width="showHeroVisual ? 680 : 900"
+          :min-tree-width="320"
+          :anchor-offset-x="showHeroVisual ? -36 : -52"
+        />
+      </div>
 
       <div
         aria-hidden="true"

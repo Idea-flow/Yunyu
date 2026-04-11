@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import YunyuImage from '~/components/common/YunyuImage.vue'
+import YunyuStarfieldFlow from '~/components/motion/YunyuStarfieldFlow.vue'
 
 /**
  * 云屿通用 Hero 组件。
@@ -14,6 +15,7 @@ interface YunyuHeroProps {
   contentWidthClass?: string
   contentPaddingClass?: string
   showStarry?: boolean
+  starfieldVariant?: 'sky' | 'warm' | 'neutral'
   showHeroMarker?: boolean
 }
 
@@ -24,6 +26,7 @@ const props = withDefaults(defineProps<YunyuHeroProps>(), {
   contentWidthClass: 'max-w-4xl',
   contentPaddingClass: 'px-5 pb-8 sm:px-8 sm:pb-10 lg:px-10 lg:pb-14',
   showStarry: true,
+  starfieldVariant: 'sky',
   showHeroMarker: true
 })
 
@@ -49,10 +52,11 @@ const heroClassName = computed(() => ['relative', props.minHeightClass].join(' '
       />
       <div class="pointer-events-none absolute inset-0" :class="overlayClass" />
 
-      <div v-if="showStarry" class="pointer-events-none absolute inset-0 opacity-75">
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(255,255,255,0.34)_0,rgba(255,255,255,0.34)_1px,transparent_1.6px),radial-gradient(circle_at_74%_22%,rgba(255,255,255,0.24)_0,rgba(255,255,255,0.24)_1px,transparent_1.6px),radial-gradient(circle_at_38%_46%,rgba(255,255,255,0.18)_0,rgba(255,255,255,0.18)_1px,transparent_1.4px),radial-gradient(circle_at_86%_58%,rgba(255,255,255,0.16)_0,rgba(255,255,255,0.16)_1px,transparent_1.5px),radial-gradient(circle_at_54%_78%,rgba(255,255,255,0.2)_0,rgba(255,255,255,0.2)_1px,transparent_1.4px)]" />
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.12),transparent_32rem)]" />
-      </div>
+      <YunyuStarfieldFlow
+        v-if="showStarry"
+        :variant="starfieldVariant"
+        density="soft"
+      />
 
       <div
         v-if="$slots.center"

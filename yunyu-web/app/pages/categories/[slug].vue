@@ -65,6 +65,7 @@ async function changePage(nextPage: number) {
       min-height-class="min-h-[42svh] sm:min-h-[48svh] lg:min-h-[54svh]"
       content-padding-class="px-5 pb-8 sm:px-8 sm:pb-10 lg:px-10 lg:pb-12"
       content-width-class="max-w-5xl"
+      starfield-variant="warm"
     >
       <p class="text-[0.72rem] font-semibold uppercase tracking-[0.34em] text-orange-200">分类页</p>
       <h1 class="mt-4 text-[clamp(2.55rem,1.85rem+2.5vw,4.8rem)] font-semibold leading-[0.98] tracking-[-0.045em] [font-family:var(--font-display)] [text-wrap:balance] text-white drop-shadow-lg">

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import YunyuImage from '~/components/common/YunyuImage.vue'
+import YunyuStarfieldFlow from '~/components/motion/YunyuStarfieldFlow.vue'
 
 /**
  * 前台文章封面首屏组件。
@@ -12,6 +13,8 @@ withDefaults(defineProps<{
   overlayClass?: string
   contentWrapperClass?: string
   contentContainerClass?: string
+  showStarry?: boolean
+  starfieldVariant?: 'sky' | 'warm' | 'neutral'
   showHeroMarker?: boolean
 }>(), {
   src: '',
@@ -20,6 +23,8 @@ withDefaults(defineProps<{
   overlayClass: 'bg-[linear-gradient(180deg,rgba(15,23,42,0.18)_0%,rgba(15,23,42,0.18)_18%,rgba(15,23,42,0.22)_42%,rgba(15,23,42,0.62)_100%)] dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.1)_0%,rgba(2,6,23,0.14)_20%,rgba(2,6,23,0.26)_44%,rgba(2,6,23,0.72)_100%)]',
   contentWrapperClass: 'absolute inset-x-0 bottom-0 z-10',
   contentContainerClass: 'mx-auto max-w-[1440px] px-5 pb-8 sm:px-8 sm:pb-12 lg:px-10 lg:pb-14',
+  showStarry: true,
+  starfieldVariant: 'sky',
   showHeroMarker: true
 })
 </script>
@@ -47,6 +52,11 @@ withDefaults(defineProps<{
         />
 
         <div class="pointer-events-none absolute inset-0" :class="overlayClass" />
+        <YunyuStarfieldFlow
+          v-if="showStarry"
+          :variant="starfieldVariant"
+          density="soft"
+        />
       </div>
 
       <div

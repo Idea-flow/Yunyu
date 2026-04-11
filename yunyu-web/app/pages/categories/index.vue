@@ -53,6 +53,7 @@ useSeoMeta({
       min-height-class="h-[min(62svh,32rem)] sm:h-[min(68svh,36rem)] lg:h-[min(74svh,42rem)]"
       content-padding-class="px-5 pb-8 sm:px-8 sm:pb-10 lg:px-10 lg:pb-12"
       content-width-class="max-w-5xl"
+      starfield-variant="warm"
     >
       <template #center>
         <YunyuPoetryTypewriter variant="orange" />

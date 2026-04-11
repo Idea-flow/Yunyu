@@ -4,6 +4,8 @@
  * 作用：承接前台与后台统一的登录、注册入口，并通过品牌化展示区强化云屿站点识别，
  * 同时在移动端收敛为单栏认证体验，保证输入与提交操作足够直接。
  */
+import YunyuAuthCharacterScene from '~/components/common/YunyuAuthCharacterScene.vue'
+
 definePageMeta({
   layout: false
 })
@@ -40,41 +42,32 @@ const isSubmitting = ref(false)
 const focusedField = ref<FocusField>(null)
 const isSceneError = ref(false)
 const sceneErrorStage = ref<SceneErrorStage>('idle')
-const purpleBlinking = ref(false)
-const blackBlinking = ref(false)
-const purplePeeking = ref(false)
-const purplePeekPhase = ref<'forward' | 'return'>('forward')
 const passwordVisibility = reactive<Record<PasswordField, boolean>>({
   password: false,
   confirmPassword: false
 })
 const scenePointer = reactive({
-  offsetX: 0,
-  offsetY: 0
+  offsetX: -0.96,
+  offsetY: -1.04
 })
 
-let purpleBlinkTimer: ReturnType<typeof setTimeout> | null = null
-let blackBlinkTimer: ReturnType<typeof setTimeout> | null = null
-let purplePeekTimer: ReturnType<typeof setTimeout> | null = null
 let sceneErrorTimer: ReturnType<typeof setTimeout> | null = null
 let sceneErrorShakeTimer: ReturnType<typeof setTimeout> | null = null
 
 const inputUi = {
   base: [
-    'w-full rounded-[22px] border border-white/70 bg-white/82 px-4 py-3 text-[15px] text-slate-800 shadow-[0_18px_38px_-30px_rgba(15,23,42,0.18)] backdrop-blur-sm transition',
-    'placeholder:text-slate-400 focus:border-[color:color-mix(in_srgb,var(--site-primary-color)_28%,white)] focus:bg-white focus:ring-4 focus:ring-[color:color-mix(in_srgb,var(--site-primary-color)_12%,transparent)]',
-    'dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-[var(--site-primary-color)] dark:focus:bg-slate-950'
+    'h-13 w-full rounded-full border border-slate-200/80 bg-white/76 px-4 py-0 text-[15px] text-slate-900 shadow-[0_14px_28px_-24px_rgba(15,23,42,0.35)] backdrop-blur-sm transition-all duration-300',
+    'placeholder:text-slate-400 focus:border-[color:color-mix(in_srgb,var(--site-primary-color)_36%,white)] focus:bg-white/92 focus:shadow-[0_18px_36px_-26px_rgba(56,189,248,0.28)] focus:ring-0',
+    'dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-[color:color-mix(in_srgb,var(--site-primary-color)_42%,transparent)] dark:focus:bg-white/[0.07]'
   ].join(' '),
-  trailing: 'pe-2',
-  leading: 'ps-2'
+  trailing: 'pe-3',
+  leading: 'ps-3'
 }
 
 const siteConfig = computed(() => siteConfigData.value)
 const brandName = computed(() => siteConfig.value?.siteName?.trim() || '云屿')
 const brandSubtitle = computed(() => siteConfig.value?.siteSubTitle?.trim() || 'Yunyu')
 const logoUrl = computed(() => siteConfig.value?.logoUrl?.trim() || '/icon-512-maskable.png')
-const isIdentityFocused = computed(() => focusedField.value === 'account' || focusedField.value === 'email')
-const isPasswordFocused = computed(() => focusedField.value === 'password' || focusedField.value === 'confirmPassword')
 const hasPasswordContent = computed(() => Boolean(formState.password || formState.confirmPassword))
 const isShowingPassword = computed(() => {
   return hasPasswordContent.value && (passwordVisibility.password || passwordVisibility.confirmPassword)
@@ -91,257 +84,6 @@ const isShowingPassword = computed(() => {
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
-
-/**
- * 计算场景当前的观察向量。
- * 作用：统一把鼠标跟随、输入框聚焦、密码显隐和报错状态映射成角色朝向，
- * 避免在模板里分散维护多套条件判断。
- *
- * @return 角色朝向向量
- */
-const sceneVector = computed(() => {
-  if (isSceneError.value) {
-    return { x: -0.62, y: 0.8 }
-  }
-
-  if (isPasswordFocused.value && !isShowingPassword.value) {
-    return { x: -1.02, y: -0.9 }
-  }
-
-  if (isShowingPassword.value) {
-    return { x: purplePeeking.value ? 0.84 : -0.88, y: purplePeeking.value ? 0.78 : -0.54 }
-  }
-
-  if (isIdentityFocused.value) {
-    return { x: 0.82, y: 0.96 }
-  }
-
-  return {
-    x: scenePointer.offsetX,
-    y: scenePointer.offsetY
-  }
-})
-
-/**
- * 根据角色在舞台中的相对站位，计算各自的观察向量。
- * 作用：参考原始示例里“每个角色按自身位置单独追踪鼠标”的逻辑，
- * 避免所有角色共用同一向量后出现同步过强、表情发呆的问题。
- *
- * @param anchorX 角色横向锚点
- * @param anchorY 角色纵向锚点
- * @return 当前角色专属的观察向量
- */
-function resolveCharacterVector(anchorX: number, anchorY: number) {
-  if (isSceneError.value || isPasswordFocused.value || isShowingPassword.value || isIdentityFocused.value) {
-    return sceneVector.value
-  }
-
-  return {
-    x: clamp(scenePointer.offsetX - anchorX, -1.36, 1.36),
-    y: clamp(scenePointer.offsetY - anchorY, -1.24, 1.24)
-  }
-}
-
-const purpleSceneVector = computed(() => resolveCharacterVector(-0.34, -0.1))
-const inkSceneVector = computed(() => resolveCharacterVector(0.05, -0.02))
-const orangeSceneVector = computed(() => resolveCharacterVector(-0.22, 0.18))
-const yellowSceneVector = computed(() => resolveCharacterVector(0.34, -0.08))
-
-/**
- * 根据朝向向量计算角色的瞳孔位移。
- *
- * @param vector 当前角色使用的观察向量
- * @param strength 位移强度
- * @return 瞳孔位移样式
- */
-function pupilStyle(vector: { x: number, y: number }, strength: number) {
-  return {
-    transform: `translate(${(vector.x * strength).toFixed(2)}px, ${(vector.y * strength).toFixed(2)}px)`
-  }
-}
-
-/**
- * 计算角色眼睛区域的整体位移。
- * 作用：在保留瞳孔跟随的同时，让整个眼睛区也产生更明显的方向偏移，
- * 更接近参考页里“整张脸在转向”的感觉。
- *
- * @param vector 当前角色使用的观察向量
- * @param baseX 基准横向偏移
- * @param baseY 基准纵向偏移
- * @param factorX 横向放大系数
- * @param factorY 纵向放大系数
- * @return 眼睛区域变换样式
- */
-function eyesShiftStyle(vector: { x: number, y: number }, baseX: number, baseY: number, factorX: number, factorY: number) {
-  const x = clamp(baseX + vector.x * factorX, -20, 20)
-  const y = clamp(baseY + vector.y * factorY, -15, 15)
-
-  return {
-    transform: `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px)`
-  }
-}
-
-/**
- * 计算单只眼球的细微位移。
- * 作用：让左右眼在同方向跟随时保留轻微错位，避免两只眼睛永远像镜像复制，
- * 更贴近参考页里“眼白位置也在变化”的灵动感。
- *
- * @param vector 当前角色使用的观察向量
- * @param strength 位移强度
- * @param side 眼睛方向
- * @return 单只眼球位移样式
- */
-function eyeballStyle(vector: { x: number, y: number }, strength: number, side: 'left' | 'right') {
-  const sideOffset = side === 'left' ? -0.8 : 0.8
-  const x = clamp(vector.x * strength + sideOffset + vector.y * 0.3, -7, 7)
-  const y = clamp(vector.y * (strength * 0.72) + (side === 'left' ? -0.22 : 0.22), -5, 5)
-
-  return {
-    transform: `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px)`
-  }
-}
-
-/**
- * 计算左侧紫色角色的主体姿态。
- *
- * @return 角色变换样式
- */
-const purpleCharacterStyle = computed(() => {
-  if (isPasswordFocused.value && !isShowingPassword.value) {
-    return {
-      transform: 'skewX(-15deg) translateX(-19px) translateY(-1px)',
-      height: '20.15rem'
-    }
-  }
-
-  if (isShowingPassword.value) {
-    if (purplePeeking.value && purplePeekPhase.value === 'forward') {
-      return {
-        transform: 'skewX(6deg) translateX(18px) translateY(-4px)',
-        height: '18.75rem'
-      }
-    }
-
-    if (purplePeeking.value && purplePeekPhase.value === 'return') {
-      return {
-        transform: 'skewX(-10deg) translateX(-10px) translateY(-1px)',
-        height: '18.1rem'
-      }
-    }
-
-    return {
-      transform: 'skewX(-8deg) translateX(-8px)',
-      height: '18.2rem'
-    }
-  }
-
-  if (isIdentityFocused.value) {
-    return {
-      transform: `skewX(${(-14 + purpleSceneVector.value.x * 4.5).toFixed(2)}deg) translateX(28px)`,
-      height: '20.15rem'
-    }
-  }
-
-  return {
-    transform: `skewX(${(purpleSceneVector.value.x * -8).toFixed(2)}deg) translateX(${(purpleSceneVector.value.x * 10).toFixed(2)}px)`,
-    height: '18.2rem'
-  }
-})
-
-/**
- * 计算左侧深色角色的主体姿态。
- *
- * @return 角色变换样式
- */
-const inkCharacterStyle = computed(() => {
-  if (isPasswordFocused.value && !isShowingPassword.value) {
-    return {
-      transform: 'skewX(13deg) translateX(-11px) translateY(-1px)'
-    }
-  }
-
-  if (isIdentityFocused.value) {
-    return {
-      transform: `skewX(${(12 + inkSceneVector.value.x * 5.5).toFixed(2)}deg) translateX(20px)`
-    }
-  }
-
-  return {
-    transform: `skewX(${(inkSceneVector.value.x * -7).toFixed(2)}deg) translateX(${(inkSceneVector.value.x * 5).toFixed(2)}px)`
-  }
-})
-
-/**
- * 计算橙色角色的主体姿态。
- *
- * @return 角色变换样式
- */
-const orangeCharacterStyle = computed(() => {
-  if (isPasswordFocused.value && !isShowingPassword.value) {
-    return {
-      transform: 'skewX(5deg) translateX(-9px)'
-    }
-  }
-
-  return {
-    transform: isShowingPassword.value
-      ? 'skewX(0deg)'
-      : `skewX(${(orangeSceneVector.value.x * -6.2).toFixed(2)}deg) translateX(${(orangeSceneVector.value.x * 7).toFixed(2)}px)`
-  }
-})
-
-/**
- * 计算黄色角色的主体姿态。
- *
- * @return 角色变换样式
- */
-const yellowCharacterStyle = computed(() => {
-  if (isPasswordFocused.value && !isShowingPassword.value) {
-    return {
-      transform: 'skewX(7deg) translateX(-6px) translateY(-1px)'
-    }
-  }
-
-  return {
-    transform: isShowingPassword.value
-      ? 'skewX(0deg)'
-      : `skewX(${(yellowSceneVector.value.x * -5.8).toFixed(2)}deg) translateX(${(yellowSceneVector.value.x * 6).toFixed(2)}px)`
-  }
-})
-
-/**
- * 计算错误态下的嘴部样式。
- *
- * @return 嘴部类名
- */
-const orangeMouthClassName = computed(() => {
-  return isSceneError.value
-    ? `auth-scene-mouth auth-scene-mouth--sad visible ${sceneErrorStage.value === 'shake' ? 'shake-head' : ''}`.trim()
-    : 'auth-scene-mouth auth-scene-mouth--sad'
-})
-
-/**
- * 计算黄色角色嘴部样式。
- *
- * @return 嘴部变换样式
- */
-const yellowMouthStyle = computed(() => {
-  if (isSceneError.value) {
-    return {
-      transform: 'translate(-8px, 4px) rotate(-8deg)'
-    }
-  }
-
-  if (isPasswordFocused.value && !isShowingPassword.value) {
-    return {
-      transform: 'translate(-12px, -8px) rotate(0deg)'
-    }
-  }
-
-  return {
-    transform: `translate(${(yellowSceneVector.value.x * 5).toFixed(2)}px, ${(yellowSceneVector.value.y * 4).toFixed(2)}px)`
-  }
-})
 
 /**
  * 计算提交按钮文案。
@@ -423,8 +165,7 @@ function handleScenePointerMove(event: PointerEvent) {
  * 作用：在鼠标离开场景后让角色缓慢回到默认姿态。
  */
 function resetScenePointer() {
-  scenePointer.offsetX = 0
-  scenePointer.offsetY = 0
+  // 参考页在鼠标滑出浏览器后会保持最后一帧状态，这里不主动重置观察点。
 }
 
 /**
@@ -465,96 +206,7 @@ function triggerSceneError() {
   }, 2680)
 }
 
-/**
- * 安排紫色角色的随机眨眼动画。
- * 作用：为左侧角色区补充生命感，避免静止时显得过于机械。
- */
-function schedulePurpleBlink() {
-  purpleBlinkTimer = setTimeout(() => {
-    purpleBlinking.value = true
-
-    setTimeout(() => {
-      purpleBlinking.value = false
-      schedulePurpleBlink()
-    }, 160)
-  }, Math.random() * 3200 + 2400)
-}
-
-/**
- * 安排深色角色的随机眨眼动画。
- * 作用：与紫色角色错开节奏，形成更自然的双角色状态变化。
- */
-function scheduleBlackBlink() {
-  blackBlinkTimer = setTimeout(() => {
-    blackBlinking.value = true
-
-    setTimeout(() => {
-      blackBlinking.value = false
-      scheduleBlackBlink()
-    }, 150)
-  }, Math.random() * 3600 + 2600)
-}
-
-/**
- * 安排密码显隐时的偷看动画。
- * 作用：当密码可见且已有内容时，让左侧角色偶尔偷看，复用参考页最有记忆点的交互之一。
- */
-function schedulePurplePeek() {
-  if (!isShowingPassword.value) {
-    purplePeeking.value = false
-    purplePeekTimer = null
-    return
-  }
-
-  purplePeekTimer = setTimeout(() => {
-    purplePeeking.value = true
-    purplePeekPhase.value = 'forward'
-
-    setTimeout(() => {
-      purplePeekTimer = setTimeout(() => {
-        purplePeekPhase.value = 'return'
-
-        setTimeout(() => {
-          purplePeeking.value = false
-          purplePeekPhase.value = 'forward'
-          schedulePurplePeek()
-        }, 460)
-      }, 260)
-    }, 560)
-  }, Math.random() * 1400 + 1500)
-}
-
-watch(isShowingPassword, (value) => {
-  if (purplePeekTimer) {
-    clearTimeout(purplePeekTimer)
-    purplePeekTimer = null
-  }
-
-  purplePeeking.value = false
-
-  if (value) {
-    schedulePurplePeek()
-  }
-})
-
-onMounted(() => {
-  schedulePurpleBlink()
-  scheduleBlackBlink()
-})
-
 onBeforeUnmount(() => {
-  if (purpleBlinkTimer) {
-    clearTimeout(purpleBlinkTimer)
-  }
-
-  if (blackBlinkTimer) {
-    clearTimeout(blackBlinkTimer)
-  }
-
-  if (purplePeekTimer) {
-    clearTimeout(purplePeekTimer)
-  }
-
   if (sceneErrorTimer) {
     clearTimeout(sceneErrorTimer)
   }
@@ -701,85 +353,17 @@ async function handleSubmit() {
 
     <div class="relative mx-auto flex h-[100svh] w-full max-w-[1480px] items-center px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
       <div class="grid h-full w-full lg:grid-cols-[1.08fr_0.92fr]">
-        <section class="relative flex min-h-0 flex-col overflow-hidden px-3 py-3 sm:px-4 sm:py-4 lg:px-6 lg:py-5">
-          <div class="relative flex items-center justify-between gap-4">
-            <NuxtLink to="/" class="flex min-w-0 items-center gap-3">
-              <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/65 bg-white/72 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.22)] dark:border-white/10 dark:bg-white/[0.05]">
-                <img :src="logoUrl" :alt="`${brandName} 图标`" class="h-full w-full object-cover">
-              </div>
-              <div class="min-w-0">
-                <p class="truncate text-[1.15rem] font-semibold tracking-[-0.05em] text-slate-950 [font-family:var(--font-display)] dark:text-white">
-                  {{ brandName }}
-                </p>
-                <p class="truncate text-[0.7rem] uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
-                  {{ brandSubtitle }}
-                </p>
-              </div>
-            </NuxtLink>
-
-            <NuxtLink
-              to="/"
-              class="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/70 bg-white/70 px-3 py-2 text-sm text-slate-600 backdrop-blur-sm transition hover:-translate-y-0.5 hover:text-slate-900 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-300 dark:hover:text-white"
-            >
-              <UIcon name="i-lucide-house" class="size-4" />
-              <span>返回首页</span>
-            </NuxtLink>
-          </div>
-
-          <div class="relative mt-4 flex flex-1 items-center justify-center lg:mt-0">
-            <div
-              class="relative hidden h-full max-h-[760px] min-h-[20rem] w-full overflow-hidden lg:block"
-            >
-              <div class="auth-scene relative h-full">
-                <div class="auth-scene__stage">
-                  <div class="auth-character auth-character--purple" :style="purpleCharacterStyle">
-                    <div class="auth-eyes auth-eyes--white" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="eyesShiftStyle(purpleSceneVector, isPasswordFocused && !isShowingPassword ? -14 : isShowingPassword && purplePeeking && purplePeekPhase === 'forward' ? 14 : isShowingPassword && purplePeeking && purplePeekPhase === 'return' ? -10 : isIdentityFocused ? 10 : 0, isPasswordFocused && !isShowingPassword ? -12 : isShowingPassword && purplePeeking && purplePeekPhase === 'forward' ? 9 : isShowingPassword && purplePeeking && purplePeekPhase === 'return' ? -5 : isIdentityFocused ? 8 : 0, 5.8, 4.1)">
-                      <div class="auth-eyeball" :class="{ 'auth-eyeball--blink': purpleBlinking }" :style="eyeballStyle(purpleSceneVector, isPasswordFocused && !isShowingPassword ? 1.1 : isShowingPassword && purplePeeking && purplePeekPhase === 'forward' ? 1.4 : isShowingPassword ? 1 : 1.45, 'left')">
-                        <div class="auth-pupil" :style="pupilStyle(purpleSceneVector, isPasswordFocused && !isShowingPassword ? 2.4 : isShowingPassword && purplePeeking && purplePeekPhase === 'forward' ? 4 : isShowingPassword && purplePeekPhase === 'return' ? 2.8 : isShowingPassword ? 3.2 : 4.7)" />
-                      </div>
-                      <div class="auth-eyeball" :class="{ 'auth-eyeball--blink': purpleBlinking }" :style="eyeballStyle(purpleSceneVector, isPasswordFocused && !isShowingPassword ? 1.1 : isShowingPassword && purplePeeking && purplePeekPhase === 'forward' ? 1.4 : isShowingPassword ? 1 : 1.45, 'right')">
-                        <div class="auth-pupil" :style="pupilStyle(purpleSceneVector, isPasswordFocused && !isShowingPassword ? 2.4 : isShowingPassword && purplePeeking && purplePeekPhase === 'forward' ? 4 : isShowingPassword && purplePeekPhase === 'return' ? 2.8 : isShowingPassword ? 3.2 : 4.7)" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="auth-character auth-character--ink" :style="inkCharacterStyle">
-                    <div class="auth-eyes auth-eyes--white" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="eyesShiftStyle(inkSceneVector, isPasswordFocused && !isShowingPassword ? -10 : isIdentityFocused ? 6 : 0, isPasswordFocused && !isShowingPassword ? -11 : isIdentityFocused ? -7 : 0, 4.3, 3.5)">
-                      <div class="auth-eyeball auth-eyeball--small" :class="{ 'auth-eyeball--blink': blackBlinking }" :style="eyeballStyle(inkSceneVector, isPasswordFocused && !isShowingPassword ? 1 : isShowingPassword ? 0.9 : 1.2, 'left')">
-                        <div class="auth-pupil auth-pupil--small" :style="pupilStyle(inkSceneVector, isPasswordFocused && !isShowingPassword ? 2.3 : isShowingPassword ? 2.8 : 3.7)" />
-                      </div>
-                      <div class="auth-eyeball auth-eyeball--small" :class="{ 'auth-eyeball--blink': blackBlinking }" :style="eyeballStyle(inkSceneVector, isPasswordFocused && !isShowingPassword ? 1 : isShowingPassword ? 0.9 : 1.2, 'right')">
-                        <div class="auth-pupil auth-pupil--small" :style="pupilStyle(inkSceneVector, isPasswordFocused && !isShowingPassword ? 2.3 : isShowingPassword ? 2.8 : 3.7)" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="auth-character auth-character--orange" :style="orangeCharacterStyle">
-                    <div class="auth-eyes auth-eyes--bare" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="eyesShiftStyle(orangeSceneVector, isPasswordFocused && !isShowingPassword ? -13 : isShowingPassword ? -9 : 0, isPasswordFocused && !isShowingPassword ? -10 : isShowingPassword ? -4 : 0, 4.7, 3.7)">
-                      <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(orangeSceneVector, isPasswordFocused && !isShowingPassword ? 2.7 : isShowingPassword ? 3.1 : 4.6)" />
-                      <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(orangeSceneVector, isPasswordFocused && !isShowingPassword ? 2.7 : isShowingPassword ? 3.1 : 4.6)" />
-                    </div>
-                    <div :class="orangeMouthClassName" />
-                  </div>
-
-                  <div class="auth-character auth-character--yellow" :style="yellowCharacterStyle">
-                    <div class="auth-eyes auth-eyes--bare" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="eyesShiftStyle(yellowSceneVector, isPasswordFocused && !isShowingPassword ? -12 : isShowingPassword ? -8 : 0, isPasswordFocused && !isShowingPassword ? -9 : isShowingPassword ? -3 : 0, 4.4, 3.6)">
-                      <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(yellowSceneVector, isPasswordFocused && !isShowingPassword ? 2.4 : isShowingPassword ? 2.8 : 4.6)" />
-                      <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(yellowSceneVector, isPasswordFocused && !isShowingPassword ? 2.4 : isShowingPassword ? 2.8 : 4.6)" />
-                    </div>
-                    <div class="auth-scene-mouth auth-scene-mouth--line" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="yellowMouthStyle" />
-                  </div>
-                </div>
-
-                <div class="auth-scene__status">
-                  <span class="inline-flex rounded-full border border-white/70 bg-white/60 px-3 py-1 text-[0.68rem] font-medium tracking-[0.2em] text-slate-500 backdrop-blur-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
-                    LIVE
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        <YunyuAuthCharacterScene
+          :brand-name="brandName"
+          :brand-subtitle="brandSubtitle"
+          :logo-url="logoUrl"
+          :focused-field="focusedField"
+          :is-showing-password="isShowingPassword"
+          :is-scene-error="isSceneError"
+          :scene-error-stage="sceneErrorStage"
+          :pointer-x="scenePointer.offsetX"
+          :pointer-y="scenePointer.offsetY"
+        />
 
         <section class="relative flex min-h-0 items-center px-1 py-3 sm:px-3 sm:py-4 lg:px-6 lg:py-5">
           <div class="relative mx-auto w-full max-w-[430px]">
@@ -788,7 +372,7 @@ async function handleSubmit() {
                 <ThemeModeSwitch variant="icon" />
               </div>
 
-              <div class="mt-4 grid grid-cols-2 gap-2 rounded-[22px] bg-slate-100/86 p-1.5 dark:bg-white/[0.05]">
+              <div class="mt-4 grid grid-cols-2 gap-2 rounded-[22px] bg-transparent p-1">
                 <button
                   type="button"
                   class="rounded-[18px] px-4 py-3 text-sm font-medium transition"
@@ -828,7 +412,7 @@ async function handleSubmit() {
                     @blur="handleFieldBlur('account')"
                   >
                     <template #leading>
-                      <UIcon name="i-lucide-user-round" class="size-4 text-slate-400" />
+                      <UIcon name="i-lucide-user-round" class="auth-input-leading-icon" />
                     </template>
                   </UInput>
                 </UFormField>
@@ -850,7 +434,7 @@ async function handleSubmit() {
                     @blur="handleFieldBlur('email')"
                   >
                     <template #leading>
-                      <UIcon name="i-lucide-mail" class="size-4 text-slate-400" />
+                      <UIcon name="i-lucide-mail" class="auth-input-leading-icon" />
                     </template>
                   </UInput>
                 </UFormField>
@@ -871,12 +455,12 @@ async function handleSubmit() {
                     @blur="handleFieldBlur('password')"
                   >
                     <template #leading>
-                      <UIcon name="i-lucide-lock-keyhole" class="size-4 text-slate-400" />
+                      <UIcon name="i-lucide-lock-keyhole" class="auth-input-leading-icon" />
                     </template>
                     <template #trailing>
                       <button
                         type="button"
-                        class="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/[0.06] dark:hover:text-slate-200"
+                        class="auth-input-trailing-icon"
                         :aria-label="passwordVisibility.password ? '隐藏密码' : '显示密码'"
                         @click="togglePasswordVisibility('password')"
                       >
@@ -903,12 +487,12 @@ async function handleSubmit() {
                     @blur="handleFieldBlur('confirmPassword')"
                   >
                     <template #leading>
-                      <UIcon name="i-lucide-shield-check" class="size-4 text-slate-400" />
+                      <UIcon name="i-lucide-shield-check" class="auth-input-leading-icon" />
                     </template>
                     <template #trailing>
                       <button
                         type="button"
-                        class="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/[0.06] dark:hover:text-slate-200"
+                        class="auth-input-trailing-icon"
                         :aria-label="passwordVisibility.confirmPassword ? '隐藏确认密码' : '显示确认密码'"
                         @click="togglePasswordVisibility('confirmPassword')"
                       >
@@ -918,13 +502,10 @@ async function handleSubmit() {
                   </UInput>
                 </UFormField>
 
-                <div class="flex items-center justify-between gap-3 text-sm">
+                <div class="text-sm">
                   <p class="text-slate-500 dark:text-slate-400">
                     {{ authMode === 'login' ? '支持邮箱或用户名登录' : '密码需为8-20位，并包含字母和数字' }}
                   </p>
-                  <span class="rounded-full border border-white/80 bg-white/72 px-3 py-1 text-xs font-medium text-slate-500 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-400">
-                    {{ authMode === 'login' ? '快捷认证' : '安全校验' }}
-                  </span>
                 </div>
 
                 <button
@@ -956,224 +537,43 @@ async function handleSubmit() {
 </template>
 
 <style scoped>
-.auth-scene {
-  min-height: 20rem;
+.auth-input-leading-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  color: rgb(100 116 139);
+  opacity: 0.95;
 }
 
-.auth-scene__stage {
-  position: absolute;
-  left: 50%;
-  top: 50.5%;
-  height: 20.6rem;
-  width: 24.2rem;
-  transform: translate(-50%, -50%);
+.dark .auth-input-leading-icon {
+  color: rgb(203 213 225);
 }
 
-.auth-scene__status {
-  position: absolute;
-  left: 50%;
-  bottom: 1.5rem;
-  transform: translateX(-50%);
-}
-
-.auth-character {
-  position: absolute;
-  bottom: 0;
-  transform-origin: bottom center;
-  transition: transform 0.62s cubic-bezier(0.22, 1, 0.36, 1), height 0.62s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.auth-character--purple {
-  left: 3.15rem;
-  width: 10rem;
-  height: 18.2rem;
-  border-radius: 1.25rem 1.25rem 0 0;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--site-primary-color) 76%, white) 0%, color-mix(in srgb, var(--site-primary-color) 88%, #2563eb) 100%);
-  box-shadow: 0 28px 60px -42px rgba(56, 189, 248, 0.55);
-  z-index: 1;
-}
-
-.auth-character--ink {
-  left: 11.1rem;
-  width: 6.4rem;
-  height: 14.2rem;
-  border-radius: 1rem 1rem 0 0;
-  background: linear-gradient(180deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.98));
-  box-shadow: 0 22px 50px -42px rgba(15, 23, 42, 0.45);
-  z-index: 2;
-}
-
-.auth-character--orange {
-  left: 0.78rem;
-  width: 12.8rem;
-  height: 9.6rem;
-  border-radius: 999px 999px 0 0;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--site-secondary-color) 74%, white) 0%, color-mix(in srgb, var(--site-secondary-color) 86%, #fb923c) 100%);
-  z-index: 3;
-}
-
-.auth-character--yellow {
-  left: 15.25rem;
-  width: 7.3rem;
-  height: 10.7rem;
-  border-radius: 999px 999px 0 0;
-  background: linear-gradient(180deg, #fde68a 0%, #facc15 100%);
-  z-index: 4;
-}
-
-.auth-eyes {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  transform-origin: center center;
-  transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.auth-eyes--white {
-  left: 2.1rem;
-  top: 2.35rem;
-}
-
-.auth-character--ink .auth-eyes--white {
-  left: 1.5rem;
-  top: 1.9rem;
-  gap: 0.8rem;
-}
-
-.auth-eyes--bare {
-  left: 4.6rem;
-  top: 4.1rem;
-}
-
-.auth-character--yellow .auth-eyes--bare {
-  left: 2.6rem;
-  top: 2.15rem;
-  gap: 0.8rem;
-}
-
-.auth-eyeball {
-  display: flex;
-  height: 1.1rem;
-  width: 1.1rem;
+.auth-input-trailing-icon {
+  display: inline-flex;
+  height: 2rem;
+  width: 2rem;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
   border-radius: 999px;
-  background: white;
-  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), height 0.15s ease;
+  color: rgb(100 116 139);
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
-.auth-eyeball--small {
-  height: 1rem;
-  width: 1rem;
+.auth-input-trailing-icon:hover {
+  background: rgba(255, 255, 255, 0.82);
+  color: rgb(51 65 85);
+  transform: scale(1.03);
 }
 
-.auth-eyeball--blink {
-  height: 2px;
+.dark .auth-input-trailing-icon {
+  color: rgb(148 163 184);
 }
 
-.auth-pupil {
-  height: 0.45rem;
-  width: 0.45rem;
-  border-radius: 999px;
-  background: #1e293b;
-  transition: transform 0.12s ease-out;
-}
-
-.auth-pupil--small {
-  height: 0.38rem;
-  width: 0.38rem;
-}
-
-.auth-pupil--bare {
-  height: 0.75rem;
-  width: 0.75rem;
-}
-
-.auth-scene-mouth {
-  position: absolute;
-  transform-origin: center center;
-  transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.42s ease;
-}
-
-.auth-scene-mouth--sad {
-  left: 5rem;
-  top: 5.8rem;
-  height: 0.85rem;
-  width: 1.8rem;
-  border: 3px solid #1e293b;
-  border-top: none;
-  border-radius: 0 0 999px 999px;
-  opacity: 0;
-}
-
-.auth-scene-mouth--sad.visible {
-  opacity: 1;
-}
-
-.auth-scene-mouth--line {
-  left: 2.1rem;
-  top: 4.7rem;
-  height: 0.25rem;
-  width: 2rem;
-  border-radius: 999px;
-  background: #1e293b;
-}
-
-.shake-head {
-  animation: shakeHead 0.9s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-}
-
-@keyframes login-float {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-
-  50% {
-    transform: translate3d(0, -14px, 0) scale(1.04);
-  }
-}
-
-@keyframes shakeHead {
-  0%,
-  100% {
-    translate: 0 0;
-  }
-
-  14% {
-    translate: -10px 0;
-  }
-
-  28% {
-    translate: 9px 0;
-  }
-
-  42% {
-    translate: -7px 0;
-  }
-
-  56% {
-    translate: 6px 0;
-  }
-
-  70% {
-    translate: -4px 0;
-  }
-
-  84% {
-    translate: 2px 0;
-  }
-
-  90% {
-    translate: -0.5px 0;
-  }
+.dark .auth-input-trailing-icon:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgb(226 232 240);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .shake-head {
-    animation: none;
-  }
 }
 </style>
