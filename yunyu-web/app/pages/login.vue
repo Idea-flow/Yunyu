@@ -16,6 +16,7 @@ const siteContent = useSiteContent()
 type AuthMode = 'login' | 'register'
 type PasswordField = 'password' | 'confirmPassword'
 type FocusField = 'account' | 'email' | 'password' | 'confirmPassword' | null
+type SceneErrorStage = 'idle' | 'pose' | 'shake'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)\S{8,20}$/
@@ -38,6 +39,7 @@ const formState = reactive({
 const isSubmitting = ref(false)
 const focusedField = ref<FocusField>(null)
 const isSceneError = ref(false)
+const sceneErrorStage = ref<SceneErrorStage>('idle')
 const purpleBlinking = ref(false)
 const blackBlinking = ref(false)
 const purplePeeking = ref(false)
@@ -54,6 +56,7 @@ let purpleBlinkTimer: ReturnType<typeof setTimeout> | null = null
 let blackBlinkTimer: ReturnType<typeof setTimeout> | null = null
 let purplePeekTimer: ReturnType<typeof setTimeout> | null = null
 let sceneErrorTimer: ReturnType<typeof setTimeout> | null = null
+let sceneErrorShakeTimer: ReturnType<typeof setTimeout> | null = null
 
 const inputUi = {
   base: [
@@ -97,7 +100,7 @@ function clamp(value: number, min: number, max: number) {
  */
 const sceneVector = computed(() => {
   if (isSceneError.value) {
-    return { x: -0.92, y: 0.96 }
+    return { x: -0.7, y: 0.82 }
   }
 
   if (isPasswordFocused.value && !isShowingPassword.value) {
@@ -142,8 +145,11 @@ function pupilStyle(strength: number) {
  * @return 眼睛区域变换样式
  */
 function eyesShiftStyle(baseX: number, baseY: number, factorX: number, factorY: number) {
+  const x = clamp(baseX + sceneVector.value.x * factorX, -24, 24)
+  const y = clamp(baseY + sceneVector.value.y * factorY, -18, 18)
+
   return {
-    transform: `translate(${(baseX + sceneVector.value.x * factorX).toFixed(2)}px, ${(baseY + sceneVector.value.y * factorY).toFixed(2)}px)`
+    transform: `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px)`
   }
 }
 
@@ -228,7 +234,9 @@ const yellowCharacterStyle = computed(() => {
  * @return 嘴部类名
  */
 const orangeMouthClassName = computed(() => {
-  return isSceneError.value ? 'auth-scene-mouth auth-scene-mouth--sad visible shake-head' : 'auth-scene-mouth auth-scene-mouth--sad'
+  return isSceneError.value
+    ? `auth-scene-mouth auth-scene-mouth--sad visible ${sceneErrorStage.value === 'shake' ? 'shake-head' : ''}`.trim()
+    : 'auth-scene-mouth auth-scene-mouth--sad'
 })
 
 /**
@@ -394,15 +402,26 @@ function togglePasswordVisibility(field: PasswordField) {
  */
 function triggerSceneError() {
   isSceneError.value = true
+  sceneErrorStage.value = 'pose'
 
   if (sceneErrorTimer) {
     clearTimeout(sceneErrorTimer)
   }
 
+  if (sceneErrorShakeTimer) {
+    clearTimeout(sceneErrorShakeTimer)
+  }
+
+  sceneErrorShakeTimer = setTimeout(() => {
+    sceneErrorStage.value = 'shake'
+    sceneErrorShakeTimer = null
+  }, 360)
+
   sceneErrorTimer = setTimeout(() => {
     isSceneError.value = false
+    sceneErrorStage.value = 'idle'
     sceneErrorTimer = null
-  }, 2200)
+  }, 2350)
 }
 
 /**
@@ -451,9 +470,16 @@ function schedulePurplePeek() {
 
     setTimeout(() => {
       purplePeeking.value = false
-      schedulePurplePeek()
-    }, 820)
-  }, Math.random() * 2200 + 1600)
+      purplePeekTimer = setTimeout(() => {
+        purplePeeking.value = true
+
+        setTimeout(() => {
+          purplePeeking.value = false
+          schedulePurplePeek()
+        }, 420)
+      }, 240)
+    }, 520)
+  }, Math.random() * 1800 + 1200)
 }
 
 watch(isShowingPassword, (value) => {
@@ -489,6 +515,10 @@ onBeforeUnmount(() => {
 
   if (sceneErrorTimer) {
     clearTimeout(sceneErrorTimer)
+  }
+
+  if (sceneErrorShakeTimer) {
+    clearTimeout(sceneErrorShakeTimer)
   }
 })
 
@@ -667,42 +697,44 @@ async function handleSubmit() {
                 <div class="auth-scene__ripple auth-scene__ripple--one" />
                 <div class="auth-scene__ripple auth-scene__ripple--two" />
 
-                <div class="auth-character auth-character--purple" :style="purpleCharacterStyle">
-                  <div class="auth-eyes auth-eyes--white" :class="{ 'shake-head': isSceneError }" :style="eyesShiftStyle(isPasswordFocused && !isShowingPassword ? -24 : isIdentityFocused ? 12 : 0, isPasswordFocused && !isShowingPassword ? -16 : isIdentityFocused ? 10 : 0, 10, 7)">
-                    <div class="auth-eyeball" :class="{ 'auth-eyeball--blink': purpleBlinking }">
-                      <div class="auth-pupil" :style="pupilStyle(5)" />
-                    </div>
-                    <div class="auth-eyeball" :class="{ 'auth-eyeball--blink': purpleBlinking }">
-                      <div class="auth-pupil" :style="pupilStyle(5)" />
+                <div class="auth-scene__stage">
+                  <div class="auth-character auth-character--purple" :style="purpleCharacterStyle">
+                    <div class="auth-eyes auth-eyes--white" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="eyesShiftStyle(isPasswordFocused && !isShowingPassword ? -18 : isIdentityFocused ? 10 : 0, isPasswordFocused && !isShowingPassword ? -12 : isIdentityFocused ? 8 : 0, 7, 5)">
+                      <div class="auth-eyeball" :class="{ 'auth-eyeball--blink': purpleBlinking }">
+                        <div class="auth-pupil" :style="pupilStyle(isPasswordFocused && !isShowingPassword ? 3.2 : isShowingPassword ? 3.8 : 5)" />
+                      </div>
+                      <div class="auth-eyeball" :class="{ 'auth-eyeball--blink': purpleBlinking }">
+                        <div class="auth-pupil" :style="pupilStyle(isPasswordFocused && !isShowingPassword ? 3.2 : isShowingPassword ? 3.8 : 5)" />
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div class="auth-character auth-character--ink" :style="inkCharacterStyle">
-                  <div class="auth-eyes auth-eyes--white" :class="{ 'shake-head': isSceneError }" :style="eyesShiftStyle(isPasswordFocused && !isShowingPassword ? -18 : isIdentityFocused ? 7 : 0, isPasswordFocused && !isShowingPassword ? -14 : isIdentityFocused ? -10 : 0, 8, 6)">
-                    <div class="auth-eyeball auth-eyeball--small" :class="{ 'auth-eyeball--blink': blackBlinking }">
-                      <div class="auth-pupil auth-pupil--small" :style="pupilStyle(4)" />
+                  <div class="auth-character auth-character--ink" :style="inkCharacterStyle">
+                    <div class="auth-eyes auth-eyes--white" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="eyesShiftStyle(isPasswordFocused && !isShowingPassword ? -14 : isIdentityFocused ? 6 : 0, isPasswordFocused && !isShowingPassword ? -10 : isIdentityFocused ? -7 : 0, 5.5, 4.2)">
+                      <div class="auth-eyeball auth-eyeball--small" :class="{ 'auth-eyeball--blink': blackBlinking }">
+                        <div class="auth-pupil auth-pupil--small" :style="pupilStyle(isPasswordFocused && !isShowingPassword ? 2.8 : isShowingPassword ? 3.2 : 4)" />
+                      </div>
+                      <div class="auth-eyeball auth-eyeball--small" :class="{ 'auth-eyeball--blink': blackBlinking }">
+                        <div class="auth-pupil auth-pupil--small" :style="pupilStyle(isPasswordFocused && !isShowingPassword ? 2.8 : isShowingPassword ? 3.2 : 4)" />
+                      </div>
                     </div>
-                    <div class="auth-eyeball auth-eyeball--small" :class="{ 'auth-eyeball--blink': blackBlinking }">
-                      <div class="auth-pupil auth-pupil--small" :style="pupilStyle(4)" />
+                  </div>
+
+                  <div class="auth-character auth-character--orange" :style="orangeCharacterStyle">
+                    <div class="auth-eyes auth-eyes--bare" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="eyesShiftStyle(isPasswordFocused && !isShowingPassword ? -16 : isShowingPassword ? -10 : 0, isPasswordFocused && !isShowingPassword ? -10 : isShowingPassword ? -4 : 0, 6, 4.8)">
+                      <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(isPasswordFocused && !isShowingPassword ? 3 : isShowingPassword ? 3.4 : 5)" />
+                      <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(isPasswordFocused && !isShowingPassword ? 3 : isShowingPassword ? 3.4 : 5)" />
                     </div>
+                    <div :class="orangeMouthClassName" />
                   </div>
-                </div>
 
-                <div class="auth-character auth-character--orange" :style="orangeCharacterStyle">
-                  <div class="auth-eyes auth-eyes--bare" :class="{ 'shake-head': isSceneError }" :style="eyesShiftStyle(isPasswordFocused && !isShowingPassword ? -24 : isShowingPassword ? -16 : 0, isPasswordFocused && !isShowingPassword ? -14 : isShowingPassword ? -6 : 0, 10, 7)">
-                    <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(5)" />
-                    <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(5)" />
+                  <div class="auth-character auth-character--yellow" :style="yellowCharacterStyle">
+                    <div class="auth-eyes auth-eyes--bare" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="eyesShiftStyle(isPasswordFocused && !isShowingPassword ? -14 : isShowingPassword ? -10 : 0, isPasswordFocused && !isShowingPassword ? -9 : isShowingPassword ? -3 : 0, 5.5, 4.5)">
+                      <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(isPasswordFocused && !isShowingPassword ? 2.8 : isShowingPassword ? 3.2 : 5)" />
+                      <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(isPasswordFocused && !isShowingPassword ? 2.8 : isShowingPassword ? 3.2 : 5)" />
+                    </div>
+                    <div class="auth-scene-mouth auth-scene-mouth--line" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="yellowMouthStyle" />
                   </div>
-                  <div :class="orangeMouthClassName" />
-                </div>
-
-                <div class="auth-character auth-character--yellow" :style="yellowCharacterStyle">
-                  <div class="auth-eyes auth-eyes--bare" :class="{ 'shake-head': isSceneError }" :style="eyesShiftStyle(isPasswordFocused && !isShowingPassword ? -18 : isShowingPassword ? -14 : 0, isPasswordFocused && !isShowingPassword ? -12 : isShowingPassword ? -4 : 0, 8, 6)">
-                    <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(5)" />
-                    <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(5)" />
-                  </div>
-                  <div class="auth-scene-mouth auth-scene-mouth--line" :class="{ 'shake-head': isSceneError }" :style="yellowMouthStyle" />
                 </div>
 
                 <div class="auth-scene__status">
@@ -939,12 +971,20 @@ async function handleSubmit() {
   animation: login-float 12s ease-in-out infinite reverse;
 }
 
+.auth-scene__stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  height: 22.5rem;
+  width: 26rem;
+  transform: translate(-50%, -50%);
+}
+
 .auth-scene__status {
   position: absolute;
-  left: 1.5rem;
-  right: 1.5rem;
+  left: 50%;
   bottom: 1.5rem;
-  max-width: 18rem;
+  transform: translateX(-50%);
 }
 
 .auth-character {
@@ -955,7 +995,7 @@ async function handleSubmit() {
 }
 
 .auth-character--purple {
-  left: 3.25rem;
+  left: 3.2rem;
   width: 10rem;
   height: 15.3rem;
   border-radius: 1.25rem 1.25rem 0 0;
@@ -965,7 +1005,7 @@ async function handleSubmit() {
 }
 
 .auth-character--ink {
-  left: 11.8rem;
+  left: 12rem;
   width: 6.4rem;
   height: 12.5rem;
   border-radius: 1rem 1rem 0 0;
@@ -975,7 +1015,7 @@ async function handleSubmit() {
 }
 
 .auth-character--orange {
-  left: 1.6rem;
+  left: 1.5rem;
   width: 12.8rem;
   height: 9.8rem;
   border-radius: 999px 999px 0 0;
@@ -984,7 +1024,7 @@ async function handleSubmit() {
 }
 
 .auth-character--yellow {
-  left: 15.5rem;
+  left: 15.7rem;
   width: 7.3rem;
   height: 10.9rem;
   border-radius: 999px 999px 0 0;
