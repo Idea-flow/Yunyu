@@ -97,19 +97,19 @@ function clamp(value: number, min: number, max: number) {
  */
 const sceneVector = computed(() => {
   if (isSceneError.value) {
-    return { x: -0.7, y: 0.82 }
+    return { x: -0.92, y: 0.96 }
   }
 
   if (isPasswordFocused.value && !isShowingPassword.value) {
-    return { x: -1, y: -0.9 }
+    return { x: -1.18, y: -1.02 }
   }
 
   if (isShowingPassword.value) {
-    return { x: purplePeeking.value ? 0.6 : -0.72, y: purplePeeking.value ? 0.68 : -0.52 }
+    return { x: purplePeeking.value ? 0.92 : -0.98, y: purplePeeking.value ? 0.88 : -0.62 }
   }
 
   if (isIdentityFocused.value) {
-    return { x: 0.56, y: 0.72 }
+    return { x: 0.82, y: 0.96 }
   }
 
   return {
@@ -131,6 +131,23 @@ function pupilStyle(strength: number) {
 }
 
 /**
+ * 计算角色眼睛区域的整体位移。
+ * 作用：在保留瞳孔跟随的同时，让整个眼睛区也产生更明显的方向偏移，
+ * 更接近参考页里“整张脸在转向”的感觉。
+ *
+ * @param baseX 基准横向偏移
+ * @param baseY 基准纵向偏移
+ * @param factorX 横向放大系数
+ * @param factorY 纵向放大系数
+ * @return 眼睛区域变换样式
+ */
+function eyesShiftStyle(baseX: number, baseY: number, factorX: number, factorY: number) {
+  return {
+    transform: `translate(${(baseX + sceneVector.value.x * factorX).toFixed(2)}px, ${(baseY + sceneVector.value.y * factorY).toFixed(2)}px)`
+  }
+}
+
+/**
  * 计算左侧紫色角色的主体姿态。
  *
  * @return 角色变换样式
@@ -138,20 +155,20 @@ function pupilStyle(strength: number) {
 const purpleCharacterStyle = computed(() => {
   if (isPasswordFocused.value && !isShowingPassword.value) {
     return {
-      transform: 'skewX(-13deg) translateX(-16px)',
-      height: '16.4rem'
+      transform: 'skewX(-18deg) translateX(-28px)',
+      height: '17rem'
     }
   }
 
   if (isIdentityFocused.value) {
     return {
-      transform: `skewX(${(-10 + sceneVector.value.x * 3).toFixed(2)}deg) translateX(14px)`,
-      height: '16rem'
+      transform: `skewX(${(-14 + sceneVector.value.x * 4.5).toFixed(2)}deg) translateX(28px)`,
+      height: '16.8rem'
     }
   }
 
   return {
-    transform: `skewX(${(sceneVector.value.x * -5).toFixed(2)}deg) translateX(${(sceneVector.value.x * 4).toFixed(2)}px)`,
+    transform: `skewX(${(sceneVector.value.x * -8).toFixed(2)}deg) translateX(${(sceneVector.value.x * 10).toFixed(2)}px)`,
     height: '15.3rem'
   }
 })
@@ -164,18 +181,18 @@ const purpleCharacterStyle = computed(() => {
 const inkCharacterStyle = computed(() => {
   if (isPasswordFocused.value && !isShowingPassword.value) {
     return {
-      transform: 'skewX(12deg) translateX(-10px)'
+      transform: 'skewX(16deg) translateX(-16px)'
     }
   }
 
   if (isIdentityFocused.value) {
     return {
-      transform: `skewX(${(8 + sceneVector.value.x * 4).toFixed(2)}deg) translateX(12px)`
+      transform: `skewX(${(12 + sceneVector.value.x * 5.5).toFixed(2)}deg) translateX(20px)`
     }
   }
 
   return {
-    transform: `skewX(${(sceneVector.value.x * -4).toFixed(2)}deg)`
+    transform: `skewX(${(sceneVector.value.x * -7).toFixed(2)}deg) translateX(${(sceneVector.value.x * 5).toFixed(2)}px)`
   }
 })
 
@@ -188,7 +205,7 @@ const orangeCharacterStyle = computed(() => {
   return {
     transform: isShowingPassword.value
       ? 'skewX(0deg)'
-      : `skewX(${(sceneVector.value.x * -3.6).toFixed(2)}deg)`
+      : `skewX(${(sceneVector.value.x * -6.2).toFixed(2)}deg) translateX(${(sceneVector.value.x * 7).toFixed(2)}px)`
   }
 })
 
@@ -201,7 +218,7 @@ const yellowCharacterStyle = computed(() => {
   return {
     transform: isShowingPassword.value
       ? 'skewX(0deg)'
-      : `skewX(${(sceneVector.value.x * -3.2).toFixed(2)}deg)`
+      : `skewX(${(sceneVector.value.x * -5.8).toFixed(2)}deg) translateX(${(sceneVector.value.x * 6).toFixed(2)}px)`
   }
 })
 
@@ -348,8 +365,8 @@ function handleScenePointerMove(event: PointerEvent) {
   const ratioX = (event.clientX - rect.left) / rect.width
   const ratioY = (event.clientY - rect.top) / rect.height
 
-  scenePointer.offsetX = clamp((ratioX - 0.5) * 2, -1, 1)
-  scenePointer.offsetY = clamp((ratioY - 0.42) * 2, -1, 1)
+  scenePointer.offsetX = clamp((ratioX - 0.5) * 2.35, -1.28, 1.28)
+  scenePointer.offsetY = clamp((ratioY - 0.42) * 2.15, -1.2, 1.2)
 }
 
 /**
@@ -599,7 +616,11 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <main class="login-page relative isolate h-[100svh] overflow-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#eef5ff_52%,#f9fafb_100%)] text-slate-900 dark:bg-[linear-gradient(180deg,#020617_0%,#0f172a_48%,#111827_100%)] dark:text-slate-50">
+  <main
+    class="login-page relative isolate h-[100svh] overflow-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#eef5ff_52%,#f9fafb_100%)] text-slate-900 dark:bg-[linear-gradient(180deg,#020617_0%,#0f172a_48%,#111827_100%)] dark:text-slate-50"
+    @pointermove="handleScenePointerMove"
+    @pointerleave="resetScenePointer"
+  >
     <div class="pointer-events-none absolute inset-0 overflow-hidden">
       <div class="absolute -left-20 top-0 h-72 w-72 rounded-full bg-[color:color-mix(in_srgb,var(--site-primary-color)_22%,white)] blur-3xl dark:bg-[color:color-mix(in_srgb,var(--site-primary-color)_18%,transparent)]" />
       <div class="absolute right-[-4rem] top-[18%] h-80 w-80 rounded-full bg-[color:color-mix(in_srgb,var(--site-secondary-color)_18%,white)] blur-3xl dark:bg-[color:color-mix(in_srgb,var(--site-secondary-color)_14%,transparent)]" />
@@ -640,8 +661,6 @@ async function handleSubmit() {
           <div class="relative mt-4 flex flex-1 items-center justify-center lg:mt-0">
             <div
               class="relative hidden h-full max-h-[760px] min-h-[20rem] w-full overflow-hidden rounded-[36px] lg:block"
-              @pointermove="handleScenePointerMove"
-              @pointerleave="resetScenePointer"
             >
               <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(255,255,255,0.72),transparent_20rem),radial-gradient(circle_at_78%_16%,color-mix(in_srgb,var(--site-secondary-color)_16%,white),transparent_16rem),linear-gradient(180deg,rgba(255,255,255,0.26),transparent)] dark:bg-[radial-gradient(circle_at_20%_18%,rgba(255,255,255,0.08),transparent_18rem),radial-gradient(circle_at_78%_16%,color-mix(in_srgb,var(--site-secondary-color)_12%,transparent),transparent_16rem),linear-gradient(180deg,rgba(255,255,255,0.03),transparent)]" />
               <div class="auth-scene relative h-full">
@@ -649,7 +668,7 @@ async function handleSubmit() {
                 <div class="auth-scene__ripple auth-scene__ripple--two" />
 
                 <div class="auth-character auth-character--purple" :style="purpleCharacterStyle">
-                  <div class="auth-eyes auth-eyes--white" :class="{ 'shake-head': isSceneError }">
+                  <div class="auth-eyes auth-eyes--white" :class="{ 'shake-head': isSceneError }" :style="eyesShiftStyle(isPasswordFocused && !isShowingPassword ? -24 : isIdentityFocused ? 12 : 0, isPasswordFocused && !isShowingPassword ? -16 : isIdentityFocused ? 10 : 0, 10, 7)">
                     <div class="auth-eyeball" :class="{ 'auth-eyeball--blink': purpleBlinking }">
                       <div class="auth-pupil" :style="pupilStyle(5)" />
                     </div>
@@ -660,7 +679,7 @@ async function handleSubmit() {
                 </div>
 
                 <div class="auth-character auth-character--ink" :style="inkCharacterStyle">
-                  <div class="auth-eyes auth-eyes--white" :class="{ 'shake-head': isSceneError }">
+                  <div class="auth-eyes auth-eyes--white" :class="{ 'shake-head': isSceneError }" :style="eyesShiftStyle(isPasswordFocused && !isShowingPassword ? -18 : isIdentityFocused ? 7 : 0, isPasswordFocused && !isShowingPassword ? -14 : isIdentityFocused ? -10 : 0, 8, 6)">
                     <div class="auth-eyeball auth-eyeball--small" :class="{ 'auth-eyeball--blink': blackBlinking }">
                       <div class="auth-pupil auth-pupil--small" :style="pupilStyle(4)" />
                     </div>
@@ -671,7 +690,7 @@ async function handleSubmit() {
                 </div>
 
                 <div class="auth-character auth-character--orange" :style="orangeCharacterStyle">
-                  <div class="auth-eyes auth-eyes--bare" :class="{ 'shake-head': isSceneError }">
+                  <div class="auth-eyes auth-eyes--bare" :class="{ 'shake-head': isSceneError }" :style="eyesShiftStyle(isPasswordFocused && !isShowingPassword ? -24 : isShowingPassword ? -16 : 0, isPasswordFocused && !isShowingPassword ? -14 : isShowingPassword ? -6 : 0, 10, 7)">
                     <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(5)" />
                     <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(5)" />
                   </div>
@@ -679,7 +698,7 @@ async function handleSubmit() {
                 </div>
 
                 <div class="auth-character auth-character--yellow" :style="yellowCharacterStyle">
-                  <div class="auth-eyes auth-eyes--bare" :class="{ 'shake-head': isSceneError }">
+                  <div class="auth-eyes auth-eyes--bare" :class="{ 'shake-head': isSceneError }" :style="eyesShiftStyle(isPasswordFocused && !isShowingPassword ? -18 : isShowingPassword ? -14 : 0, isPasswordFocused && !isShowingPassword ? -12 : isShowingPassword ? -4 : 0, 8, 6)">
                     <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(5)" />
                     <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(5)" />
                   </div>
@@ -932,7 +951,7 @@ async function handleSubmit() {
   position: absolute;
   bottom: 0;
   transform-origin: bottom center;
-  transition: transform 0.7s ease, height 0.7s ease;
+  transition: transform 0.68s ease-in-out, height 0.68s ease-in-out;
 }
 
 .auth-character--purple {
@@ -1101,35 +1120,35 @@ async function handleSubmit() {
   }
 
   10% {
-    translate: -9px 0;
+    translate: -14px 0;
   }
 
   20% {
-    translate: 7px 0;
+    translate: 12px 0;
   }
 
   30% {
-    translate: -6px 0;
+    translate: -10px 0;
   }
 
   40% {
-    translate: 5px 0;
+    translate: 8px 0;
   }
 
   50% {
-    translate: -4px 0;
+    translate: -7px 0;
   }
 
   60% {
-    translate: 3px 0;
+    translate: 5px 0;
   }
 
   70% {
-    translate: -2px 0;
+    translate: -4px 0;
   }
 
   80% {
-    translate: 1px 0;
+    translate: 2px 0;
   }
 
   90% {
