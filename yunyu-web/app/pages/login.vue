@@ -182,6 +182,26 @@ function eyesShiftStyle(vector: { x: number, y: number }, baseX: number, baseY: 
 }
 
 /**
+ * 计算单只眼球的细微位移。
+ * 作用：让左右眼在同方向跟随时保留轻微错位，避免两只眼睛永远像镜像复制，
+ * 更贴近参考页里“眼白位置也在变化”的灵动感。
+ *
+ * @param vector 当前角色使用的观察向量
+ * @param strength 位移强度
+ * @param side 眼睛方向
+ * @return 单只眼球位移样式
+ */
+function eyeballStyle(vector: { x: number, y: number }, strength: number, side: 'left' | 'right') {
+  const sideOffset = side === 'left' ? -0.8 : 0.8
+  const x = clamp(vector.x * strength + sideOffset + vector.y * 0.3, -7, 7)
+  const y = clamp(vector.y * (strength * 0.72) + (side === 'left' ? -0.22 : 0.22), -5, 5)
+
+  return {
+    transform: `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px)`
+  }
+}
+
+/**
  * 计算左侧紫色角色的主体姿态。
  *
  * @return 角色变换样式
@@ -714,10 +734,10 @@ async function handleSubmit() {
                 <div class="auth-scene__stage">
                   <div class="auth-character auth-character--purple" :style="purpleCharacterStyle">
                     <div class="auth-eyes auth-eyes--white" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="eyesShiftStyle(purpleSceneVector, isPasswordFocused && !isShowingPassword ? -14 : isShowingPassword && purplePeeking && purplePeekPhase === 'forward' ? 14 : isShowingPassword && purplePeeking && purplePeekPhase === 'return' ? -10 : isIdentityFocused ? 10 : 0, isPasswordFocused && !isShowingPassword ? -12 : isShowingPassword && purplePeeking && purplePeekPhase === 'forward' ? 9 : isShowingPassword && purplePeeking && purplePeekPhase === 'return' ? -5 : isIdentityFocused ? 8 : 0, 5.8, 4.1)">
-                      <div class="auth-eyeball" :class="{ 'auth-eyeball--blink': purpleBlinking }">
+                      <div class="auth-eyeball" :class="{ 'auth-eyeball--blink': purpleBlinking }" :style="eyeballStyle(purpleSceneVector, isPasswordFocused && !isShowingPassword ? 1.1 : isShowingPassword && purplePeeking && purplePeekPhase === 'forward' ? 1.4 : isShowingPassword ? 1 : 1.45, 'left')">
                         <div class="auth-pupil" :style="pupilStyle(purpleSceneVector, isPasswordFocused && !isShowingPassword ? 2.4 : isShowingPassword && purplePeeking && purplePeekPhase === 'forward' ? 4 : isShowingPassword && purplePeekPhase === 'return' ? 2.8 : isShowingPassword ? 3.2 : 4.7)" />
                       </div>
-                      <div class="auth-eyeball" :class="{ 'auth-eyeball--blink': purpleBlinking }">
+                      <div class="auth-eyeball" :class="{ 'auth-eyeball--blink': purpleBlinking }" :style="eyeballStyle(purpleSceneVector, isPasswordFocused && !isShowingPassword ? 1.1 : isShowingPassword && purplePeeking && purplePeekPhase === 'forward' ? 1.4 : isShowingPassword ? 1 : 1.45, 'right')">
                         <div class="auth-pupil" :style="pupilStyle(purpleSceneVector, isPasswordFocused && !isShowingPassword ? 2.4 : isShowingPassword && purplePeeking && purplePeekPhase === 'forward' ? 4 : isShowingPassword && purplePeekPhase === 'return' ? 2.8 : isShowingPassword ? 3.2 : 4.7)" />
                       </div>
                     </div>
@@ -725,10 +745,10 @@ async function handleSubmit() {
 
                   <div class="auth-character auth-character--ink" :style="inkCharacterStyle">
                     <div class="auth-eyes auth-eyes--white" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="eyesShiftStyle(inkSceneVector, isPasswordFocused && !isShowingPassword ? -10 : isIdentityFocused ? 6 : 0, isPasswordFocused && !isShowingPassword ? -11 : isIdentityFocused ? -7 : 0, 4.3, 3.5)">
-                      <div class="auth-eyeball auth-eyeball--small" :class="{ 'auth-eyeball--blink': blackBlinking }">
+                      <div class="auth-eyeball auth-eyeball--small" :class="{ 'auth-eyeball--blink': blackBlinking }" :style="eyeballStyle(inkSceneVector, isPasswordFocused && !isShowingPassword ? 1 : isShowingPassword ? 0.9 : 1.2, 'left')">
                         <div class="auth-pupil auth-pupil--small" :style="pupilStyle(inkSceneVector, isPasswordFocused && !isShowingPassword ? 2.3 : isShowingPassword ? 2.8 : 3.7)" />
                       </div>
-                      <div class="auth-eyeball auth-eyeball--small" :class="{ 'auth-eyeball--blink': blackBlinking }">
+                      <div class="auth-eyeball auth-eyeball--small" :class="{ 'auth-eyeball--blink': blackBlinking }" :style="eyeballStyle(inkSceneVector, isPasswordFocused && !isShowingPassword ? 1 : isShowingPassword ? 0.9 : 1.2, 'right')">
                         <div class="auth-pupil auth-pupil--small" :style="pupilStyle(inkSceneVector, isPasswordFocused && !isShowingPassword ? 2.3 : isShowingPassword ? 2.8 : 3.7)" />
                       </div>
                     </div>
@@ -1041,7 +1061,7 @@ async function handleSubmit() {
   overflow: hidden;
   border-radius: 999px;
   background: white;
-  transition: height 0.15s ease;
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), height 0.15s ease;
 }
 
 .auth-eyeball--small {
