@@ -43,6 +43,7 @@ const sceneErrorStage = ref<SceneErrorStage>('idle')
 const purpleBlinking = ref(false)
 const blackBlinking = ref(false)
 const purplePeeking = ref(false)
+const purplePeekPhase = ref<'forward' | 'return'>('forward')
 const passwordVisibility = reactive<Record<PasswordField, boolean>>({
   password: false,
   confirmPassword: false
@@ -100,15 +101,15 @@ function clamp(value: number, min: number, max: number) {
  */
 const sceneVector = computed(() => {
   if (isSceneError.value) {
-    return { x: -0.7, y: 0.82 }
+    return { x: -0.62, y: 0.8 }
   }
 
   if (isPasswordFocused.value && !isShowingPassword.value) {
-    return { x: -1.18, y: -1.02 }
+    return { x: -1.02, y: -0.9 }
   }
 
   if (isShowingPassword.value) {
-    return { x: purplePeeking.value ? 0.92 : -0.98, y: purplePeeking.value ? 0.88 : -0.62 }
+    return { x: purplePeeking.value ? 0.84 : -0.88, y: purplePeeking.value ? 0.78 : -0.54 }
   }
 
   if (isIdentityFocused.value) {
@@ -122,14 +123,40 @@ const sceneVector = computed(() => {
 })
 
 /**
+ * 根据角色在舞台中的相对站位，计算各自的观察向量。
+ * 作用：参考原始示例里“每个角色按自身位置单独追踪鼠标”的逻辑，
+ * 避免所有角色共用同一向量后出现同步过强、表情发呆的问题。
+ *
+ * @param anchorX 角色横向锚点
+ * @param anchorY 角色纵向锚点
+ * @return 当前角色专属的观察向量
+ */
+function resolveCharacterVector(anchorX: number, anchorY: number) {
+  if (isSceneError.value || isPasswordFocused.value || isShowingPassword.value || isIdentityFocused.value) {
+    return sceneVector.value
+  }
+
+  return {
+    x: clamp(scenePointer.offsetX - anchorX, -1.36, 1.36),
+    y: clamp(scenePointer.offsetY - anchorY, -1.24, 1.24)
+  }
+}
+
+const purpleSceneVector = computed(() => resolveCharacterVector(-0.34, -0.1))
+const inkSceneVector = computed(() => resolveCharacterVector(0.05, -0.02))
+const orangeSceneVector = computed(() => resolveCharacterVector(-0.22, 0.18))
+const yellowSceneVector = computed(() => resolveCharacterVector(0.34, -0.08))
+
+/**
  * 根据朝向向量计算角色的瞳孔位移。
  *
+ * @param vector 当前角色使用的观察向量
  * @param strength 位移强度
  * @return 瞳孔位移样式
  */
-function pupilStyle(strength: number) {
+function pupilStyle(vector: { x: number, y: number }, strength: number) {
   return {
-    transform: `translate(${(sceneVector.value.x * strength).toFixed(2)}px, ${(sceneVector.value.y * strength).toFixed(2)}px)`
+    transform: `translate(${(vector.x * strength).toFixed(2)}px, ${(vector.y * strength).toFixed(2)}px)`
   }
 }
 
@@ -138,15 +165,16 @@ function pupilStyle(strength: number) {
  * 作用：在保留瞳孔跟随的同时，让整个眼睛区也产生更明显的方向偏移，
  * 更接近参考页里“整张脸在转向”的感觉。
  *
+ * @param vector 当前角色使用的观察向量
  * @param baseX 基准横向偏移
  * @param baseY 基准纵向偏移
  * @param factorX 横向放大系数
  * @param factorY 纵向放大系数
  * @return 眼睛区域变换样式
  */
-function eyesShiftStyle(baseX: number, baseY: number, factorX: number, factorY: number) {
-  const x = clamp(baseX + sceneVector.value.x * factorX, -24, 24)
-  const y = clamp(baseY + sceneVector.value.y * factorY, -18, 18)
+function eyesShiftStyle(vector: { x: number, y: number }, baseX: number, baseY: number, factorX: number, factorY: number) {
+  const x = clamp(baseX + vector.x * factorX, -20, 20)
+  const y = clamp(baseY + vector.y * factorY, -15, 15)
 
   return {
     transform: `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px)`
@@ -161,21 +189,42 @@ function eyesShiftStyle(baseX: number, baseY: number, factorX: number, factorY: 
 const purpleCharacterStyle = computed(() => {
   if (isPasswordFocused.value && !isShowingPassword.value) {
     return {
-      transform: 'skewX(-18deg) translateX(-28px)',
-      height: '17rem'
+      transform: 'skewX(-15deg) translateX(-19px) translateY(-1px)',
+      height: '20.15rem'
+    }
+  }
+
+  if (isShowingPassword.value) {
+    if (purplePeeking.value && purplePeekPhase.value === 'forward') {
+      return {
+        transform: 'skewX(6deg) translateX(18px) translateY(-4px)',
+        height: '18.75rem'
+      }
+    }
+
+    if (purplePeeking.value && purplePeekPhase.value === 'return') {
+      return {
+        transform: 'skewX(-10deg) translateX(-10px) translateY(-1px)',
+        height: '18.1rem'
+      }
+    }
+
+    return {
+      transform: 'skewX(-8deg) translateX(-8px)',
+      height: '18.2rem'
     }
   }
 
   if (isIdentityFocused.value) {
     return {
-      transform: `skewX(${(-14 + sceneVector.value.x * 4.5).toFixed(2)}deg) translateX(28px)`,
-      height: '16.8rem'
+      transform: `skewX(${(-14 + purpleSceneVector.value.x * 4.5).toFixed(2)}deg) translateX(28px)`,
+      height: '20.15rem'
     }
   }
 
   return {
-    transform: `skewX(${(sceneVector.value.x * -8).toFixed(2)}deg) translateX(${(sceneVector.value.x * 10).toFixed(2)}px)`,
-    height: '15.3rem'
+    transform: `skewX(${(purpleSceneVector.value.x * -8).toFixed(2)}deg) translateX(${(purpleSceneVector.value.x * 10).toFixed(2)}px)`,
+    height: '18.2rem'
   }
 })
 
@@ -187,18 +236,18 @@ const purpleCharacterStyle = computed(() => {
 const inkCharacterStyle = computed(() => {
   if (isPasswordFocused.value && !isShowingPassword.value) {
     return {
-      transform: 'skewX(16deg) translateX(-16px)'
+      transform: 'skewX(13deg) translateX(-11px) translateY(-1px)'
     }
   }
 
   if (isIdentityFocused.value) {
     return {
-      transform: `skewX(${(12 + sceneVector.value.x * 5.5).toFixed(2)}deg) translateX(20px)`
+      transform: `skewX(${(12 + inkSceneVector.value.x * 5.5).toFixed(2)}deg) translateX(20px)`
     }
   }
 
   return {
-    transform: `skewX(${(sceneVector.value.x * -7).toFixed(2)}deg) translateX(${(sceneVector.value.x * 5).toFixed(2)}px)`
+    transform: `skewX(${(inkSceneVector.value.x * -7).toFixed(2)}deg) translateX(${(inkSceneVector.value.x * 5).toFixed(2)}px)`
   }
 })
 
@@ -208,10 +257,16 @@ const inkCharacterStyle = computed(() => {
  * @return 角色变换样式
  */
 const orangeCharacterStyle = computed(() => {
+  if (isPasswordFocused.value && !isShowingPassword.value) {
+    return {
+      transform: 'skewX(5deg) translateX(-9px)'
+    }
+  }
+
   return {
     transform: isShowingPassword.value
       ? 'skewX(0deg)'
-      : `skewX(${(sceneVector.value.x * -6.2).toFixed(2)}deg) translateX(${(sceneVector.value.x * 7).toFixed(2)}px)`
+      : `skewX(${(orangeSceneVector.value.x * -6.2).toFixed(2)}deg) translateX(${(orangeSceneVector.value.x * 7).toFixed(2)}px)`
   }
 })
 
@@ -221,10 +276,16 @@ const orangeCharacterStyle = computed(() => {
  * @return 角色变换样式
  */
 const yellowCharacterStyle = computed(() => {
+  if (isPasswordFocused.value && !isShowingPassword.value) {
+    return {
+      transform: 'skewX(7deg) translateX(-6px) translateY(-1px)'
+    }
+  }
+
   return {
     transform: isShowingPassword.value
       ? 'skewX(0deg)'
-      : `skewX(${(sceneVector.value.x * -5.8).toFixed(2)}deg) translateX(${(sceneVector.value.x * 6).toFixed(2)}px)`
+      : `skewX(${(yellowSceneVector.value.x * -5.8).toFixed(2)}deg) translateX(${(yellowSceneVector.value.x * 6).toFixed(2)}px)`
   }
 })
 
@@ -258,28 +319,8 @@ const yellowMouthStyle = computed(() => {
   }
 
   return {
-    transform: `translate(${(sceneVector.value.x * 5).toFixed(2)}px, ${(sceneVector.value.y * 4).toFixed(2)}px)`
+    transform: `translate(${(yellowSceneVector.value.x * 5).toFixed(2)}px, ${(yellowSceneVector.value.y * 4).toFixed(2)}px)`
   }
-})
-
-/**
- * 计算表单区标题。
- *
- * @return 表单标题
- */
-const formTitle = computed(() => {
-  return authMode.value === 'login' ? '登录你的账户' : '注册新账户'
-})
-
-/**
- * 计算表单区辅助说明。
- *
- * @return 表单说明文案
- */
-const formDescription = computed(() => {
-  return authMode.value === 'login'
-    ? '输入账号与密码，继续访问你的云屿空间。'
-    : '请设置常用邮箱与密码，后续可直接用于登录。'
 })
 
 /**
@@ -293,26 +334,6 @@ const submitButtonText = computed(() => {
   }
 
   return authMode.value === 'login' ? '登录并进入' : '注册并进入'
-})
-
-/**
- * 计算回跳提示文案。
- * 作用：当用户是从受保护页面跳转过来时，明确告知登录后会回到原目标页。
- *
- * @return 回跳提示
- */
-const redirectHint = computed(() => {
-  const redirect = route.query.redirect
-
-  if (typeof redirect !== 'string' || !redirect.startsWith('/')) {
-    return ''
-  }
-
-  if (redirect.startsWith('/admin')) {
-    return '登录成功后将继续进入后台管理。'
-  }
-
-  return '登录成功后将返回你刚才访问的页面。'
 })
 
 /**
@@ -415,13 +436,13 @@ function triggerSceneError() {
   sceneErrorShakeTimer = setTimeout(() => {
     sceneErrorStage.value = 'shake'
     sceneErrorShakeTimer = null
-  }, 360)
+  }, 520)
 
   sceneErrorTimer = setTimeout(() => {
     isSceneError.value = false
     sceneErrorStage.value = 'idle'
     sceneErrorTimer = null
-  }, 2350)
+  }, 2680)
 }
 
 /**
@@ -467,19 +488,20 @@ function schedulePurplePeek() {
 
   purplePeekTimer = setTimeout(() => {
     purplePeeking.value = true
+    purplePeekPhase.value = 'forward'
 
     setTimeout(() => {
-      purplePeeking.value = false
       purplePeekTimer = setTimeout(() => {
-        purplePeeking.value = true
+        purplePeekPhase.value = 'return'
 
         setTimeout(() => {
           purplePeeking.value = false
+          purplePeekPhase.value = 'forward'
           schedulePurplePeek()
-        }, 420)
-      }, 240)
-    }, 520)
-  }, Math.random() * 1800 + 1200)
+        }, 460)
+      }, 260)
+    }, 560)
+  }, Math.random() * 1400 + 1500)
 }
 
 watch(isShowingPassword, (value) => {
@@ -699,39 +721,39 @@ async function handleSubmit() {
 
                 <div class="auth-scene__stage">
                   <div class="auth-character auth-character--purple" :style="purpleCharacterStyle">
-                    <div class="auth-eyes auth-eyes--white" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="eyesShiftStyle(isPasswordFocused && !isShowingPassword ? -18 : isIdentityFocused ? 10 : 0, isPasswordFocused && !isShowingPassword ? -12 : isIdentityFocused ? 8 : 0, 7, 5)">
+                    <div class="auth-eyes auth-eyes--white" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="eyesShiftStyle(purpleSceneVector, isPasswordFocused && !isShowingPassword ? -14 : isShowingPassword && purplePeeking && purplePeekPhase === 'forward' ? 14 : isShowingPassword && purplePeeking && purplePeekPhase === 'return' ? -10 : isIdentityFocused ? 10 : 0, isPasswordFocused && !isShowingPassword ? -12 : isShowingPassword && purplePeeking && purplePeekPhase === 'forward' ? 9 : isShowingPassword && purplePeeking && purplePeekPhase === 'return' ? -5 : isIdentityFocused ? 8 : 0, 5.8, 4.1)">
                       <div class="auth-eyeball" :class="{ 'auth-eyeball--blink': purpleBlinking }">
-                        <div class="auth-pupil" :style="pupilStyle(isPasswordFocused && !isShowingPassword ? 3.2 : isShowingPassword ? 3.8 : 5)" />
+                        <div class="auth-pupil" :style="pupilStyle(purpleSceneVector, isPasswordFocused && !isShowingPassword ? 2.4 : isShowingPassword && purplePeeking && purplePeekPhase === 'forward' ? 4 : isShowingPassword && purplePeekPhase === 'return' ? 2.8 : isShowingPassword ? 3.2 : 4.7)" />
                       </div>
                       <div class="auth-eyeball" :class="{ 'auth-eyeball--blink': purpleBlinking }">
-                        <div class="auth-pupil" :style="pupilStyle(isPasswordFocused && !isShowingPassword ? 3.2 : isShowingPassword ? 3.8 : 5)" />
+                        <div class="auth-pupil" :style="pupilStyle(purpleSceneVector, isPasswordFocused && !isShowingPassword ? 2.4 : isShowingPassword && purplePeeking && purplePeekPhase === 'forward' ? 4 : isShowingPassword && purplePeekPhase === 'return' ? 2.8 : isShowingPassword ? 3.2 : 4.7)" />
                       </div>
                     </div>
                   </div>
 
                   <div class="auth-character auth-character--ink" :style="inkCharacterStyle">
-                    <div class="auth-eyes auth-eyes--white" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="eyesShiftStyle(isPasswordFocused && !isShowingPassword ? -14 : isIdentityFocused ? 6 : 0, isPasswordFocused && !isShowingPassword ? -10 : isIdentityFocused ? -7 : 0, 5.5, 4.2)">
+                    <div class="auth-eyes auth-eyes--white" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="eyesShiftStyle(inkSceneVector, isPasswordFocused && !isShowingPassword ? -10 : isIdentityFocused ? 6 : 0, isPasswordFocused && !isShowingPassword ? -11 : isIdentityFocused ? -7 : 0, 4.3, 3.5)">
                       <div class="auth-eyeball auth-eyeball--small" :class="{ 'auth-eyeball--blink': blackBlinking }">
-                        <div class="auth-pupil auth-pupil--small" :style="pupilStyle(isPasswordFocused && !isShowingPassword ? 2.8 : isShowingPassword ? 3.2 : 4)" />
+                        <div class="auth-pupil auth-pupil--small" :style="pupilStyle(inkSceneVector, isPasswordFocused && !isShowingPassword ? 2.3 : isShowingPassword ? 2.8 : 3.7)" />
                       </div>
                       <div class="auth-eyeball auth-eyeball--small" :class="{ 'auth-eyeball--blink': blackBlinking }">
-                        <div class="auth-pupil auth-pupil--small" :style="pupilStyle(isPasswordFocused && !isShowingPassword ? 2.8 : isShowingPassword ? 3.2 : 4)" />
+                        <div class="auth-pupil auth-pupil--small" :style="pupilStyle(inkSceneVector, isPasswordFocused && !isShowingPassword ? 2.3 : isShowingPassword ? 2.8 : 3.7)" />
                       </div>
                     </div>
                   </div>
 
                   <div class="auth-character auth-character--orange" :style="orangeCharacterStyle">
-                    <div class="auth-eyes auth-eyes--bare" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="eyesShiftStyle(isPasswordFocused && !isShowingPassword ? -16 : isShowingPassword ? -10 : 0, isPasswordFocused && !isShowingPassword ? -10 : isShowingPassword ? -4 : 0, 6, 4.8)">
-                      <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(isPasswordFocused && !isShowingPassword ? 3 : isShowingPassword ? 3.4 : 5)" />
-                      <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(isPasswordFocused && !isShowingPassword ? 3 : isShowingPassword ? 3.4 : 5)" />
+                    <div class="auth-eyes auth-eyes--bare" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="eyesShiftStyle(orangeSceneVector, isPasswordFocused && !isShowingPassword ? -13 : isShowingPassword ? -9 : 0, isPasswordFocused && !isShowingPassword ? -10 : isShowingPassword ? -4 : 0, 4.7, 3.7)">
+                      <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(orangeSceneVector, isPasswordFocused && !isShowingPassword ? 2.7 : isShowingPassword ? 3.1 : 4.6)" />
+                      <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(orangeSceneVector, isPasswordFocused && !isShowingPassword ? 2.7 : isShowingPassword ? 3.1 : 4.6)" />
                     </div>
                     <div :class="orangeMouthClassName" />
                   </div>
 
                   <div class="auth-character auth-character--yellow" :style="yellowCharacterStyle">
-                    <div class="auth-eyes auth-eyes--bare" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="eyesShiftStyle(isPasswordFocused && !isShowingPassword ? -14 : isShowingPassword ? -10 : 0, isPasswordFocused && !isShowingPassword ? -9 : isShowingPassword ? -3 : 0, 5.5, 4.5)">
-                      <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(isPasswordFocused && !isShowingPassword ? 2.8 : isShowingPassword ? 3.2 : 5)" />
-                      <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(isPasswordFocused && !isShowingPassword ? 2.8 : isShowingPassword ? 3.2 : 5)" />
+                    <div class="auth-eyes auth-eyes--bare" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="eyesShiftStyle(yellowSceneVector, isPasswordFocused && !isShowingPassword ? -12 : isShowingPassword ? -8 : 0, isPasswordFocused && !isShowingPassword ? -9 : isShowingPassword ? -3 : 0, 4.4, 3.6)">
+                      <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(yellowSceneVector, isPasswordFocused && !isShowingPassword ? 2.4 : isShowingPassword ? 2.8 : 4.6)" />
+                      <div class="auth-pupil auth-pupil--bare" :style="pupilStyle(yellowSceneVector, isPasswordFocused && !isShowingPassword ? 2.4 : isShowingPassword ? 2.8 : 4.6)" />
                     </div>
                     <div class="auth-scene-mouth auth-scene-mouth--line" :class="{ 'shake-head': sceneErrorStage === 'shake' }" :style="yellowMouthStyle" />
                   </div>
@@ -751,31 +773,12 @@ async function handleSubmit() {
           <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.18),rgba(248,250,252,0.08))] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))]" />
 
           <div class="relative mx-auto w-full max-w-[430px]">
-            <div class="rounded-[30px] border border-white/75 bg-white/78 p-5 shadow-[0_30px_90px_-52px_rgba(15,23,42,0.42)] backdrop-blur-xl sm:p-6 dark:border-white/10 dark:bg-slate-950/58">
-              <div class="flex items-start justify-between gap-4">
-                <div>
-                  <p class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-[var(--site-primary-color)]">
-                    Account Center
-                  </p>
-                  <h2 class="mt-3 text-[1.7rem] font-semibold tracking-[-0.05em] text-slate-950 [font-family:var(--font-display)] dark:text-white">
-                    {{ formTitle }}
-                  </h2>
-                  <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                    {{ formDescription }}
-                  </p>
-                </div>
-
+            <div class="px-3 py-2 sm:px-4">
+              <div class="flex items-center justify-end gap-4">
                 <ThemeModeSwitch variant="icon" />
               </div>
 
-              <div
-                v-if="redirectHint"
-                class="mt-5 rounded-[22px] border border-[color:color-mix(in_srgb,var(--site-primary-color)_16%,white)] bg-[color:color-mix(in_srgb,var(--site-primary-color)_8%,white)] px-4 py-3 text-sm leading-6 text-slate-600 dark:border-[color:color-mix(in_srgb,var(--site-primary-color)_22%,transparent)] dark:bg-[color:color-mix(in_srgb,var(--site-primary-color)_10%,transparent)] dark:text-slate-300"
-              >
-                {{ redirectHint }}
-              </div>
-
-              <div class="mt-6 grid grid-cols-2 gap-2 rounded-[24px] border border-white/80 bg-slate-100/80 p-1.5 dark:border-white/10 dark:bg-white/[0.04]">
+              <div class="mt-4 grid grid-cols-2 gap-2 rounded-[22px] bg-slate-100/86 p-1.5 dark:bg-white/[0.05]">
                 <button
                   type="button"
                   class="rounded-[18px] px-4 py-3 text-sm font-medium transition"
@@ -974,9 +977,9 @@ async function handleSubmit() {
 .auth-scene__stage {
   position: absolute;
   left: 50%;
-  top: 50%;
-  height: 22.5rem;
-  width: 26rem;
+  top: 50.5%;
+  height: 20.6rem;
+  width: 24.2rem;
   transform: translate(-50%, -50%);
 }
 
@@ -991,13 +994,13 @@ async function handleSubmit() {
   position: absolute;
   bottom: 0;
   transform-origin: bottom center;
-  transition: transform 0.68s ease-in-out, height 0.68s ease-in-out;
+  transition: transform 0.62s cubic-bezier(0.22, 1, 0.36, 1), height 0.62s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .auth-character--purple {
-  left: 3.2rem;
+  left: 3.15rem;
   width: 10rem;
-  height: 15.3rem;
+  height: 18.2rem;
   border-radius: 1.25rem 1.25rem 0 0;
   background: linear-gradient(180deg, color-mix(in srgb, var(--site-primary-color) 76%, white) 0%, color-mix(in srgb, var(--site-primary-color) 88%, #2563eb) 100%);
   box-shadow: 0 28px 60px -42px rgba(56, 189, 248, 0.55);
@@ -1005,9 +1008,9 @@ async function handleSubmit() {
 }
 
 .auth-character--ink {
-  left: 12rem;
+  left: 11.1rem;
   width: 6.4rem;
-  height: 12.5rem;
+  height: 14.2rem;
   border-radius: 1rem 1rem 0 0;
   background: linear-gradient(180deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.98));
   box-shadow: 0 22px 50px -42px rgba(15, 23, 42, 0.45);
@@ -1015,18 +1018,18 @@ async function handleSubmit() {
 }
 
 .auth-character--orange {
-  left: 1.5rem;
+  left: 0.78rem;
   width: 12.8rem;
-  height: 9.8rem;
+  height: 9.6rem;
   border-radius: 999px 999px 0 0;
   background: linear-gradient(180deg, color-mix(in srgb, var(--site-secondary-color) 74%, white) 0%, color-mix(in srgb, var(--site-secondary-color) 86%, #fb923c) 100%);
   z-index: 3;
 }
 
 .auth-character--yellow {
-  left: 15.7rem;
+  left: 15.25rem;
   width: 7.3rem;
-  height: 10.9rem;
+  height: 10.7rem;
   border-radius: 999px 999px 0 0;
   background: linear-gradient(180deg, #fde68a 0%, #facc15 100%);
   z-index: 4;
@@ -1037,17 +1040,18 @@ async function handleSubmit() {
   display: flex;
   align-items: center;
   gap: 1rem;
-  transition: transform 0.6s ease;
+  transform-origin: center center;
+  transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .auth-eyes--white {
   left: 2.1rem;
-  top: 2rem;
+  top: 2.35rem;
 }
 
 .auth-character--ink .auth-eyes--white {
   left: 1.5rem;
-  top: 1.65rem;
+  top: 1.9rem;
   gap: 0.8rem;
 }
 
@@ -1088,7 +1092,7 @@ async function handleSubmit() {
   width: 0.45rem;
   border-radius: 999px;
   background: #1e293b;
-  transition: transform 0.14s ease-out;
+  transition: transform 0.12s ease-out;
 }
 
 .auth-pupil--small {
@@ -1103,7 +1107,8 @@ async function handleSubmit() {
 
 .auth-scene-mouth {
   position: absolute;
-  transition: transform 0.6s ease, opacity 0.6s ease;
+  transform-origin: center center;
+  transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.42s ease;
 }
 
 .auth-scene-mouth--sad {
@@ -1139,7 +1144,7 @@ async function handleSubmit() {
 }
 
 .shake-head {
-  animation: shakeHead 0.8s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  animation: shakeHead 0.9s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
 @keyframes login-float {
@@ -1159,35 +1164,27 @@ async function handleSubmit() {
     translate: 0 0;
   }
 
-  10% {
-    translate: -14px 0;
-  }
-
-  20% {
-    translate: 12px 0;
-  }
-
-  30% {
+  14% {
     translate: -10px 0;
   }
 
-  40% {
-    translate: 8px 0;
+  28% {
+    translate: 9px 0;
   }
 
-  50% {
+  42% {
     translate: -7px 0;
   }
 
-  60% {
-    translate: 5px 0;
+  56% {
+    translate: 6px 0;
   }
 
   70% {
     translate: -4px 0;
   }
 
-  80% {
+  84% {
     translate: 2px 0;
   }
 
