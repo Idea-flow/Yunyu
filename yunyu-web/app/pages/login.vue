@@ -238,26 +238,6 @@ const yellowMouthStyle = computed(() => {
 })
 
 /**
- * 计算当前认证模式下的主标题。
- *
- * @return 页面主标题
- */
-const pageTitle = computed(() => {
-  return authMode.value === 'login' ? '欢迎回到云屿' : '创建你的云屿账户'
-})
-
-/**
- * 计算当前认证模式下的说明文案。
- *
- * @return 页面说明文案
- */
-const pageDescription = computed(() => {
-  return authMode.value === 'login'
-    ? '继续阅读、收藏与管理你的内容节奏，一次登录即可同步前台与后台入口。'
-    : '用邮箱快速创建新账户，注册成功后会自动登录并回到你刚才想访问的位置。'
-})
-
-/**
  * 计算表单区标题。
  *
  * @return 表单标题
@@ -308,43 +288,6 @@ const redirectHint = computed(() => {
   }
 
   return '登录成功后将返回你刚才访问的页面。'
-})
-
-/**
- * 计算左侧展示区的特性内容。
- *
- * @return 页面展示要点
- */
-const showcaseItems = computed(() => {
-  return authMode.value === 'login'
-    ? [
-        {
-          title: '同步阅读状态',
-          description: '收藏、评论与浏览记录在同一账户下统一管理。'
-        },
-        {
-          title: '前后台共用身份',
-          description: '站长可直接进入后台，普通用户仍保持前台体验简洁一致。'
-        },
-        {
-          title: '更适合阅读的节奏',
-          description: '围绕文章、专题与内容归档，保持清爽而稳定的访问体验。'
-        }
-      ]
-    : [
-        {
-          title: '注册后自动登录',
-          description: '减少重复操作，创建账户后即可继续当前访问流程。'
-        },
-        {
-          title: '邮箱安全校验',
-          description: '在提交前先完成基础格式与密码强度校验，减少无效请求。'
-        },
-        {
-          title: '移动端同样顺手',
-          description: '单栏表单与清晰触控区域，方便在手机上快速完成认证。'
-        }
-      ]
 })
 
 /**
@@ -656,7 +599,7 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <main class="login-page relative isolate min-h-screen overflow-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#eef5ff_52%,#f9fafb_100%)] text-slate-900 dark:bg-[linear-gradient(180deg,#020617_0%,#0f172a_48%,#111827_100%)] dark:text-slate-50">
+  <main class="login-page relative isolate h-[100svh] overflow-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#eef5ff_52%,#f9fafb_100%)] text-slate-900 dark:bg-[linear-gradient(180deg,#020617_0%,#0f172a_48%,#111827_100%)] dark:text-slate-50">
     <div class="pointer-events-none absolute inset-0 overflow-hidden">
       <div class="absolute -left-20 top-0 h-72 w-72 rounded-full bg-[color:color-mix(in_srgb,var(--site-primary-color)_22%,white)] blur-3xl dark:bg-[color:color-mix(in_srgb,var(--site-primary-color)_18%,transparent)]" />
       <div class="absolute right-[-4rem] top-[18%] h-80 w-80 rounded-full bg-[color:color-mix(in_srgb,var(--site-secondary-color)_18%,white)] blur-3xl dark:bg-[color:color-mix(in_srgb,var(--site-secondary-color)_14%,transparent)]" />
@@ -665,9 +608,9 @@ async function handleSubmit() {
       <div class="login-orb-delayed absolute right-[14%] top-[56%] h-20 w-20 rounded-full border border-white/45 bg-white/36 backdrop-blur-md dark:border-white/10 dark:bg-white/[0.04]" />
     </div>
 
-    <div class="relative mx-auto flex min-h-screen w-full max-w-[1480px] items-center px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
-      <div class="grid min-h-[calc(100svh-2rem)] w-full overflow-hidden rounded-[30px] border border-white/70 bg-white/60 shadow-[0_40px_110px_-58px_rgba(15,23,42,0.38)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] lg:grid-cols-[1.08fr_0.92fr]">
-        <section class="relative flex flex-col overflow-hidden border-b border-white/60 px-5 py-6 sm:px-7 sm:py-8 lg:border-b-0 lg:border-r lg:border-white/50 lg:px-10 lg:py-10 dark:border-white/10">
+    <div class="relative mx-auto flex h-[100svh] w-full max-w-[1480px] items-center px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
+      <div class="grid h-full w-full lg:grid-cols-[1.08fr_0.92fr]">
+        <section class="relative flex min-h-0 flex-col overflow-hidden px-3 py-3 sm:px-4 sm:py-4 lg:px-6 lg:py-5">
           <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.5),transparent_32%),linear-gradient(135deg,color-mix(in_srgb,var(--site-primary-color)_10%,white),transparent_56%),linear-gradient(180deg,rgba(255,255,255,0.2),transparent)] dark:bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.08),transparent_28%),linear-gradient(135deg,color-mix(in_srgb,var(--site-primary-color)_18%,transparent),transparent_56%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent)]" />
 
           <div class="relative flex items-center justify-between gap-4">
@@ -694,21 +637,9 @@ async function handleSubmit() {
             </NuxtLink>
           </div>
 
-          <div class="relative mt-10 flex flex-1 flex-col justify-between gap-8 lg:mt-14">
-            <div class="max-w-[34rem]">
-              <p class="text-[0.72rem] font-semibold uppercase tracking-[0.34em] text-slate-500 dark:text-slate-400">
-                统一认证入口
-              </p>
-              <h1 class="mt-4 max-w-[10ch] text-[clamp(2rem,1.45rem+2vw,4.4rem)] font-semibold leading-[0.95] tracking-[-0.06em] text-slate-950 [font-family:var(--font-display)] dark:text-white">
-                {{ pageTitle }}
-              </h1>
-              <p class="mt-5 max-w-[34rem] text-sm leading-7 text-slate-600 sm:text-[15px] sm:leading-8 dark:text-slate-300">
-                {{ pageDescription }}
-              </p>
-            </div>
-
+          <div class="relative mt-4 flex flex-1 items-center justify-center lg:mt-0">
             <div
-              class="relative hidden min-h-[20rem] overflow-hidden rounded-[32px] border border-white/75 bg-[linear-gradient(135deg,rgba(255,255,255,0.82),rgba(239,246,255,0.56))] shadow-[0_28px_60px_-42px_rgba(15,23,42,0.26)] backdrop-blur-md lg:block"
+              class="relative hidden h-full max-h-[760px] min-h-[20rem] w-full overflow-hidden rounded-[36px] lg:block"
               @pointermove="handleScenePointerMove"
               @pointerleave="resetScenePointer"
             >
@@ -756,61 +687,17 @@ async function handleSubmit() {
                 </div>
 
                 <div class="auth-scene__status">
-                  <p class="text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
-                    Live Interaction
-                  </p>
-                  <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                    鼠标移动会被角色捕捉，聚焦账号与密码输入时左侧角色会跟随切换不同姿态。
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              <article
-                v-for="item in showcaseItems"
-                :key="item.title"
-                class="rounded-[24px] border border-white/70 bg-white/54 p-4 shadow-[0_22px_42px_-34px_rgba(15,23,42,0.25)] backdrop-blur-md dark:border-white/10 dark:bg-white/[0.04]"
-              >
-                <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,color-mix(in_srgb,var(--site-primary-color)_18%,white),color-mix(in_srgb,var(--site-secondary-color)_12%,white))] text-[var(--site-primary-color)] shadow-[0_20px_34px_-26px_rgba(56,189,248,0.55)] dark:bg-[linear-gradient(135deg,color-mix(in_srgb,var(--site-primary-color)_24%,transparent),color-mix(in_srgb,var(--site-secondary-color)_16%,transparent))] dark:text-white"
-                >
-                  <UIcon name="i-lucide-sparkles" class="size-4.5" />
-                </div>
-                <h2 class="text-sm font-semibold tracking-[-0.02em] text-slate-900 dark:text-slate-100">
-                  {{ item.title }}
-                </h2>
-                <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                  {{ item.description }}
-                </p>
-              </article>
-            </div>
-
-            <div class="rounded-[28px] border border-white/75 bg-[linear-gradient(135deg,rgba(255,255,255,0.7),rgba(248,250,252,0.56))] p-5 shadow-[0_28px_50px_-40px_rgba(15,23,42,0.26)] backdrop-blur-md dark:border-white/10 dark:bg-[linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))]">
-              <div class="flex flex-wrap items-start justify-between gap-4">
-                <div class="max-w-[28rem]">
-                  <p class="text-[0.72rem] font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
-                    Yunyu Account
-                  </p>
-                  <p class="mt-3 text-base font-semibold tracking-[-0.03em] text-slate-900 dark:text-slate-100">
-                    一个账户，连接阅读、收藏、评论与后台管理。
-                  </p>
-                  <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                    云屿把内容浏览与身份入口放在同一套体验里，减少切换时的割裂感。
-                  </p>
-                </div>
-
-                <div class="flex flex-wrap gap-2">
-                  <span class="rounded-full border border-white/80 bg-white/72 px-3 py-1.5 text-xs font-medium text-slate-600 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-300">阅读同步</span>
-                  <span class="rounded-full border border-white/80 bg-white/72 px-3 py-1.5 text-xs font-medium text-slate-600 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-300">统一认证</span>
-                  <span class="rounded-full border border-white/80 bg-white/72 px-3 py-1.5 text-xs font-medium text-slate-600 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-300">移动优先</span>
+                  <span class="inline-flex rounded-full border border-white/70 bg-white/60 px-3 py-1 text-[0.68rem] font-medium tracking-[0.2em] text-slate-500 backdrop-blur-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400">
+                    LIVE
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section class="relative flex items-center px-4 py-5 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
-          <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.44),rgba(248,250,252,0.22))] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))]" />
+        <section class="relative flex min-h-0 items-center px-1 py-3 sm:px-3 sm:py-4 lg:px-6 lg:py-5">
+          <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.18),rgba(248,250,252,0.08))] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))]" />
 
           <div class="relative mx-auto w-full max-w-[430px]">
             <div class="rounded-[30px] border border-white/75 bg-white/78 p-5 shadow-[0_30px_90px_-52px_rgba(15,23,42,0.42)] backdrop-blur-xl sm:p-6 dark:border-white/10 dark:bg-slate-950/58">
