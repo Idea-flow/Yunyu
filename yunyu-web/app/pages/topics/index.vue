@@ -44,6 +44,7 @@ useSeoMeta({
 
 <template>
   <main class="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] dark:bg-[linear-gradient(180deg,#020617_0%,#081120_100%)]">
+
     <YunyuHero
       :src="heroTopic?.coverUrl"
       :alt="heroTopic?.name || '云屿专题'"
