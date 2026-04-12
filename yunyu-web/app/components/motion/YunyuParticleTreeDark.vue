@@ -111,7 +111,7 @@ const TREE_DYNAMIC_PROFILE: TreeRenderProfile = {
   leafDepthAlpha: 0.06,
   leafSoftBaseAlpha: 0.024,
   leafSoftDepthAlpha: 0.036,
-  particleAlphaScale: 0.42
+  particleAlphaScale: 0.52
 }
 const TREE_STATIC_PROFILE: TreeRenderProfile = {
   branchGlowBaseAlpha: 0.004,
@@ -125,7 +125,7 @@ const TREE_STATIC_PROFILE: TreeRenderProfile = {
   leafDepthAlpha: 0.026,
   leafSoftBaseAlpha: 0.011,
   leafSoftDepthAlpha: 0.02,
-  particleAlphaScale: 0.22
+  particleAlphaScale: 0.42
 }
 
 let animationFrameId: number | null = null
@@ -332,18 +332,29 @@ function createTreeScene(width: number, height: number, paddingLeft: number, pad
     0.02
   )
 
-  const particleCount = width < 520 ? 4 : 7
+  const particleCount = width < 520 ? 5 : 8
+  const leafAnchors = leaves.length > 0 ? leaves : [{
+    x: areaLeft + areaWidth * 0.72,
+    y: height * 0.34,
+    radius: 1,
+    revealAt: 0,
+    driftPhase: 0,
+    driftAmplitude: 0
+  }]
 
   for (let index = 0; index < particleCount; index += 1) {
+    const anchorLeaf = leafAnchors[Math.floor(random() * leafAnchors.length)]
+    const endBias = 0.58 + random() * 0.34
+
     particles.push({
-      x: areaLeft + areaWidth * (0.22 + random() * 0.62),
-      y: height * (0.22 + random() * 0.42),
-      radius: 0.45 + random() * 0.92,
-      alpha: 0.06 + random() * 0.09,
-      driftX: 1.4 + random() * 4.2,
-      driftY: 1.1 + random() * 3.4,
+      x: anchorLeaf.x + (random() - 0.22) * 18 + areaWidth * 0.08 * endBias,
+      y: anchorLeaf.y + (random() - 0.5) * 16 - height * 0.015 * endBias,
+      radius: 0.5 + random() * 0.96,
+      alpha: 0.09 + random() * 0.14,
+      driftX: 1 + random() * 3,
+      driftY: 0.8 + random() * 2.2,
       phase: random() * Math.PI * 2,
-      speed: 0.14 + random() * 0.22
+      speed: 0.1 + random() * 0.16
     })
   }
 
@@ -838,7 +849,7 @@ onBeforeUnmount(() => {
   --yy-tree-branch-glow-rgb: 68, 120, 172;
   --yy-tree-leaf-rgb: 85, 98, 114;
   --yy-tree-leaf-soft-rgb: 68, 81, 98;
-  --yy-tree-dust-rgb: 114, 128, 144;
+  --yy-tree-dust-rgb: 132, 145, 160;
   mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.98) 0%, rgba(0, 0, 0, 0.95) 56%, rgba(0, 0, 0, 0.36) 72%, transparent 100%);
 }
 
@@ -847,7 +858,7 @@ onBeforeUnmount(() => {
   --yy-tree-branch-glow-rgb: 72, 128, 182;
   --yy-tree-leaf-rgb: 93, 107, 123;
   --yy-tree-leaf-soft-rgb: 71, 86, 104;
-  --yy-tree-dust-rgb: 118, 132, 148;
+  --yy-tree-dust-rgb: 138, 152, 168;
 }
 
 .yunyu-particle-tree__canvas {

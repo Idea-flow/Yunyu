@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -102,6 +103,19 @@ public class SiteContentController {
     @GetMapping("/posts/{slug}")
     public ApiResponse<SitePostDetailResponse> getPostDetail(@PathVariable String slug) {
         return ApiResponse.success(siteContentService.getPostDetail(slug));
+    }
+
+    /**
+     * 上报文章浏览量。
+     *
+     * @param id 文章 id
+     * @return 是否上报成功
+     */
+    @Operation(summary = "上报文章浏览量")
+    @PostMapping("/posts/{id}/view")
+    public ApiResponse<Boolean> increasePostViewCount(@PathVariable Long id) {
+        siteContentService.increasePostViewCount(id);
+        return ApiResponse.success(Boolean.TRUE);
     }
 
     /**

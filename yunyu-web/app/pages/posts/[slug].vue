@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted } from 'vue'
+import QRCode from 'qrcode'
 import { formatChineseDate } from '~/utils/date'
 import type { ArticleTocItem } from '../../types/post'
 import ArticleContentRenderer from '../../components/content/ArticleContentRenderer.vue'
@@ -20,17 +21,23 @@ type ArticleCodeTheme = 'github-light' | 'github-dark'
 const route = useRoute()
 const siteContent = useSiteContent()
 const colorMode = useColorMode()
-const isThemeModeMounted = ref(false)
+const yunyuToast = useYunyuToast()
 const activeTocId = ref('')
 const readingProgress = ref(0)
 const mobileTocOpen = ref(false)
 const mobileTocVisible = ref(false)
 const lastWindowScrollTop = ref(0)
 const isTocManualScrolling = ref(false)
+const isSharingArticle = ref(false)
+const isSharePanelOpen = ref(false)
+const isWechatShareModalOpen = ref(false)
+const wechatShareQrCodeDataUrl = ref('')
 const articleContentRef = ref<HTMLElement | null>(null)
 const tocScrollContainerRef = ref<HTMLElement | null>(null)
+const hasReportedViewCount = ref(false)
 let tocObserver: IntersectionObserver | null = null
 let tocManualScrollTimer: number | null = null
+let viewCountReportTimer: ReturnType<typeof setTimeout> | null = null
 const ARTICLE_CONTENT_THEME_STORAGE_KEY = 'yunyu-post-content-theme'
 const articleContentThemeOptions: Array<{ value: ArticleContentTheme, label: string, hint: string }> = [
   { value: 'editorial', label: '杂志感', hint: '更有内容阅读氛围' },
@@ -76,16 +83,17 @@ const relatedCompactPosts = computed(() => post.value?.relatedPosts?.slice(0, 2)
  */
 const hasRelatedPosts = computed(() => (post.value?.relatedPosts?.length || 0) > 0)
 
-const currentArticleContentThemeLabel = computed(() => {
-  return articleContentThemeOptions.find(item => item.value === selectedArticleContentTheme.value)?.label || '杂志感'
-})
-const currentThemeModeLabel = computed(() => {
-  if (!isThemeModeMounted.value) {
-    return '系统主题'
-  }
+/**
+ * 计算当前文章分享标题。
+ * 作用：统一组织原生分享与复制链接时使用的标题文本，避免不同分享入口出现不一致文案。
+ */
+const shareTitle = computed(() => post.value?.title || '云屿文章')
 
-  return colorMode.value === 'dark' ? '暗色模式' : '亮色模式'
-})
+/**
+ * 计算当前文章分享描述。
+ * 作用：为支持原生分享描述字段的环境补充一段简短摘要，没有摘要时回退站点默认文案。
+ */
+const shareDescription = computed(() => post.value?.summary || '来自云屿的文章分享')
 
 /**
  * 解析标题内部纯文本。
@@ -224,6 +232,20 @@ watch(
   }
 )
 
+watch(() => post.value?.id, () => {
+  hasReportedViewCount.value = false
+  clearViewCountReportTimer()
+  scheduleViewCountReport()
+})
+
+watch(isWechatShareModalOpen, async value => {
+  if (!value) {
+    return
+  }
+
+  await ensureWechatShareQrCode()
+})
+
 useSeoMeta({
   title: () => post.value?.seoTitle || post.value?.title || '云屿文章',
   description: () => post.value?.seoDescription || post.value?.summary || '云屿文章详情'
@@ -303,6 +325,261 @@ function hydrateArticleThemePreference() {
 
   if (savedContentTheme === 'editorial' || savedContentTheme === 'documentation' || savedContentTheme === 'minimal') {
     selectedArticleContentTheme.value = savedContentTheme
+  }
+}
+
+/**
+ * 清理浏览量上报定时器。
+ * 作用：在文章切换或页面卸载时取消尚未执行的浏览量上报，
+ * 避免旧文章详情页残留的延迟任务误记到新页面。
+ */
+function clearViewCountReportTimer() {
+  if (!import.meta.client || viewCountReportTimer === null) {
+    return
+  }
+
+  window.clearTimeout(viewCountReportTimer)
+  viewCountReportTimer = null
+}
+
+/**
+ * 上报当前文章浏览量。
+ * 作用：在前台正文完成客户端挂载后，异步调用后端独立浏览量接口，
+ * 不阻塞文章详情首屏渲染，也避免同一页面重复上报。
+ */
+async function reportViewCount() {
+  if (!import.meta.client || hasReportedViewCount.value || !post.value?.id) {
+    return
+  }
+
+  hasReportedViewCount.value = true
+
+  try {
+    await siteContent.increasePostViewCount(post.value.id)
+  } catch {
+    hasReportedViewCount.value = false
+  }
+}
+
+/**
+ * 延迟安排浏览量上报。
+ * 作用：让文章内容先完成渲染，再在客户端延迟一次轻量上报，
+ * 过滤掉刚进入详情页就立即离开的访问。
+ */
+function scheduleViewCountReport() {
+  if (!import.meta.client || hasReportedViewCount.value || !post.value?.id) {
+    return
+  }
+
+  clearViewCountReportTimer()
+  viewCountReportTimer = window.setTimeout(() => {
+    viewCountReportTimer = null
+    void reportViewCount()
+  }, 1000)
+}
+
+/**
+ * 读取当前文章分享地址。
+ * 作用：优先复用浏览器当前地址，确保复制与原生分享都指向用户正在阅读的真实详情页地址。
+ */
+function getShareUrl() {
+  if (!import.meta.client) {
+    return ''
+  }
+
+  return window.location.href
+}
+
+/**
+ * 复制当前文章链接。
+ * 作用：在原生分享不可用时回退为复制链接，保证桌面端和部分受限环境仍能完成分享动作。
+ */
+async function copyShareUrl() {
+  await copyText(getShareUrl())
+}
+
+/**
+ * 复制指定文本。
+ * 作用：统一处理不同平台的分享文案复制逻辑，避免各平台按钮重复操作剪贴板。
+ *
+ * @param text 需要复制的文本
+ */
+async function copyText(text: string) {
+  if (!text) {
+    throw new Error('当前分享内容不可用')
+  }
+
+  if (!navigator.clipboard?.writeText) {
+    throw new Error('当前环境不支持剪贴板')
+  }
+
+  await navigator.clipboard.writeText(text)
+}
+
+/**
+ * 生成小红书分享文案。
+ * 作用：组织适合复制到小红书的标题、摘要和链接内容，降低用户二次整理成本。
+ */
+function buildXiaohongshuShareText() {
+  return [
+    shareTitle.value,
+    shareDescription.value,
+    '',
+    `原文链接：${getShareUrl()}`
+  ].filter(Boolean).join('\n')
+}
+
+/**
+ * 生成技术社区分享文案。
+ * 作用：为 `CSDN` 和掘金生成 Markdown 风格内容，便于直接粘贴到编辑器中。
+ *
+ * @param platformName 平台名称
+ * @returns 平台分享文案
+ */
+function buildCommunityShareText(platformName: string) {
+  return [
+    `# ${shareTitle.value}`,
+    '',
+    shareDescription.value,
+    '',
+    `原文链接：${getShareUrl()}`,
+    '',
+    `转载到${platformName}时可按需补充你的导读或使用感受。`
+  ].filter(Boolean).join('\n')
+}
+
+/**
+ * 打开外部平台页面。
+ * 作用：在复制平台文案后顺手打开目标站点，减少用户再手动寻找入口的步骤。
+ *
+ * @param url 平台地址
+ */
+function openExternalPlatform(url: string) {
+  if (!import.meta.client || !url) {
+    return
+  }
+
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+
+/**
+ * 生成微信分享二维码。
+ * 作用：在前端本地把当前文章链接编码为二维码图片，避免依赖外部二维码服务。
+ */
+async function ensureWechatShareQrCode() {
+  if (!import.meta.client || wechatShareQrCodeDataUrl.value) {
+    return
+  }
+
+  const shareUrl = getShareUrl()
+
+  if (!shareUrl) {
+    return
+  }
+
+  try {
+    wechatShareQrCodeDataUrl.value = await QRCode.toDataURL(shareUrl, {
+      margin: 1,
+      width: 240,
+      color: {
+        dark: colorMode.value === 'dark' ? '#F8FAFC' : '#0F172A',
+        light: colorMode.value === 'dark' ? '#1F2937' : '#FFFFFF'
+      }
+    })
+  } catch {
+    wechatShareQrCodeDataUrl.value = ''
+    yunyuToast.error('二维码生成失败', '暂时无法生成微信分享二维码。')
+  }
+}
+
+/**
+ * 处理系统分享。
+ * 作用：在分享面板里提供系统级分享能力，不支持时自动回退为复制链接。
+ */
+async function handleNativeShare() {
+  isSharePanelOpen.value = false
+
+  if (!import.meta.client || isSharingArticle.value) {
+    return
+  }
+
+  isSharingArticle.value = true
+
+  try {
+    const shareUrl = getShareUrl()
+
+    if (!shareUrl) {
+      throw new Error('当前分享地址不可用')
+    }
+
+    if (typeof navigator.share === 'function') {
+      await navigator.share({
+        title: shareTitle.value,
+        text: shareDescription.value,
+        url: shareUrl
+      })
+      return
+    }
+
+    await copyShareUrl()
+    yunyuToast.success('文章链接已复制')
+  } catch (error: any) {
+    if (error?.name === 'AbortError') {
+      return
+    }
+
+    try {
+      await copyShareUrl()
+      yunyuToast.success('文章链接已复制')
+    } catch {
+      yunyuToast.error('分享失败', '当前环境暂时无法分享或复制链接。')
+    }
+  } finally {
+    isSharingArticle.value = false
+  }
+}
+
+/**
+ * 打开微信分享弹窗。
+ * 作用：在分享面板中展示二维码，方便用户用微信扫码打开当前文章。
+ */
+function handleWechatShare() {
+  isSharePanelOpen.value = false
+  isWechatShareModalOpen.value = true
+}
+
+/**
+ * 处理小红书分享。
+ * 作用：复制适合小红书的分享文案，并打开小红书首页供用户继续发布。
+ */
+async function handleXiaohongshuShare() {
+  isSharePanelOpen.value = false
+
+  try {
+    await copyText(buildXiaohongshuShareText())
+    openExternalPlatform('https://www.xiaohongshu.com/')
+    yunyuToast.success('小红书分享文案已复制')
+  } catch {
+    yunyuToast.error('复制失败', '暂时无法复制小红书分享文案。')
+  }
+}
+
+/**
+ * 处理技术社区分享。
+ * 作用：复制适合技术社区编辑器的 Markdown 文案，并打开对应平台。
+ *
+ * @param platformName 平台名称
+ * @param platformUrl 平台地址
+ */
+async function handleCommunityShare(platformName: string, platformUrl: string) {
+  isSharePanelOpen.value = false
+
+  try {
+    await copyText(buildCommunityShareText(platformName))
+    openExternalPlatform(platformUrl)
+    yunyuToast.success(`${platformName}分享文案已复制`)
+  } catch {
+    yunyuToast.error('复制失败', `暂时无法复制${platformName}分享文案。`)
   }
 }
 
@@ -534,12 +811,12 @@ onMounted(async () => {
     return
   }
 
-  isThemeModeMounted.value = true
   await nextTick()
   hydrateArticleThemePreference()
   observeArticleHeadings()
   syncReadingProgress()
   syncMobileTocVisibility()
+  scheduleViewCountReport()
   window.addEventListener('scroll', syncReadingProgress, { passive: true })
   window.addEventListener('scroll', syncMobileTocVisibility, { passive: true })
   window.addEventListener('resize', syncReadingProgress)
@@ -557,6 +834,8 @@ onBeforeUnmount(() => {
     window.clearTimeout(tocManualScrollTimer)
     tocManualScrollTimer = null
   }
+
+  clearViewCountReportTimer()
 
   window.removeEventListener('scroll', syncReadingProgress)
   window.removeEventListener('scroll', syncMobileTocVisibility)
@@ -584,7 +863,7 @@ onBeforeUnmount(() => {
           <YunyuPoetryTypewriter variant="sky" />
         </template>
 
-        <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end lg:gap-8">
+        <div class="max-w-[52rem] min-w-0">
           <div class="max-w-[44rem] min-w-0">
             <div class="flex flex-wrap gap-2">
               <NuxtLink :to="`/categories/${post.categorySlug}`">
@@ -606,42 +885,124 @@ onBeforeUnmount(() => {
             <h1 class="mt-4 max-w-[36rem] text-[clamp(1.16rem,4.9vw,2.08rem)] font-semibold leading-[1.1] tracking-[-0.032em] [font-family:var(--font-display)] [text-wrap:balance] text-white drop-shadow-[0_14px_32px_rgba(15,23,42,0.3)] sm:mt-5 sm:text-[clamp(1.34rem,1.18rem+0.82vw,2.08rem)] sm:leading-[1.08]">
               {{ post.title }}
             </h1>
-          </div>
 
-          <section class="hidden justify-self-end lg:block lg:w-full lg:max-w-[320px]">
-            <div class="rounded-[18px] border border-white/12 bg-black/12 px-4 py-3 text-white/88 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.34)] backdrop-blur-[14px]">
-              <div class="flex items-center justify-between gap-3">
-                <p class="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-white/56">阅读主题</p>
-                <span class="text-[0.66rem] text-white/58">
-                  {{ currentThemeModeLabel }}
-                </span>
-              </div>
-
-              <div class="mt-3 space-y-3">
-                <div>
-                  <div class="flex items-center justify-between gap-3">
-                    <p class="text-[0.68rem] font-medium text-white/74">主题</p>
-                    <span class="text-[0.66rem] text-white/52">{{ currentArticleContentThemeLabel }}</span>
-                  </div>
-                  <div class="mt-1.5 flex flex-wrap gap-1.5">
-                    <button
-                      v-for="theme in articleContentThemeOptions"
-                      :key="theme.value"
-                      type="button"
-                      class="inline-flex cursor-pointer items-center rounded-full border px-2.5 py-1 text-[0.68rem] font-medium transition"
-                      :class="selectedArticleContentTheme === theme.value
-                        ? 'border-white/22 bg-white/14 text-white'
-                        : 'border-white/8 bg-transparent text-white/64 hover:border-white/16 hover:bg-white/[0.06] hover:text-white/88'"
-                      :title="theme.hint"
-                      @click="switchArticleContentTheme(theme.value)"
-                    >
-                      {{ theme.label }}
-                    </button>
-                  </div>
-                </div>
-              </div>
+            <div class="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.74rem] text-white/82 sm:gap-x-4 sm:text-[0.78rem]">
+              <span class="font-medium text-white">作者 {{ post.authorName }}</span>
+              <span class="h-1 w-1 rounded-full bg-white/35" />
+              <span>发布 {{ postPublishedAtLabel }}</span>
+              <span class="h-1 w-1 rounded-full bg-white/35" />
+              <span>阅读 {{ post.readingMinutes }} 分钟</span>
+              <span class="h-1 w-1 rounded-full bg-white/35" />
+              <span>热度 {{ post.viewCount }} 次浏览</span>
             </div>
-          </section>
+
+            <div class="mt-4 flex flex-wrap items-center gap-2.5 sm:mt-5">
+              <div class="flex items-center gap-1 rounded-full">
+                <button
+                  v-for="theme in articleContentThemeOptions"
+                  :key="theme.value"
+                  type="button"
+                  class="inline-flex cursor-pointer items-center rounded-full px-3 py-1.5 text-[0.72rem] font-medium transition sm:px-3.5 sm:text-[0.76rem]"
+                  :class="selectedArticleContentTheme === theme.value
+                    ? 'bg-white/18 text-white shadow-[0_14px_32px_-24px_rgba(15,23,42,0.5)] backdrop-blur-md'
+                    : 'bg-transparent text-white/66 hover:text-white'"
+                  :title="theme.hint"
+                  @click="switchArticleContentTheme(theme.value)"
+                >
+                  {{ theme.label }}
+                </button>
+              </div>
+
+              <UPopover
+                v-model:open="isSharePanelOpen"
+                mode="click"
+                :arrow="true"
+                :content="{
+                  side: 'bottom',
+                  align: 'start',
+                  sideOffset: 12
+                }"
+                :ui="{
+                  content: 'w-[13rem] max-w-[calc(100vw-2rem)] rounded-[18px] border border-slate-200/85 bg-white/97 p-2 text-slate-900 shadow-[0_22px_54px_-30px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-[rgba(7,14,26,0.95)] dark:text-white dark:shadow-[0_24px_60px_-34px_rgba(0,0,0,0.55)] sm:w-[13.5rem]'
+                }"
+              >
+                <button
+                  type="button"
+                  class="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-transparent text-white/84 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-70 sm:h-10 sm:w-10"
+                  :disabled="isSharingArticle"
+                  :aria-label="isSharingArticle ? '分享中' : '分享这篇文章'"
+                  :title="isSharingArticle ? '分享中...' : '分享这篇文章'"
+                >
+                  <UIcon
+                    :name="isSharingArticle ? 'i-lucide-loader-circle' : 'i-lucide-share-2'"
+                    class="size-4"
+                    :class="isSharingArticle ? 'animate-spin' : ''"
+                  />
+                </button>
+
+                <template #content>
+                  <div>
+                    <div class="space-y-1">
+                    <button
+                      type="button"
+                      class="flex min-h-10 w-full items-center gap-2.5 rounded-[12px] border border-transparent px-2.5 py-2 text-left text-[0.82rem] text-slate-700 transition hover:border-slate-200/90 hover:bg-slate-50 hover:text-slate-950 dark:text-white/90 dark:hover:border-white/10 dark:hover:bg-white/6 dark:hover:text-white sm:min-h-9 sm:text-[0.8rem]"
+                      @click="handleNativeShare"
+                    >
+                      <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px] bg-[linear-gradient(135deg,#0f172a,#334155)] text-white shadow-[0_14px_26px_-18px_rgba(15,23,42,0.55)] dark:bg-[linear-gradient(135deg,#f8fafc,#cbd5e1)] dark:text-slate-900">
+                        <UIcon name="i-lucide-share-2" class="size-3.5" />
+                      </span>
+                      <span class="min-w-0 truncate font-medium">发送到设备</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="flex min-h-10 w-full items-center gap-2.5 rounded-[12px] border border-transparent px-2.5 py-2 text-left text-[0.82rem] text-slate-700 transition hover:border-slate-200/90 hover:bg-slate-50 hover:text-slate-950 dark:text-white/90 dark:hover:border-white/10 dark:hover:bg-white/6 dark:hover:text-white sm:min-h-9 sm:text-[0.8rem]"
+                      @click="handleWechatShare"
+                    >
+                      <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px] bg-[linear-gradient(135deg,#f7fff9,#d9fbe7)] text-[#07C160] shadow-[0_14px_26px_-18px_rgba(34,197,94,0.38)] ring-1 ring-[#07C160]/10 dark:bg-[linear-gradient(135deg,#18251f,#101915)] dark:text-[#3ddc84] dark:ring-white/8">
+                        <Icon name="social:wechat" class="size-[0.9rem]" />
+                      </span>
+                      <span class="min-w-0 truncate font-medium">微信</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="flex min-h-10 w-full items-center gap-2.5 rounded-[12px] border border-transparent px-2.5 py-2 text-left text-[0.82rem] text-slate-700 transition hover:border-slate-200/90 hover:bg-slate-50 hover:text-slate-950 dark:text-white/90 dark:hover:border-white/10 dark:hover:bg-white/6 dark:hover:text-white sm:min-h-9 sm:text-[0.8rem]"
+                      @click="handleXiaohongshuShare"
+                    >
+                      <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px] bg-[linear-gradient(135deg,#fff5f7,#ffe0e6)] text-[#FF2442] shadow-[0_14px_26px_-18px_rgba(255,36,66,0.3)] ring-1 ring-[#FF2442]/10 dark:bg-[linear-gradient(135deg,#2a151b,#180d12)] dark:text-[#ff6b83] dark:ring-white/8">
+                        <Icon name="social:xiaohongshu" class="size-[0.9rem]" />
+                      </span>
+                      <span class="min-w-0 truncate font-medium">小红书</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="flex min-h-10 w-full items-center gap-2.5 rounded-[12px] border border-transparent px-2.5 py-2 text-left text-[0.82rem] text-slate-700 transition hover:border-slate-200/90 hover:bg-slate-50 hover:text-slate-950 dark:text-white/90 dark:hover:border-white/10 dark:hover:bg-white/6 dark:hover:text-white sm:min-h-9 sm:text-[0.8rem]"
+                      @click="handleCommunityShare('CSDN', 'https://www.csdn.net/')"
+                    >
+                      <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px] bg-[linear-gradient(135deg,#fff6f2,#ffe2da)] text-[#FC5531] shadow-[0_14px_26px_-18px_rgba(252,85,49,0.3)] ring-1 ring-[#FC5531]/10 dark:bg-[linear-gradient(135deg,#2d1814,#1a0f0d)] dark:text-[#ff8c72] dark:ring-white/8">
+                        <Icon name="social:csdn" class="size-[0.92rem]" />
+                      </span>
+                      <span class="min-w-0 truncate font-medium">CSDN</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="flex min-h-10 w-full items-center gap-2.5 rounded-[12px] border border-transparent px-2.5 py-2 text-left text-[0.82rem] text-slate-700 transition hover:border-slate-200/90 hover:bg-slate-50 hover:text-slate-950 dark:text-white/90 dark:hover:border-white/10 dark:hover:bg-white/6 dark:hover:text-white sm:min-h-9 sm:text-[0.8rem]"
+                      @click="handleCommunityShare('掘金', 'https://juejin.cn/')"
+                    >
+                      <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px] bg-[linear-gradient(135deg,#f3f8ff,#ddeaff)] text-[#007FFF] shadow-[0_14px_26px_-18px_rgba(0,127,255,0.3)] ring-1 ring-[#007FFF]/10 dark:bg-[linear-gradient(135deg,#102033,#0a1524)] dark:text-[#58a6ff] dark:ring-white/8">
+                        <Icon name="social:juejin" class="size-[0.9rem]" />
+                      </span>
+                      <span class="min-w-0 truncate font-medium">掘金</span>
+                    </button>
+                    </div>
+                  </div>
+                </template>
+              </UPopover>
+            </div>
+          </div>
         </div>
       </PostCoverHero>
 
@@ -651,51 +1012,6 @@ onBeforeUnmount(() => {
     <section v-if="post" class="relative z-10 mx-auto -mt-4 max-w-[1440px] px-4 pb-14 sm:-mt-8 sm:px-8 lg:-mt-10 lg:px-10 lg:pb-24">
       <div class="grid min-w-0 gap-6 sm:gap-8 lg:items-start" :class="showArticleSidebar ? 'lg:grid-cols-[minmax(0,1fr)_340px]' : ''">
         <div ref="articleContentRef" class="min-w-0 w-full max-w-full space-y-6 sm:space-y-8">
-          <section class="px-1 pt-1 text-[0.74rem] text-slate-500 dark:text-slate-400 sm:pt-2 sm:text-[0.78rem]">
-            <div class="flex flex-wrap items-center gap-x-3 gap-y-2 sm:gap-x-4">
-              <span class="font-medium text-slate-700 dark:text-slate-200">作者 {{ post.authorName }}</span>
-              <span class="h-1 w-1 rounded-full bg-slate-300/90 dark:bg-slate-600" />
-              <span>发布 {{ postPublishedAtLabel }}</span>
-              <span class="h-1 w-1 rounded-full bg-slate-300/90 dark:bg-slate-600" />
-              <span>阅读 {{ post.readingMinutes }} 分钟</span>
-              <span class="h-1 w-1 rounded-full bg-slate-300/90 dark:bg-slate-600" />
-              <span>热度 {{ post.viewCount }} 次浏览</span>
-            </div>
-          </section>
-
-          <section class="rounded-[16px] border border-slate-200/70 bg-white/76 px-3.5 py-3 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/56 lg:hidden">
-            <div class="flex items-center justify-between gap-3">
-              <p class="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">阅读主题</p>
-              <span class="text-[0.66rem] text-slate-400 dark:text-slate-500">
-                {{ currentThemeModeLabel }}
-              </span>
-            </div>
-
-            <div class="mt-3 space-y-3">
-              <div>
-                <div class="flex items-center justify-between gap-3">
-                  <p class="text-[0.7rem] font-medium text-slate-600 dark:text-slate-300">主题</p>
-                  <span class="text-[0.66rem] text-slate-400 dark:text-slate-500">{{ currentArticleContentThemeLabel }}</span>
-                </div>
-                <div class="mt-1.5 flex flex-wrap gap-1.5">
-                  <button
-                    v-for="theme in articleContentThemeOptions"
-                    :key="theme.value"
-                    type="button"
-                    class="inline-flex cursor-pointer items-center rounded-full border px-2.5 py-1 text-[0.68rem] font-medium transition"
-                    :class="selectedArticleContentTheme === theme.value
-                      ? 'border-slate-300 bg-slate-900 text-white dark:border-white/12 dark:bg-white dark:text-slate-950'
-                      : 'border-slate-200/80 bg-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900 dark:border-white/10 dark:text-slate-300 dark:hover:border-white/14 dark:hover:text-slate-50'"
-                    :title="theme.hint"
-                    @click="switchArticleContentTheme(theme.value)"
-                  >
-                    {{ theme.label }}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </section>
-
           <section
             v-if="hasInlineVideo"
             class="overflow-hidden rounded-[24px] border border-white/60 bg-white/84 p-1.5 shadow-[0_24px_60px_-44px_rgba(15,23,42,0.24)] backdrop-blur-xl sm:rounded-[34px] sm:p-2 sm:shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)] dark:border-white/10 dark:bg-slate-950/70"
@@ -934,5 +1250,56 @@ onBeforeUnmount(() => {
         </div>
       </section>
     </Transition>
+
+    <UModal
+      v-model:open="isWechatShareModalOpen"
+      :ui="{ content: 'sm:max-w-sm rounded-[24px] border border-slate-200/80 bg-white/98 p-0 text-slate-900 shadow-[0_24px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-[rgba(7,14,26,0.96)] dark:text-white dark:shadow-[0_24px_70px_-34px_rgba(0,0,0,0.62)]' }"
+    >
+      <template #content>
+        <div class="p-5 sm:p-6">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-[0.72rem] font-semibold uppercase tracking-[0.3em] text-slate-400 dark:text-white/45">WeChat</p>
+              <h2 class="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 dark:text-white">微信扫码分享</h2>
+              <p class="mt-3 text-sm leading-7 text-slate-500 dark:text-white/62">
+                使用微信扫描二维码，直接在手机里打开当前文章。
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900 dark:bg-white/6 dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white"
+              @click="isWechatShareModalOpen = false"
+            >
+              <UIcon name="i-lucide-x" class="size-4" />
+            </button>
+          </div>
+
+          <div class="mt-5 rounded-[22px] bg-slate-50 p-4 dark:bg-slate-900">
+            <img
+              v-if="wechatShareQrCodeDataUrl"
+              :src="wechatShareQrCodeDataUrl"
+              alt="微信分享二维码"
+              class="mx-auto h-56 w-56 rounded-[16px] object-contain shadow-[0_18px_40px_-28px_rgba(15,23,42,0.24)] dark:shadow-[0_18px_40px_-28px_rgba(0,0,0,0.58)]"
+            >
+          </div>
+
+          <div class="mt-5 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-slate-100"
+              @click="copyShareUrl().then(() => yunyuToast.success('文章链接已复制')).catch(() => yunyuToast.error('复制失败', '暂时无法复制文章链接。'))"
+            >
+              <UIcon name="i-lucide-copy" class="size-4" />
+              <span>复制链接</span>
+            </button>
+
+            <p class="text-xs leading-6 text-slate-400 dark:text-white/48">
+              扫码不方便时，也可以直接复制链接发到微信。
+            </p>
+          </div>
+        </div>
+      </template>
+    </UModal>
   </main>
 </template>

@@ -11,6 +11,14 @@ export default defineNuxtConfig({
     // 关闭 @nuxt/ui 自动注入的 @nuxt/fonts，避免开发环境请求 Google 字体元数据。
     fonts: false
   },
+  icon: {
+    customCollections: [
+      {
+        prefix: 'social',
+        dir: './app/assets/svg'
+      }
+    ]
+  },
   css: ['katex/dist/katex.min.css', '~/assets/css/main.css'],
   runtimeConfig: {
     public: {

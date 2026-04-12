@@ -1,5 +1,6 @@
 package com.ideaflow.yunyu.module.site.service;
 
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -182,6 +183,29 @@ public class SiteContentService {
         response.setAllowComment(postEntity.getAllowComment() != null && postEntity.getAllowComment() == 1);
         response.setRelatedPosts(listRelatedPosts(postEntity));
         return response;
+    }
+
+    /**
+     * 增加文章浏览量。
+     * 作用：在前台文章详情页完成客户端加载后，按文章 id 执行一次原子自增，
+     * 避免详情读取接口与浏览量统计逻辑耦合。
+     *
+     * @param id 文章 id
+     */
+    public void increasePostViewCount(Long id) {
+        if (id == null) {
+            throw new BizException(ResultCode.BAD_REQUEST, "文章不存在");
+        }
+
+        int affectedRows = postMapper.update(null, new LambdaUpdateWrapper<PostEntity>()
+                .setSql("view_count = COALESCE(view_count, 0) + 1")
+                .eq(PostEntity::getId, id)
+                .eq(PostEntity::getStatus, "PUBLISHED")
+                .eq(PostEntity::getDeleted, 0));
+
+        if (affectedRows <= 0) {
+            throw new BizException(ResultCode.NOT_FOUND, "文章不存在");
+        }
     }
 
     /**

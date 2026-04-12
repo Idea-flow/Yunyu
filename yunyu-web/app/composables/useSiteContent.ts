@@ -66,6 +66,18 @@ export function useSiteContent() {
   }
 
   /**
+   * 上报文章浏览量。
+   *
+   * @param id 文章 id
+   * @returns 是否上报成功
+   */
+  async function increasePostViewCount(id: number) {
+    return await apiClient.request<boolean>(`/api/site/posts/${id}/view`, {
+      method: 'POST'
+    })
+  }
+
+  /**
    * 查询文章评论列表。
    *
    * @param slug 文章 slug
@@ -164,6 +176,7 @@ export function useSiteContent() {
     getHome,
     listPosts,
     getPostDetail,
+    increasePostViewCount,
     listPostComments,
     createPostComment,
     listCategories,
