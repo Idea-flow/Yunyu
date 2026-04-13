@@ -7,8 +7,7 @@ import ArticleContentRenderer from '../../components/content/ArticleContentRende
 import ArticleCommentPanel from '../../components/content/ArticleCommentPanel.vue'
 import ArticleTocTree from '../../components/content/ArticleTocTree.vue'
 import ShareQrCard from '../../components/content/ShareQrCard.vue'
-import VideoPlayer from '../../components/video/VideoPlayer.vue'
-import type { VideoSourceItem } from '../../components/video/player.types'
+import YunyuVideo from '../../components/common/YunyuVideo.vue'
 import PostCoverHero from '~/components/common/PostCoverHero.vue'
 import YunyuImage from '~/components/common/YunyuImage.vue'
 import YunyuPoetryTypewriter from '~/components/common/YunyuPoetryTypewriter.vue'
@@ -29,7 +28,6 @@ const activeTocId = ref('')
 const readingProgress = ref(0)
 const mobileTocOpen = ref(false)
 const mobileTocVisible = ref(false)
-const activeVideoSourceId = ref<number | null>(1)
 const lastWindowScrollTop = ref(0)
 const isTocManualScrolling = ref(false)
 const isSharingArticle = ref(false)
@@ -68,69 +66,6 @@ const post = computed(() => data.value)
  * 作用：当文章配置了视频地址时，在首屏图片下方插入独立的视频播放区。
  */
 const hasInlineVideo = computed(() => Boolean(post.value?.videoUrl))
-
-/**
- * 根据视频地址推断播放器源类型。
- * 作用：让文章详情页在只提供一个 `videoUrl` 字段时，
- * 也能按地址特征自动选择 `mp4`、`m3u8`、`iframe` 或 `iframeFull` 播放方式。
- *
- * @param videoUrl 原始视频地址或 iframe 片段
- * @returns 播放器可识别的视频源类型
- */
-function inferVideoSourceType(videoUrl: string): VideoSourceItem['sourceType'] {
-  const normalizedVideoUrl = videoUrl.trim()
-  const lowerVideoUrl = normalizedVideoUrl.toLowerCase()
-
-  if (lowerVideoUrl.includes('<iframe')) {
-    return 'iframeFull'
-  }
-
-  if (lowerVideoUrl.includes('.m3u8')) {
-    return 'm3u8'
-  }
-
-  if (
-    lowerVideoUrl.includes('youtube.com')
-    || lowerVideoUrl.includes('youtu.be')
-    || lowerVideoUrl.includes('player.bilibili.com')
-    || lowerVideoUrl.includes('bilibili.com/video')
-    || lowerVideoUrl.includes('vimeo.com')
-    || lowerVideoUrl.includes('youku.com')
-    || lowerVideoUrl.includes('/embed/')
-  ) {
-    return 'iframe'
-  }
-
-  return 'mp4'
-}
-
-/**
- * 计算文章详情播放器数据源。
- * 作用：把后端单个视频地址转换成播放器组件需要的 `sources` 结构，
- * 这样详情页可以直接复用公共视频播放器而不再维护单独的原生 `<video>` 分支。
- */
-const articleVideoSources = computed<VideoSourceItem[]>(() => {
-  const videoUrl = post.value?.videoUrl?.trim()
-
-  if (!videoUrl) {
-    return []
-  }
-
-  const sourceType = inferVideoSourceType(videoUrl)
-  const sourceLabelMap: Record<VideoSourceItem['sourceType'], string> = {
-    mp4: '视频播放',
-    m3u8: 'M3U8 播放',
-    iframe: '嵌入播放',
-    iframeFull: '嵌入播放'
-  }
-
-  return [{
-    id: 1,
-    label: sourceLabelMap[sourceType],
-    sourceType,
-    sourceUrl: videoUrl
-  }]
-})
 
 /**
  * 计算文章详情首屏展示标签。
@@ -312,10 +247,6 @@ watch(isWechatShareModalOpen, async value => {
 
   await ensureWechatShareQrCode()
 })
-
-watch(articleVideoSources, value => {
-  activeVideoSourceId.value = value[0]?.id ?? null
-}, { immediate: true })
 
 useSeoMeta({
   title: () => post.value?.seoTitle || post.value?.title || '云屿文章',
@@ -1083,16 +1014,11 @@ onBeforeUnmount(() => {
     <section v-if="post" class="relative z-10 mx-auto -mt-4 max-w-[1440px] px-4 pb-14 sm:-mt-8 sm:px-8 lg:-mt-10 lg:px-10 lg:pb-24">
       <div class="grid min-w-0 gap-6 sm:gap-8 lg:items-start" :class="showArticleSidebar ? 'lg:grid-cols-[minmax(0,1fr)_340px]' : ''">
         <div ref="articleContentRef" class="min-w-0 w-full max-w-full space-y-6 sm:space-y-8">
-          <section
+          <YunyuVideo
             v-if="hasInlineVideo"
-            class="overflow-hidden rounded-[24px] border border-white/60 bg-white/84 p-1.5 shadow-[0_24px_60px_-44px_rgba(15,23,42,0.24)] backdrop-blur-xl sm:rounded-[34px] sm:p-2 sm:shadow-[0_34px_94px_-58px_rgba(15,23,42,0.28)] dark:border-white/10 dark:bg-slate-950/70"
-          >
-            <VideoPlayer
-              v-model:active-source-id="activeVideoSourceId"
-              :sources="articleVideoSources"
-              :poster-url="post.coverUrl || undefined"
-            />
-          </section>
+            :video-url="post.videoUrl || ''"
+            :poster-url="post.coverUrl || ''"
+          />
 
           <section v-if="heroTags.length" class="px-1">
             <div class="flex flex-wrap gap-2">
