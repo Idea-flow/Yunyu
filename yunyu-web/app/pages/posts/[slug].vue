@@ -6,6 +6,7 @@ import type { ArticleTocItem } from '../../types/post'
 import ArticleContentRenderer from '../../components/content/ArticleContentRenderer.vue'
 import ArticleCommentPanel from '../../components/content/ArticleCommentPanel.vue'
 import ArticleTocTree from '../../components/content/ArticleTocTree.vue'
+import ShareQrCard from '../../components/content/ShareQrCard.vue'
 import PostCoverHero from '~/components/common/PostCoverHero.vue'
 import YunyuImage from '~/components/common/YunyuImage.vue'
 import YunyuPoetryTypewriter from '~/components/common/YunyuPoetryTypewriter.vue'
@@ -1253,52 +1254,19 @@ onBeforeUnmount(() => {
 
     <UModal
       v-model:open="isWechatShareModalOpen"
-      :ui="{ content: 'sm:max-w-sm rounded-[24px] border border-slate-200/80 bg-white/98 p-0 text-slate-900 shadow-[0_24px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-[rgba(7,14,26,0.96)] dark:text-white dark:shadow-[0_24px_70px_-34px_rgba(0,0,0,0.62)]' }"
+      :ui="{ content: 'sm:max-w-[24rem] overflow-hidden rounded-[30px] border border-slate-200/42 bg-[linear-gradient(180deg,rgba(255,255,255,0.9),rgba(248,250,252,0.82))] p-0 text-slate-900 shadow-[0_24px_68px_-40px_rgba(15,23,42,0.14)] backdrop-blur-[28px] dark:border-white/6 dark:bg-[linear-gradient(180deg,rgba(10,18,34,0.8),rgba(8,14,28,0.72))] dark:text-white dark:shadow-[0_24px_68px_-40px_rgba(0,0,0,0.4)]' }"
     >
       <template #content>
-        <div class="p-5 sm:p-6">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <p class="text-[0.72rem] font-semibold uppercase tracking-[0.3em] text-slate-400 dark:text-white/45">WeChat</p>
-              <h2 class="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 dark:text-white">微信扫码分享</h2>
-              <p class="mt-3 text-sm leading-7 text-slate-500 dark:text-white/62">
-                使用微信扫描二维码，直接在手机里打开当前文章。
-              </p>
-            </div>
-
-            <button
-              type="button"
-              class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900 dark:bg-white/6 dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white"
-              @click="isWechatShareModalOpen = false"
-            >
-              <UIcon name="i-lucide-x" class="size-4" />
-            </button>
-          </div>
-
-          <div class="mt-5 rounded-[22px] bg-slate-50 p-4 dark:bg-slate-900">
-            <img
-              v-if="wechatShareQrCodeDataUrl"
-              :src="wechatShareQrCodeDataUrl"
-              alt="微信分享二维码"
-              class="mx-auto h-56 w-56 rounded-[16px] object-contain shadow-[0_18px_40px_-28px_rgba(15,23,42,0.24)] dark:shadow-[0_18px_40px_-28px_rgba(0,0,0,0.58)]"
-            >
-          </div>
-
-          <div class="mt-5 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              class="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-slate-100"
-              @click="copyShareUrl().then(() => yunyuToast.success('文章链接已复制')).catch(() => yunyuToast.error('复制失败', '暂时无法复制文章链接。'))"
-            >
-              <UIcon name="i-lucide-copy" class="size-4" />
-              <span>复制链接</span>
-            </button>
-
-            <p class="text-xs leading-6 text-slate-400 dark:text-white/48">
-              扫码不方便时，也可以直接复制链接发到微信。
-            </p>
-          </div>
-        </div>
+        <ShareQrCard
+          title="扫码分享"
+          brand-label="WeChat"
+          :poster-title="post?.title || ''"
+          :qr-code-url="wechatShareQrCodeDataUrl"
+          qr-code-alt="微信分享二维码"
+          :share-url="getShareUrl()"
+          :download-file-name="post?.title || ''"
+          @close="isWechatShareModalOpen = false"
+        />
       </template>
     </UModal>
   </main>
