@@ -26,8 +26,10 @@ const emit = defineEmits<{
  * @returns 缩进样式对象
  */
 function getIndentStyle(level: number) {
+  const basePaddingLeft = 0.9
+
   return {
-    paddingLeft: `${Math.max(0, level - 1) * 0.78}rem`
+    paddingLeft: `${basePaddingLeft + Math.max(0, level - 1) * 0.78}rem`
   }
 }
 
@@ -41,7 +43,7 @@ function getIndentStyle(level: number) {
  */
 function getItemClass(item: ArticleTocItem) {
   return props.activeId === item.id
-    ? 'rounded-[1.35rem] bg-[linear-gradient(90deg,rgba(224,242,254,0.98),rgba(240,249,255,0.74))] text-sky-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] ring-1 ring-sky-100/80 dark:bg-[linear-gradient(90deg,rgba(14,116,144,0.4),rgba(8,47,73,0.22))] dark:text-sky-50 dark:ring-sky-400/18 dark:shadow-none'
+    ? 'rounded-[0.95rem] bg-[linear-gradient(90deg,rgba(224,242,254,0.94),rgba(240,249,255,0.66))] text-sky-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.68)] ring-1 ring-sky-100/70 dark:bg-[linear-gradient(90deg,rgba(14,116,144,0.34),rgba(8,47,73,0.18))] dark:text-sky-50 dark:ring-sky-400/16 dark:shadow-none'
     : 'text-slate-500 hover:text-slate-900 dark:text-slate-400/82 dark:hover:text-slate-100'
 }
 
@@ -82,12 +84,12 @@ function handleSelect(item: ArticleTocItem) {
       :key="item.id"
       type="button"
       :data-toc-id="item.id"
-      class="group relative flex min-h-11 w-full items-start overflow-hidden px-3 py-2 text-left transition duration-200 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/45 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-sky-400/25 dark:focus-visible:ring-offset-slate-950"
+      class="group relative flex min-h-10 w-full items-start overflow-hidden pr-3.5 py-1.5 text-left transition duration-200 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/45 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-sky-400/25 dark:focus-visible:ring-offset-slate-950"
       :class="getItemClass(item)"
       :style="getIndentStyle(item.level)"
       @click="handleSelect(item)"
     >
-      <span class="min-w-0 flex-1 pr-1 transition duration-200">
+      <span class="min-w-0 flex-1 pr-1.5 transition duration-200">
         <span class="block min-w-0 transition duration-200" :class="[getTextClass(item), props.activeId === item.id ? 'text-sky-950 dark:text-sky-50' : '']">
           {{ item.text }}
         </span>
