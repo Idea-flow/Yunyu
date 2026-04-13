@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import ArticleImagePreview from './ArticleImagePreview.vue'
 
 /**
  * 文章内容渲染组件。
@@ -52,10 +53,10 @@ const actionIconMap: Record<string, string> = {
 }
 
 /**
- * 清理已注册的代码块事件。
- * 作用：在内容重新渲染或组件卸载时移除旧按钮监听，避免重复绑定。
+ * 清理已注册的运行时增强事件。
+ * 作用：在内容重新渲染或组件卸载时移除旧监听，避免重复绑定。
  */
-function cleanupCodeEnhancements() {
+function cleanupEnhancements() {
   while (cleanupCallbacks.length) {
     cleanupCallbacks.pop()?.()
   }
@@ -411,8 +412,6 @@ function enhanceTables() {
  * 作用：为通过 `v-html` 注入的代码块补充复制按钮、折叠能力和运行时状态。
  */
 function enhanceCodeBlocks() {
-  cleanupCodeEnhancements()
-
   if (!containerRef.value) {
     return
   }
@@ -480,6 +479,7 @@ async function refreshEnhancements() {
   }
 
   await nextTick()
+  cleanupEnhancements()
   enhanceTables()
   enhanceCodeBlocks()
   enhanceEmbeddedIframes()
@@ -494,7 +494,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  cleanupCodeEnhancements()
+  cleanupEnhancements()
 })
 </script>
 
@@ -536,4 +536,8 @@ onBeforeUnmount(() => {
       </div>
     </div>
   </div>
+  <ArticleImagePreview
+    :target-element="containerRef"
+    :content-key="normalizedHtml"
+  />
 </template>
