@@ -1,4 +1,9 @@
-import type { AdminSiteConfigForm } from '../types/admin-site-config'
+import type {
+  AdminS3ConfigForm,
+  AdminS3ConnectionTestResponse,
+  AdminS3ProfileForm,
+  AdminSiteConfigForm
+} from '../types/admin-site-config'
 
 /**
  * 后台站点配置组合式函数。
@@ -29,8 +34,46 @@ export function useAdminSiteConfig() {
     })
   }
 
+  /**
+   * 查询站点 S3 配置。
+   *
+   * @returns S3 配置
+   */
+  async function getS3Config() {
+    return await apiClient.request<AdminS3ConfigForm>('/api/admin/site/storage/s3')
+  }
+
+  /**
+   * 更新站点 S3 配置。
+   *
+   * @param payload S3 配置
+   * @returns 更新后的 S3 配置
+   */
+  async function updateS3Config(payload: AdminS3ConfigForm) {
+    return await apiClient.request<AdminS3ConfigForm>('/api/admin/site/storage/s3', {
+      method: 'PUT',
+      body: payload
+    })
+  }
+
+  /**
+   * 测试 S3 配置连接。
+   *
+   * @param payload S3 配置项
+   * @returns 测试结果
+   */
+  async function testS3Connection(payload: AdminS3ProfileForm) {
+    return await apiClient.request<AdminS3ConnectionTestResponse>('/api/admin/site/storage/s3/test', {
+      method: 'POST',
+      body: payload
+    })
+  }
+
   return {
     getSiteConfig,
-    updateSiteConfig
+    updateSiteConfig,
+    getS3Config,
+    updateS3Config,
+    testS3Connection
   }
 }

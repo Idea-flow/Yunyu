@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type {
+  AdminS3ConfigForm,
+  AdminS3ProfileForm,
   AdminHomepageConfigForm,
   AdminHomepageHeroStatForm,
   AdminSiteConfigForm
@@ -19,7 +21,7 @@ definePageMeta({
  * 站点设置标签键类型。
  * 作用：约束后台站点设置页所有配置分组键值，避免标签切换和保存逻辑散落不一致。
  */
-type SiteConfigTabKey = 'basic' | 'seo' | 'theme' | 'homepage'
+type SiteConfigTabKey = 'basic' | 'seo' | 'theme' | 'homepage' | 's3'
 
 /**
  * 站点设置标签项类型。
@@ -38,13 +40,18 @@ const adminPosts = useAdminPosts()
 
 const isLoading = ref(false)
 const isSubmitting = ref(false)
+const isSavingS3Config = ref(false)
+const isTestingS3Connection = ref(false)
+const isActivatingS3Profile = ref(false)
 const activeTab = ref<SiteConfigTabKey>('basic')
 const lastSavedSiteSnapshot = ref('')
 const lastSavedHomepageSnapshot = ref('')
+const lastSavedS3Snapshot = ref('')
 const heroVisualKeyword = ref('')
 const isLoadingHeroVisualOptions = ref(false)
 const heroVisualOptions = ref<AdminPostItem[]>([])
 const selectedHeroVisualPost = ref<AdminPostItem | null>(null)
+const selectedS3ProfileKey = ref('')
 let heroVisualSearchTimer: ReturnType<typeof setTimeout> | null = null
 const DEFAULT_PRIMARY_COLOR = '#38BDF8'
 const DEFAULT_SECONDARY_COLOR = '#FB923C'
@@ -131,11 +138,48 @@ const homepageBackgroundOptions = [
   { label: '关键词气泡', value: 'keyword-cloud' }
 ] as const
 
+const defaultAllowedContentTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4']
+
+/**
+ * 创建默认 S3 配置项。
+ * 作用：为新增配置和首次进入页面时提供稳定的默认值。
+ *
+ * @param profileKey 配置键
+ * @param enabled 是否启用
+ */
+function createDefaultS3Profile(profileKey: string, enabled = false): AdminS3ProfileForm {
+  return {
+    profileKey,
+    name: enabled ? '默认配置' : '新配置',
+    enabled,
+    endpoint: '',
+    region: 'auto',
+    bucket: '',
+    accessKey: '',
+    secretKey: '',
+    pathStyleAccess: false,
+    publicBaseUrl: '',
+    presignExpireSeconds: 300,
+    maxFileSizeMb: 20,
+    allowedContentTypes: [...defaultAllowedContentTypes]
+  }
+}
+
+/**
+ * S3 配置表单状态。
+ * 作用：承载后台 S3 多配置列表和当前启用配置键。\n
+ */
+const s3FormState = reactive<AdminS3ConfigForm>({
+  activeProfileKey: '',
+  profiles: []
+})
+
 const tabItems: SiteConfigTabItem[] = [
   { key: 'basic', label: '基础信息', icon: 'i-lucide-badge-info' },
   { key: 'seo', label: 'SEO 配置', icon: 'i-lucide-search-check' },
   { key: 'theme', label: '视觉风格', icon: 'i-lucide-palette' },
-  { key: 'homepage', label: '首页展示', icon: 'i-lucide-layout-template' }
+  { key: 'homepage', label: '首页展示', icon: 'i-lucide-layout-template' },
+  { key: 's3', label: 'S3 配置', icon: 'i-lucide-hard-drive-upload' }
 ]
 
 /**
@@ -143,6 +187,7 @@ const tabItems: SiteConfigTabItem[] = [
  * 作用：统一控制保存行为、文案与页面右侧预览区显隐。
  */
 const isHomepageTab = computed(() => activeTab.value === 'homepage')
+const isS3Tab = computed(() => activeTab.value === 's3')
 
 /**
  * 当前站点配置是否存在未保存修改。
@@ -155,32 +200,59 @@ const siteHasUnsavedChanges = computed(() => serializeSiteFormState(siteFormStat
  * 作用：比较首页展示当前表单和最近一次保存快照。
  */
 const homepageHasUnsavedChanges = computed(() => serializeHomepageFormState(homepageFormState) !== lastSavedHomepageSnapshot.value)
+const s3HasUnsavedChanges = computed(() => serializeS3FormState(s3FormState) !== lastSavedS3Snapshot.value)
 
 /**
  * 页面整体是否存在未保存修改。
  * 作用：在页面头部统一提示当前页面是否有待保存内容。
  */
-const hasUnsavedChanges = computed(() => siteHasUnsavedChanges.value || homepageHasUnsavedChanges.value)
+const hasUnsavedChanges = computed(() =>
+  siteHasUnsavedChanges.value ||
+  homepageHasUnsavedChanges.value ||
+  s3HasUnsavedChanges.value
+)
 
 /**
  * 当前标签是否存在未保存修改。
  * 作用：让保存按钮和状态文案更贴合当前编辑分组。
  */
 const currentTabHasUnsavedChanges = computed(() => {
-  return isHomepageTab.value ? homepageHasUnsavedChanges.value : siteHasUnsavedChanges.value
+  if (isHomepageTab.value) {
+    return homepageHasUnsavedChanges.value
+  }
+  if (isS3Tab.value) {
+    return s3HasUnsavedChanges.value
+  }
+  return siteHasUnsavedChanges.value
 })
 
 /**
  * 保存按钮文案。
  * 作用：根据当前标签切换为更准确的保存提示，避免用户不清楚保存目标。
  */
-const submitButtonLabel = computed(() => isHomepageTab.value ? '保存首页展示' : '保存站点配置')
+const submitButtonLabel = computed(() => {
+  if (isHomepageTab.value) {
+    return '保存首页展示'
+  }
+  if (isS3Tab.value) {
+    return '保存 S3 配置'
+  }
+  return '保存站点配置'
+})
 
 /**
  * 保存中按钮文案。
  * 作用：根据当前标签切换保存中的状态提示。
  */
-const submitLoadingLabel = computed(() => isHomepageTab.value ? '首页展示保存中...' : '站点配置保存中...')
+const submitLoadingLabel = computed(() => {
+  if (isHomepageTab.value) {
+    return '首页展示保存中...'
+  }
+  if (isS3Tab.value) {
+    return 'S3 配置保存中...'
+  }
+  return '站点配置保存中...'
+})
 
 /**
  * 首页预览背景样式。
@@ -230,16 +302,19 @@ async function loadAllConfig() {
   isLoading.value = true
 
   try {
-    const [siteResponse, homepageResponse] = await Promise.all([
+    const [siteResponse, homepageResponse, s3Response] = await Promise.all([
       adminSiteConfig.getSiteConfig(),
-      adminHomepageConfig.getHomepageConfig()
+      adminHomepageConfig.getHomepageConfig(),
+      adminSiteConfig.getS3Config()
     ])
 
     assignSiteFormState(siteResponse)
     assignHomepageFormState(homepageResponse)
+    assignS3FormState(s3Response)
     await syncSelectedHeroVisualPost()
     lastSavedSiteSnapshot.value = serializeSiteFormState(siteResponse)
     lastSavedHomepageSnapshot.value = serializeHomepageFormState(homepageResponse)
+    lastSavedS3Snapshot.value = serializeS3FormState(s3Response)
   } catch (error: any) {
     toast.add({
       title: '加载配置失败',
@@ -304,6 +379,52 @@ function assignHomepageFormState(data: AdminHomepageConfigForm) {
 }
 
 /**
+ * 将 S3 配置响应同步到表单。
+ *
+ * @param data S3 配置数据
+ */
+function assignS3FormState(data: AdminS3ConfigForm) {
+  const profileList = (data.profiles || []).map(profile => ({
+    profileKey: profile.profileKey || '',
+    name: profile.name || '',
+    enabled: !!profile.enabled,
+    endpoint: profile.endpoint || '',
+    region: profile.region || 'auto',
+    bucket: profile.bucket || '',
+    accessKey: profile.accessKey || '',
+    secretKey: profile.secretKey || '',
+    pathStyleAccess: !!profile.pathStyleAccess,
+    publicBaseUrl: profile.publicBaseUrl || '',
+    presignExpireSeconds: profile.presignExpireSeconds || 300,
+    maxFileSizeMb: profile.maxFileSizeMb || 20,
+    allowedContentTypes: profile.allowedContentTypes?.length
+      ? profile.allowedContentTypes.map(item => item.trim()).filter(Boolean)
+      : [...defaultAllowedContentTypes]
+  }))
+
+  s3FormState.activeProfileKey = data.activeProfileKey || ''
+  s3FormState.profiles = profileList
+
+  if (!s3FormState.profiles.length) {
+    const defaultKey = `default-${Date.now()}`
+    s3FormState.profiles = [createDefaultS3Profile(defaultKey, true)]
+    s3FormState.activeProfileKey = defaultKey
+  }
+
+  let activeProfile = s3FormState.profiles.find(profile => profile.profileKey === s3FormState.activeProfileKey)
+  if (!activeProfile) {
+    activeProfile = s3FormState.profiles.find(profile => profile.enabled) || s3FormState.profiles[0]
+    s3FormState.activeProfileKey = activeProfile.profileKey
+  }
+
+  s3FormState.profiles = s3FormState.profiles.map(profile => ({
+    ...profile,
+    enabled: profile.profileKey === s3FormState.activeProfileKey
+  }))
+  selectedS3ProfileKey.value = s3FormState.activeProfileKey
+}
+
+/**
  * 序列化站点配置表单状态。
  * 作用：将站点配置表单转换为稳定字符串，用于比较未保存修改状态。
  *
@@ -364,6 +485,34 @@ function serializeHomepageFormState(data: AdminHomepageConfigForm) {
 }
 
 /**
+ * 序列化 S3 配置表单状态。
+ * 作用：将 S3 配置转换为稳定字符串，用于比较当前是否有未保存修改。
+ *
+ * @param data S3 配置数据
+ * @returns 稳定序列化后的字符串
+ */
+function serializeS3FormState(data: AdminS3ConfigForm) {
+  return JSON.stringify({
+    activeProfileKey: data.activeProfileKey.trim(),
+    profiles: data.profiles.map(profile => ({
+      profileKey: profile.profileKey.trim(),
+      name: profile.name.trim(),
+      enabled: profile.enabled,
+      endpoint: profile.endpoint.trim(),
+      region: profile.region.trim(),
+      bucket: profile.bucket.trim(),
+      accessKey: profile.accessKey.trim(),
+      secretKey: profile.secretKey.trim(),
+      pathStyleAccess: profile.pathStyleAccess,
+      publicBaseUrl: profile.publicBaseUrl.trim(),
+      presignExpireSeconds: profile.presignExpireSeconds,
+      maxFileSizeMb: profile.maxFileSizeMb,
+      allowedContentTypes: profile.allowedContentTypes.map(item => item.trim()).filter(Boolean)
+    }))
+  })
+}
+
+/**
  * 切换配置标签。
  * 作用：在不同站点配置分组之间切换当前编辑视图。
  *
@@ -371,6 +520,9 @@ function serializeHomepageFormState(data: AdminHomepageConfigForm) {
  */
 function switchTab(key: SiteConfigTabKey) {
   activeTab.value = key
+  if (key === 's3' && !selectedS3ProfileKey.value && s3FormState.profiles.length) {
+    selectedS3ProfileKey.value = s3FormState.activeProfileKey || s3FormState.profiles[0].profileKey
+  }
 }
 
 /**
@@ -487,6 +639,168 @@ function validateHomepageForm() {
   }
 
   return true
+}
+
+/**
+ * 校验 S3 配置表单。
+ * 作用：在保存 S3 配置前确保配置项完整且仅有一个启用项。
+ */
+function validateS3Form() {
+  if (!s3FormState.profiles.length) {
+    toast.add({ title: '至少保留一个 S3 配置项', color: 'warning' })
+    return false
+  }
+
+  const enabledProfiles = s3FormState.profiles.filter(profile => profile.enabled)
+  if (enabledProfiles.length !== 1) {
+    toast.add({ title: 'S3 配置必须且只能启用一个', color: 'warning' })
+    return false
+  }
+
+  if (s3FormState.activeProfileKey !== enabledProfiles[0].profileKey) {
+    s3FormState.activeProfileKey = enabledProfiles[0].profileKey
+  }
+
+  for (const profile of s3FormState.profiles) {
+    if (!profile.profileKey.trim()) {
+      toast.add({ title: 'S3 配置键不能为空', color: 'warning' })
+      return false
+    }
+    if (!profile.name.trim()) {
+      toast.add({ title: 'S3 配置名称不能为空', color: 'warning' })
+      return false
+    }
+    if (!profile.endpoint.trim()) {
+      toast.add({ title: 'S3 Endpoint 不能为空', color: 'warning' })
+      return false
+    }
+    if (!profile.bucket.trim()) {
+      toast.add({ title: 'S3 Bucket 不能为空', color: 'warning' })
+      return false
+    }
+    if (!profile.accessKey.trim() || !profile.secretKey.trim()) {
+      toast.add({ title: 'S3 AccessKey/SecretKey 不能为空', color: 'warning' })
+      return false
+    }
+    if (profile.presignExpireSeconds < 60 || profile.presignExpireSeconds > 3600) {
+      toast.add({ title: '签名有效期需在 60-3600 秒', color: 'warning' })
+      return false
+    }
+    if (profile.maxFileSizeMb < 1 || profile.maxFileSizeMb > 2048) {
+      toast.add({ title: '最大文件大小需在 1-2048 MB', color: 'warning' })
+      return false
+    }
+    if (!profile.allowedContentTypes.map(item => item.trim()).filter(Boolean).length) {
+      toast.add({ title: '允许的 MIME 类型不能为空', color: 'warning' })
+      return false
+    }
+  }
+
+  const keys = s3FormState.profiles.map(profile => profile.profileKey.trim())
+  if (new Set(keys).size !== keys.length) {
+    toast.add({ title: 'S3 配置键不能重复', color: 'warning' })
+    return false
+  }
+
+  return true
+}
+
+/**
+ * 获取当前正在编辑的 S3 配置项。
+ */
+const currentS3Profile = computed(() =>
+  s3FormState.profiles.find(profile => profile.profileKey === selectedS3ProfileKey.value) || null
+)
+
+/**
+ * 新增 S3 配置项。
+ * 作用：在后台站点设置页追加一个新的 S3 配置页签。
+ */
+function addS3Profile() {
+  const profileKey = `s3-${Date.now()}`
+  const profile = createDefaultS3Profile(profileKey, false)
+  s3FormState.profiles.push(profile)
+  selectedS3ProfileKey.value = profileKey
+}
+
+/**
+ * 切换当前编辑的 S3 配置项。
+ *
+ * @param profileKey 配置键
+ */
+function selectS3Profile(profileKey: string) {
+  selectedS3ProfileKey.value = profileKey
+}
+
+/**
+ * 设为当前启用 S3 配置项。
+ *
+ * @param profileKey 配置键
+ */
+async function setActiveS3Profile(profileKey: string) {
+  const previousState: AdminS3ConfigForm = {
+    activeProfileKey: s3FormState.activeProfileKey,
+    profiles: s3FormState.profiles.map(profile => ({
+      ...profile,
+      allowedContentTypes: [...profile.allowedContentTypes]
+    }))
+  }
+
+  s3FormState.activeProfileKey = profileKey
+  s3FormState.profiles = s3FormState.profiles.map(profile => ({
+    ...profile,
+    enabled: profile.profileKey === profileKey
+  }))
+  selectedS3ProfileKey.value = profileKey
+
+  if (!validateS3Form()) {
+    assignS3FormState(previousState)
+    return
+  }
+
+  isActivatingS3Profile.value = true
+
+  try {
+    await saveS3Config({ silentSuccessToast: true })
+    toast.add({
+      title: '启用配置已更新',
+      color: 'success'
+    })
+  } catch (error: any) {
+    assignS3FormState(previousState)
+    toast.add({
+      title: '启用配置失败',
+      description: error?.message || '启用配置未成功，请稍后重试。',
+      color: 'error'
+    })
+  } finally {
+    isActivatingS3Profile.value = false
+  }
+}
+
+/**
+ * 删除 S3 配置项。
+ *
+ * @param profileKey 配置键
+ */
+function removeS3Profile(profileKey: string) {
+  if (s3FormState.profiles.length <= 1) {
+    toast.add({ title: '至少保留一个 S3 配置项', color: 'warning' })
+    return
+  }
+
+  const removingActive = s3FormState.activeProfileKey === profileKey
+  s3FormState.profiles = s3FormState.profiles.filter(profile => profile.profileKey !== profileKey)
+
+  if (removingActive) {
+    const nextProfile = s3FormState.profiles[0]
+    void setActiveS3Profile(nextProfile.profileKey)
+    return
+  }
+
+  if (selectedS3ProfileKey.value === profileKey) {
+    selectedS3ProfileKey.value = s3FormState.profiles[0].profileKey
+  }
 }
 
 /**
@@ -715,6 +1029,102 @@ async function saveHomepageConfig() {
 }
 
 /**
+ * 构建 S3 配置保存请求体。
+ * 作用：统一整理并裁剪表单字段，避免普通保存和启用保存出现字段不一致。
+ */
+function buildS3ConfigPayload(): AdminS3ConfigForm {
+  return {
+    activeProfileKey: s3FormState.activeProfileKey.trim(),
+    profiles: s3FormState.profiles.map(profile => ({
+      profileKey: profile.profileKey.trim(),
+      name: profile.name.trim(),
+      enabled: profile.enabled,
+      endpoint: profile.endpoint.trim(),
+      region: profile.region.trim() || 'auto',
+      bucket: profile.bucket.trim(),
+      accessKey: profile.accessKey.trim(),
+      secretKey: profile.secretKey.trim(),
+      pathStyleAccess: profile.pathStyleAccess,
+      publicBaseUrl: profile.publicBaseUrl.trim(),
+      presignExpireSeconds: profile.presignExpireSeconds,
+      maxFileSizeMb: profile.maxFileSizeMb,
+      allowedContentTypes: profile.allowedContentTypes.map(item => item.trim()).filter(Boolean)
+    }))
+  }
+}
+
+/**
+ * 保存 S3 配置。
+ * 作用：将后台 S3 多配置提交到后端，并在成功后刷新本地快照。
+ */
+async function saveS3Config(options?: { silentSuccessToast?: boolean }) {
+  if (!validateS3Form()) {
+    return
+  }
+
+  isSavingS3Config.value = true
+
+  try {
+    const response = await adminSiteConfig.updateS3Config(buildS3ConfigPayload())
+
+    assignS3FormState(response)
+    lastSavedS3Snapshot.value = serializeS3FormState(response)
+
+    if (!options?.silentSuccessToast) {
+      toast.add({
+        title: 'S3 配置已保存',
+        color: 'success'
+      })
+    }
+  } finally {
+    isSavingS3Config.value = false
+  }
+}
+
+/**
+ * 测试当前 S3 配置连接。
+ * 作用：实时校验当前编辑配置的 endpoint、bucket 和密钥是否可用。
+ */
+async function testCurrentS3Connection() {
+  if (!currentS3Profile.value) {
+    toast.add({ title: '当前没有可测试的 S3 配置', color: 'warning' })
+    return
+  }
+
+  isTestingS3Connection.value = true
+
+  try {
+    const response = await adminSiteConfig.testS3Connection({
+      ...currentS3Profile.value,
+      profileKey: currentS3Profile.value.profileKey.trim(),
+      name: currentS3Profile.value.name.trim(),
+      endpoint: currentS3Profile.value.endpoint.trim(),
+      region: currentS3Profile.value.region.trim() || 'auto',
+      bucket: currentS3Profile.value.bucket.trim(),
+      accessKey: currentS3Profile.value.accessKey.trim(),
+      secretKey: currentS3Profile.value.secretKey.trim(),
+      pathStyleAccess: !!currentS3Profile.value.pathStyleAccess,
+      publicBaseUrl: currentS3Profile.value.publicBaseUrl.trim(),
+      allowedContentTypes: currentS3Profile.value.allowedContentTypes.map(item => item.trim()).filter(Boolean)
+    })
+
+    toast.add({
+      title: response.success ? '连接测试成功' : '连接测试失败',
+      description: response.message,
+      color: response.success ? 'success' : 'error'
+    })
+  } catch (error: any) {
+    toast.add({
+      title: '连接测试失败',
+      description: error?.message || '连接测试请求失败，请稍后重试。',
+      color: 'error'
+    })
+  } finally {
+    isTestingS3Connection.value = false
+  }
+}
+
+/**
  * 保存当前标签配置。
  * 作用：根据当前所在标签分组调用对应接口，避免不同配置模型互相混写。
  */
@@ -727,10 +1137,18 @@ async function handleSubmit() {
       return
     }
 
+    if (isS3Tab.value) {
+      await saveS3Config()
+      return
+    }
+
     await saveSiteConfig()
   } catch (error: any) {
+    const title = isHomepageTab.value
+      ? '保存首页展示失败'
+      : (isS3Tab.value ? '保存 S3 配置失败' : '保存站点配置失败')
     toast.add({
-      title: isHomepageTab.value ? '保存首页展示失败' : '保存站点配置失败',
+      title,
       description: error?.message || '保存未成功，请稍后重试。',
       color: 'error'
     })
@@ -893,7 +1311,7 @@ onMounted(async () => {
           </div>
         </div>
 
-        <div v-else class="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_360px]">
+        <div v-else-if="activeTab === 'homepage'" class="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_360px]">
           <div class="space-y-5">
             <section class="rounded-[16px] border border-slate-200/80 bg-white/75 p-4 dark:border-white/10 dark:bg-white/4">
               <div class="flex flex-wrap items-center justify-between gap-3">
@@ -1324,6 +1742,159 @@ onMounted(async () => {
               </div>
             </section>
           </aside>
+        </div>
+
+        <div v-else class="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
+          <aside class="space-y-3 rounded-[16px] border border-slate-200/80 bg-white/75 p-3 dark:border-white/10 dark:bg-white/4">
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">S3 配置列表</p>
+              <AdminButton
+                icon="i-lucide-plus"
+                label="新增"
+                tone="neutral"
+                variant="outline"
+                size="xs"
+                @click="addS3Profile"
+              />
+            </div>
+
+            <div class="space-y-2">
+              <button
+                v-for="profile in s3FormState.profiles"
+                :key="profile.profileKey"
+                type="button"
+                class="w-full rounded-[12px] border px-3 py-2 text-left transition"
+                :class="selectedS3ProfileKey === profile.profileKey
+                  ? 'border-sky-200 bg-sky-50/90 text-sky-700 dark:border-sky-400/30 dark:bg-sky-400/10 dark:text-sky-200'
+                  : 'border-slate-200 bg-white/80 text-slate-600 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-300'"
+                @click="selectS3Profile(profile.profileKey)"
+              >
+                <div class="flex items-center justify-between gap-2">
+                  <p class="truncate text-sm font-medium">{{ profile.name || profile.profileKey }}</p>
+                  <span
+                    class="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                    :class="profile.enabled
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/20 dark:text-emerald-200'
+                      : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400'"
+                  >
+                    {{ profile.enabled ? '启用中' : '未启用' }}
+                  </span>
+                </div>
+                <p class="mt-1 truncate text-xs text-slate-400 dark:text-slate-500">{{ profile.profileKey }}</p>
+              </button>
+            </div>
+          </aside>
+
+          <section v-if="currentS3Profile" class="space-y-4 rounded-[16px] border border-slate-200/80 bg-white/75 p-4 dark:border-white/10 dark:bg-white/4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">当前配置详情</p>
+              <div class="flex items-center gap-2">
+                <AdminButton
+                  icon="i-lucide-plug-zap"
+                  label="连接测试"
+                  tone="neutral"
+                  variant="outline"
+                  size="xs"
+                  :loading="isTestingS3Connection"
+                  @click="testCurrentS3Connection"
+                />
+                <AdminButton
+                  icon="i-lucide-check"
+                  label="设为启用"
+                  tone="neutral"
+                  variant="outline"
+                  size="xs"
+                  :loading="isActivatingS3Profile"
+                  @click="setActiveS3Profile(currentS3Profile.profileKey)"
+                />
+                <AdminPrimaryButton
+                  icon="i-lucide-save"
+                  label="保存配置"
+                  loading-label="保存中..."
+                  size="xs"
+                  :loading="isSavingS3Config"
+                  @click="saveS3Config"
+                />
+                <AdminButton
+                  icon="i-lucide-trash-2"
+                  label="删除"
+                  tone="neutral"
+                  variant="outline"
+                  size="xs"
+                  @click="removeS3Profile(currentS3Profile.profileKey)"
+                />
+              </div>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-2">
+              <div class="space-y-2">
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">配置键</p>
+                <AdminInput
+                  :model-value="currentS3Profile.profileKey"
+                  placeholder="例如：r2-prod"
+                  readonly
+                />
+              </div>
+              <div class="space-y-2">
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">配置名称</p>
+                <AdminInput v-model="currentS3Profile.name" placeholder="例如：R2 生产" />
+              </div>
+              <div class="space-y-2 md:col-span-2">
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Endpoint</p>
+                <AdminInput v-model="currentS3Profile.endpoint" placeholder="https://s3.example.com" />
+              </div>
+              <div class="space-y-2">
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Region</p>
+                <AdminInput v-model="currentS3Profile.region" placeholder="auto" />
+              </div>
+              <div class="space-y-2">
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Bucket</p>
+                <AdminInput v-model="currentS3Profile.bucket" placeholder="yunyu-assets" />
+              </div>
+              <div class="space-y-2">
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">AccessKey</p>
+                <AdminInput v-model="currentS3Profile.accessKey" placeholder="请输入 AccessKey" />
+              </div>
+              <div class="space-y-2">
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">SecretKey</p>
+                <AdminInput v-model="currentS3Profile.secretKey" placeholder="请输入 SecretKey" />
+              </div>
+              <div class="space-y-2 md:col-span-2">
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">访问风格</p>
+                <div class="rounded-[12px] border border-slate-200/80 bg-white/80 p-3 dark:border-white/10 dark:bg-white/[0.03]">
+                  <AdminToggleButton
+                    v-model="currentS3Profile.pathStyleAccess"
+                    tone="info"
+                    active-label="Path-Style（endpoint/bucket/key）"
+                    inactive-label="Virtual-hosted-style（bucket.endpoint/key）"
+                  />
+                  <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                    MinIO、部分私有 S3 和本地域名环境通常需要启用 Path-Style。
+                  </p>
+                </div>
+              </div>
+              <div class="space-y-2 md:col-span-2">
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Public Base URL</p>
+                <AdminInput v-model="currentS3Profile.publicBaseUrl" placeholder="https://cdn.example.com" />
+              </div>
+              <div class="space-y-2">
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">签名有效期（秒）</p>
+                <AdminInput v-model="currentS3Profile.presignExpireSeconds" type="number" placeholder="300" />
+              </div>
+              <div class="space-y-2">
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">最大文件大小（MB）</p>
+                <AdminInput v-model="currentS3Profile.maxFileSizeMb" type="number" placeholder="20" />
+              </div>
+              <div class="space-y-2 md:col-span-2">
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">允许 MIME 类型（逗号分隔）</p>
+                <AdminInput
+                  :model-value="currentS3Profile.allowedContentTypes.join(',')"
+                  placeholder="image/jpeg,image/png,image/webp,video/mp4"
+                  @update:model-value="value => { currentS3Profile.allowedContentTypes = value.split(',').map(item => item.trim()).filter(Boolean) }"
+                />
+              </div>
+            </div>
+          </section>
         </div>
       </section>
     </div>

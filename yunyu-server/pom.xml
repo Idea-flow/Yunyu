@@ -34,6 +34,7 @@
 			<yunyu.native.scan.packages></yunyu.native.scan.packages>
 			<mybatis.plus.version>3.5.15</mybatis.plus.version>
 			<springdoc.version>3.0.0</springdoc.version>
+			<aws.sdk.version>2.32.12</aws.sdk.version>
 			<!-- GraalVM Native Build Tools 插件版本：统一控制 Native Maven 插件版本。 -->
 			<graalvm.native.buildtools.version>0.11.1</graalvm.native.buildtools.version>
 			<!-- Yunyu Native Support 组件版本：统一控制 starter、core、lambda-override 的版本。 -->
@@ -109,6 +110,13 @@
 			<groupId>com.mysql</groupId>
 			<artifactId>mysql-connector-j</artifactId>
 			<scope>runtime</scope>
+		</dependency>
+
+		<!-- 提供 S3 协议对象存储客户端与预签名能力，用于附件前端直传和远程文件删除。 -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>${aws.sdk.version}</version>
 		</dependency>
 
 		<!-- 提供 Lombok 注解能力，用于减少样板代码，提升实体类与 DTO 开发效率。 -->

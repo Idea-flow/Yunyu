@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ideaflow.yunyu.common.constant.ResultCode;
 import com.ideaflow.yunyu.common.exception.BizException;
 import com.ideaflow.yunyu.module.category.entity.CategoryEntity;
@@ -18,8 +17,6 @@ import com.ideaflow.yunyu.module.post.mapper.PostMapper;
 import com.ideaflow.yunyu.module.post.mapper.PostTagMapper;
 import com.ideaflow.yunyu.module.post.mapper.TopicPostMapper;
 import com.ideaflow.yunyu.module.site.dto.SitePostQueryRequest;
-import com.ideaflow.yunyu.module.site.entity.SiteConfigEntity;
-import com.ideaflow.yunyu.module.site.mapper.SiteConfigMapper;
 import com.ideaflow.yunyu.module.site.vo.SiteBaseInfoResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteCategoryDetailResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteCategoryItemResponse;
@@ -63,9 +60,8 @@ public class SiteContentService {
     private final UserMapper userMapper;
     private final PostTagMapper postTagMapper;
     private final TopicPostMapper topicPostMapper;
-    private final SiteConfigMapper siteConfigMapper;
+    private final SiteConfigService siteConfigService;
     private final HomepageConfigService homepageConfigService;
-    private final ObjectMapper objectMapper;
 
     /**
      * 创建前台内容服务。
@@ -78,9 +74,8 @@ public class SiteContentService {
      * @param userMapper 用户 Mapper
      * @param postTagMapper 文章标签关联 Mapper
      * @param topicPostMapper 专题文章关联 Mapper
-     * @param siteConfigMapper 站点配置 Mapper
+     * @param siteConfigService 站点配置统一服务
      * @param homepageConfigService 首页配置服务
-     * @param objectMapper Jackson 对象映射器
      */
     public SiteContentService(PostMapper postMapper,
                               PostContentMapper postContentMapper,
@@ -90,9 +85,8 @@ public class SiteContentService {
                               UserMapper userMapper,
                               PostTagMapper postTagMapper,
                               TopicPostMapper topicPostMapper,
-                              SiteConfigMapper siteConfigMapper,
-                              HomepageConfigService homepageConfigService,
-                              ObjectMapper objectMapper) {
+                              SiteConfigService siteConfigService,
+                              HomepageConfigService homepageConfigService) {
         this.postMapper = postMapper;
         this.postContentMapper = postContentMapper;
         this.categoryMapper = categoryMapper;
@@ -101,9 +95,8 @@ public class SiteContentService {
         this.userMapper = userMapper;
         this.postTagMapper = postTagMapper;
         this.topicPostMapper = topicPostMapper;
-        this.siteConfigMapper = siteConfigMapper;
+        this.siteConfigService = siteConfigService;
         this.homepageConfigService = homepageConfigService;
-        this.objectMapper = objectMapper;
     }
 
     /**
@@ -320,13 +313,9 @@ public class SiteContentService {
      */
     private SiteBaseInfoResponse buildSiteBaseInfo() {
         SiteBaseInfoResponse response = new SiteBaseInfoResponse();
-        SiteConfigEntity baseConfig = findSiteConfig("site.base");
-        SiteConfigEntity seoConfig = findSiteConfig("site.seo");
-        SiteConfigEntity themeConfig = findSiteConfig("site.theme");
-
-        JsonNode baseNode = readJsonNode(baseConfig == null ? null : baseConfig.getConfigJson());
-        JsonNode seoNode = readJsonNode(seoConfig == null ? null : seoConfig.getConfigJson());
-        JsonNode themeNode = readJsonNode(themeConfig == null ? null : themeConfig.getConfigJson());
+        JsonNode baseNode = siteConfigService.getConfigJsonNodeByKey("site.base");
+        JsonNode seoNode = siteConfigService.getConfigJsonNodeByKey("site.seo");
+        JsonNode themeNode = siteConfigService.getConfigJsonNodeByKey("site.theme");
 
         response.setSiteName(readJsonText(baseNode, "siteName", "云屿"));
         response.setSiteSubTitle(readJsonText(baseNode, "siteSubTitle", "在二次元场景与情绪里漫游的内容站"));
@@ -817,36 +806,6 @@ public class SiteContentService {
                 .eq(PostEntity::getStatus, "PUBLISHED")
                 .inSql(PostEntity::getId, "SELECT post_id FROM post_tag WHERE tag_id = " + tagId));
         return count == null ? 0L : count;
-    }
-
-    /**
-     * 查询站点配置。
-     *
-     * @param configKey 配置键
-     * @return 站点配置
-     */
-    private SiteConfigEntity findSiteConfig(String configKey) {
-        return siteConfigMapper.selectOne(new LambdaQueryWrapper<SiteConfigEntity>()
-                .eq(SiteConfigEntity::getConfigKey, configKey)
-                .last("LIMIT 1"));
-    }
-
-    /**
-     * 读取 JSON 节点。
-     *
-     * @param jsonText JSON 文本
-     * @return JSON 节点
-     */
-    private JsonNode readJsonNode(String jsonText) {
-        if (jsonText == null || jsonText.isBlank()) {
-            return objectMapper.createObjectNode();
-        }
-
-        try {
-            return objectMapper.readTree(jsonText);
-        } catch (Exception exception) {
-            return objectMapper.createObjectNode();
-        }
     }
 
     /**

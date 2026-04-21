@@ -18,10 +18,15 @@ const props = withDefaults(defineProps<{
 const toast = useToast()
 const adminPosts = useAdminPosts()
 const adminTaxonomy = useAdminTaxonomy()
+const adminAttachments = useAdminAttachments()
 
 const isSubmitting = ref(false)
 const isLoadingDetail = ref(false)
 const isLoadingTaxonomy = ref(false)
+const isUploadingCover = ref(false)
+const isUploadingVideo = ref(false)
+const coverFileInputRef = ref<HTMLInputElement | null>(null)
+const videoFileInputRef = ref<HTMLInputElement | null>(null)
 const categoryOptions = ref<Array<{ label: string, value: number | null }>>([
   { label: '暂不设置分类', value: null }
 ])
@@ -326,6 +331,94 @@ function toggleTopic(topicId: number) {
     : [...formState.topicIds, topicId]
 }
 
+/**
+ * 触发封面文件选择。
+ * 作用：打开封面上传文件选择器，准备执行前端直传。
+ */
+function triggerCoverUpload() {
+  coverFileInputRef.value?.click()
+}
+
+/**
+ * 触发视频文件选择。
+ * 作用：打开视频上传文件选择器，准备执行前端直传。
+ */
+function triggerVideoUpload() {
+  videoFileInputRef.value?.click()
+}
+
+/**
+ * 处理封面文件选择。
+ *
+ * @param event 文件选择事件
+ */
+async function onCoverFileSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) {
+    return
+  }
+  await uploadAttachmentAndFill(file, 'cover')
+  input.value = ''
+}
+
+/**
+ * 处理视频文件选择。
+ *
+ * @param event 文件选择事件
+ */
+async function onVideoFileSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) {
+    return
+  }
+  await uploadAttachmentAndFill(file, 'video')
+  input.value = ''
+}
+
+/**
+ * 上传附件并回填 URL。
+ * 作用：复用附件直传能力，将上传后的访问地址回填到文章表单字段。
+ *
+ * @param file 文件对象
+ * @param target 回填目标
+ */
+async function uploadAttachmentAndFill(file: File, target: 'cover' | 'video') {
+  const isVideoTarget = target === 'video'
+  if (isVideoTarget) {
+    isUploadingVideo.value = true
+  } else {
+    isUploadingCover.value = true
+  }
+
+  try {
+    const uploadResult = await adminAttachments.uploadFile(file)
+    if (isVideoTarget) {
+      formState.videoUrl = uploadResult.attachment.accessUrl
+    } else {
+      formState.coverUrl = uploadResult.attachment.accessUrl
+    }
+    toast.add({
+      title: isVideoTarget ? '视频上传成功' : '封面上传成功',
+      description: `已回填 ${uploadResult.attachment.fileName}`,
+      color: 'success'
+    })
+  } catch (error: any) {
+    toast.add({
+      title: isVideoTarget ? '视频上传失败' : '封面上传失败',
+      description: error?.message || '附件上传失败，请稍后重试。',
+      color: 'error'
+    })
+  } finally {
+    if (isVideoTarget) {
+      isUploadingVideo.value = false
+    } else {
+      isUploadingCover.value = false
+    }
+  }
+}
+
 await Promise.all([
   loadTaxonomyOptions(),
   loadPostDetail()
@@ -415,17 +508,55 @@ await Promise.all([
                 </UFormField>
 
                 <UFormField name="coverUrl" label="封面地址">
-                  <AdminInput
-                    v-model="formState.coverUrl"
-                    placeholder="请输入封面图片 URL"
-                  />
+                  <div class="space-y-2">
+                    <AdminInput
+                      v-model="formState.coverUrl"
+                      placeholder="请输入封面图片 URL"
+                    />
+                    <div class="flex justify-end">
+                      <AdminButton
+                        label="上传封面"
+                        tone="neutral"
+                        variant="outline"
+                        icon="i-lucide-upload"
+                        :loading="isUploadingCover"
+                        @click="triggerCoverUpload"
+                      />
+                    </div>
+                    <input
+                      ref="coverFileInputRef"
+                      type="file"
+                      accept="image/*"
+                      class="hidden"
+                      @change="onCoverFileSelected"
+                    >
+                  </div>
                 </UFormField>
 
                 <UFormField name="videoUrl" label="视频地址">
-                  <AdminInput
-                    v-model="formState.videoUrl"
-                    placeholder="请输入视频直链 URL"
-                  />
+                  <div class="space-y-2">
+                    <AdminInput
+                      v-model="formState.videoUrl"
+                      placeholder="请输入视频直链 URL"
+                    />
+                    <div class="flex justify-end">
+                      <AdminButton
+                        label="上传视频"
+                        tone="neutral"
+                        variant="outline"
+                        icon="i-lucide-upload"
+                        :loading="isUploadingVideo"
+                        @click="triggerVideoUpload"
+                      />
+                    </div>
+                    <input
+                      ref="videoFileInputRef"
+                      type="file"
+                      accept="video/mp4,video/webm,video/quicktime"
+                      class="hidden"
+                      @change="onVideoFileSelected"
+                    >
+                  </div>
                 </UFormField>
               </div>
             </div>

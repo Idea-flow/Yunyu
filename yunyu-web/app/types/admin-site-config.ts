@@ -15,6 +15,44 @@ export interface AdminSiteConfigForm {
 }
 
 /**
+ * 后台 S3 配置项表单类型。
+ * 作用：统一描述后台站点设置页中单个 S3 配置项的字段结构。
+ */
+export interface AdminS3ProfileForm {
+  profileKey: string
+  name: string
+  enabled: boolean
+  endpoint: string
+  region: string
+  bucket: string
+  accessKey: string
+  secretKey: string
+  pathStyleAccess: boolean
+  publicBaseUrl: string
+  presignExpireSeconds: number
+  maxFileSizeMb: number
+  allowedContentTypes: string[]
+}
+
+/**
+ * 后台 S3 配置表单类型。
+ * 作用：统一描述后台站点设置页中 S3 多配置集合和启用配置键。
+ */
+export interface AdminS3ConfigForm {
+  activeProfileKey: string
+  profiles: AdminS3ProfileForm[]
+}
+
+/**
+ * 后台 S3 连接测试响应类型。
+ * 作用：描述后台测试 S3 配置连接后的结果状态和提示信息。
+ */
+export interface AdminS3ConnectionTestResponse {
+  success: boolean
+  message: string
+}
+
+/**
  * 后台首页首屏统计项表单类型。
  * 作用：统一描述后台首页设置页中首屏统计项的可编辑结构。
  */

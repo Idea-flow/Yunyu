@@ -13,15 +13,12 @@ import com.ideaflow.yunyu.module.post.entity.PostEntity;
 import com.ideaflow.yunyu.module.post.mapper.PostMapper;
 import com.ideaflow.yunyu.module.site.dto.AdminHomepageConfigUpdateRequest;
 import com.ideaflow.yunyu.module.site.dto.AdminHomepageHeroStatRequest;
-import com.ideaflow.yunyu.module.site.entity.SiteConfigEntity;
-import com.ideaflow.yunyu.module.site.mapper.SiteConfigMapper;
 import com.ideaflow.yunyu.module.site.vo.AdminHomepageConfigResponse;
 import com.ideaflow.yunyu.module.site.vo.AdminHomepageHeroStatResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteHomepageConfigResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteHomepageHeroStatResponse;
 import com.ideaflow.yunyu.module.topic.entity.TopicEntity;
 import com.ideaflow.yunyu.module.topic.mapper.TopicMapper;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -50,7 +47,7 @@ public class HomepageConfigService {
     private static final String DEFAULT_CATEGORY_SECTION_TITLE = "分类";
     private static final String DEFAULT_TOPIC_SECTION_TITLE = "专题";
 
-    private final SiteConfigMapper siteConfigMapper;
+    private final SiteConfigService siteConfigService;
     private final PostMapper postMapper;
     private final CategoryMapper categoryMapper;
     private final TopicMapper topicMapper;
@@ -59,18 +56,18 @@ public class HomepageConfigService {
     /**
      * 创建首页配置服务。
      *
-     * @param siteConfigMapper 站点配置 Mapper
+     * @param siteConfigService 站点配置统一服务
      * @param postMapper 文章 Mapper
      * @param categoryMapper 分类 Mapper
      * @param topicMapper 专题 Mapper
      * @param objectMapper JSON 对象映射器
      */
-    public HomepageConfigService(SiteConfigMapper siteConfigMapper,
+    public HomepageConfigService(SiteConfigService siteConfigService,
                                  PostMapper postMapper,
                                  CategoryMapper categoryMapper,
                                  TopicMapper topicMapper,
                                  ObjectMapper objectMapper) {
-        this.siteConfigMapper = siteConfigMapper;
+        this.siteConfigService = siteConfigService;
         this.postMapper = postMapper;
         this.categoryMapper = categoryMapper;
         this.topicMapper = topicMapper;
@@ -166,8 +163,7 @@ public class HomepageConfigService {
      * @return 首页配置 JSON 节点
      */
     private JsonNode readHomepageConfigNode() {
-        SiteConfigEntity configEntity = findConfigByKey(HOMEPAGE_CONFIG_KEY);
-        return readJsonNode(configEntity == null ? null : configEntity.getConfigJson());
+        return siteConfigService.getConfigJsonNodeByKey(HOMEPAGE_CONFIG_KEY);
     }
 
     /**
@@ -473,18 +469,6 @@ public class HomepageConfigService {
     }
 
     /**
-     * 按配置键查询配置实体。
-     *
-     * @param configKey 配置键
-     * @return 配置实体
-     */
-    private SiteConfigEntity findConfigByKey(String configKey) {
-        return siteConfigMapper.selectOne(new LambdaQueryWrapper<SiteConfigEntity>()
-                .eq(SiteConfigEntity::getConfigKey, configKey)
-                .last("LIMIT 1"));
-    }
-
-    /**
      * 保存配置项。
      *
      * @param configKey 配置键
@@ -493,44 +477,7 @@ public class HomepageConfigService {
      * @param remark 配置备注
      */
     private void saveConfig(String configKey, String configName, String configJson, String remark) {
-        SiteConfigEntity entity = findConfigByKey(configKey);
-        LocalDateTime now = LocalDateTime.now();
-
-        if (entity == null) {
-            entity = new SiteConfigEntity();
-            entity.setConfigKey(configKey);
-            entity.setCreatedTime(now);
-        }
-
-        entity.setConfigName(configName);
-        entity.setConfigJson(configJson);
-        entity.setRemark(remark);
-        entity.setUpdatedTime(now);
-
-        if (entity.getId() == null) {
-            siteConfigMapper.insert(entity);
-            return;
-        }
-
-        siteConfigMapper.updateById(entity);
-    }
-
-    /**
-     * 读取 JSON 节点。
-     *
-     * @param configJson JSON 字符串
-     * @return JSON 节点
-     */
-    private JsonNode readJsonNode(String configJson) {
-        if (configJson == null || configJson.isBlank()) {
-            return objectMapper.createObjectNode();
-        }
-
-        try {
-            return objectMapper.readTree(configJson);
-        } catch (Exception exception) {
-            throw new BizException(ResultCode.INTERNAL_SERVER_ERROR, "首页配置 JSON 解析失败");
-        }
+        siteConfigService.saveConfig(configKey, configName, configJson, remark);
     }
 
     /**
@@ -603,11 +550,7 @@ public class HomepageConfigService {
      * @return JSON 字符串
      */
     private String writeJson(ObjectNode jsonNode) {
-        try {
-            return objectMapper.writeValueAsString(jsonNode);
-        } catch (Exception exception) {
-            throw new BizException(ResultCode.INTERNAL_SERVER_ERROR, "首页配置 JSON 序列化失败");
-        }
+        return siteConfigService.writeJson(jsonNode);
     }
 
     /**

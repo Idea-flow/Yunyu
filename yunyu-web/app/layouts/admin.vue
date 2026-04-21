@@ -35,6 +35,11 @@ const navigationItems: AdminNavigationItem[] = [
     to: '/admin/posts'
   },
   {
+    label: '附件管理',
+    icon: 'i-lucide-paperclip',
+    to: '/admin/attachments'
+  },
+  {
     label: '分类管理',
     icon: 'i-lucide-folders',
     to: '/admin/categories'
