@@ -96,9 +96,10 @@ export function useApiClient() {
   ) {
     const { withAuth = true, ...fetchOptions } = options
     const headers = buildHeaders(fetchOptions.headers, withAuth)
+    const requestUrl = `${config.public.apiBase}${path}`
 
     try {
-      const response = await $fetch<ApiResponse<T>>(`${config.public.apiBase}${path}`, {
+      const response = await $fetch<ApiResponse<T>>(requestUrl, {
         ...fetchOptions,
         headers
       })
@@ -115,7 +116,9 @@ export function useApiClient() {
       throw new Error(
         error?.data?.message ||
         responseMessage ||
-        (responseStatusCode === 404 ? '请求的接口不存在，请确认后端服务已重启并加载最新接口。' : null) ||
+        (responseStatusCode === 404
+          ? `请求的接口不存在：${path}。当前前端连接的后端地址为 ${config.public.apiBase}，请确认是否连到了最新后端服务。`
+          : null) ||
         error?.statusMessage ||
         error?.message ||
         '接口请求失败'

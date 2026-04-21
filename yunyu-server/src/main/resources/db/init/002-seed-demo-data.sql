@@ -6,6 +6,7 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 DELETE FROM `comment`;
+DELETE FROM `friend_link`;
 DELETE FROM `topic_post`;
 DELETE FROM `post_tag`;
 DELETE FROM `post_content`;
@@ -584,6 +585,76 @@ VALUES
   (10, 5, 1, NULL, NULL, '后续前台第一版我会把这篇放进明显入口。', 'APPROVED', '127.0.0.1', '2026-03-21 20:40:00', '2026-03-21 20:40:00', 0),
   (11, 6, 1, NULL, NULL, '海边列车这个关键词真的太适合做封面了。', 'APPROVED', '127.0.0.1', '2026-03-20 21:00:00', '2026-03-20 21:00:00', 0),
   (12, 6, 2, NULL, NULL, '希望后面补一个壁纸专题。', 'APPROVED', '127.0.0.1', '2026-03-20 21:12:00', '2026-03-20 21:12:00', 0);
+
+INSERT INTO `friend_link` (
+  `id`, `site_name`, `site_url`, `logo_url`, `description`, `contact_name`, `contact_email`,
+  `contact_message`, `theme_color`, `sort_order`, `status`, `created_time`, `updated_time`, `deleted`
+)
+VALUES
+  (
+    1,
+    '风铃图书室',
+    'https://library.yunyu-demo.local',
+    'https://image.pollinations.ai/prompt/soft%20bookstore%20logo%20hand-drawn?width=256&height=256&seed=6101&nologo=true',
+    '收藏阅读、手账与温柔生活方式的小型内容站。',
+    '白井遥',
+    'hello@library.yunyu-demo.local',
+    '想和云屿做长期互访，把温柔内容放进同一片风里。',
+    '#7CC6B8',
+    10,
+    'APPROVED',
+    '2026-03-18 10:00:00',
+    '2026-03-28 10:00:00',
+    0
+  ),
+  (
+    2,
+    '星潮车站',
+    'https://station.yunyu-demo.local',
+    'https://image.pollinations.ai/prompt/sky%20train%20station%20icon%20illustration?width=256&height=256&seed=6102&nologo=true',
+    '记录夜色、电车和城市边缘情绪的视觉博客。',
+    '神谷澈',
+    'station@yunyu-demo.local',
+    '希望交换友链，一起做城市夜景主题的内容联动。',
+    '#5FA8FF',
+    20,
+    'APPROVED',
+    '2026-03-19 11:20:00',
+    '2026-03-28 11:20:00',
+    0
+  ),
+  (
+    3,
+    '浮云手札',
+    'https://notes.yunyu-demo.local',
+    'https://image.pollinations.ai/prompt/cloud%20notes%20logo%20gentle%20illustration?width=256&height=256&seed=6103&nologo=true',
+    '写作、插画与独立创作随笔的小岛日志。',
+    '绪方凛',
+    'note@yunyu-demo.local',
+    '我们的内容气质很接近，想申请加入友链列表。',
+    '#F2A65A',
+    30,
+    'APPROVED',
+    '2026-03-20 09:40:00',
+    '2026-03-29 09:40:00',
+    0
+  ),
+  (
+    4,
+    '晨雾邮局',
+    'https://post.yunyu-demo.local',
+    '',
+    '分享明信片、旅行见闻与手绘地图的小站。',
+    '早川芽衣',
+    'post@yunyu-demo.local',
+    '刚上线不久，想申请和云屿交换友链。',
+    '#F4BF75',
+    0,
+    'PENDING',
+    '2026-03-30 14:10:00',
+    '2026-03-30 14:10:00',
+    0
+  );
 
 INSERT INTO `site_config` (`config_key`, `config_name`, `config_json`, `remark`)
 VALUES

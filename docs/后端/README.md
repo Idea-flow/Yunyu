@@ -23,3 +23,7 @@
 当前已补充专题目录：
 
 - [native-image/README.md](/Users/wangpenglong/projects/full-stack-project/Yunyu/docs/后端/native-image/README.md)
+
+当前已补充专题文档：
+
+- [05-附件管理-S3前端直传实现方案.md](/Users/wangpenglong/projects/full-stack-project/Yunyu/docs/后端/05-附件管理-S3前端直传实现方案.md)

@@ -56,6 +56,11 @@ const navigationItems: AdminNavigationItem[] = [
     badgeType: 'pending-comments'
   },
   {
+    label: '友链管理',
+    icon: 'i-lucide-handshake',
+    to: '/admin/friend-links'
+  },
+  {
     label: '用户管理',
     icon: 'i-lucide-users',
     to: '/admin/users'

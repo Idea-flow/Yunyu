@@ -19,7 +19,8 @@ const navigationItems = [
   { label: '文章', to: '/posts' },
   { label: '分类', to: '/categories' },
   { label: '标签', to: '/tags' },
-  { label: '专题', to: '/topics' }
+  { label: '专题', to: '/topics' },
+  { label: '友链', to: '/friends' }
 ]
 
 const isScrolled = ref(false)
@@ -84,18 +85,18 @@ const headerClassName = computed(() => {
  */
 const navPanelClassName = computed(() => {
   if (isOverlayPage.value) {
-    return 'border border-transparent bg-transparent shadow-none backdrop-blur-[12px] sm:backdrop-blur-[14px]'
+    return 'bg-transparent shadow-none backdrop-blur-[12px] sm:backdrop-blur-[14px]'
   }
 
   if (!isSolidNav.value) {
     if (isOverlayPage.value) {
-      return 'border border-white/8 bg-slate-950/12 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.18)] backdrop-blur-[10px] dark:border-white/10 dark:bg-slate-950/16'
+      return 'bg-slate-950/12 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.18)] backdrop-blur-[10px] dark:bg-slate-950/16'
     }
 
-    return 'border border-white/10 bg-slate-950/10 shadow-none backdrop-blur-[14px] dark:border-white/10 dark:bg-slate-950/14'
+    return 'bg-slate-950/10 shadow-none backdrop-blur-[14px] dark:bg-slate-950/14'
   }
 
-  return 'border border-slate-300/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(244,246,250,0.88))] shadow-[0_24px_52px_-34px_rgba(15,23,42,0.22)] backdrop-blur-[24px] dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.82),rgba(2,6,23,0.72))]'
+  return 'bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(244,246,250,0.88))] shadow-[0_24px_52px_-34px_rgba(15,23,42,0.22)] backdrop-blur-[24px] dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.82),rgba(2,6,23,0.72))]'
 })
 
 /**
@@ -104,10 +105,10 @@ const navPanelClassName = computed(() => {
  */
 const overlaySolidLayerClassName = computed(() => {
   if (route.path === '/') {
-    return 'absolute inset-0 rounded-[inherit] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(248,250,252,0.68))] shadow-[0_20px_44px_-34px_rgba(15,23,42,0.16)] backdrop-blur-[20px] transition-opacity duration-300 ease-out dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.58),rgba(2,6,23,0.46))] motion-reduce:transition-none'
+    return 'absolute inset-0 rounded-[inherit] bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(248,250,252,0.68))] shadow-[0_20px_44px_-34px_rgba(15,23,42,0.16)] backdrop-blur-[20px] transition-opacity duration-300 ease-out dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.58),rgba(2,6,23,0.46))] motion-reduce:transition-none'
   }
 
-  return 'absolute inset-0 rounded-[inherit] border border-slate-300/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(244,246,250,0.88))] shadow-[0_24px_52px_-34px_rgba(15,23,42,0.22)] transition-opacity duration-300 ease-out dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.82),rgba(2,6,23,0.72))] motion-reduce:transition-none'
+  return 'absolute inset-0 rounded-[inherit] bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(244,246,250,0.88))] shadow-[0_24px_52px_-34px_rgba(15,23,42,0.22)] transition-opacity duration-300 ease-out dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.82),rgba(2,6,23,0.72))] motion-reduce:transition-none'
 })
 
 /**
@@ -385,7 +386,7 @@ async function handleUserMenuSelect(item: { key: string }) {
             class="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]"
           >
             <div
-              class="absolute inset-0 rounded-[inherit] border border-white/8 bg-slate-950/12 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.18)] transition-opacity duration-300 ease-out dark:border-white/10 dark:bg-slate-950/16 motion-reduce:transition-none"
+              class="absolute inset-0 rounded-[inherit] bg-slate-950/12 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.18)] transition-opacity duration-300 ease-out dark:bg-slate-950/16 motion-reduce:transition-none"
               :style="postDetailOverlayLayerStyle"
             />
             <div
