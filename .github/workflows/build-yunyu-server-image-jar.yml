@@ -1,4 +1,4 @@
-name: Build Yunyu Server Image
+name: Build Yunyu Server Image Jar
 
 on:
   push:
