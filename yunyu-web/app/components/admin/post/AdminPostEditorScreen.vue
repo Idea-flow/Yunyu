@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AdminPostForm } from '../../../types/post'
 import type { AdminTaxonomyItem } from '../../../types/taxonomy'
+import type { AdminAttachmentItem } from '../../../types/attachment'
 import AdminMarkdownWorkbench from './AdminMarkdownWorkbench.vue'
 
 /**
@@ -23,10 +24,11 @@ const adminAttachments = useAdminAttachments()
 const isSubmitting = ref(false)
 const isLoadingDetail = ref(false)
 const isLoadingTaxonomy = ref(false)
-const isUploadingCover = ref(false)
 const isUploadingVideo = ref(false)
-const coverFileInputRef = ref<HTMLInputElement | null>(null)
 const videoFileInputRef = ref<HTMLInputElement | null>(null)
+const isCoverUploadModalOpen = ref(false)
+const isCoverSelectModalOpen = ref(false)
+const coverSelectorReloadToken = ref(0)
 const categoryOptions = ref<Array<{ label: string, value: number | null }>>([
   { label: '暂不设置分类', value: null }
 ])
@@ -332,34 +334,11 @@ function toggleTopic(topicId: number) {
 }
 
 /**
- * 触发封面文件选择。
- * 作用：打开封面上传文件选择器，准备执行前端直传。
- */
-function triggerCoverUpload() {
-  coverFileInputRef.value?.click()
-}
-
-/**
  * 触发视频文件选择。
  * 作用：打开视频上传文件选择器，准备执行前端直传。
  */
 function triggerVideoUpload() {
   videoFileInputRef.value?.click()
-}
-
-/**
- * 处理封面文件选择。
- *
- * @param event 文件选择事件
- */
-async function onCoverFileSelected(event: Event) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) {
-    return
-  }
-  await uploadAttachmentAndFill(file, 'cover')
-  input.value = ''
 }
 
 /**
@@ -388,8 +367,6 @@ async function uploadAttachmentAndFill(file: File, target: 'cover' | 'video') {
   const isVideoTarget = target === 'video'
   if (isVideoTarget) {
     isUploadingVideo.value = true
-  } else {
-    isUploadingCover.value = true
   }
 
   try {
@@ -413,10 +390,73 @@ async function uploadAttachmentAndFill(file: File, target: 'cover' | 'video') {
   } finally {
     if (isVideoTarget) {
       isUploadingVideo.value = false
-    } else {
-      isUploadingCover.value = false
     }
   }
+}
+
+/**
+ * 打开封面上传弹窗。
+ */
+function openCoverUploadModal() {
+  isCoverUploadModalOpen.value = true
+}
+
+/**
+ * 打开封面附件选择弹窗。
+ */
+function openCoverSelectorModal() {
+  isCoverSelectModalOpen.value = true
+}
+
+/**
+ * 同步封面上传弹窗开关状态。
+ *
+ * @param value 是否打开
+ */
+function handleCoverUploadModalOpenChange(value: boolean) {
+  isCoverUploadModalOpen.value = value
+}
+
+/**
+ * 同步封面附件选择弹窗开关状态。
+ *
+ * @param value 是否打开
+ */
+function handleCoverSelectModalOpenChange(value: boolean) {
+  isCoverSelectModalOpen.value = value
+}
+
+/**
+ * 处理封面上传成功回调。
+ * 作用：上传完成后回填封面地址并关闭上传弹窗。
+ *
+ * @param attachment 上传后的附件
+ */
+function handleCoverUploaded(attachment: AdminAttachmentItem) {
+  formState.coverUrl = attachment.accessUrl
+  isCoverUploadModalOpen.value = false
+  coverSelectorReloadToken.value += 1
+  toast.add({
+    title: '封面上传成功',
+    description: `已回填 ${attachment.fileName}`,
+    color: 'success'
+  })
+}
+
+/**
+ * 处理从附件库选择封面。
+ * 作用：将所选图片附件地址回填到封面字段并关闭选择弹窗。
+ *
+ * @param item 附件条目
+ */
+function handleSelectCoverFromLibrary(item: AdminAttachmentItem) {
+  formState.coverUrl = item.accessUrl
+  isCoverSelectModalOpen.value = false
+  toast.add({
+    title: '封面已选择',
+    description: item.fileName,
+    color: 'success'
+  })
 }
 
 await Promise.all([
@@ -513,23 +553,22 @@ await Promise.all([
                       v-model="formState.coverUrl"
                       placeholder="请输入封面图片 URL"
                     />
-                    <div class="flex justify-end">
+                    <div class="flex flex-wrap justify-end gap-2">
                       <AdminButton
-                        label="上传封面"
+                        label="上传图片"
                         tone="neutral"
                         variant="outline"
                         icon="i-lucide-upload"
-                        :loading="isUploadingCover"
-                        @click="triggerCoverUpload"
+                        @click="openCoverUploadModal"
+                      />
+                      <AdminButton
+                        label="从附件选择"
+                        tone="neutral"
+                        variant="outline"
+                        icon="i-lucide-images"
+                        @click="openCoverSelectorModal"
                       />
                     </div>
-                    <input
-                      ref="coverFileInputRef"
-                      type="file"
-                      accept="image/*"
-                      class="hidden"
-                      @change="onCoverFileSelected"
-                    >
                   </div>
                 </UFormField>
 
@@ -709,5 +748,49 @@ await Promise.all([
         </div>
       </section>
     </div>
+
+    <UModal
+      :open="isCoverUploadModalOpen"
+      title="上传封面图片"
+      description="支持点击选择或拖拽上传，上传成功后会自动回填封面地址。"
+      :ui="{
+        overlay: 'bg-slate-950/36 backdrop-blur-[10px] dark:bg-slate-950/60',
+        content: 'w-[calc(100vw-2rem)] max-w-2xl rounded-[16px] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,255,255,0.82))] shadow-[0_24px_48px_-34px_rgba(15,23,42,0.24)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.92),rgba(15,23,42,0.88))]',
+        header: 'px-6 pt-6 pb-4 border-b border-white/60 dark:border-white/10',
+        body: 'px-6 py-5'
+      }"
+      @update:open="handleCoverUploadModalOpenChange"
+    >
+      <template #body>
+        <AdminAttachmentUploader
+          accept="image/*"
+          upload-button-label="上传并回填封面"
+          empty-hint="点击选择图片，或将图片拖拽到此区域"
+          @uploaded="handleCoverUploaded"
+        />
+      </template>
+    </UModal>
+
+    <UModal
+      :open="isCoverSelectModalOpen"
+      title="从附件库选择封面"
+      description="复用附件管理列表与查询，选择一个图片后将自动回填封面地址。"
+      :ui="{
+        overlay: 'bg-slate-950/36 backdrop-blur-[10px] dark:bg-slate-950/60',
+        content: 'w-[calc(100vw-2rem)] max-w-[1100px] rounded-[16px] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,255,255,0.82))] shadow-[0_24px_48px_-34px_rgba(15,23,42,0.24)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.92),rgba(15,23,42,0.88))]',
+        header: 'px-6 pt-6 pb-4 border-b border-white/60 dark:border-white/10',
+        body: 'px-6 py-5'
+      }"
+      @update:open="handleCoverSelectModalOpenChange"
+    >
+      <template #body>
+        <AdminAttachmentLibraryPanel
+          mode="select"
+          default-mime-type="image/"
+          :reload-token="coverSelectorReloadToken"
+          @select="handleSelectCoverFromLibrary"
+        />
+      </template>
+    </UModal>
   </div>
 </template>

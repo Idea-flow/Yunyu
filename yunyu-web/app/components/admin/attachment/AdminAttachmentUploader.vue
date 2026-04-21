@@ -2,9 +2,19 @@
 import type { AdminAttachmentItem } from '../../../types/attachment'
 
 /**
- * 附件测试上传组件。
- * 作用：在后台附件管理弹窗中提供单文件上传测试能力，展示上传结果并支持复制访问链接。
+ * 后台通用附件上传组件。
+ * 作用：封装附件前端直传能力，支持点击选择与拖拽上传，并在上传完成后向父组件回传附件信息。
  */
+const props = withDefaults(defineProps<{
+  accept?: string
+  uploadButtonLabel?: string
+  emptyHint?: string
+}>(), {
+  accept: '',
+  uploadButtonLabel: '开始上传',
+  emptyHint: '点击选择文件，或将文件拖拽到此区域'
+})
+
 const emit = defineEmits<{
   uploaded: [attachment: AdminAttachmentItem]
 }>()
@@ -16,13 +26,25 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 const selectedFile = ref<File | null>(null)
 const isUploading = ref(false)
 const uploadResult = ref<AdminAttachmentItem | null>(null)
+const isDragOver = ref(false)
 
 /**
  * 触发文件选择。
- * 作用：打开系统文件选择窗口，供用户选择测试上传文件。
+ * 作用：打开系统文件选择窗口，供用户手动选择待上传文件。
  */
 function triggerFileSelect() {
   fileInputRef.value?.click()
+}
+
+/**
+ * 根据文件列表设置当前选中文件。
+ *
+ * @param fileList 文件列表
+ */
+function setSelectedFile(fileList: FileList | null) {
+  const file = fileList?.[0] || null
+  selectedFile.value = file
+  uploadResult.value = null
 }
 
 /**
@@ -32,14 +54,40 @@ function triggerFileSelect() {
  */
 function handleFileChange(event: Event) {
   const input = event.target as HTMLInputElement
-  const file = input.files?.[0] || null
-  selectedFile.value = file
-  uploadResult.value = null
+  setSelectedFile(input.files)
 }
 
 /**
- * 执行测试上传。
- * 作用：调用附件直传能力完成一次真实上传，并将结果回传给父页面。
+ * 处理拖拽进入事件。
+ *
+ * @param event 拖拽事件
+ */
+function handleDragOver(event: DragEvent) {
+  event.preventDefault()
+  isDragOver.value = true
+}
+
+/**
+ * 处理拖拽离开事件。
+ */
+function handleDragLeave() {
+  isDragOver.value = false
+}
+
+/**
+ * 处理拖拽放置事件。
+ *
+ * @param event 拖拽事件
+ */
+function handleDrop(event: DragEvent) {
+  event.preventDefault()
+  isDragOver.value = false
+  setSelectedFile(event.dataTransfer?.files || null)
+}
+
+/**
+ * 执行上传。
+ * 作用：调用附件直传并把上传后的附件结果回传给父组件。
  */
 async function handleUpload() {
   if (!selectedFile.value) {
@@ -54,13 +102,13 @@ async function handleUpload() {
     uploadResult.value = result.attachment
     emit('uploaded', result.attachment)
     toast.add({
-      title: '测试上传成功',
+      title: '上传成功',
       description: result.attachment.fileName,
       color: 'success'
     })
   } catch (error: any) {
     toast.add({
-      title: '测试上传失败',
+      title: '上传失败',
       description: error?.message || '上传过程中发生异常。',
       color: 'error'
     })
@@ -111,24 +159,27 @@ function formatFileSize(sizeBytes: number) {
       <div class="space-y-3">
         <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">选择上传文件</p>
 
-        <div class="flex flex-wrap items-center gap-2">
-          <AdminButton
-            icon="i-lucide-paperclip"
-            label="选择文件"
-            tone="neutral"
-            variant="outline"
-            @click="triggerFileSelect"
-          />
-
-          <span v-if="selectedFile" class="text-sm text-slate-600 dark:text-slate-300">
+        <div
+          class="cursor-pointer rounded-[12px] border border-dashed px-4 py-6 text-center transition"
+          :class="isDragOver
+            ? 'border-sky-300 bg-sky-50/80 dark:border-sky-400/40 dark:bg-sky-400/10'
+            : 'border-slate-300/80 bg-white/80 hover:border-slate-400/80 dark:border-white/15 dark:bg-white/[0.03] dark:hover:border-white/25'"
+          @click="triggerFileSelect"
+          @dragover="handleDragOver"
+          @dragleave="handleDragLeave"
+          @drop="handleDrop"
+        >
+          <p class="text-sm text-slate-600 dark:text-slate-300">{{ emptyHint }}</p>
+          <p v-if="selectedFile" class="mt-2 text-sm font-medium text-slate-900 dark:text-slate-50">
             {{ selectedFile.name }}（{{ formatFileSize(selectedFile.size) }}）
-          </span>
-          <span v-else class="text-sm text-slate-500 dark:text-slate-400">尚未选择文件</span>
+          </p>
+          <p v-else class="mt-2 text-xs text-slate-500 dark:text-slate-400">支持单文件上传</p>
         </div>
 
         <input
           ref="fileInputRef"
           type="file"
+          :accept="accept"
           class="hidden"
           @change="handleFileChange"
         >
@@ -136,7 +187,7 @@ function formatFileSize(sizeBytes: number) {
         <div class="flex justify-end">
           <AdminPrimaryButton
             icon="i-lucide-upload"
-            label="开始上传"
+            :label="uploadButtonLabel"
             loading-label="上传中..."
             :loading="isUploading"
             @click="handleUpload"
