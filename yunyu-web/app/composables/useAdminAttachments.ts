@@ -1,5 +1,7 @@
 import type {
   AdminAttachmentCompleteRequest,
+  AdminAttachmentExistsCheckRequest,
+  AdminAttachmentExistsCheckResponse,
   AdminAttachmentItem,
   AdminAttachmentListResponse,
   AdminAttachmentPresignRequest,
@@ -14,6 +16,19 @@ import type {
  */
 export function useAdminAttachments() {
   const apiClient = useApiClient()
+
+  /**
+   * 检查附件是否已存在（秒传检查）。
+   *
+   * @param payload 秒传检查请求
+   * @returns 秒传检查响应
+   */
+  async function checkExists(payload: AdminAttachmentExistsCheckRequest) {
+    return await apiClient.request<AdminAttachmentExistsCheckResponse>('/api/admin/attachments/check-exists', {
+      method: 'POST',
+      body: payload
+    })
+  }
 
   /**
    * 申请附件上传预签名。
@@ -74,6 +89,14 @@ export function useAdminAttachments() {
   async function uploadFile(file: File): Promise<AdminAttachmentUploadResult> {
     const contentType = file.type || 'application/octet-stream'
     const sha256 = await computeSha256(file)
+    const checkResult = await checkExists({ sha256 })
+    if (checkResult.exists && checkResult.attachment) {
+      return {
+        attachment: checkResult.attachment,
+        sha256
+      }
+    }
+
     const presign = await presignUpload({
       fileName: file.name,
       contentType,
@@ -129,6 +152,7 @@ export function useAdminAttachments() {
   }
 
   return {
+    checkExists,
     presignUpload,
     completeUpload,
     listAttachments,

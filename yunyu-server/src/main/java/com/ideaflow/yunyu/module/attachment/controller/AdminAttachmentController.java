@@ -2,9 +2,11 @@ package com.ideaflow.yunyu.module.attachment.controller;
 
 import com.ideaflow.yunyu.common.response.ApiResponse;
 import com.ideaflow.yunyu.module.attachment.dto.AdminAttachmentCompleteRequest;
+import com.ideaflow.yunyu.module.attachment.dto.AdminAttachmentExistsCheckRequest;
 import com.ideaflow.yunyu.module.attachment.dto.AdminAttachmentPresignRequest;
 import com.ideaflow.yunyu.module.attachment.dto.AdminAttachmentQueryRequest;
 import com.ideaflow.yunyu.module.attachment.service.AdminAttachmentService;
+import com.ideaflow.yunyu.module.attachment.vo.AdminAttachmentExistsCheckResponse;
 import com.ideaflow.yunyu.module.attachment.vo.AdminAttachmentItemResponse;
 import com.ideaflow.yunyu.module.attachment.vo.AdminAttachmentListResponse;
 import com.ideaflow.yunyu.module.attachment.vo.AdminAttachmentPresignResponse;
@@ -37,6 +39,18 @@ public class AdminAttachmentController {
      */
     public AdminAttachmentController(AdminAttachmentService adminAttachmentService) {
         this.adminAttachmentService = adminAttachmentService;
+    }
+
+    /**
+     * 检查附件是否已存在。
+     *
+     * @param request 秒传检查请求
+     * @return 秒传检查响应
+     */
+    @Operation(summary = "检查附件是否已存在")
+    @PostMapping("/check-exists")
+    public ApiResponse<AdminAttachmentExistsCheckResponse> checkExists(@Valid @RequestBody AdminAttachmentExistsCheckRequest request) {
+        return ApiResponse.success(adminAttachmentService.checkExists(request));
     }
 
     /**

@@ -6,12 +6,14 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ideaflow.yunyu.common.constant.ResultCode;
 import com.ideaflow.yunyu.common.exception.BizException;
 import com.ideaflow.yunyu.module.attachment.dto.AdminAttachmentCompleteRequest;
+import com.ideaflow.yunyu.module.attachment.dto.AdminAttachmentExistsCheckRequest;
 import com.ideaflow.yunyu.module.attachment.dto.AdminAttachmentPresignRequest;
 import com.ideaflow.yunyu.module.attachment.dto.AdminAttachmentQueryRequest;
 import com.ideaflow.yunyu.module.attachment.entity.AttachmentFileEntity;
 import com.ideaflow.yunyu.module.attachment.mapper.AttachmentFileMapper;
 import com.ideaflow.yunyu.module.attachment.vo.AdminAttachmentItemResponse;
 import com.ideaflow.yunyu.module.attachment.vo.AdminAttachmentListResponse;
+import com.ideaflow.yunyu.module.attachment.vo.AdminAttachmentExistsCheckResponse;
 import com.ideaflow.yunyu.module.attachment.vo.AdminAttachmentPresignResponse;
 import com.ideaflow.yunyu.module.site.model.SiteStorageS3Profile;
 import com.ideaflow.yunyu.module.site.service.SiteStorageS3ConfigService;
@@ -106,6 +108,27 @@ public class AdminAttachmentService {
                 presignedPutObjectRequest.expiration(),
                 ZoneId.systemDefault()
         ));
+        return response;
+    }
+
+    /**
+     * 检查附件是否已存在。
+     * 作用：在预签名前按文件哈希执行秒传判断，命中时直接复用已有附件。
+     *
+     * @param request 秒传检查请求
+     * @return 秒传检查结果
+     */
+    public AdminAttachmentExistsCheckResponse checkExists(AdminAttachmentExistsCheckRequest request) {
+        AttachmentFileEntity existingEntity = findExistingAttachmentBySha256(request.getSha256());
+        AdminAttachmentExistsCheckResponse response = new AdminAttachmentExistsCheckResponse();
+        if (existingEntity == null) {
+            response.setExists(false);
+            response.setAttachment(null);
+            return response;
+        }
+
+        response.setExists(true);
+        response.setAttachment(toItemResponse(existingEntity));
         return response;
     }
 
@@ -282,6 +305,25 @@ public class AdminAttachmentService {
         if (request.getSizeBytes() > maxFileSizeBytes) {
             throw new BizException(ResultCode.BAD_REQUEST, "文件大小超过限制，最大允许 " + profile.getMaxFileSizeMb() + "MB");
         }
+    }
+
+    /**
+     * 按 sha256 查找已存在附件。
+     * 作用：用于上传前秒传判断，命中后直接复用已有附件信息并跳过重复上传。
+     *
+     * @param sha256 文件哈希
+     * @return 已存在附件；未命中返回 null
+     */
+    private AttachmentFileEntity findExistingAttachmentBySha256(String sha256) {
+        if (sha256 == null || sha256.isBlank()) {
+            return null;
+        }
+
+        String normalizedSha256 = normalizeSha256(sha256);
+        return attachmentFileMapper.selectOne(new LambdaQueryWrapper<AttachmentFileEntity>()
+                .eq(AttachmentFileEntity::getSha256, normalizedSha256)
+                .eq(AttachmentFileEntity::getDeleted, 0)
+                .last("LIMIT 1"));
     }
 
     /**

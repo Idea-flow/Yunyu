@@ -24,6 +24,23 @@ export interface AdminAttachmentPresignResponse {
 }
 
 /**
+ * 后台附件秒传检查请求类型。
+ * 作用：描述前端在申请预签名前提交的哈希检查参数。
+ */
+export interface AdminAttachmentExistsCheckRequest {
+  sha256: string
+}
+
+/**
+ * 后台附件秒传检查响应类型。
+ * 作用：描述哈希是否命中已有附件及命中详情。
+ */
+export interface AdminAttachmentExistsCheckResponse {
+  exists: boolean
+  attachment: AdminAttachmentItem | null
+}
+
+/**
  * 后台附件上传完成请求类型。
  * 作用：描述前端完成直传后回执所需的对象信息和哈希字段。
  */
