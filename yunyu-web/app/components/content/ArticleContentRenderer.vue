@@ -3,6 +3,26 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import ArticleImagePreview from './ArticleImagePreview.vue'
 
 /**
+ * Mermaid 模块类型。
+ * 作用：描述运行时动态加载后的 Mermaid 实例能力，便于在正文组件内完成图表初始化与渲染。
+ */
+interface MermaidModule {
+  default: {
+    initialize(config: Record<string, unknown>): void
+    run(options: { nodes: NodeListOf<HTMLElement> | HTMLElement[] }): Promise<void>
+  }
+}
+
+/**
+ * Mermaid 主题配置类型。
+ * 作用：统一描述 Mermaid 初始化时需要使用的主题名与变量集合。
+ */
+interface MermaidThemeConfig {
+  theme: string
+  themeVariables: Record<string, string>
+}
+
+/**
  * 文章内容渲染组件。
  * 作用：统一承接后台预览与前台正文的 HTML 展示能力，
  * 通过内容主题和代码主题控制标题、段落、链接、引用、代码块等元素的最终视觉效果。
@@ -32,6 +52,7 @@ const containerRef = ref<HTMLElement | null>(null)
 const cleanupCallbacks: Array<() => void> = []
 const collapseHeight = 152
 const iframeWarningDelay = 5200
+let mermaidModulePromise: Promise<MermaidModule['default']> | null = null
 const yunyuToast = useYunyuToast()
 const actionIconMap: Record<string, string> = {
   'lucide:copy': `
@@ -49,6 +70,27 @@ const actionIconMap: Record<string, string> = {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="m18 15-6-6-6 6"></path>
     </svg>
+  `,
+  'lucide:zoom-in': `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7"></circle>
+      <path d="M21 21l-4.35-4.35"></path>
+      <path d="M11 8v6"></path>
+      <path d="M8 11h6"></path>
+    </svg>
+  `,
+  'lucide:zoom-out': `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7"></circle>
+      <path d="M21 21l-4.35-4.35"></path>
+      <path d="M8 11h6"></path>
+    </svg>
+  `,
+  'lucide:rotate-ccw': `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M3 2v6h6"></path>
+      <path d="M3 8a9 9 0 1 0 3-4.9L3 8"></path>
+    </svg>
   `
 }
 
@@ -59,6 +101,106 @@ const actionIconMap: Record<string, string> = {
 function cleanupEnhancements() {
   while (cleanupCallbacks.length) {
     cleanupCallbacks.pop()?.()
+  }
+}
+
+/**
+ * 获取 Mermaid 运行时模块。
+ * 作用：按需加载 Mermaid，并只在首次使用时完成一次全局初始化，避免正文重复渲染时反复初始化。
+ *
+ * @returns Mermaid 实例
+ */
+async function getMermaidModule() {
+  if (!mermaidModulePromise) {
+    mermaidModulePromise = import('mermaid').then((module) => {
+      return module.default
+    })
+  }
+
+  return mermaidModulePromise
+}
+
+/**
+ * 构建当前 Mermaid 主题配置。
+ * 作用：根据正文当前主题返回 Mermaid 的明暗配色，让图表本身在暗黑模式下也保持可读性。
+ *
+ * @returns Mermaid 主题配置
+ */
+function buildMermaidThemeConfig(): MermaidThemeConfig {
+  const isDarkTheme = props.codeTheme === 'github-dark' || props.codeTheme === 'vitesse-dark'
+
+  if (isDarkTheme) {
+    return {
+      theme: 'base',
+      themeVariables: {
+        darkMode: 'true',
+        fontFamily: 'Inter, Helvetica, PingFang SC, Microsoft YaHei, sans-serif',
+        primaryColor: '#0f172a',
+        primaryTextColor: '#e5eef9',
+        primaryBorderColor: '#475569',
+        lineColor: '#94a3b8',
+        secondaryColor: '#111827',
+        tertiaryColor: '#0b1220',
+        background: '#0b1220',
+        mainBkg: '#0f172a',
+        secondBkg: '#111827',
+        tertiaryBkg: '#020617',
+        clusterBkg: '#0f172a',
+        clusterBorder: '#475569',
+        edgeLabelBackground: '#111827',
+        actorBkg: '#0f172a',
+        actorBorder: '#64748b',
+        actorTextColor: '#e5eef9',
+        actorLineColor: '#94a3b8',
+        signalColor: '#94a3b8',
+        signalTextColor: '#e2e8f0',
+        labelBoxBkgColor: '#111827',
+        labelBoxBorderColor: '#475569',
+        labelTextColor: '#e5eef9',
+        noteBkgColor: '#1e293b',
+        noteBorderColor: '#64748b',
+        noteTextColor: '#f8fafc',
+        activationBorderColor: '#7dd3fc',
+        activationBkgColor: '#082f49',
+        sequenceNumberColor: '#0f172a'
+      }
+    }
+  }
+
+  return {
+    theme: 'base',
+    themeVariables: {
+      darkMode: 'false',
+      fontFamily: 'Inter, Helvetica, PingFang SC, Microsoft YaHei, sans-serif',
+      primaryColor: '#ffffff',
+      primaryTextColor: '#0f172a',
+      primaryBorderColor: '#94a3b8',
+      lineColor: '#64748b',
+      secondaryColor: '#f8fafc',
+      tertiaryColor: '#eef2ff',
+      background: '#ffffff',
+      mainBkg: '#ffffff',
+      secondBkg: '#f8fafc',
+      tertiaryBkg: '#f1f5f9',
+      clusterBkg: '#f8fafc',
+      clusterBorder: '#cbd5e1',
+      edgeLabelBackground: '#ffffff',
+      actorBkg: '#ffffff',
+      actorBorder: '#94a3b8',
+      actorTextColor: '#0f172a',
+      actorLineColor: '#64748b',
+      signalColor: '#475569',
+      signalTextColor: '#0f172a',
+      labelBoxBkgColor: '#ffffff',
+      labelBoxBorderColor: '#cbd5e1',
+      labelTextColor: '#0f172a',
+      noteBkgColor: '#fff7ed',
+      noteBorderColor: '#fdba74',
+      noteTextColor: '#7c2d12',
+      activationBorderColor: '#38bdf8',
+      activationBkgColor: '#e0f2fe',
+      sequenceNumberColor: '#ffffff'
+    }
   }
 }
 
@@ -243,6 +385,350 @@ function ensureCodeSurface(codeBody: HTMLElement) {
   codeBody.insertBefore(surface, shikiElement)
   surface.appendChild(shikiElement)
   return surface
+}
+
+/**
+ * 为 Mermaid 图表补充渲染失败回退。
+ * 作用：当图表语法错误或运行时渲染失败时，回退显示原始 Mermaid 源码，避免正文区域直接留空。
+ *
+ * @param diagramBlock 图表容器
+ * @param fallbackCode 回退代码块节点
+ */
+function revealDiagramFallback(diagramBlock: HTMLElement, fallbackCode: HTMLElement | null) {
+  diagramBlock.dataset.diagramRendered = 'error'
+
+  if (fallbackCode) {
+    fallbackCode.hidden = false
+  }
+}
+
+/**
+ * 同步 Mermaid 图表缩放比例。
+ * 作用：为每个 Mermaid 图表维护独立缩放状态，支持放大、缩小和还原比例。
+ *
+ * @param diagramBlock 图表容器
+ * @param scale 目标缩放比例
+ */
+function syncDiagramScale(diagramBlock: HTMLElement, scale: number) {
+  const normalizedScale = Math.min(2.4, Math.max(0.6, Number(scale.toFixed(2))))
+  const stageElement = diagramBlock.querySelector<HTMLElement>('.yy-md-diagram-stage')
+  const zoomResetButton = diagramBlock.querySelector<HTMLButtonElement>('[data-diagram-zoom-reset]')
+
+  diagramBlock.dataset.diagramScale = normalizedScale.toFixed(2)
+
+  if (stageElement) {
+    stageElement.style.setProperty('--yy-diagram-scale', `${normalizedScale}`)
+  }
+
+  if (zoomResetButton) {
+    const label = normalizedScale === 1 ? '原始比例' : `当前 ${Math.round(normalizedScale * 100)}%`
+    zoomResetButton.setAttribute('aria-label', `还原图表比例，${label}`)
+    zoomResetButton.setAttribute('title', `还原图表比例，${label}`)
+  }
+}
+
+/**
+ * 创建 Mermaid 图表舞台容器。
+ * 作用：把 Mermaid 生成的 SVG 包裹到独立舞台层，便于统一做缩放与滚动控制。
+ *
+ * @param canvasElement Mermaid 画布节点
+ * @returns Mermaid 图表舞台节点
+ */
+function ensureDiagramStage(canvasElement: HTMLElement) {
+  const existingStage = canvasElement.querySelector<HTMLElement>('.yy-md-diagram-stage')
+
+  if (existingStage) {
+    return existingStage
+  }
+
+  const stageElement = document.createElement('div')
+  stageElement.className = 'yy-md-diagram-stage'
+
+  while (canvasElement.firstChild) {
+    stageElement.appendChild(canvasElement.firstChild)
+  }
+
+  canvasElement.appendChild(stageElement)
+  return stageElement
+}
+
+/**
+ * 确保 Mermaid 图表工具栏动作区存在。
+ * 作用：兼容历史 HTML 中没有缩放按钮的 Mermaid 块，在运行时自动补齐统一工具栏。
+ *
+ * @param diagramBlock 图表容器
+ */
+function ensureDiagramToolbar(diagramBlock: HTMLElement) {
+  const toolbarElement = diagramBlock.querySelector<HTMLElement>('.yy-md-diagram-toolbar')
+
+  if (!toolbarElement) {
+    return
+  }
+
+  let metaElement = toolbarElement.querySelector<HTMLElement>('.yy-md-diagram-toolbar-meta')
+
+  if (!metaElement) {
+    metaElement = document.createElement('div')
+    metaElement.className = 'yy-md-diagram-toolbar-meta'
+
+    while (toolbarElement.firstChild) {
+      metaElement.appendChild(toolbarElement.firstChild)
+    }
+
+    toolbarElement.appendChild(metaElement)
+  }
+
+  let actionsElement = toolbarElement.querySelector<HTMLElement>('.yy-md-diagram-toolbar-actions')
+
+  if (!actionsElement) {
+    actionsElement = document.createElement('div')
+    actionsElement.className = 'yy-md-diagram-toolbar-actions'
+    toolbarElement.appendChild(actionsElement)
+  }
+
+  const actionDefinitions = [
+    {
+      selector: '[data-diagram-zoom-out]',
+      attribute: 'data-diagram-zoom-out',
+      icon: 'zoom-out',
+      label: '缩小图表'
+    },
+    {
+      selector: '[data-diagram-zoom-reset]',
+      attribute: 'data-diagram-zoom-reset',
+      icon: 'zoom-reset',
+      label: '还原图表比例'
+    },
+    {
+      selector: '[data-diagram-zoom-in]',
+      attribute: 'data-diagram-zoom-in',
+      icon: 'zoom-in',
+      label: '放大图表'
+    },
+    {
+      selector: '[data-diagram-help-trigger]',
+      attribute: 'data-diagram-help-trigger',
+      icon: '',
+      label: '缩放提示'
+    }
+  ] as const
+
+  for (const definition of actionDefinitions) {
+    if (actionsElement.querySelector(definition.selector)) {
+      continue
+    }
+
+    const buttonElement = document.createElement('button')
+    buttonElement.type = 'button'
+    buttonElement.className = 'yy-md-diagram-action'
+    buttonElement.setAttribute(definition.attribute, '')
+    buttonElement.setAttribute('aria-label', definition.label)
+    buttonElement.setAttribute('title', definition.label)
+
+    if (definition.attribute === 'data-diagram-help-trigger') {
+      buttonElement.classList.add('yy-md-diagram-help-trigger')
+      buttonElement.textContent = definition.label
+      const helpPanelElement = document.createElement('div')
+      helpPanelElement.className = 'yy-md-diagram-help-panel'
+      helpPanelElement.setAttribute('data-diagram-help-panel', '')
+      helpPanelElement.hidden = true
+      helpPanelElement.textContent = '支持 Ctrl + 滚轮 或 Command + 滚轮 缩放，放大后可按住鼠标左键拖动画布。'
+      actionsElement.appendChild(buttonElement)
+      actionsElement.appendChild(helpPanelElement)
+      continue
+    }
+
+    const iconHostElement = document.createElement('span')
+    iconHostElement.setAttribute('data-diagram-icon-host', definition.icon)
+    iconHostElement.setAttribute('aria-hidden', 'true')
+    buttonElement.appendChild(iconHostElement)
+    actionsElement.appendChild(buttonElement)
+  }
+}
+
+/**
+ * 挂载 Mermaid 图表工具栏图标。
+ * 作用：为图表缩放按钮补齐运行时 SVG 图标，保持与代码块工具栏一致的视觉风格。
+ *
+ * @param diagramBlock 图表容器
+ */
+function mountDiagramToolbarIcons(diagramBlock: HTMLElement) {
+  const iconHostMap: Record<string, string> = {
+    'zoom-in': 'lucide:zoom-in',
+    'zoom-out': 'lucide:zoom-out',
+    'zoom-reset': 'lucide:rotate-ccw'
+  }
+
+  const iconHosts = diagramBlock.querySelectorAll<HTMLElement>('[data-diagram-icon-host]')
+
+  for (const iconHost of iconHosts) {
+    const iconName = iconHost.dataset.diagramIconHost || ''
+    const actionIconName = iconHostMap[iconName]
+
+    if (!actionIconName) {
+      continue
+    }
+
+    mountActionIcon(iconHost, actionIconName)
+  }
+}
+
+/**
+ * 绑定 Mermaid 图表缩放事件。
+ * 作用：让图表支持点击放大、缩小、还原，并支持按住 Ctrl 或 Command 键配合滚轮缩放。
+ *
+ * @param diagramBlock 图表容器
+ */
+function bindDiagramZoomInteractions(diagramBlock: HTMLElement) {
+  const canvasElement = diagramBlock.querySelector<HTMLElement>('.yy-md-diagram-canvas')
+  const zoomInButton = diagramBlock.querySelector<HTMLButtonElement>('[data-diagram-zoom-in]')
+  const zoomOutButton = diagramBlock.querySelector<HTMLButtonElement>('[data-diagram-zoom-out]')
+  const zoomResetButton = diagramBlock.querySelector<HTMLButtonElement>('[data-diagram-zoom-reset]')
+  const helpTriggerButton = diagramBlock.querySelector<HTMLButtonElement>('[data-diagram-help-trigger]')
+  const helpPanelElement = diagramBlock.querySelector<HTMLElement>('[data-diagram-help-panel]')
+
+  syncDiagramScale(diagramBlock, Number(diagramBlock.dataset.diagramScale || '1'))
+
+  if (zoomInButton) {
+    const handleZoomIn = () => {
+      syncDiagramScale(diagramBlock, Number(diagramBlock.dataset.diagramScale || '1') + 0.2)
+    }
+
+    zoomInButton.addEventListener('click', handleZoomIn)
+    cleanupCallbacks.push(() => zoomInButton.removeEventListener('click', handleZoomIn))
+  }
+
+  if (zoomOutButton) {
+    const handleZoomOut = () => {
+      syncDiagramScale(diagramBlock, Number(diagramBlock.dataset.diagramScale || '1') - 0.2)
+    }
+
+    zoomOutButton.addEventListener('click', handleZoomOut)
+    cleanupCallbacks.push(() => zoomOutButton.removeEventListener('click', handleZoomOut))
+  }
+
+  if (zoomResetButton) {
+    const handleZoomReset = () => {
+      syncDiagramScale(diagramBlock, 1)
+    }
+
+    zoomResetButton.addEventListener('click', handleZoomReset)
+    cleanupCallbacks.push(() => zoomResetButton.removeEventListener('click', handleZoomReset))
+  }
+
+  if (helpTriggerButton && helpPanelElement) {
+    const showHelpPanel = () => {
+      helpPanelElement.hidden = false
+      helpTriggerButton.setAttribute('aria-expanded', 'true')
+    }
+
+    const hideHelpPanel = () => {
+      helpPanelElement.hidden = true
+      helpTriggerButton.setAttribute('aria-expanded', 'false')
+    }
+
+    const toggleHelpPanel = () => {
+      if (helpPanelElement.hidden) {
+        showHelpPanel()
+        return
+      }
+
+      hideHelpPanel()
+    }
+
+    const handleDocumentPointerDown = (event: PointerEvent) => {
+      const targetElement = event.target as HTMLElement | null
+
+      if (targetElement?.closest('[data-diagram-help-trigger]') || targetElement?.closest('[data-diagram-help-panel]')) {
+        return
+      }
+
+      hideHelpPanel()
+    }
+
+    helpTriggerButton.setAttribute('aria-label', '查看缩放与拖拽提示')
+    helpTriggerButton.setAttribute('aria-expanded', 'false')
+    helpTriggerButton.removeAttribute('title')
+    helpTriggerButton.addEventListener('mouseenter', showHelpPanel)
+    helpTriggerButton.addEventListener('mouseleave', hideHelpPanel)
+    helpTriggerButton.addEventListener('focus', showHelpPanel)
+    helpTriggerButton.addEventListener('blur', hideHelpPanel)
+    helpTriggerButton.addEventListener('click', toggleHelpPanel)
+    document.addEventListener('pointerdown', handleDocumentPointerDown)
+    cleanupCallbacks.push(() => helpTriggerButton.removeEventListener('mouseenter', showHelpPanel))
+    cleanupCallbacks.push(() => helpTriggerButton.removeEventListener('mouseleave', hideHelpPanel))
+    cleanupCallbacks.push(() => helpTriggerButton.removeEventListener('focus', showHelpPanel))
+    cleanupCallbacks.push(() => helpTriggerButton.removeEventListener('blur', hideHelpPanel))
+    cleanupCallbacks.push(() => helpTriggerButton.removeEventListener('click', toggleHelpPanel))
+    cleanupCallbacks.push(() => document.removeEventListener('pointerdown', handleDocumentPointerDown))
+  }
+
+  if (canvasElement) {
+    const handleWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey && !event.metaKey) {
+        return
+      }
+
+      event.preventDefault()
+      const delta = event.deltaY < 0 ? 0.12 : -0.12
+      syncDiagramScale(diagramBlock, Number(diagramBlock.dataset.diagramScale || '1') + delta)
+    }
+
+    canvasElement.addEventListener('wheel', handleWheel, { passive: false })
+    cleanupCallbacks.push(() => canvasElement.removeEventListener('wheel', handleWheel))
+
+    let isPointerDragging = false
+    let dragStartX = 0
+    let dragStartY = 0
+    let dragStartScrollLeft = 0
+    let dragStartScrollTop = 0
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.button !== 0) {
+        return
+      }
+
+      if ((event.target as HTMLElement | null)?.closest('button')) {
+        return
+      }
+
+      isPointerDragging = true
+      dragStartX = event.clientX
+      dragStartY = event.clientY
+      dragStartScrollLeft = canvasElement.scrollLeft
+      dragStartScrollTop = canvasElement.scrollTop
+      canvasElement.classList.add('is-dragging')
+    }
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (!isPointerDragging) {
+        return
+      }
+
+      const deltaX = event.clientX - dragStartX
+      const deltaY = event.clientY - dragStartY
+      canvasElement.scrollLeft = dragStartScrollLeft - deltaX
+      canvasElement.scrollTop = dragStartScrollTop - deltaY
+    }
+
+    const stopPointerDragging = () => {
+      if (!isPointerDragging) {
+        return
+      }
+
+      isPointerDragging = false
+      canvasElement.classList.remove('is-dragging')
+    }
+
+    canvasElement.addEventListener('pointerdown', handlePointerDown)
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerup', stopPointerDragging)
+    window.addEventListener('pointercancel', stopPointerDragging)
+    cleanupCallbacks.push(() => canvasElement.removeEventListener('pointerdown', handlePointerDown))
+    cleanupCallbacks.push(() => window.removeEventListener('pointermove', handlePointerMove))
+    cleanupCallbacks.push(() => window.removeEventListener('pointerup', stopPointerDragging))
+    cleanupCallbacks.push(() => window.removeEventListener('pointercancel', stopPointerDragging))
+  }
 }
 
 /**
@@ -470,6 +956,90 @@ function enhanceCodeBlocks() {
 }
 
 /**
+ * 增强 Mermaid 图表渲染。
+ * 作用：扫描 Markdown 中的 Mermaid 占位节点，并在客户端把源码渲染成 SVG 图表。
+ */
+async function enhanceMermaidDiagrams() {
+  if (!containerRef.value) {
+    return
+  }
+
+  const diagramBlocks = Array.from(
+    containerRef.value.querySelectorAll<HTMLElement>('.yy-md-diagram-block[data-diagram-engine="mermaid"]')
+  )
+
+  if (!diagramBlocks.length) {
+    return
+  }
+
+  try {
+    const mermaid = await getMermaidModule()
+    const themeConfig = buildMermaidThemeConfig()
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: 'loose',
+      theme: themeConfig.theme,
+      themeVariables: themeConfig.themeVariables,
+      fontFamily: '"Inter", "Helvetica", "PingFang SC", "Microsoft YaHei", sans-serif'
+    })
+
+    const diagramNodes: HTMLElement[] = []
+
+    for (const [index, diagramBlock] of diagramBlocks.entries()) {
+      const sourceElement = diagramBlock.querySelector<HTMLElement>('.yy-md-diagram-source')
+      const canvasElement = diagramBlock.querySelector<HTMLElement>('.yy-md-diagram-canvas')
+      const fallbackCode = diagramBlock.querySelector<HTMLElement>('.yy-md-diagram-fallback')
+      const source = sourceElement?.textContent?.trim() || ''
+
+      if (!canvasElement || !source) {
+        revealDiagramFallback(diagramBlock, fallbackCode)
+        continue
+      }
+
+      const diagramId = `yy-mermaid-${index}-${Math.random().toString(36).slice(2, 10)}`
+      canvasElement.textContent = source
+      canvasElement.removeAttribute('data-processed')
+      canvasElement.id = diagramId
+      diagramNodes.push(canvasElement)
+    }
+
+    if (!diagramNodes.length) {
+      return
+    }
+
+    await mermaid.run({ nodes: diagramNodes })
+
+    for (const diagramBlock of diagramBlocks) {
+      const fallbackCode = diagramBlock.querySelector<HTMLElement>('.yy-md-diagram-fallback')
+      const canvasElement = diagramBlock.querySelector<HTMLElement>('.yy-md-diagram-canvas')
+      const hasSvg = Boolean(canvasElement?.querySelector('svg'))
+
+      if (hasSvg) {
+        diagramBlock.dataset.diagramRendered = 'true'
+        ensureDiagramToolbar(diagramBlock)
+        mountDiagramToolbarIcons(diagramBlock)
+        ensureDiagramStage(canvasElement!)
+        bindDiagramZoomInteractions(diagramBlock)
+        syncDiagramScale(diagramBlock, 1)
+        if (fallbackCode) {
+          fallbackCode.hidden = true
+        }
+        continue
+      }
+
+      revealDiagramFallback(diagramBlock, fallbackCode)
+    }
+  } catch (error) {
+    console.error('[ArticleContentRenderer] Mermaid render failed.', error)
+
+    for (const diagramBlock of diagramBlocks) {
+      const fallbackCode = diagramBlock.querySelector<HTMLElement>('.yy-md-diagram-fallback')
+      revealDiagramFallback(diagramBlock, fallbackCode)
+    }
+  }
+}
+
+/**
  * 刷新正文运行时增强效果。
  * 作用：在 HTML 内容或加载状态变化后，等待 DOM 更新完成再增强代码块交互。
  */
@@ -482,10 +1052,11 @@ async function refreshEnhancements() {
   cleanupEnhancements()
   enhanceTables()
   enhanceCodeBlocks()
+  await enhanceMermaidDiagrams()
   enhanceEmbeddedIframes()
 }
 
-watch(() => [props.html, props.isLoading, props.codeDefaultExpanded] as const, async () => {
+watch(() => [props.html, props.isLoading, props.codeDefaultExpanded, props.codeTheme] as const, async () => {
   await refreshEnhancements()
 })
 

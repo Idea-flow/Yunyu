@@ -967,52 +967,13 @@ await Promise.all([
                           </span>
                         </div>
 
-                        <div class="mt-4 grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-                          <div>
-                            <AdminTextarea
-                              v-model="formState.tailHiddenContentMarkdown"
-                              :rows="16"
-                              autoresize
-                              placeholder="请输入尾部隐藏内容 Markdown"
-                            />
-                          </div>
-
-                          <div :class="workspaceSurfaceClass">
-                            <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">隐藏内容摘要</p>
-                            <div class="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-300">
-                              <div class="flex items-center justify-between">
-                                <span>模块开关</span>
-                                <span>{{ formState.contentAccessConfig.tailHiddenAccess.enabled ? '已启用' : '未启用' }}</span>
-                              </div>
-                              <div class="flex items-center justify-between">
-                                <span>预计阅读</span>
-                                <span>{{ renderedTailHiddenReadingMinutes }} 分钟</span>
-                              </div>
-                              <div class="flex items-center justify-between">
-                                <span>纯文本字数</span>
-                                <span>{{ renderedTailHiddenPlainText.length }}</span>
-                              </div>
-                              <div>
-                                <p class="mb-2 text-xs uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">当前规则</p>
-                                <div class="flex flex-wrap gap-2">
-                                  <UBadge
-                                    v-for="ruleType in formState.contentAccessConfig.tailHiddenAccess.ruleTypes"
-                                    :key="ruleType"
-                                    color="success"
-                                    variant="soft"
-                                  >
-                                    {{ ruleType }}
-                                  </UBadge>
-                                  <span
-                                    v-if="!formState.contentAccessConfig.tailHiddenAccess.ruleTypes.length"
-                                    class="text-sm text-slate-400 dark:text-slate-500"
-                                  >
-                                    未配置规则
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                        <div class="mt-4">
+                          <AdminTextarea
+                            v-model="formState.tailHiddenContentMarkdown"
+                            :rows="16"
+                            autoresize
+                            placeholder="请输入尾部隐藏内容 Markdown"
+                          />
                         </div>
                       </div>
                     </div>

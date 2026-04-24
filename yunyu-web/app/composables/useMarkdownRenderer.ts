@@ -25,6 +25,7 @@ interface CodeBlockRenderMeta {
   language: string
   displayLanguage: string
   isCollapsible: boolean
+  isDiagram: boolean
 }
 
 /**
@@ -418,6 +419,20 @@ function escapeHtmlAttribute(value: string) {
 }
 
 /**
+ * 转义 HTML 文本节点内容。
+ * 作用：避免 Mermaid 源码等原始文本插入 HTML 结构时被浏览器当成标签解析。
+ *
+ * @param value 原始文本
+ * @returns 可安全写入 HTML 文本节点的内容
+ */
+function escapeHtmlText(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
+/**
  * 解析代码块语言信息。
  * 作用：从 Markdown fence 信息中提取语言名，并生成更适合展示的标签文本。
  *
@@ -451,7 +466,8 @@ function resolveCodeBlockMeta(info: string | undefined): CodeBlockRenderMeta {
   return {
     language: normalizedLanguage,
     displayLanguage: displayMap[normalizedLanguage] || rawLanguage.toUpperCase(),
-    isCollapsible: true
+    isCollapsible: normalizedLanguage !== 'mermaid',
+    isDiagram: normalizedLanguage === 'mermaid'
   }
 }
 
@@ -473,6 +489,41 @@ async function renderTokensToHtml(tokens: any[]) {
 
     const meta = resolveCodeBlockMeta(token.info)
     const code = token.content || ''
+
+    if (meta.isDiagram) {
+      const diagramSource = escapeHtmlText(code)
+      const diagramLanguageAttr = escapeHtmlAttribute(meta.language)
+      const diagramLabelAttr = escapeHtmlText(meta.displayLanguage)
+
+      fenceHtmlByIndex.set(index, `
+<div
+  class="yy-md-diagram-block"
+  data-diagram-engine="${diagramLanguageAttr}"
+  data-diagram-rendered="false"
+  data-diagram-scale="1"
+>
+  <div class="yy-md-diagram-toolbar">
+    <div class="yy-md-diagram-toolbar-meta">
+      <span class="yy-md-diagram-language-pill">${diagramLabelAttr}</span>
+    </div>
+    <div class="yy-md-diagram-toolbar-actions">
+      <button type="button" class="yy-md-diagram-action" data-diagram-zoom-out aria-label="缩小图表" title="缩小图表">
+        <span data-diagram-icon-host="zoom-out" aria-hidden="true"></span>
+      </button>
+      <button type="button" class="yy-md-diagram-action" data-diagram-zoom-reset aria-label="还原图表比例" title="还原图表比例">
+        <span data-diagram-icon-host="zoom-reset" aria-hidden="true"></span>
+      </button>
+      <button type="button" class="yy-md-diagram-action" data-diagram-zoom-in aria-label="放大图表" title="放大图表">
+        <span data-diagram-icon-host="zoom-in" aria-hidden="true"></span>
+      </button>
+    </div>
+  </div>
+  <div class="yy-md-diagram-canvas" aria-live="polite"></div>
+  <pre class="yy-md-diagram-fallback" hidden>${diagramSource}</pre>
+  <div class="yy-md-diagram-source" hidden>${diagramSource}</div>
+</div>`.trim())
+      return
+    }
 
     let renderedHtml = ''
 

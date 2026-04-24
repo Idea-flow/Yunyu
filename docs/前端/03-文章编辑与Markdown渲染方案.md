@@ -4,12 +4,13 @@
 
 本文档用于沉淀 `Yunyu` 项目当前已经落地的 Markdown 渲染链路，并与早期架构文档中的目标方案做对照，避免后续继续出现“文档里是一套、代码里是另一套”的情况。
 
-本文档重点回答四个问题：
+本文档重点回答五个问题：
 
 - 当前项目真实的 Markdown 渲染链路到底是什么
 - 后台编辑预览、文章保存、前台详情页分别是谁在负责渲染
 - 当前已经支持了哪些 Markdown 能力，还缺哪些能力
 - 数学公式当前是如何接入的，以及后续还应该如何继续扩展
+- Markdown 图表能力当前支持到什么程度，第一期为什么先统一使用 Mermaid
 
 ## 一、当前代码里的真实实现
 
@@ -102,6 +103,10 @@
 - 代码块工具栏图标增强
 - macOS 风格三色圆点兼容补齐
 - 内容主题和代码主题视觉统一
+- Mermaid 图表客户端渲染
+- Mermaid 图表暗黑模式主题适配
+- Mermaid 图表失败回退源码展示
+- Mermaid 图表缩放控制（放大 / 缩小 / 还原）
 
 ## 四、当前还没有实现的能力
 
@@ -200,6 +205,107 @@
 - 数学公式在 Markdown 渲染阶段完成
 - 正文展示层只负责样式和滚动体验
 - 存库的 `contentHtml` 已经可以承载公式结果
+
+## 八、Markdown 图表支持方案
+
+当前项目已经进入第一期 Markdown 图表支持阶段，正式方案是：
+
+- 统一支持 ` ```mermaid ` 代码块
+- 后台编辑预览支持 Mermaid 实时渲染
+- 前台详情页支持 Mermaid 图表渲染
+- Mermaid 语法错误时回退显示源码，而不是整块空白
+- 图表展示层支持暗黑模式适配
+- 图表展示层支持放大、缩小、还原比例
+
+### 8.1 第一阶段为什么先统一使用 Mermaid
+
+第一阶段不并行接入多套图表引擎，原因是：
+
+- Mermaid 语法门槛低，适合内容型站点作者使用
+- 支持流程图、时序图、类图、状态图、ER 图、旅程图、甘特图等常见知识型图表
+- 与 Markdown fence 语法天然契合，接入成本低
+- 前后端都更容易围绕同一种图表标准沉淀规范、示例和文档
+
+所以第一期标准能力明确为：
+
+- `Mermaid = Markdown 图表的统一标准能力`
+
+后续如果要扩展 PlantUML、Graphviz、ECharts DSL 或 draw.io 嵌入，应作为第二阶段能力，不在当前主链路并行推进。
+
+### 8.2 当前支持的 Mermaid 图表类型
+
+基于 Mermaid 当前能力，项目第一期可以支持的主流图表类型包括：
+
+- 流程图 `flowchart`
+- 时序图 `sequenceDiagram`
+- 类图 `classDiagram`
+- 状态图 `stateDiagram-v2`
+- 实体关系图 `erDiagram`
+- 用户旅程图 `journey`
+- 甘特图 `gantt`
+- Git 提交流程图 `gitGraph`
+- 饼图 `pie`
+- 象限图 `quadrantChart`
+- 时间线 `timeline`
+- 思维导图 `mindmap`
+
+其中最推荐优先用于知识库与技术方案文档的类型是：
+
+- 流程图
+- 时序图
+- 状态图
+- ER 图
+- 类图
+
+### 8.3 当前渲染链路
+
+当前 Mermaid 渲染链路分为两段：
+
+1. `useMarkdownRenderer` 在 Markdown 解析阶段识别 `mermaid` fence，不再按普通代码块输出，而是输出图表占位结构。
+2. `ArticleContentRenderer` 在客户端挂载后扫描 Mermaid 占位节点，动态加载 `mermaid` 运行时并渲染为 SVG。
+
+这意味着：
+
+- 后台预览与前台展示共用同一套 Mermaid 展示组件能力
+- Mermaid 不走 Shiki 代码高亮链路
+- Mermaid 的渲染责任位于“Markdown 解析 + 正文展示增强”之间
+
+### 8.4 为什么不是服务端直接渲染 Mermaid SVG
+
+当前第一期没有把 Mermaid SVG 生成放到服务端，主要原因是：
+
+- 当前项目 Markdown 主渲染仍在前端
+- 客户端 Mermaid 更容易复用在后台预览与前台详情页
+- 第一阶段先保证编辑体验和展示闭环，避免过早把渲染职责拆成两套
+
+但这也意味着：
+
+- 如果数据库里存的是旧版 `contentHtml`，需要在后台重新保存一次文章，才能把新的 Mermaid 占位结构持久化
+- 后续如果项目收口为“服务端统一派生 HTML”，再评估是否把 Mermaid SVG 派生也一起放到服务端
+
+### 8.5 当前交互能力
+
+当前 Mermaid 图表在正文中支持：
+
+- 自适应正文宽度展示
+- 横向滚动查看宽图
+- 暗黑模式主题优化
+- 工具栏放大
+- 工具栏缩小
+- 工具栏还原比例
+- `Ctrl + 滚轮` 或 `Command + 滚轮` 缩放
+
+### 8.6 当前边界
+
+当前 Mermaid 第一阶段仍有明确边界：
+
+- 只支持 Mermaid，不支持多图表引擎并行解析
+- 不支持图内拖拽平移
+- 不支持导出 PNG / SVG
+- 不支持编辑态所见即所得图形编辑器
+- 不支持服务端统一校验 Mermaid 语法
+
+这部分能力如果后续要补，应进入第二期“Markdown 图表增强方案”单独设计。
 
 ## 七、原生 HTML 与 iframe 当前如何渲染
 
@@ -411,3 +517,285 @@
 - 先让前台和后台预览可用
 - 不打断当前已成型的编辑链路
 - 后续仍保留把派生能力收回后端的演进空间
+
+## 十三、Markdown 图表渲染支持方案
+
+## 13.1 当前为什么还不支持 Mermaid
+
+以当前代码为准，`useMarkdownRenderer` 的 `fence` 代码块处理只做了两件事：
+
+- 按语言类型走 `Shiki` 代码高亮
+- 输出统一代码块工具栏与代码块容器 HTML
+
+这意味着：
+
+- ```` ```mermaid ```` 当前会被当作普通代码块
+- `sequenceDiagram`、`flowchart` 等内容只会以源码文本展示
+- 后台预览和前台详情页都不会真正执行 Mermaid 渲染
+
+因此当前“不支持 Mermaid”不是正文样式层的问题，而是 Markdown 渲染链路里还没有接入“图表块识别 + 图表引擎渲染”这层能力。
+
+## 13.2 正式技术结论
+
+本项目关于 Markdown 图表支持，建议采用下面这套正式结论：
+
+- 第一阶段统一采用 `Mermaid` 作为 Markdown 图表标准能力
+- 仍然沿用当前 `markdown-it` 主链路扩展，不切换整套 Markdown 渲染体系
+- 后台编辑预览与前台详情页共用同一套图表渲染组件能力
+- Markdown 存储仍然保存原始源码，不把图表源码转成静态图片再存库
+- `contentHtml` 中保存的是“图表占位节点 + 原始图表源码”，真正图形渲染在前端组件层完成
+
+原因：
+
+- 当前项目的 Markdown 主链路已经是 `markdown-it`
+- Mermaid 已经覆盖流程图、时序图、类图、ER 图、甘特图等内容站最常见图种
+- 后台预览和前台详情页可以共用统一渲染逻辑
+- 后续继续支持更多图种时，只需要在“代码块语言 -> 图表渲染器”这层扩展
+
+## 13.3 第一阶段建议支持的图表类型
+
+第一阶段建议把 `mermaid` fenced code block 作为统一入口，支持 Mermaid 主流图种。
+
+建议明确支持：
+
+- `flowchart`：流程图
+- `sequenceDiagram`：时序图
+- `classDiagram`：类图
+- `stateDiagram-v2`：状态图
+- `erDiagram`：ER 图
+- `journey`：用户旅程图
+- `gantt`：甘特图
+- `pie`：饼图
+- `mindmap`：思维导图
+- `timeline`：时间线
+- `gitGraph`：Git 流程图
+- `quadrantChart`：象限图
+- `requirementDiagram`：需求图
+- `C4Context / C4Container / C4Component / C4Dynamic / C4Deployment`：C4 架构图
+
+第一阶段不建议一口气再并行接入多套图表引擎。
+
+正式建议是：
+
+- 先把 `mermaid` 这一套打通
+- 先覆盖内容站最常见图表需求
+- 后续再评估是否需要增加独立 fence 语言支持
+
+## 13.4 除了 Mermaid 之外，Markdown 图表还可以支持哪些
+
+从 Markdown 内容站的长期演进看，常见图表能力大致可分为两类。
+
+### 13.4.1 通用图表语法
+
+- `mermaid`
+- `plantuml`
+- `graphviz` / `dot`
+- `d2`
+- `markmap`
+
+### 13.4.2 专项图表语法
+
+- `vega-lite`：数据图表
+- `wavedrom`：时序波形图
+- `abc`：简谱 / 乐谱
+- `nomnoml`：轻量 UML
+
+但对当前项目，不建议第一阶段同时把这些全部接进来。
+
+更合理的产品策略是：
+
+1. 第一阶段统一支持 `mermaid`
+2. 第二阶段如果明确有架构图、UML、数据图表等稳定需求，再扩 fence 语言
+3. 不为了“看起来全能”而一次性引入多套前端图表运行时
+
+## 13.5 推荐渲染架构
+
+建议在当前链路上新增“图表块渲染层”。
+
+正式分层建议如下：
+
+1. Markdown 解析层：`useMarkdownRenderer`
+2. 图表块识别层：识别 fenced code block 的语言
+3. 图表占位输出层：输出统一图表节点 HTML
+4. 图表运行时层：前端在挂载后执行 Mermaid 渲染
+5. 展示样式层：统一图表容器、滚动、错误态、暗色模式
+
+### 13.5.1 Markdown 解析层
+
+在 `useMarkdownRenderer.ts` 中扩展 `fence` 规则：
+
+- 如果语言不是图表语言，维持现有代码块逻辑
+- 如果语言是 `mermaid`，不再走 `Shiki` 代码高亮
+- 而是输出统一图表占位节点
+
+建议输出形态类似：
+
+```html
+<div
+  class="yy-md-diagram-block"
+  data-diagram-engine="mermaid"
+>
+  <pre class="yy-md-diagram-source" hidden>原始 Mermaid 源码</pre>
+  <div class="yy-md-diagram-canvas"></div>
+</div>
+```
+
+不建议直接输出：
+
+- 原始 `<script>` 标签
+- 运行时内联脚本
+- 直接把 Mermaid 生成 SVG 后存回数据库
+
+### 13.5.2 图表运行时层
+
+建议新增统一客户端能力，例如：
+
+- `app/components/content/ArticleDiagramRenderer.vue`
+- `app/composables/useArticleDiagramRenderer.ts`
+
+职责：
+
+- 扫描正文中的 `.yy-md-diagram-block`
+- 读取 `data-diagram-engine`
+- 如果是 `mermaid`，动态加载 Mermaid 运行时
+- 把源码渲染为 SVG 并写入 `.yy-md-diagram-canvas`
+- 渲染失败时显示源码回退和错误提示
+
+这样后台编辑预览与前台详情页都能复用同一套图表运行时。
+
+### 13.5.3 详情页与预览页复用原则
+
+这块必须统一，不建议后台预览和前台详情页各写一套。
+
+正式建议：
+
+- `MarkdownPreview` 继续负责编辑器右侧预览承载
+- `ArticleContentRenderer` 继续负责正文 HTML 展示
+- 图表渲染能力作为 `ArticleContentRenderer` 内部增强的一部分统一接入
+
+这样：
+
+- 后台预览能看到 Mermaid 图
+- 前台详情页也能渲染同样的 Mermaid 图
+- 内容表现不会出现“后台能看，前台不能看”或反过来的分裂
+
+## 13.6 数据流设计
+
+建议第一阶段的数据流为：
+
+1. 作者在后台输入 Mermaid Markdown
+2. `useMarkdownRenderer` 在前端把 Mermaid fenced code block 转成图表占位 HTML
+3. 编辑预览区由 `ArticleContentRenderer` 挂载 Mermaid 运行时并绘制图表
+4. 提交保存时，仍然保存：
+   - `contentMarkdown`
+   - `contentHtml`
+   - `contentTocJson`
+5. 前台详情页直接消费 `contentHtml`
+6. `ArticleContentRenderer` 在客户端再次把图表占位节点渲染为 Mermaid SVG
+
+注意：
+
+- 第一阶段 `contentHtml` 存的是“图表占位结构”，不是最终 SVG
+- SVG 运行时生成，避免后续 Mermaid 升级后历史 SVG 难以统一回收
+
+## 13.7 为什么第一阶段不建议把 Mermaid 渲染结果直接存成 SVG
+
+虽然“保存时直接生成 SVG”看起来也能做，但当前阶段不推荐，原因有三点：
+
+- 当前项目的 Markdown 派生主链路还在前端，先把运行时闭环打通更稳
+- Mermaid 渲染涉及主题、暗色模式、字号和容器宽度，直接固化 SVG 不够灵活
+- 未来如果 Mermaid 版本升级，历史内容的图形更新会更麻烦
+
+所以当前更推荐：
+
+- Markdown 存源码
+- HTML 存占位结构
+- SVG 在前端运行时生成
+
+## 13.8 失败兜底与降级策略
+
+图表能力不能只考虑成功态，必须定义失败兜底。
+
+建议兜底规则如下：
+
+1. Mermaid 源码解析成功：
+   - 展示 SVG 图
+2. Mermaid 渲染失败：
+   - 显示简洁错误提示
+   - 同时允许展开查看原始 Mermaid 源码
+3. 客户端未加载 Mermaid 运行时：
+   - 至少保留源码回退
+4. 服务端渲染阶段：
+   - 不阻塞页面 HTML 输出
+   - 图表区域先输出占位节点，客户端再补图
+
+正式要求：
+
+- 不因为某一张 Mermaid 图报错导致整篇文章正文渲染失败
+- 单个图失败时，影响范围必须限制在当前图表块内
+
+## 13.9 暗色模式与主题适配
+
+Mermaid 接入后，不能只解决“能画出来”，还要解决主题一致性。
+
+建议：
+
+- Mermaid 运行时主题跟随当前页面色彩模式
+- `light` 模式和 `dark` 模式使用不同 Mermaid theme 配置
+- 图表容器外层继续沿用当前正文卡片风格
+- 移动端默认支持横向滚动与最大宽度限制
+
+建议至少统一处理：
+
+- 背景色
+- 主文字色
+- 线条色
+- 节点圆角
+- 标题字号
+- 容器内边距
+
+## 13.10 后续扩展方案
+
+如果 Mermaid 第一阶段稳定后，后续可以按 fence language 扩展成统一图表协议：
+
+```ts
+type MarkdownDiagramEngine =
+  | 'mermaid'
+  | 'plantuml'
+  | 'graphviz'
+  | 'markmap'
+  | 'vega-lite'
+```
+
+统一图表块结构建议保持：
+
+```ts
+interface MarkdownDiagramBlock {
+  engine: MarkdownDiagramEngine
+  source: string
+  title?: string
+}
+```
+
+这样未来新增图表引擎时：
+
+- 不需要推翻现有 Markdown 渲染链路
+- 只需要增加新的图表运行时适配器
+- 正文展示层仍然保持统一结构
+
+## 13.11 当前阶段的正式实施建议
+
+结合当前项目状态，建议按下面顺序落地：
+
+1. 第一阶段：只支持 ` ```mermaid ` fenced code block
+2. 在 `useMarkdownRenderer` 中增加 Mermaid 图表块识别和占位输出
+3. 在 `ArticleContentRenderer` 中增加 Mermaid 客户端渲染能力
+4. 完成后台预览、前台详情页、暗色模式、错误态闭环
+5. 再评估是否扩展 `plantuml / graphviz / markmap / vega-lite`
+
+当前阶段的正式结论：
+
+- Mermaid 是本项目 Markdown 图表支持的第一优先级
+- 流程图、时序图之外，第一阶段一并覆盖 Mermaid 主流图种
+- 不建议第一阶段并行接入多套图表引擎
+- 最合适的落地方式是在现有 `markdown-it` 链路上增加“图表占位 + 前端运行时渲染”能力
