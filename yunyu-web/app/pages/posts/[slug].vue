@@ -1373,14 +1373,18 @@ onBeforeUnmount(() => {
             </div>
 
             <div v-if="tailHiddenAccessAllowed && hasTailHiddenContent" class="pt-6">
-              <ArticleContentRenderer
-                :html="post.tailHiddenContentHtml"
-                :content-theme="articleContentTheme"
-                :code-theme="articleCodeTheme"
-                :code-default-expanded="false"
-                container-class="min-h-0 border-0 bg-transparent p-0 shadow-none"
-                body-class="px-0"
-              />
+              <div class="h-[32rem] overflow-hidden rounded-[22px] border border-slate-200/70 bg-white/70 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:border-white/10 dark:bg-slate-950/36">
+                <div class="h-full overflow-auto">
+                  <ArticleContentRenderer
+                    :html="post.tailHiddenContentHtml"
+                    :content-theme="articleContentTheme"
+                    :code-theme="articleCodeTheme"
+                    :code-default-expanded="false"
+                    container-class="h-full min-h-0 overflow-visible border-0 bg-transparent p-0 shadow-none"
+                    body-class="min-w-max px-0"
+                  />
+                </div>
+              </div>
             </div>
 
             <div v-else-if="!tailHiddenAccessAllowed" class="pt-5">
