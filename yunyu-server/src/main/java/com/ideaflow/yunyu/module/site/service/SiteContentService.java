@@ -48,8 +48,10 @@ import com.ideaflow.yunyu.module.user.mapper.UserMapper;
 import com.ideaflow.yunyu.security.LoginUser;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -272,8 +274,24 @@ public class SiteContentService {
         ContentAccessArticleConfig articleAccess = contentAccessConfig.getArticleAccess();
         ContentAccessTailHiddenConfig tailHiddenAccess = contentAccessConfig.getTailHiddenAccess();
         Long currentUserId = getCurrentUserId();
-        List<String> articlePendingRules = resolvePendingRuleTypes("ARTICLE", postId, articleAccess.getEnabled(), articleAccess.getRuleTypes(), loggedIn, currentUserId, visitorIdHash);
-        List<String> tailPendingRules = resolvePendingRuleTypes("TAIL_HIDDEN", postId, tailHiddenAccess.getEnabled(), tailHiddenAccess.getRuleTypes(), loggedIn, currentUserId, visitorIdHash);
+        List<String> articlePendingRules = resolvePendingRuleTypes("ARTICLE",
+                postId,
+                articleAccess.getEnabled(),
+                articleAccess.getRuleTypes(),
+                loggedIn,
+                currentUserId,
+                visitorIdHash,
+                Set.of());
+        boolean articleAccessAllowed = articlePendingRules.isEmpty();
+        Set<String> inheritedSatisfiedRuleTypes = resolveSatisfiedRuleTypes(articleAccess.getEnabled(), articleAccess.getRuleTypes(), articlePendingRules);
+        List<String> tailPendingRules = resolvePendingRuleTypes("TAIL_HIDDEN",
+                postId,
+                tailHiddenAccess.getEnabled(),
+                tailHiddenAccess.getRuleTypes(),
+                loggedIn,
+                currentUserId,
+                visitorIdHash,
+                inheritedSatisfiedRuleTypes);
 
         response.setLoggedIn(loggedIn);
         response.setArticleAccessRuleTypes(articleAccess.getRuleTypes());
@@ -283,7 +301,7 @@ public class SiteContentService {
         response.setWechatAccessCodeEnabled(readBoolean(contentAccessConfigNode, "wechatAccessCodeEnabled"));
         response.setWechatAccessCodeHint(readText(contentAccessConfigNode, "wechatAccessCodeHint", "关注公众号后输入访问验证码"));
         response.setWechatQrCodeUrl(readText(contentAccessConfigNode, "wechatQrCodeUrl", ""));
-        response.setArticleAccessAllowed(articlePendingRules.isEmpty());
+        response.setArticleAccessAllowed(articleAccessAllowed);
         response.setTailHiddenAccessAllowed(tailPendingRules.isEmpty());
         return response;
     }
@@ -307,13 +325,17 @@ public class SiteContentService {
                                                  List<String> ruleTypes,
                                                  boolean loggedIn,
                                                  Long userId,
-                                                 String visitorIdHash) {
+                                                 String visitorIdHash,
+                                                 Set<String> inheritedSatisfiedRuleTypes) {
         if (!Boolean.TRUE.equals(enabled) || ruleTypes == null || ruleTypes.isEmpty()) {
             return List.of();
         }
 
         List<String> pendingRuleTypes = new ArrayList<>();
         for (String ruleType : ruleTypes) {
+            if (inheritedSatisfiedRuleTypes != null && inheritedSatisfiedRuleTypes.contains(ruleType)) {
+                continue;
+            }
             if ("LOGIN".equals(ruleType) && !loggedIn) {
                 pendingRuleTypes.add(ruleType);
                 continue;
@@ -324,6 +346,35 @@ public class SiteContentService {
             }
         }
         return pendingRuleTypes;
+    }
+
+    /**
+     * 解析当前范围下已满足的规则类型集合。
+     * 作用：让隐藏内容范围可以继承文章范围已经通过的同类型规则，
+     * 避免文章和隐藏内容同时配置相同规则时重复要求用户再次校验。
+     *
+     * @param enabled 是否启用当前范围
+     * @param ruleTypes 当前范围规则列表
+     * @param pendingRuleTypes 当前范围未满足规则列表
+     * @return 已满足规则类型集合
+     */
+    private Set<String> resolveSatisfiedRuleTypes(Boolean enabled,
+                                                  List<String> ruleTypes,
+                                                  List<String> pendingRuleTypes) {
+        if (!Boolean.TRUE.equals(enabled) || ruleTypes == null || ruleTypes.isEmpty()) {
+            return Set.of();
+        }
+
+        Set<String> pendingRuleTypeSet = pendingRuleTypes == null
+                ? Set.of()
+                : new HashSet<>(pendingRuleTypes);
+        Set<String> satisfiedRuleTypes = new HashSet<>();
+        for (String ruleType : ruleTypes) {
+            if (!pendingRuleTypeSet.contains(ruleType)) {
+                satisfiedRuleTypes.add(ruleType);
+            }
+        }
+        return satisfiedRuleTypes;
     }
 
     /**
@@ -342,9 +393,6 @@ public class SiteContentService {
             throw new BizException(ResultCode.BAD_REQUEST, "当前内容未启用该访问规则");
         }
 
-        if ("TAIL_HIDDEN".equals(scopeType) && "ACCESS_CODE".equals(ruleType)) {
-            throw new BizException(ResultCode.BAD_REQUEST, "尾部隐藏内容暂不支持文章访问码");
-        }
     }
 
     /**

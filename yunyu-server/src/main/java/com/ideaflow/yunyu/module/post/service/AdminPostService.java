@@ -9,6 +9,7 @@ import com.ideaflow.yunyu.common.constant.ResultCode;
 import com.ideaflow.yunyu.common.exception.BizException;
 import com.ideaflow.yunyu.module.category.entity.CategoryEntity;
 import com.ideaflow.yunyu.module.category.mapper.CategoryMapper;
+import com.ideaflow.yunyu.module.contentaccess.service.ContentAccessGrantService;
 import com.ideaflow.yunyu.module.contentaccess.model.ContentAccessArticleConfig;
 import com.ideaflow.yunyu.module.contentaccess.model.ContentAccessConfig;
 import com.ideaflow.yunyu.module.contentaccess.model.ContentAccessTailHiddenConfig;
@@ -34,6 +35,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,6 +55,7 @@ public class AdminPostService {
     private final PostTagMapper postTagMapper;
     private final TopicPostMapper topicPostMapper;
     private final ObjectMapper objectMapper;
+    private final ContentAccessGrantService contentAccessGrantService;
 
     /**
      * 创建后台文章管理服务。
@@ -65,6 +68,7 @@ public class AdminPostService {
      * @param postTagMapper 文章标签关联 Mapper
      * @param topicPostMapper 专题文章关联 Mapper
      * @param objectMapper Jackson 对象映射器
+     * @param contentAccessGrantService 内容访问授权缓存服务
      */
     public AdminPostService(PostMapper postMapper,
                             PostContentMapper postContentMapper,
@@ -73,7 +77,8 @@ public class AdminPostService {
                             TopicMapper topicMapper,
                             PostTagMapper postTagMapper,
                             TopicPostMapper topicPostMapper,
-                            ObjectMapper objectMapper) {
+                            ObjectMapper objectMapper,
+                            ContentAccessGrantService contentAccessGrantService) {
         this.postMapper = postMapper;
         this.postContentMapper = postContentMapper;
         this.categoryMapper = categoryMapper;
@@ -82,6 +87,7 @@ public class AdminPostService {
         this.postTagMapper = postTagMapper;
         this.topicPostMapper = topicPostMapper;
         this.objectMapper = objectMapper;
+        this.contentAccessGrantService = contentAccessGrantService;
     }
 
     /**
@@ -304,6 +310,7 @@ public class AdminPostService {
         String tocJson = contentTocJson == null || contentTocJson.isBlank() ? null : contentTocJson.trim();
         String normalizedVideoUrl = normalizeOptionalValue(videoUrl);
         ContentAccessConfig normalizedContentAccessConfig = normalizeContentAccessConfig(contentAccessConfig);
+        String normalizedContentAccessConfigJson = writeContentAccessConfig(normalizedContentAccessConfig);
         String normalizedTailHiddenMarkdown = normalizeOptionalValue(tailHiddenContentMarkdown);
         String normalizedTailHiddenHtml = normalizeOptionalValue(tailHiddenContentHtml);
         String plainText = markdown.replaceAll("`{1,3}[^`]*`{1,3}", " ")
@@ -325,10 +332,14 @@ public class AdminPostService {
             postContentEntity.setCreatedTime(LocalDateTime.now());
         }
 
+        String previousContentAccessConfigJson = postContentEntity.getId() == null
+                ? null
+                : writeContentAccessConfig(readContentAccessConfig(postContentEntity.getContentAccessConfigJson()));
+
         postContentEntity.setContentMarkdown(markdown);
         postContentEntity.setContentHtml(html);
         postContentEntity.setContentTocJson(tocJson);
-        postContentEntity.setContentAccessConfigJson(writeContentAccessConfig(normalizedContentAccessConfig));
+        postContentEntity.setContentAccessConfigJson(normalizedContentAccessConfigJson);
         postContentEntity.setTailHiddenContentMarkdown(normalizedTailHiddenMarkdown);
         postContentEntity.setTailHiddenContentHtml(normalizedTailHiddenHtml);
         postContentEntity.setVideoUrl(normalizedVideoUrl);
@@ -341,6 +352,10 @@ public class AdminPostService {
             return;
         }
         postContentMapper.updateById(postContentEntity);
+
+        if (!Objects.equals(previousContentAccessConfigJson, normalizedContentAccessConfigJson)) {
+            contentAccessGrantService.clearPostAccessGrants(postId);
+        }
     }
 
     /**

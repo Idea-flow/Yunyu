@@ -6,6 +6,7 @@ import com.ideaflow.yunyu.common.constant.ResultCode;
 import com.ideaflow.yunyu.common.exception.BizException;
 import com.ideaflow.yunyu.module.contentaccess.entity.ContentAccessGrantEntity;
 import com.ideaflow.yunyu.module.contentaccess.mapper.ContentAccessGrantMapper;
+import java.util.List;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
@@ -130,6 +131,24 @@ public class ContentAccessGrantService {
         existingGrant.setExpireAt(expireAt);
         existingGrant.setUpdatedTime(now);
         contentAccessGrantMapper.updateById(existingGrant);
+    }
+
+    /**
+     * 清理文章相关的内容访问授权缓存。
+     * 作用：当后台修改文章访问规则、访问码或隐藏内容规则时，主动失效旧授权，
+     * 避免前台继续沿用历史通过记录导致内容被错误放行。
+     *
+     * @param postId 文章 ID
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void clearPostAccessGrants(Long postId) {
+        if (postId == null || postId <= 0) {
+            return;
+        }
+
+        contentAccessGrantMapper.delete(new LambdaQueryWrapper<ContentAccessGrantEntity>()
+                .eq(ContentAccessGrantEntity::getScopeId, postId)
+                .in(ContentAccessGrantEntity::getScopeType, List.of("ARTICLE", "TAIL_HIDDEN")));
     }
 
     /**

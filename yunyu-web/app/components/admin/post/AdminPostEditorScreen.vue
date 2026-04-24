@@ -48,7 +48,6 @@ const contentAccessRuleOptions: Array<{ label: string, value: ContentAccessRuleT
   { label: '公众号验证码', value: 'WECHAT_ACCESS_CODE', description: '适合站点级公众号引导验证。' },
   { label: '文章访问码', value: 'ACCESS_CODE', description: '适合文章独立配置访问码。' }
 ]
-const tailHiddenRuleOptions = contentAccessRuleOptions.filter(option => option.value !== 'ACCESS_CODE')
 
 const formState = reactive<AdminPostForm>({
   title: '',
@@ -119,6 +118,10 @@ const estimatedReadingMinutes = computed(() => renderedReadingMinutes.value)
 const selectedCategoryLabel = computed(() =>
   categoryOptions.value.find(option => option.value === formState.categoryId)?.label || '暂不设置分类'
 )
+const sharedArticleAccessCodeEnabled = computed(() =>
+  formState.contentAccessConfig.articleAccess.ruleTypes.includes('ACCESS_CODE')
+  || formState.contentAccessConfig.tailHiddenAccess.ruleTypes.includes('ACCESS_CODE')
+)
 
 /**
  * 统一工作台卡片样式。
@@ -158,19 +161,29 @@ function validateForm() {
       return false
     }
 
-    if (
-      formState.contentAccessConfig.articleAccess.ruleTypes.includes('ACCESS_CODE')
-      && !formState.contentAccessConfig.articleAccess.articleAccessCode.trim()
-    ) {
+    if (sharedArticleAccessCodeEnabled.value
+      && !formState.contentAccessConfig.articleAccess.articleAccessCode.trim()) {
       toast.add({ title: '已启用文章访问码，请填写文章访问码', color: 'warning' })
       return false
     }
 
-    if (
-      formState.contentAccessConfig.articleAccess.ruleTypes.includes('ACCESS_CODE')
-      && !formState.contentAccessConfig.articleAccess.articleAccessCodeHint.trim()
-    ) {
+    if (sharedArticleAccessCodeEnabled.value
+      && !formState.contentAccessConfig.articleAccess.articleAccessCodeHint.trim()) {
       toast.add({ title: '已启用文章访问码，请填写访问码提示文案', color: 'warning' })
+      return false
+    }
+  }
+
+  if (formState.contentAccessConfig.tailHiddenAccess.enabled) {
+    if (sharedArticleAccessCodeEnabled.value
+      && !formState.contentAccessConfig.articleAccess.articleAccessCode.trim()) {
+      toast.add({ title: '隐藏内容启用了访问码，请填写文章访问码', color: 'warning' })
+      return false
+    }
+
+    if (sharedArticleAccessCodeEnabled.value
+      && !formState.contentAccessConfig.articleAccess.articleAccessCodeHint.trim()) {
+      toast.add({ title: '隐藏内容启用了访问码，请填写访问码提示文案', color: 'warning' })
       return false
     }
   }
@@ -853,7 +866,7 @@ await Promise.all([
                         <p class="mb-2 text-sm font-medium text-slate-700 dark:text-slate-200">文章访问规则</p>
                         <div class="space-y-2">
                           <button
-                            v-for="option in tailHiddenRuleOptions"
+                            v-for="option in contentAccessRuleOptions"
                             :key="`article-${option.value}`"
                             type="button"
                             class="flex w-full items-start gap-3 rounded-[12px] border px-3 py-3 text-left transition"
@@ -874,19 +887,6 @@ await Promise.all([
                         </div>
                       </div>
 
-                      <UFormField name="articleAccessCode" label="文章访问码">
-                        <AdminInput
-                          v-model="formState.contentAccessConfig.articleAccess.articleAccessCode"
-                          placeholder="仅在勾选“文章访问码”后生效"
-                        />
-                      </UFormField>
-
-                      <UFormField name="articleAccessCodeHint" label="文章访问码提示文案">
-                        <AdminInput
-                          v-model="formState.contentAccessConfig.articleAccess.articleAccessCodeHint"
-                          placeholder="例如：扫描公众号后输入访问验证码"
-                        />
-                      </UFormField>
                     </div>
                   </div>
 
@@ -932,6 +932,89 @@ await Promise.all([
                           </button>
                         </div>
                       </div>
+
+                      <div
+                        v-if="sharedArticleAccessCodeEnabled"
+                        class="rounded-[12px] border border-sky-200/80 bg-sky-50/72 p-4 dark:border-sky-400/20 dark:bg-sky-400/8"
+                      >
+                        <p class="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-50">文章访问码配置</p>
+                        <p class="mb-3 text-xs text-slate-500 dark:text-slate-400">文章访问控制与隐藏内容访问控制共用这一套访问码配置。</p>
+                        <div class="space-y-4">
+                          <UFormField name="articleAccessCode" label="文章访问码">
+                            <AdminInput
+                              v-model="formState.contentAccessConfig.articleAccess.articleAccessCode"
+                              placeholder="请输入文章访问码"
+                            />
+                          </UFormField>
+
+                          <UFormField name="articleAccessCodeHint" label="文章访问码提示文案">
+                            <AdminInput
+                              v-model="formState.contentAccessConfig.articleAccess.articleAccessCodeHint"
+                              placeholder="例如：请输入文章访问码"
+                            />
+                          </UFormField>
+                        </div>
+                      </div>
+
+                      <div class="rounded-[12px] border border-emerald-200/80 bg-emerald-50/70 p-4 dark:border-emerald-400/20 dark:bg-emerald-400/8">
+                        <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                          <div>
+                            <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">尾部隐藏内容</p>
+                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">这一块会显示在文章详情页末尾，按当前规则决定是否对访客可见。</p>
+                          </div>
+                          <span class="text-xs font-medium uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                            Tail Hidden Block
+                          </span>
+                        </div>
+
+                        <div class="mt-4 grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+                          <div>
+                            <AdminTextarea
+                              v-model="formState.tailHiddenContentMarkdown"
+                              :rows="16"
+                              autoresize
+                              placeholder="请输入尾部隐藏内容 Markdown"
+                            />
+                          </div>
+
+                          <div :class="workspaceSurfaceClass">
+                            <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">隐藏内容摘要</p>
+                            <div class="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-300">
+                              <div class="flex items-center justify-between">
+                                <span>模块开关</span>
+                                <span>{{ formState.contentAccessConfig.tailHiddenAccess.enabled ? '已启用' : '未启用' }}</span>
+                              </div>
+                              <div class="flex items-center justify-between">
+                                <span>预计阅读</span>
+                                <span>{{ renderedTailHiddenReadingMinutes }} 分钟</span>
+                              </div>
+                              <div class="flex items-center justify-between">
+                                <span>纯文本字数</span>
+                                <span>{{ renderedTailHiddenPlainText.length }}</span>
+                              </div>
+                              <div>
+                                <p class="mb-2 text-xs uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">当前规则</p>
+                                <div class="flex flex-wrap gap-2">
+                                  <UBadge
+                                    v-for="ruleType in formState.contentAccessConfig.tailHiddenAccess.ruleTypes"
+                                    :key="ruleType"
+                                    color="success"
+                                    variant="soft"
+                                  >
+                                    {{ ruleType }}
+                                  </UBadge>
+                                  <span
+                                    v-if="!formState.contentAccessConfig.tailHiddenAccess.ruleTypes.length"
+                                    class="text-sm text-slate-400 dark:text-slate-500"
+                                  >
+                                    未配置规则
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -972,67 +1055,6 @@ await Promise.all([
         </div>
       </section>
 
-      <section :class="workspaceCardClass">
-        <div class="border-b border-white/60 px-5 py-4 dark:border-white/10">
-          <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p class="text-base font-semibold text-slate-900 dark:text-slate-50">尾部隐藏内容</p>
-              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">这一块不会插入正文中，而是挂在文章详情页尾部，按访问规则决定是否展示。</p>
-            </div>
-            <span class="text-xs font-medium uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
-              Tail Hidden Block
-            </span>
-          </div>
-        </div>
-
-        <div class="grid gap-5 px-5 py-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div>
-            <AdminTextarea
-              v-model="formState.tailHiddenContentMarkdown"
-              :rows="16"
-              autoresize
-              placeholder="请输入尾部隐藏内容 Markdown"
-            />
-          </div>
-
-          <div :class="workspaceSurfaceClass">
-            <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">隐藏内容摘要</p>
-            <div class="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-300">
-              <div class="flex items-center justify-between">
-                <span>模块开关</span>
-                <span>{{ formState.contentAccessConfig.tailHiddenAccess.enabled ? '已启用' : '未启用' }}</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span>预计阅读</span>
-                <span>{{ renderedTailHiddenReadingMinutes }} 分钟</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span>纯文本字数</span>
-                <span>{{ renderedTailHiddenPlainText.length }}</span>
-              </div>
-              <div>
-                <p class="mb-2 text-xs uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">当前规则</p>
-                <div class="flex flex-wrap gap-2">
-                  <UBadge
-                    v-for="ruleType in formState.contentAccessConfig.tailHiddenAccess.ruleTypes"
-                    :key="ruleType"
-                    color="success"
-                    variant="soft"
-                  >
-                    {{ ruleType }}
-                  </UBadge>
-                  <span
-                    v-if="!formState.contentAccessConfig.tailHiddenAccess.ruleTypes.length"
-                    class="text-sm text-slate-400 dark:text-slate-500"
-                  >
-                    未配置规则
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
 
     <UModal

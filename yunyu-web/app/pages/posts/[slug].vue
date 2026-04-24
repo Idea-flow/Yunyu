@@ -85,7 +85,7 @@ const articlePendingRuleTypes = computed<ContentAccessRuleType[]>(() => {
 
 /**
  * 计算尾部隐藏内容未完成规则列表。
- * 作用：为尾部隐藏内容模块的解锁提示和操作入口提供统一规则集合。
+ * 作用：为尾部隐藏内容模块的独立提示与校验入口提供统一数据源。
  */
 const tailHiddenPendingRuleTypes = computed<ContentAccessRuleType[]>(() => {
   return (post.value?.contentAccessState?.tailHiddenAccessPendingRuleTypes || []) as ContentAccessRuleType[]
@@ -134,7 +134,7 @@ const articlePrimaryPendingRule = computed(() => getPrimaryPendingRule(articlePe
 
 /**
  * 计算尾部隐藏内容当前主规则。
- * 作用：尾部隐藏内容同样按单步解锁方式展示。
+ * 作用：尾部隐藏内容拥有独立规则时，也按单步方式提示。
  */
 const tailHiddenPrimaryPendingRule = computed(() => getPrimaryPendingRule(tailHiddenPendingRuleTypes.value))
 
@@ -158,13 +158,19 @@ const articleRequiresWechatCode = computed(() => articlePrimaryPendingRule.value
 
 /**
  * 判断尾部隐藏内容当前是否优先要求登录。
- * 作用：只在当前主规则是登录时展示登录按钮。
+ * 作用：只在尾部隐藏内容当前主规则为登录时展示登录按钮。
  */
 const tailHiddenRequiresLogin = computed(() => tailHiddenPrimaryPendingRule.value === 'LOGIN')
 
 /**
+ * 判断尾部隐藏内容当前是否优先要求访问码。
+ * 作用：尾部隐藏内容独立配置文章访问码时，也复用统一访问码输入弹窗。
+ */
+const tailHiddenRequiresAccessCode = computed(() => tailHiddenPrimaryPendingRule.value === 'ACCESS_CODE')
+
+/**
  * 判断尾部隐藏内容当前是否优先要求公众号验证码。
- * 作用：只在当前主规则是公众号验证码时展示校验入口。
+ * 作用：只在尾部隐藏内容当前主规则为公众号验证码时展示校验入口。
  */
 const tailHiddenRequiresWechatCode = computed(() => tailHiddenPrimaryPendingRule.value === 'WECHAT_ACCESS_CODE')
 
@@ -193,21 +199,7 @@ const relatedCompactPosts = computed(() => post.value?.relatedPosts?.slice(0, 2)
 const hasRelatedPosts = computed(() => (post.value?.relatedPosts?.length || 0) > 0)
 const hasTailHiddenBlock = computed(() => Boolean(post.value?.contentAccessConfig?.tailHiddenAccess?.enabled))
 const tailHiddenAccessAllowed = computed(() => Boolean(post.value?.contentAccessState?.tailHiddenAccessAllowed))
-const tailHiddenRuleLabels = computed(() => {
-  const ruleTypes = post.value?.contentAccessState?.tailHiddenAccessRuleTypes || []
-  return ruleTypes.map((ruleType) => {
-    if (ruleType === 'LOGIN') {
-      return '登录后可见'
-    }
-    if (ruleType === 'WECHAT_ACCESS_CODE') {
-      return '公众号验证码'
-    }
-    if (ruleType === 'ACCESS_CODE') {
-      return '文章访问码'
-    }
-    return ruleType
-  })
-})
+const hasTailHiddenContent = computed(() => Boolean(post.value?.tailHiddenContentHtml))
 
 /**
  * 计算当前弹窗对应的待校验规则列表。
@@ -1315,12 +1307,6 @@ onBeforeUnmount(() => {
               container-class="min-h-0 border-0 bg-transparent p-0 shadow-none"
               body-class="px-3.5 sm:px-6 lg:px-12"
             />
-
-            <ArticleCommentPanel
-              :post-slug="post.slug"
-              :allow-comment="post.allowComment"
-              :initial-comment-count="post.commentCount"
-            />
           </template>
 
           <section
@@ -1380,29 +1366,13 @@ onBeforeUnmount(() => {
             v-if="articleAccessAllowed && hasTailHiddenBlock"
             class="overflow-hidden rounded-[28px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] p-6 shadow-[0_22px_52px_-36px_rgba(15,23,42,0.18)] dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.82),rgba(2,6,23,0.88))]"
           >
-            <div class="flex flex-col gap-4 border-b border-slate-200/70 pb-5 dark:border-white/10 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-sky-600 dark:text-sky-300">
-                  尾部隐藏内容
-                </p>
-                <h2 class="mt-3 text-[1.22rem] font-semibold tracking-[-0.03em] [font-family:var(--font-display)] text-slate-950 dark:text-slate-50">
-                  {{ post.tailHiddenTitle || '隐藏内容' }}
-                </h2>
-              </div>
-
-              <div class="flex flex-wrap gap-2">
-                <UBadge
-                  v-for="label in tailHiddenRuleLabels"
-                  :key="label"
-                  color="neutral"
-                  variant="soft"
-                >
-                  {{ label }}
-                </UBadge>
-              </div>
+            <div>
+              <h2 class="text-[1.22rem] font-semibold tracking-[-0.03em] [font-family:var(--font-display)] text-slate-950 dark:text-slate-50">
+                {{ post.tailHiddenTitle || '隐藏内容' }}
+              </h2>
             </div>
 
-            <div v-if="tailHiddenAccessAllowed" class="pt-6">
+            <div v-if="tailHiddenAccessAllowed && hasTailHiddenContent" class="pt-6">
               <ArticleContentRenderer
                 :html="post.tailHiddenContentHtml"
                 :content-theme="articleContentTheme"
@@ -1413,12 +1383,12 @@ onBeforeUnmount(() => {
               />
             </div>
 
-            <div v-else class="pt-6">
-              <div class="rounded-[20px] border border-dashed border-slate-300/80 bg-slate-50/80 p-5 dark:border-white/15 dark:bg-white/[0.03]">
-                <p class="text-sm font-medium text-slate-900 dark:text-slate-50">当前内容暂未解锁</p>
-                <p class="mt-2 text-sm leading-7 text-slate-500 dark:text-slate-400">
+            <div v-else-if="!tailHiddenAccessAllowed" class="pt-5">
+              <div class="rounded-[18px] border border-dashed border-slate-300/80 bg-slate-50/80 px-4 py-4 dark:border-white/12 dark:bg-white/[0.03]">
+                <p class="text-sm text-slate-500 dark:text-slate-400">
                   {{ getRuleHint(tailHiddenPrimaryPendingRule) }}
                 </p>
+
                 <div class="mt-4 flex flex-wrap gap-3">
                   <button
                     v-if="tailHiddenRequiresLogin"
@@ -1428,24 +1398,26 @@ onBeforeUnmount(() => {
                   >
                     {{ isLoggedIn ? '刷新登录状态' : '登录后继续' }}
                   </button>
+
                   <button
-                    v-if="tailHiddenRequiresWechatCode"
+                    v-if="tailHiddenRequiresAccessCode || tailHiddenRequiresWechatCode"
                     type="button"
                     class="inline-flex min-h-10 items-center justify-center rounded-full border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:text-sky-700 dark:border-white/12 dark:bg-white/[0.04] dark:text-slate-200 dark:hover:border-sky-400/30 dark:hover:text-sky-200"
                     @click="openAccessModal('TAIL_HIDDEN')"
                   >
-                    输入公众号验证码
+                    {{ tailHiddenRequiresAccessCode ? '输入访问码' : '输入公众号验证码' }}
                   </button>
                 </div>
-                <img
-                  v-if="post.contentAccessState?.wechatQrCodeUrl"
-                  :src="post.contentAccessState.wechatQrCodeUrl"
-                  alt="公众号二维码"
-                  class="mt-4 h-32 w-32 rounded-[16px] border border-slate-200/80 object-cover dark:border-white/10"
-                >
               </div>
             </div>
           </section>
+
+          <ArticleCommentPanel
+            v-if="articleAccessAllowed"
+            :post-slug="post.slug"
+            :allow-comment="post.allowComment"
+            :initial-comment-count="post.commentCount"
+          />
 
           <section
             v-if="hasRelatedPosts"

@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-04-24T00:00:00.000Z" agent="Codex" version="26.2.8">
+  <diagram id="content-access-sequence" name="Page-1">
+    <mxGraphModel dx="1460" dy="920" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="当前内容权限校验时序图" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=22;fontStyle=1;fontColor=#111827;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="360" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="subtitle" value="聚焦文章详情页真实链路：详情查询、规则判定、验证码校验、授权缓存复用与再次刷新" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=12;fontColor=#6B7280;" vertex="1" parent="1">
+          <mxGeometry x="40" y="52" width="760" height="24" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="lane1" value="浏览器 / 详情页" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#DCEBFF;strokeColor=#1F2937;strokeWidth=1.5;fontColor=#111827;fontSize=15;fontStyle=1;verticalAlign=top;spacingTop=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="100" width="220" height="960" as="geometry"/>
+        </mxCell>
+        <mxCell id="lane2" value="SiteContentController / 站点接口" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#DDF5E7;strokeColor=#1F2937;strokeWidth=1.5;fontColor=#111827;fontSize=15;fontStyle=1;verticalAlign=top;spacingTop=12;" vertex="1" parent="1">
+          <mxGeometry x="300" y="100" width="250" height="960" as="geometry"/>
+        </mxCell>
+        <mxCell id="lane3" value="SiteContentService" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#1F2937;strokeWidth=1.5;fontColor=#111827;fontSize=15;fontStyle=1;verticalAlign=top;spacingTop=12;" vertex="1" parent="1">
+          <mxGeometry x="590" y="100" width="240" height="960" as="geometry"/>
+        </mxCell>
+        <mxCell id="lane4" value="ContentAccessGrantService" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFE9B8;strokeColor=#1F2937;strokeWidth=1.5;fontColor=#111827;fontSize=15;fontStyle=1;verticalAlign=top;spacingTop=12;" vertex="1" parent="1">
+          <mxGeometry x="870" y="100" width="240" height="960" as="geometry"/>
+        </mxCell>
+        <mxCell id="lane5" value="数据库" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FEF2F2;strokeColor=#1F2937;strokeWidth=1.5;fontColor=#111827;fontSize=15;fontStyle=1;verticalAlign=top;spacingTop=12;" vertex="1" parent="1">
+          <mxGeometry x="1150" y="100" width="260" height="960" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="n1" value="1. GET /api/site/posts/{slug}" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D1D5DB;strokeWidth=1.2;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="72" y="150" width="156" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="n2" value="2. 解析可选登录态&#xa;生成访客指纹" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D1D5DB;strokeWidth=1.2;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="342" y="150" width="166" height="64" as="geometry"/>
+        </mxCell>
+        <mxCell id="n3" value="3. getPostDetail(slug, visitorId)" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D1D5DB;strokeWidth=1.2;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="622" y="150" width="176" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="n4" value="4. 查询 post / post_content" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D1D5DB;strokeWidth=1.2;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="1192" y="150" width="176" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="n5" value="5. hasValidGrant(scope, rule, userId, visitorIdHash)" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D1D5DB;strokeWidth=1.2;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="892" y="240" width="196" height="64" as="geometry"/>
+        </mxCell>
+        <mxCell id="n6" value="6. 查询 content_access_grant" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D1D5DB;strokeWidth=1.2;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="1192" y="248" width="176" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="n7" value="7. 返回 contentHtml / tailHiddenContentHtml / contentAccessState" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D1D5DB;strokeWidth=1.2;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="622" y="340" width="176" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="n8" value="8. 详情页只显示当前最高优先级规则&#xa;优先级：LOGIN → ACCESS_CODE → WECHAT_ACCESS_CODE" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D1D5DB;strokeWidth=1.2;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="72" y="352" width="156" height="96" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="groupA" value="文章级未通过" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#D1D5DB;strokeWidth=1.2;fontColor=#111827;fontSize=14;fontStyle=1;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="56" y="490" width="1350" height="318" as="geometry"/>
+        </mxCell>
+        <mxCell id="a1" value="当前规则 = LOGIN&#xa;跳转 /login?redirect=当前详情页" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F2937;strokeWidth=1.2;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="76" y="536" width="160" height="72" as="geometry"/>
+        </mxCell>
+        <mxCell id="a2" value="登录后再次&#xa;GET /api/site/posts/{slug}" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F2937;strokeWidth=1.2;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="76" y="644" width="160" height="72" as="geometry"/>
+        </mxCell>
+        <mxCell id="a3" value="当前规则 = ACCESS_CODE&#xa;或 WECHAT_ACCESS_CODE" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F2937;strokeWidth=1.2;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="76" y="736" width="160" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="a4" value="POST /api/site/posts/{slug}/access/verify&#xa;scopeType + ruleType + accessCode" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#DCEBFF;strokeColor=#1F2937;strokeWidth=1.5;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="338" y="546" width="174" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="a5" value="解析可选登录态&#xa;生成访客指纹" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F2937;strokeWidth=1.2;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="338" y="656" width="174" height="64" as="geometry"/>
+        </mxCell>
+        <mxCell id="a6" value="verifyContentAccess(...)" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#DDF5E7;strokeColor=#1F2937;strokeWidth=1.5;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="622" y="546" width="176" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="a7" value="查询 post / post_content&#xa;校验规则启用与验证码" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F2937;strokeWidth=1.2;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="622" y="636" width="176" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="a8" value="grantAccess(scope, postId, ruleType, userId, visitorIdHash)" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FFE9B8;strokeColor=#1F2937;strokeWidth=1.5;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="892" y="546" width="196" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="a9" value="写入或刷新 content_access_grant&#xa;有效期 7 天" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FEF2F2;strokeColor=#1F2937;strokeWidth=1.5;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="1192" y="556" width="176" height="64" as="geometry"/>
+        </mxCell>
+        <mxCell id="a10" value="返回 granted = true + 最新 contentAccessState" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F2937;strokeWidth=1.2;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="622" y="736" width="176" height="56" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="groupB" value="文章级已通过" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#D1D5DB;strokeWidth=1.2;fontColor=#111827;fontSize=14;fontStyle=1;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="56" y="832" width="1350" height="198" as="geometry"/>
+        </mxCell>
+        <mxCell id="b1" value="展示正文与评论区" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F2937;strokeWidth=1.2;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="76" y="882" width="160" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="b2" value="若尾部隐藏内容未通过&#xa;仅显示占位" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F2937;strokeWidth=1.2;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="76" y="954" width="160" height="64" as="geometry"/>
+        </mxCell>
+        <mxCell id="b3" value="按需再次 POST /api/site/posts/{slug}/access/verify" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#DCEBFF;strokeColor=#1F2937;strokeWidth=1.5;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="338" y="954" width="174" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="b4" value="校验成功后再次 GET /api/site/posts/{slug}" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#DDF5E7;strokeColor=#1F2937;strokeWidth=1.5;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="622" y="954" width="176" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="b5" value="展示真实尾部隐藏内容" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1F2937;strokeWidth=1.2;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="76" y="978" width="160" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e1" edge="1" parent="1" source="n1" target="n2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=1.6;endArrow=block;endFill=1;"/>
+        <mxCell id="e2" edge="1" parent="1" source="n2" target="n3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=1.6;endArrow=block;endFill=1;"/>
+        <mxCell id="e3" edge="1" parent="1" source="n3" target="n4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=1.6;endArrow=block;endFill=1;"/>
+        <mxCell id="e4" edge="1" parent="1" source="n3" target="n5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=1.6;endArrow=block;endFill=1;"/>
+        <mxCell id="e5" edge="1" parent="1" source="n5" target="n6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=1.6;endArrow=block;endFill=1;"/>
+        <mxCell id="e6" edge="1" parent="1" source="n5" target="n7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=1.6;endArrow=block;endFill=1;"/>
+        <mxCell id="e7" edge="1" parent="1" source="n7" target="n8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=1.6;endArrow=block;endFill=1;"/>
+        <mxCell id="e8" edge="1" parent="1" source="a3" target="a4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=1.6;endArrow=block;endFill=1;"/>
+        <mxCell id="e9" edge="1" parent="1" source="a4" target="a6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=1.6;endArrow=block;endFill=1;"/>
+        <mxCell id="e10" edge="1" parent="1" source="a6" target="a8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=1.6;endArrow=block;endFill=1;"/>
+        <mxCell id="e11" edge="1" parent="1" source="a8" target="a9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=1.6;endArrow=block;endFill=1;"/>
+        <mxCell id="e12" edge="1" parent="1" source="a9" target="a10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=1.6;endArrow=block;endFill=1;"/>
+        <mxCell id="e13" edge="1" parent="1" source="a10" target="a2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=1.6;endArrow=block;endFill=1;dashed=1;dashPattern=6 4;"/>
+        <mxCell id="e14" edge="1" parent="1" source="a1" target="a2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=1.6;endArrow=block;endFill=1;"/>
+        <mxCell id="e15" edge="1" parent="1" source="b2" target="b3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=1.6;endArrow=block;endFill=1;"/>
+        <mxCell id="e16" edge="1" parent="1" source="b3" target="b4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=1.6;endArrow=block;endFill=1;"/>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
