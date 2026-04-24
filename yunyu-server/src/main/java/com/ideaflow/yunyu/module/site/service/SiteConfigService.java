@@ -76,6 +76,31 @@ public class SiteConfigService {
     }
 
     /**
+     * 按配置键读取原始 JSON 文本。
+     *
+     * @param configKey 配置键
+     * @param defaultValue 默认值
+     * @return 配置 JSON 文本
+     */
+    public String getConfigJsonTextByKey(String configKey, String defaultValue) {
+        SiteConfigEntity entity = getConfigByKey(configKey);
+        if (entity == null || entity.getConfigJson() == null || entity.getConfigJson().isBlank()) {
+            return defaultValue;
+        }
+        return entity.getConfigJson();
+    }
+
+    /**
+     * 获取当前 JSON 对象映射器。
+     * 作用：给需要做复杂对象映射的业务服务提供统一的 Jackson 实例，避免各处重复构造。
+     *
+     * @return Jackson 对象映射器
+     */
+    public ObjectMapper getObjectMapper() {
+        return objectMapper;
+    }
+
+    /**
      * 保存配置项。
      *
      * @param configKey 配置键

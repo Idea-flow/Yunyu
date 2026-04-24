@@ -4,6 +4,12 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.ideaflow.yunyu.module.contentaccess.model.ContentAccessArticleConfig;
+import com.ideaflow.yunyu.module.contentaccess.model.ContentAccessConfig;
+import com.ideaflow.yunyu.module.contentaccess.model.ContentAccessTailHiddenConfig;
+import com.ideaflow.yunyu.module.contentaccess.dto.SiteContentAccessVerifyRequest;
+import com.ideaflow.yunyu.module.contentaccess.service.ContentAccessGrantService;
+import com.ideaflow.yunyu.module.contentaccess.vo.SiteContentAccessVerifyResponse;
 import com.ideaflow.yunyu.common.constant.ResultCode;
 import com.ideaflow.yunyu.common.exception.BizException;
 import com.ideaflow.yunyu.module.category.entity.CategoryEntity;
@@ -20,6 +26,7 @@ import com.ideaflow.yunyu.module.site.dto.SitePostQueryRequest;
 import com.ideaflow.yunyu.module.site.vo.SiteBaseInfoResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteCategoryDetailResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteCategoryItemResponse;
+import com.ideaflow.yunyu.module.site.vo.SiteContentAccessStateResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteHeroVisualResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteHomeResponse;
 import com.ideaflow.yunyu.module.site.vo.SiteHomepageConfigResponse;
@@ -38,11 +45,14 @@ import com.ideaflow.yunyu.module.topic.entity.TopicEntity;
 import com.ideaflow.yunyu.module.topic.mapper.TopicMapper;
 import com.ideaflow.yunyu.module.user.entity.UserEntity;
 import com.ideaflow.yunyu.module.user.mapper.UserMapper;
+import com.ideaflow.yunyu.security.LoginUser;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * 前台内容服务类。
@@ -62,6 +72,7 @@ public class SiteContentService {
     private final TopicPostMapper topicPostMapper;
     private final SiteConfigService siteConfigService;
     private final HomepageConfigService homepageConfigService;
+    private final ContentAccessGrantService contentAccessGrantService;
 
     /**
      * 创建前台内容服务。
@@ -76,6 +87,7 @@ public class SiteContentService {
      * @param topicPostMapper 专题文章关联 Mapper
      * @param siteConfigService 站点配置统一服务
      * @param homepageConfigService 首页配置服务
+     * @param contentAccessGrantService 内容访问授权缓存服务
      */
     public SiteContentService(PostMapper postMapper,
                               PostContentMapper postContentMapper,
@@ -86,7 +98,8 @@ public class SiteContentService {
                               PostTagMapper postTagMapper,
                               TopicPostMapper topicPostMapper,
                               SiteConfigService siteConfigService,
-                              HomepageConfigService homepageConfigService) {
+                              HomepageConfigService homepageConfigService,
+                              ContentAccessGrantService contentAccessGrantService) {
         this.postMapper = postMapper;
         this.postContentMapper = postContentMapper;
         this.categoryMapper = categoryMapper;
@@ -97,6 +110,7 @@ public class SiteContentService {
         this.topicPostMapper = topicPostMapper;
         this.siteConfigService = siteConfigService;
         this.homepageConfigService = homepageConfigService;
+        this.contentAccessGrantService = contentAccessGrantService;
     }
 
     /**
@@ -145,11 +159,14 @@ public class SiteContentService {
      * @param slug 文章 slug
      * @return 文章详情
      */
-    public SitePostDetailResponse getPostDetail(String slug) {
+    public SitePostDetailResponse getPostDetail(String slug, String visitorId) {
         PostEntity postEntity = findPublishedPostBySlug(slug);
         PostContentEntity postContentEntity = findPostContent(postEntity.getId());
         SitePostDetailResponse response = new SitePostDetailResponse();
         SitePostSummaryResponse summaryResponse = toSitePostSummaryResponse(postEntity);
+        ContentAccessConfig contentAccessConfig = buildContentAccessConfig(postContentEntity);
+        String visitorIdHash = contentAccessGrantService.hashVisitorId(visitorId);
+        SiteContentAccessStateResponse contentAccessState = buildContentAccessState(postEntity.getId(), contentAccessConfig, visitorIdHash);
 
         response.setId(summaryResponse.getId());
         response.setSlug(summaryResponse.getSlug());
@@ -170,12 +187,323 @@ public class SiteContentService {
         response.setCommentCount(postEntity.getCommentCount());
         response.setSeoTitle(postEntity.getSeoTitle());
         response.setSeoDescription(postEntity.getSeoDescription());
-        response.setContentMarkdown(postContentEntity == null ? "" : defaultString(postContentEntity.getContentMarkdown()));
-        response.setContentHtml(postContentEntity == null ? "" : defaultString(postContentEntity.getContentHtml()));
-        response.setContentTocJson(postContentEntity == null ? "[]" : defaultJsonArray(postContentEntity.getContentTocJson()));
-        response.setAllowComment(postEntity.getAllowComment() != null && postEntity.getAllowComment() == 1);
+        response.setContentMarkdown(Boolean.TRUE.equals(contentAccessState.getArticleAccessAllowed())
+                ? postContentEntity == null ? "" : defaultString(postContentEntity.getContentMarkdown())
+                : "");
+        response.setContentHtml(Boolean.TRUE.equals(contentAccessState.getArticleAccessAllowed())
+                ? postContentEntity == null ? "" : defaultString(postContentEntity.getContentHtml())
+                : "");
+        response.setContentTocJson(Boolean.TRUE.equals(contentAccessState.getArticleAccessAllowed())
+                ? postContentEntity == null ? "[]" : defaultJsonArray(postContentEntity.getContentTocJson())
+                : "[]");
+        response.setContentAccessConfig(contentAccessConfig);
+        response.setTailHiddenTitle(resolveTailHiddenTitle(contentAccessConfig));
+        response.setTailHiddenContentHtml(Boolean.TRUE.equals(contentAccessState.getArticleAccessAllowed())
+                && Boolean.TRUE.equals(contentAccessState.getTailHiddenAccessAllowed())
+                ? defaultString(postContentEntity == null ? null : postContentEntity.getTailHiddenContentHtml())
+                : "");
+        response.setContentAccessState(contentAccessState);
+        response.setAllowComment(Boolean.TRUE.equals(contentAccessState.getArticleAccessAllowed())
+                && postEntity.getAllowComment() != null && postEntity.getAllowComment() == 1);
         response.setRelatedPosts(listRelatedPosts(postEntity));
         return response;
+    }
+
+    /**
+     * 校验并写入内容访问授权。
+     *
+     * @param slug 文章 slug
+     * @param request 校验请求
+     * @param visitorId 访客标识
+     * @return 最新内容访问状态
+     */
+    public SiteContentAccessVerifyResponse verifyContentAccess(String slug, SiteContentAccessVerifyRequest request, String visitorId) {
+        PostEntity postEntity = findPublishedPostBySlug(slug);
+        PostContentEntity postContentEntity = findPostContent(postEntity.getId());
+        ContentAccessConfig contentAccessConfig = buildContentAccessConfig(postContentEntity);
+        String visitorIdHash = contentAccessGrantService.hashVisitorId(visitorId);
+        Long currentUserId = getCurrentUserId();
+        String scopeType = request.getScopeType().trim();
+        String ruleType = request.getRuleType().trim();
+        String accessCode = request.getAccessCode().trim();
+
+        validateRuleAllowed(scopeType, ruleType, contentAccessConfig);
+        validateAccessCode(scopeType, ruleType, accessCode, contentAccessConfig);
+        contentAccessGrantService.grantAccess(scopeType, postEntity.getId(), ruleType, currentUserId, visitorIdHash);
+
+        SiteContentAccessVerifyResponse response = new SiteContentAccessVerifyResponse();
+        response.setGranted(Boolean.TRUE);
+        response.setContentAccessState(buildContentAccessState(postEntity.getId(), contentAccessConfig, visitorIdHash));
+        return response;
+    }
+
+    /**
+     * 构建内容访问控制配置。
+     * 作用：从正文扩展表中解析文章访问控制和尾部隐藏内容配置，供前台详情页复用。
+     *
+     * @param postContentEntity 正文实体
+     * @return 内容访问控制配置
+     */
+    private ContentAccessConfig buildContentAccessConfig(PostContentEntity postContentEntity) {
+        if (postContentEntity == null || postContentEntity.getContentAccessConfigJson() == null || postContentEntity.getContentAccessConfigJson().isBlank()) {
+            return createDefaultContentAccessConfig();
+        }
+
+        try {
+            ContentAccessConfig contentAccessConfig = siteConfigService.getObjectMapper()
+                    .readValue(postContentEntity.getContentAccessConfigJson(), ContentAccessConfig.class);
+            return normalizeContentAccessConfig(contentAccessConfig);
+        } catch (Exception exception) {
+            return createDefaultContentAccessConfig();
+        }
+    }
+
+    /**
+     * 构建前台内容访问状态。
+     * 作用：根据当前登录态、文章访问规则和站点级公众号配置，生成详情页可直接消费的状态对象。
+     *
+     * @param contentAccessConfig 内容访问配置
+     * @return 当前访客内容访问状态
+     */
+    private SiteContentAccessStateResponse buildContentAccessState(Long postId, ContentAccessConfig contentAccessConfig, String visitorIdHash) {
+        SiteContentAccessStateResponse response = new SiteContentAccessStateResponse();
+        boolean loggedIn = isCurrentUserLoggedIn();
+        JsonNode contentAccessConfigNode = siteConfigService.readJsonNode(readSiteContentAccessConfigJson());
+        ContentAccessArticleConfig articleAccess = contentAccessConfig.getArticleAccess();
+        ContentAccessTailHiddenConfig tailHiddenAccess = contentAccessConfig.getTailHiddenAccess();
+        Long currentUserId = getCurrentUserId();
+        List<String> articlePendingRules = resolvePendingRuleTypes("ARTICLE", postId, articleAccess.getEnabled(), articleAccess.getRuleTypes(), loggedIn, currentUserId, visitorIdHash);
+        List<String> tailPendingRules = resolvePendingRuleTypes("TAIL_HIDDEN", postId, tailHiddenAccess.getEnabled(), tailHiddenAccess.getRuleTypes(), loggedIn, currentUserId, visitorIdHash);
+
+        response.setLoggedIn(loggedIn);
+        response.setArticleAccessRuleTypes(articleAccess.getRuleTypes());
+        response.setArticleAccessPendingRuleTypes(articlePendingRules);
+        response.setTailHiddenAccessRuleTypes(tailHiddenAccess.getRuleTypes());
+        response.setTailHiddenAccessPendingRuleTypes(tailPendingRules);
+        response.setWechatAccessCodeEnabled(readBoolean(contentAccessConfigNode, "wechatAccessCodeEnabled"));
+        response.setWechatAccessCodeHint(readText(contentAccessConfigNode, "wechatAccessCodeHint", "关注公众号后输入访问验证码"));
+        response.setWechatQrCodeUrl(readText(contentAccessConfigNode, "wechatQrCodeUrl", ""));
+        response.setArticleAccessAllowed(articlePendingRules.isEmpty());
+        response.setTailHiddenAccessAllowed(tailPendingRules.isEmpty());
+        return response;
+    }
+
+    /**
+     * 解析当前仍未满足的规则列表。
+     * 作用：按“多选规则全部满足才通过”的语义计算尚未满足的规则，供前台渲染解锁提示与动作入口。
+     *
+     * @param scopeType 授权范围类型
+     * @param scopeId 授权范围 ID
+     * @param enabled 是否启用规则
+     * @param ruleTypes 规则列表
+     * @param loggedIn 是否已登录
+     * @param userId 用户 ID
+     * @param visitorIdHash 访客标识哈希
+     * @return 未满足的规则列表
+     */
+    private List<String> resolvePendingRuleTypes(String scopeType,
+                                                 Long scopeId,
+                                                 Boolean enabled,
+                                                 List<String> ruleTypes,
+                                                 boolean loggedIn,
+                                                 Long userId,
+                                                 String visitorIdHash) {
+        if (!Boolean.TRUE.equals(enabled) || ruleTypes == null || ruleTypes.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> pendingRuleTypes = new ArrayList<>();
+        for (String ruleType : ruleTypes) {
+            if ("LOGIN".equals(ruleType) && !loggedIn) {
+                pendingRuleTypes.add(ruleType);
+                continue;
+            }
+            if (("WECHAT_ACCESS_CODE".equals(ruleType) || "ACCESS_CODE".equals(ruleType))
+                    && !contentAccessGrantService.hasValidGrant(scopeType, scopeId, ruleType, userId, visitorIdHash)) {
+                pendingRuleTypes.add(ruleType);
+            }
+        }
+        return pendingRuleTypes;
+    }
+
+    /**
+     * 校验指定规则是否允许在当前范围下使用。
+     *
+     * @param scopeType 范围类型
+     * @param ruleType 规则类型
+     * @param contentAccessConfig 内容访问配置
+     */
+    private void validateRuleAllowed(String scopeType, String ruleType, ContentAccessConfig contentAccessConfig) {
+        List<String> supportedRuleTypes = "ARTICLE".equals(scopeType)
+                ? contentAccessConfig.getArticleAccess().getRuleTypes()
+                : contentAccessConfig.getTailHiddenAccess().getRuleTypes();
+
+        if (!supportedRuleTypes.contains(ruleType)) {
+            throw new BizException(ResultCode.BAD_REQUEST, "当前内容未启用该访问规则");
+        }
+
+        if ("TAIL_HIDDEN".equals(scopeType) && "ACCESS_CODE".equals(ruleType)) {
+            throw new BizException(ResultCode.BAD_REQUEST, "尾部隐藏内容暂不支持文章访问码");
+        }
+    }
+
+    /**
+     * 校验访问码是否正确。
+     *
+     * @param scopeType 范围类型
+     * @param ruleType 规则类型
+     * @param accessCode 用户提交的访问码
+     * @param contentAccessConfig 内容访问配置
+     */
+    private void validateAccessCode(String scopeType, String ruleType, String accessCode, ContentAccessConfig contentAccessConfig) {
+        if ("ACCESS_CODE".equals(ruleType)) {
+            String expectedCode = defaultString(contentAccessConfig.getArticleAccess().getArticleAccessCode()).trim();
+            if (expectedCode.isEmpty() || !expectedCode.equals(accessCode)) {
+                throw new BizException(ResultCode.BAD_REQUEST, "文章访问码不正确");
+            }
+            return;
+        }
+
+        if ("WECHAT_ACCESS_CODE".equals(ruleType)) {
+            JsonNode contentAccessNode = siteConfigService.getConfigJsonNodeByKey("site.content-access");
+            boolean enabled = readBoolean(contentAccessNode, "wechatAccessCodeEnabled");
+            String expectedCode = readText(contentAccessNode, "wechatAccessCode", "");
+            if (!enabled || expectedCode.isBlank()) {
+                throw new BizException(ResultCode.BAD_REQUEST, "站点未启用公众号验证码");
+            }
+            if (!expectedCode.equals(accessCode)) {
+                throw new BizException(ResultCode.BAD_REQUEST, "公众号验证码不正确");
+            }
+            return;
+        }
+
+        throw new BizException(ResultCode.BAD_REQUEST, "不支持的访问规则");
+    }
+
+    /**
+     * 读取尾部隐藏内容标题。
+     * 作用：前台详情页在需要展示隐藏内容模块时，优先复用配置中的业务标题。
+     *
+     * @param contentAccessConfig 内容访问配置
+     * @return 模块标题
+     */
+    private String resolveTailHiddenTitle(ContentAccessConfig contentAccessConfig) {
+        String title = contentAccessConfig.getTailHiddenAccess().getTitle();
+        return title == null || title.isBlank() ? "隐藏内容" : title;
+    }
+
+    /**
+     * 创建默认内容访问控制配置。
+     * 作用：当正文尚未配置访问控制时，给前台返回稳定的默认对象结构。
+     *
+     * @return 默认内容访问控制配置
+     */
+    private ContentAccessConfig createDefaultContentAccessConfig() {
+        return normalizeContentAccessConfig(new ContentAccessConfig());
+    }
+
+    /**
+     * 规范化内容访问控制配置。
+     *
+     * @param contentAccessConfig 原始配置
+     * @return 规范化后的配置
+     */
+    private ContentAccessConfig normalizeContentAccessConfig(ContentAccessConfig contentAccessConfig) {
+        ContentAccessConfig normalizedConfig = contentAccessConfig == null ? new ContentAccessConfig() : contentAccessConfig;
+        if (normalizedConfig.getVersion() == null || normalizedConfig.getVersion() < 1) {
+            normalizedConfig.setVersion(1);
+        }
+        if (normalizedConfig.getArticleAccess() == null) {
+            normalizedConfig.setArticleAccess(new ContentAccessArticleConfig());
+        }
+        if (normalizedConfig.getTailHiddenAccess() == null) {
+            normalizedConfig.setTailHiddenAccess(new ContentAccessTailHiddenConfig());
+        }
+        normalizedConfig.getArticleAccess().setEnabled(Boolean.TRUE.equals(normalizedConfig.getArticleAccess().getEnabled()));
+        normalizedConfig.getArticleAccess().setRuleTypes(normalizeRuleTypes(normalizedConfig.getArticleAccess().getRuleTypes()));
+        normalizedConfig.getTailHiddenAccess().setEnabled(Boolean.TRUE.equals(normalizedConfig.getTailHiddenAccess().getEnabled()));
+        normalizedConfig.getTailHiddenAccess().setRuleTypes(normalizeRuleTypes(normalizedConfig.getTailHiddenAccess().getRuleTypes()));
+        return normalizedConfig;
+    }
+
+    /**
+     * 规范化规则类型列表。
+     *
+     * @param ruleTypes 原始规则列表
+     * @return 规范化后的规则列表
+     */
+    private List<String> normalizeRuleTypes(List<String> ruleTypes) {
+        if (ruleTypes == null || ruleTypes.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> normalizedTypes = new ArrayList<>();
+        for (String ruleType : ruleTypes) {
+            if (ruleType != null && !ruleType.isBlank() && !normalizedTypes.contains(ruleType.trim())) {
+                normalizedTypes.add(ruleType.trim());
+            }
+        }
+        return normalizedTypes;
+    }
+
+    /**
+     * 判断当前访问者是否已登录。
+     * 作用：为前台详情页的最小访问裁决提供登录态依据，避免依赖前端传参。
+     *
+     * @return 是否已登录
+     */
+    private boolean isCurrentUserLoggedIn() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.getPrincipal() instanceof LoginUser;
+    }
+
+    /**
+     * 获取当前登录用户 ID。
+     *
+     * @return 用户 ID，未登录时返回 null
+     */
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof LoginUser loginUser)) {
+            return null;
+        }
+        return loginUser.getUserId();
+    }
+
+    /**
+     * 读取站点级内容访问配置 JSON。
+     *
+     * @return 配置 JSON
+     */
+    private String readSiteContentAccessConfigJson() {
+        return siteConfigService.getConfigJsonTextByKey("site.content-access", "{}");
+    }
+
+    /**
+     * 从 JSON 节点中读取布尔值。
+     *
+     * @param jsonNode JSON 节点
+     * @param fieldName 字段名
+     * @return 布尔值
+     */
+    private boolean readBoolean(JsonNode jsonNode, String fieldName) {
+        return jsonNode != null && jsonNode.path(fieldName).asBoolean(false);
+    }
+
+    /**
+     * 从 JSON 节点中读取文本值。
+     *
+     * @param jsonNode JSON 节点
+     * @param fieldName 字段名
+     * @param defaultValue 默认值
+     * @return 文本值
+     */
+    private String readText(JsonNode jsonNode, String fieldName, String defaultValue) {
+        if (jsonNode == null || jsonNode.path(fieldName).isMissingNode() || jsonNode.path(fieldName).isNull()) {
+            return defaultValue;
+        }
+        String value = jsonNode.path(fieldName).asText(defaultValue);
+        return value == null || value.isBlank() ? defaultValue : value;
     }
 
     /**

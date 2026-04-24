@@ -1,3 +1,5 @@
+import type { ContentAccessConfig } from './content-access'
+
 /**
  * 后台文章条目类型。
  * 作用：统一描述后台文章管理页中单篇文章的数据结构，供列表和表单复用。
@@ -28,6 +30,8 @@ export interface AdminPostItem {
   readingMinutes: number
   wordCount: number
   contentMarkdown: string
+  contentAccessConfig: ContentAccessConfig
+  tailHiddenContentMarkdown: string | null
   updatedAt: string
   publishedAt: string | null
 }
@@ -94,4 +98,7 @@ export interface AdminPostForm {
   contentHtml?: string
   contentToc?: ArticleTocItem[]
   contentTocJson?: string
+  contentAccessConfig: ContentAccessConfig
+  tailHiddenContentMarkdown: string
+  tailHiddenContentHtml?: string
 }

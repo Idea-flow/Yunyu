@@ -1,5 +1,6 @@
 package com.ideaflow.yunyu.module.post.vo;
 
+import com.ideaflow.yunyu.module.contentaccess.model.ContentAccessConfig;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.Data;
@@ -36,6 +37,8 @@ public class AdminPostItemResponse {
     private Integer readingMinutes;
     private Integer wordCount;
     private String contentMarkdown;
+    private ContentAccessConfig contentAccessConfig;
+    private String tailHiddenContentMarkdown;
     private LocalDateTime updatedAt;
     private LocalDateTime publishedAt;
 }

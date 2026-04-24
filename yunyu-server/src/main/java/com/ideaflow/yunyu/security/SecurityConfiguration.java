@@ -59,6 +59,7 @@ public class SecurityConfiguration {
                         PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/auth/login"),
                         PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/auth/register"),
                         PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/site/friend-links/applications"),
+                        PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/site/posts/{slug}/access/verify"),
                         PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/api/site/**"),
                         PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/api/site/posts/{slug}/comments"),
                         PathPatternRequestMatcher.pathPattern("/v3/api-docs/**"),

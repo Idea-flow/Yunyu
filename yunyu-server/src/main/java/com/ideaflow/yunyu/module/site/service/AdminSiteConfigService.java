@@ -19,6 +19,7 @@ public class AdminSiteConfigService {
     private static final String SITE_BASE_KEY = "site.base";
     private static final String SITE_SEO_KEY = "site.seo";
     private static final String SITE_THEME_KEY = "site.theme";
+    private static final String SITE_CONTENT_ACCESS_KEY = "site.content-access";
 
     private final SiteConfigService siteConfigService;
     private final ObjectMapper objectMapper;
@@ -44,10 +45,12 @@ public class AdminSiteConfigService {
         SiteConfigEntity baseConfig = findConfigByKey(SITE_BASE_KEY);
         SiteConfigEntity seoConfig = findConfigByKey(SITE_SEO_KEY);
         SiteConfigEntity themeConfig = findConfigByKey(SITE_THEME_KEY);
+        SiteConfigEntity contentAccessConfig = findConfigByKey(SITE_CONTENT_ACCESS_KEY);
 
         JsonNode baseNode = readJsonNode(baseConfig == null ? null : baseConfig.getConfigJson());
         JsonNode seoNode = readJsonNode(seoConfig == null ? null : seoConfig.getConfigJson());
         JsonNode themeNode = readJsonNode(themeConfig == null ? null : themeConfig.getConfigJson());
+        JsonNode contentAccessNode = readJsonNode(contentAccessConfig == null ? null : contentAccessConfig.getConfigJson());
 
         AdminSiteConfigResponse response = new AdminSiteConfigResponse();
         response.setSiteName(readJsonText(baseNode, "siteName", "云屿"));
@@ -59,6 +62,10 @@ public class AdminSiteConfigService {
         response.setDefaultDescription(readJsonText(seoNode, "defaultDescription", response.getSiteSubTitle()));
         response.setPrimaryColor(readJsonText(themeNode, "primaryColor", "#38BDF8"));
         response.setSecondaryColor(readJsonText(themeNode, "secondaryColor", "#FB923C"));
+        response.setWechatAccessCodeEnabled(readJsonBoolean(contentAccessNode, "wechatAccessCodeEnabled", false));
+        response.setWechatAccessCode(readJsonText(contentAccessNode, "wechatAccessCode", ""));
+        response.setWechatAccessCodeHint(readJsonText(contentAccessNode, "wechatAccessCodeHint", "关注公众号后输入访问验证码"));
+        response.setWechatQrCodeUrl(readJsonText(contentAccessNode, "wechatQrCodeUrl", ""));
         return response;
     }
 
@@ -74,6 +81,7 @@ public class AdminSiteConfigService {
         saveConfig(SITE_BASE_KEY, "站点基础配置", buildBaseConfigJson(request), "站点名称、副标题、页脚与图标等基础展示信息");
         saveConfig(SITE_SEO_KEY, "站点 SEO 配置", buildSeoConfigJson(request), "站点默认标题、描述与分享图配置");
         saveConfig(SITE_THEME_KEY, "站点主题配置", buildThemeConfigJson(request), "站点主题色与首页风格配置");
+        saveConfig(SITE_CONTENT_ACCESS_KEY, "站点内容访问配置", buildContentAccessConfigJson(request), "站点级公众号验证码与内容访问控制相关配置");
         return getSiteConfig();
     }
 
@@ -116,6 +124,21 @@ public class AdminSiteConfigService {
         ObjectNode jsonNode = objectMapper.createObjectNode();
         jsonNode.put("primaryColor", normalizeText(request.getPrimaryColor()));
         jsonNode.put("secondaryColor", normalizeText(request.getSecondaryColor()));
+        return writeJson(jsonNode);
+    }
+
+    /**
+     * 构建站点内容访问配置 JSON。
+     *
+     * @param request 更新请求
+     * @return 内容访问配置 JSON 字符串
+     */
+    private String buildContentAccessConfigJson(AdminSiteConfigUpdateRequest request) {
+        ObjectNode jsonNode = objectMapper.createObjectNode();
+        jsonNode.put("wechatAccessCodeEnabled", Boolean.TRUE.equals(request.getWechatAccessCodeEnabled()));
+        jsonNode.put("wechatAccessCode", normalizeText(request.getWechatAccessCode()));
+        jsonNode.put("wechatAccessCodeHint", normalizeText(request.getWechatAccessCodeHint()));
+        jsonNode.put("wechatQrCodeUrl", normalizeText(request.getWechatQrCodeUrl()));
         return writeJson(jsonNode);
     }
 
@@ -166,6 +189,21 @@ public class AdminSiteConfigService {
 
         String value = jsonNode.path(fieldName).asText(defaultValue);
         return value == null || value.isBlank() ? defaultValue : value;
+    }
+
+    /**
+     * 从 JSON 节点中读取布尔值。
+     *
+     * @param jsonNode JSON 节点
+     * @param fieldName 字段名
+     * @param defaultValue 默认值
+     * @return 布尔值
+     */
+    private Boolean readJsonBoolean(JsonNode jsonNode, String fieldName, boolean defaultValue) {
+        if (jsonNode == null || jsonNode.get(fieldName) == null || jsonNode.get(fieldName).isNull()) {
+            return defaultValue;
+        }
+        return jsonNode.path(fieldName).asBoolean(defaultValue);
     }
 
     /**

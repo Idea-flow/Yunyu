@@ -131,6 +131,9 @@ CREATE TABLE IF NOT EXISTS `post_content` (
   `content_html` LONGTEXT NOT NULL COMMENT 'HTML正文',
   `content_plain_text` LONGTEXT DEFAULT NULL COMMENT '纯文本内容',
   `content_toc_json` JSON DEFAULT NULL COMMENT '目录JSON',
+  `content_access_config_json` JSON DEFAULT NULL COMMENT '统一内容访问控制配置',
+  `tail_hidden_content_markdown` MEDIUMTEXT DEFAULT NULL COMMENT '尾部隐藏内容 Markdown',
+  `tail_hidden_content_html` MEDIUMTEXT DEFAULT NULL COMMENT '尾部隐藏内容 HTML',
   `video_url` VARCHAR(500) DEFAULT NULL COMMENT '视频直链地址',
   `reading_time` INT NOT NULL DEFAULT 0 COMMENT '预计阅读时长，单位分钟',
   `created_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -147,6 +150,25 @@ CREATE TABLE IF NOT EXISTS `post_tag` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_post_tag_post_id_tag_id` (`post_id`, `tag_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='文章标签关联表';
+
+CREATE TABLE IF NOT EXISTS `content_access_grant` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '授权ID',
+  `scope_type` VARCHAR(32) NOT NULL COMMENT '授权范围类型：ARTICLE / TAIL_HIDDEN',
+  `scope_id` BIGINT UNSIGNED NOT NULL COMMENT '授权范围ID，通常是文章ID',
+  `rule_type` VARCHAR(64) NOT NULL COMMENT '规则类型：LOGIN / ACCESS_CODE / WECHAT_ACCESS_CODE',
+  `grant_target_type` VARCHAR(32) NOT NULL COMMENT '授权主体类型：USER / VISITOR',
+  `user_id` BIGINT UNSIGNED DEFAULT NULL COMMENT '用户ID',
+  `visitor_id_hash` VARCHAR(128) DEFAULT NULL COMMENT '访客标识哈希值',
+  `granted_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '授权时间',
+  `expire_at` DATETIME NOT NULL COMMENT '过期时间',
+  `created_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_scope_type_scope_id_rule_type` (`scope_type`, `scope_id`, `rule_type`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_visitor_id_hash` (`visitor_id_hash`),
+  KEY `idx_expire_at` (`expire_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='内容访问授权缓存表';
 
 CREATE TABLE IF NOT EXISTS `topic_post` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '专题文章关联ID',
@@ -241,6 +263,7 @@ VALUES
   ('site.base', '站点基础配置', JSON_OBJECT('siteName', '', 'siteSubTitle', '', 'logoUrl', '', 'faviconUrl', '', 'footerText', ''), '初始化占位配置'),
   ('site.seo', '站点SEO配置', JSON_OBJECT('defaultTitle', '', 'defaultDescription', ''), '初始化占位配置'),
   ('site.theme', '站点主题配置', JSON_OBJECT('primaryColor', '', 'secondaryColor', ''), '初始化占位配置'),
+  ('site.content-access', '站点内容访问配置', JSON_OBJECT('wechatAccessCodeEnabled', false, 'wechatAccessCode', '', 'wechatAccessCodeHint', '关注公众号后输入访问验证码', 'wechatQrCodeUrl', ''), '初始化站点内容访问配置'),
   ('homepage_config', '首页配置', JSON_OBJECT('heroEnabled', true, 'heroLayout', 'brand', 'heroBackgroundMode', 'gradient-grid', 'heroEyebrow', 'Yunyu / 云屿', 'heroTitle', '把热爱、写作与长期观察，整理成一个可以慢慢逛的内容站', 'heroSubtitle', '记录技术、审美、创作与阅读的个人博客与内容网站', 'heroPrimaryButtonText', '查看文章', 'heroPrimaryButtonLink', '/posts', 'heroSecondaryButtonText', '进入专题', 'heroSecondaryButtonLink', '/topics', 'heroVisualPostId', NULL, 'heroVisualClickable', true, 'heroKeywords', JSON_ARRAY('写作', '技术', '审美', '长期主义'), 'showHeroKeywords', true, 'showHeroStats', true, 'heroStats', JSON_ARRAY(), 'showFeaturedSection', true, 'featuredSectionTitle', '主打内容', 'showLatestSection', true, 'latestSectionTitle', '最新文章', 'showCategorySection', true, 'categorySectionTitle', '分类', 'showTopicSection', true, 'topicSectionTitle', '专题'), '首页无封面首屏配置'),
   ('site.feature', '站点功能开关', JSON_OBJECT('allowRegister', false, 'allowComment', true, 'enableSearch', false, 'enableSubscribe', false), '初始化占位配置')
 ON DUPLICATE KEY UPDATE

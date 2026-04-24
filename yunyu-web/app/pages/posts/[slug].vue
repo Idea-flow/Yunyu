@@ -3,6 +3,7 @@ import { nextTick, onBeforeUnmount, onMounted } from 'vue'
 import QRCode from 'qrcode'
 import { formatChineseDate } from '~/utils/date'
 import type { ArticleTocItem } from '../../types/post'
+import type { ContentAccessRuleType } from '../../types/content-access'
 import ArticleContentRenderer from '../../components/content/ArticleContentRenderer.vue'
 import ArticleCommentPanel from '../../components/content/ArticleCommentPanel.vue'
 import ArticleTocTree from '../../components/content/ArticleTocTree.vue'
@@ -22,6 +23,7 @@ type ArticleCodeTheme = 'github-light' | 'github-dark'
  */
 const route = useRoute()
 const siteContent = useSiteContent()
+const auth = useAuth()
 const colorMode = useColorMode()
 const yunyuToast = useYunyuToast()
 const activeTocId = ref('')
@@ -33,7 +35,12 @@ const isTocManualScrolling = ref(false)
 const isSharingArticle = ref(false)
 const isSharePanelOpen = ref(false)
 const isWechatShareModalOpen = ref(false)
+const isAccessModalOpen = ref(false)
 const wechatShareQrCodeDataUrl = ref('')
+const activeAccessScope = ref<'ARTICLE' | 'TAIL_HIDDEN'>('ARTICLE')
+const articleAccessCodeInput = ref('')
+const wechatAccessCodeInput = ref('')
+const isAccessSubmitting = ref(false)
 const articleContentRef = ref<HTMLElement | null>(null)
 const tocScrollContainerRef = ref<HTMLElement | null>(null)
 const hasReportedViewCount = ref(false)
@@ -48,7 +55,7 @@ const articleContentThemeOptions: Array<{ value: ArticleContentTheme, label: str
 ]
 const selectedArticleContentTheme = ref<ArticleContentTheme>('editorial')
 
-const { data, error } = await useAsyncData(`site-post-${route.params.slug}`, async () => {
+const { data, error, refresh } = await useAsyncData(`site-post-${route.params.slug}`, async () => {
   return await siteContent.getPostDetail(String(route.params.slug || ''))
 })
 
@@ -60,6 +67,106 @@ if (error.value) {
 }
 
 const post = computed(() => data.value)
+const isLoggedIn = computed(() => Boolean(auth.currentUser.value || post.value?.contentAccessState?.loggedIn))
+
+/**
+ * 计算文章正文是否已解锁。
+ * 作用：统一控制正文、评论区以及整篇文章解锁引导的显示逻辑。
+ */
+const articleAccessAllowed = computed(() => Boolean(post.value?.contentAccessState?.articleAccessAllowed))
+
+/**
+ * 计算文章级未完成规则列表。
+ * 作用：为整篇文章未解锁时的按钮、提示和弹窗入口提供统一数据源。
+ */
+const articlePendingRuleTypes = computed<ContentAccessRuleType[]>(() => {
+  return (post.value?.contentAccessState?.articleAccessPendingRuleTypes || []) as ContentAccessRuleType[]
+})
+
+/**
+ * 计算尾部隐藏内容未完成规则列表。
+ * 作用：为尾部隐藏内容模块的解锁提示和操作入口提供统一规则集合。
+ */
+const tailHiddenPendingRuleTypes = computed<ContentAccessRuleType[]>(() => {
+  return (post.value?.contentAccessState?.tailHiddenAccessPendingRuleTypes || []) as ContentAccessRuleType[]
+})
+
+/**
+ * 获取规则优先级。
+ * 作用：让详情页按“先登录，再其他校验”的节奏逐步提示，不一次抛出全部限制条件。
+ *
+ * @param ruleType 规则类型
+ * @returns 优先级数值，数值越小优先级越高
+ */
+function getRulePriority(ruleType: ContentAccessRuleType) {
+  if (ruleType === 'LOGIN') {
+    return 1
+  }
+  if (ruleType === 'ACCESS_CODE') {
+    return 2
+  }
+  if (ruleType === 'WECHAT_ACCESS_CODE') {
+    return 3
+  }
+  return 99
+}
+
+/**
+ * 获取当前需要先处理的规则。
+ * 作用：从未完成规则中挑出优先级最高的一条，作为当前界面唯一提示步骤。
+ *
+ * @param ruleTypes 未完成规则列表
+ * @returns 当前优先规则
+ */
+function getPrimaryPendingRule(ruleTypes: ContentAccessRuleType[]) {
+  if (!ruleTypes.length) {
+    return null
+  }
+
+  return [...ruleTypes].sort((first, second) => getRulePriority(first) - getRulePriority(second))[0] || null
+}
+
+/**
+ * 计算文章当前主规则。
+ * 作用：整篇文章访问控制只展示当前最该完成的一步。
+ */
+const articlePrimaryPendingRule = computed(() => getPrimaryPendingRule(articlePendingRuleTypes.value))
+
+/**
+ * 计算尾部隐藏内容当前主规则。
+ * 作用：尾部隐藏内容同样按单步解锁方式展示。
+ */
+const tailHiddenPrimaryPendingRule = computed(() => getPrimaryPendingRule(tailHiddenPendingRuleTypes.value))
+
+/**
+ * 判断文章当前是否优先要求登录。
+ * 作用：只在当前主规则是登录时展示登录按钮。
+ */
+const articleRequiresLogin = computed(() => articlePrimaryPendingRule.value === 'LOGIN')
+
+/**
+ * 判断文章当前是否优先要求文章访问码。
+ * 作用：只在当前主规则是文章访问码时展示访问码入口。
+ */
+const articleRequiresAccessCode = computed(() => articlePrimaryPendingRule.value === 'ACCESS_CODE')
+
+/**
+ * 判断文章当前是否优先要求公众号验证码。
+ * 作用：只在当前主规则是公众号验证码时展示公众号校验入口。
+ */
+const articleRequiresWechatCode = computed(() => articlePrimaryPendingRule.value === 'WECHAT_ACCESS_CODE')
+
+/**
+ * 判断尾部隐藏内容当前是否优先要求登录。
+ * 作用：只在当前主规则是登录时展示登录按钮。
+ */
+const tailHiddenRequiresLogin = computed(() => tailHiddenPrimaryPendingRule.value === 'LOGIN')
+
+/**
+ * 判断尾部隐藏内容当前是否优先要求公众号验证码。
+ * 作用：只在当前主规则是公众号验证码时展示校验入口。
+ */
+const tailHiddenRequiresWechatCode = computed(() => tailHiddenPrimaryPendingRule.value === 'WECHAT_ACCESS_CODE')
 
 /**
  * 判断文章详情是否存在视频。
@@ -84,6 +191,66 @@ const relatedCompactPosts = computed(() => post.value?.relatedPosts?.slice(0, 2)
  * 作用：当后端未返回相关推荐时隐藏“继续阅读”区块，避免正文后出现空白导览容器。
  */
 const hasRelatedPosts = computed(() => (post.value?.relatedPosts?.length || 0) > 0)
+const hasTailHiddenBlock = computed(() => Boolean(post.value?.contentAccessConfig?.tailHiddenAccess?.enabled))
+const tailHiddenAccessAllowed = computed(() => Boolean(post.value?.contentAccessState?.tailHiddenAccessAllowed))
+const tailHiddenRuleLabels = computed(() => {
+  const ruleTypes = post.value?.contentAccessState?.tailHiddenAccessRuleTypes || []
+  return ruleTypes.map((ruleType) => {
+    if (ruleType === 'LOGIN') {
+      return '登录后可见'
+    }
+    if (ruleType === 'WECHAT_ACCESS_CODE') {
+      return '公众号验证码'
+    }
+    if (ruleType === 'ACCESS_CODE') {
+      return '文章访问码'
+    }
+    return ruleType
+  })
+})
+
+/**
+ * 计算当前弹窗对应的待校验规则列表。
+ * 作用：在同一个弹窗中同时支持文章级与尾部隐藏内容两类场景，避免重复维护两套界面。
+ */
+const activeAccessPendingRuleTypes = computed<ContentAccessRuleType[]>(() => {
+  const activeRule = activeAccessScope.value === 'ARTICLE'
+    ? articlePrimaryPendingRule.value
+    : tailHiddenPrimaryPendingRule.value
+  return activeRule ? [activeRule] : []
+})
+
+/**
+ * 计算当前弹窗标题。
+ * 作用：根据当前解锁范围切换弹窗文案，让用户更清楚自己正在解锁哪一层内容。
+ */
+const accessModalTitle = computed(() => {
+  return activeAccessScope.value === 'ARTICLE' ? '解锁文章内容' : `解锁${post.value?.tailHiddenTitle || '隐藏内容'}`
+})
+
+/**
+ * 判断弹窗内是否需要文章访问码输入框。
+ * 作用：仅在文章级场景且待校验规则包含 `ACCESS_CODE` 时展示对应输入区域。
+ */
+const accessModalRequiresArticleCode = computed(() => {
+  return activeAccessPendingRuleTypes.value.includes('ACCESS_CODE')
+})
+
+/**
+ * 判断弹窗内是否需要公众号验证码输入框。
+ * 作用：仅在当前范围仍待校验公众号验证码时展示对应输入区域。
+ */
+const accessModalRequiresWechatCode = computed(() => {
+  return activeAccessPendingRuleTypes.value.includes('WECHAT_ACCESS_CODE')
+})
+
+/**
+ * 计算文章访问码提示文案。
+ * 作用：在文章启用了访问码规则时，把后台配置的提示语展示给读者。
+ */
+const articleAccessCodeHint = computed(() => {
+  return post.value?.contentAccessConfig?.articleAccess?.articleAccessCodeHint || '请输入文章访问验证码'
+})
 
 /**
  * 计算当前文章分享标题。
@@ -116,6 +283,46 @@ function extractHeadingText(html: string) {
     .replace(/&#39;/gi, '\'')
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+/**
+ * 转换访问规则展示文案。
+ * 作用：把服务端规则标识映射为前台可直接展示的中文说明。
+ *
+ * @param ruleType 规则类型
+ * @returns 中文标签
+ */
+function getRuleLabel(ruleType: ContentAccessRuleType) {
+  if (ruleType === 'LOGIN') {
+    return '登录后可见'
+  }
+  if (ruleType === 'WECHAT_ACCESS_CODE') {
+    return '公众号验证码'
+  }
+  if (ruleType === 'ACCESS_CODE') {
+    return '文章访问码'
+  }
+  return ruleType
+}
+
+/**
+ * 获取当前主规则的简短说明。
+ * 作用：把解锁提示压缩成一句话，降低页面噪音。
+ *
+ * @param ruleType 规则类型
+ * @returns 简短提示文案
+ */
+function getRuleHint(ruleType: ContentAccessRuleType | null) {
+  if (ruleType === 'LOGIN') {
+    return '请先登录'
+  }
+  if (ruleType === 'ACCESS_CODE') {
+    return articleAccessCodeHint.value
+  }
+  if (ruleType === 'WECHAT_ACCESS_CODE') {
+    return post.value?.contentAccessState?.wechatAccessCodeHint || '请输入公众号验证码'
+  }
+  return '当前内容暂不可见'
 }
 
 /**
@@ -294,6 +501,65 @@ function openMobileTocDrawer() {
   }
 
   mobileTocOpen.value = true
+}
+
+/**
+ * 跳转到登录页继续解锁。
+ * 作用：保留当前文章地址作为回跳参数，让用户登录后能直接回到当前详情页。
+ */
+async function goToLoginForAccess() {
+  await navigateTo(`/login?redirect=${encodeURIComponent(route.fullPath)}`)
+}
+
+/**
+ * 打开内容访问校验弹窗。
+ * 作用：根据当前解锁范围切换弹窗上下文，复用同一套验证码输入交互。
+ *
+ * @param scopeType 解锁范围
+ */
+function openAccessModal(scopeType: 'ARTICLE' | 'TAIL_HIDDEN') {
+  activeAccessScope.value = scopeType
+  articleAccessCodeInput.value = ''
+  wechatAccessCodeInput.value = ''
+  isAccessModalOpen.value = true
+}
+
+/**
+ * 提交内容访问校验。
+ * 作用：向后端提交文章访问码或公众号验证码，校验成功后刷新详情页状态并关闭弹窗。
+ *
+ * @param ruleType 规则类型
+ */
+async function submitAccessVerification(ruleType: 'ACCESS_CODE' | 'WECHAT_ACCESS_CODE') {
+  if (!post.value?.slug || isAccessSubmitting.value) {
+    return
+  }
+
+  const accessCode = (ruleType === 'ACCESS_CODE' ? articleAccessCodeInput.value : wechatAccessCodeInput.value).trim()
+
+  if (!accessCode) {
+    yunyuToast.warning(ruleType === 'ACCESS_CODE' ? '请输入文章访问验证码' : '请输入公众号验证码')
+    return
+  }
+
+  isAccessSubmitting.value = true
+
+  try {
+    await siteContent.verifyPostAccess(post.value.slug, {
+      scopeType: activeAccessScope.value,
+      ruleType,
+      accessCode
+    })
+    await refresh()
+    isAccessModalOpen.value = false
+    articleAccessCodeInput.value = ''
+    wechatAccessCodeInput.value = ''
+    yunyuToast.success('校验通过，内容已解锁')
+  } catch (error: any) {
+    yunyuToast.error('校验失败', error?.message || '访问验证码校验失败，请稍后重试。')
+  } finally {
+    isAccessSubmitting.value = false
+  }
 }
 
 /**
@@ -813,6 +1079,13 @@ onMounted(async () => {
     return
   }
 
+  auth.hydratePersistedUser()
+  const previousLoggedIn = Boolean(post.value?.contentAccessState?.loggedIn)
+  const currentUser = await auth.fetchCurrentUser()
+  if (Boolean(currentUser) !== previousLoggedIn) {
+    await refresh()
+  }
+
   await nextTick()
   hydrateArticleThemePreference()
   observeArticleHeadings()
@@ -1033,20 +1306,146 @@ onBeforeUnmount(() => {
             </div>
           </section>
 
-          <ArticleContentRenderer
-            :html="post.contentHtml"
-            :content-theme="articleContentTheme"
-            :code-theme="articleCodeTheme"
-            :code-default-expanded="false"
-            container-class="min-h-0 border-0 bg-transparent p-0 shadow-none"
-            body-class="px-3.5 sm:px-6 lg:px-12"
-          />
+          <template v-if="articleAccessAllowed">
+            <ArticleContentRenderer
+              :html="post.contentHtml"
+              :content-theme="articleContentTheme"
+              :code-theme="articleCodeTheme"
+              :code-default-expanded="false"
+              container-class="min-h-0 border-0 bg-transparent p-0 shadow-none"
+              body-class="px-3.5 sm:px-6 lg:px-12"
+            />
 
-          <ArticleCommentPanel
-            :post-slug="post.slug"
-            :allow-comment="post.allowComment"
-            :initial-comment-count="post.commentCount"
-          />
+            <ArticleCommentPanel
+              :post-slug="post.slug"
+              :allow-comment="post.allowComment"
+              :initial-comment-count="post.commentCount"
+            />
+          </template>
+
+          <section
+            v-else
+            class="overflow-hidden rounded-[28px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.94))] p-6 shadow-[0_22px_52px_-36px_rgba(15,23,42,0.18)] dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.84),rgba(2,6,23,0.92))]"
+          >
+            <div class="border-b border-slate-200/70 pb-5 dark:border-white/10">
+              <p class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-sky-600 dark:text-sky-300">
+                内容访问控制
+              </p>
+              <h2 class="mt-3 text-[1.24rem] font-semibold tracking-[-0.03em] [font-family:var(--font-display)] text-slate-950 dark:text-slate-50">
+                当前文章暂不可见
+              </h2>
+              <p class="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
+                {{ getRuleHint(articlePrimaryPendingRule) }}
+              </p>
+            </div>
+
+            <div class="grid gap-4 pt-6 lg:grid-cols-[minmax(0,1fr)_19rem]">
+              <div class="rounded-[20px] border border-slate-200/75 bg-white/88 p-5 dark:border-white/10 dark:bg-white/[0.03]">
+                <div class="flex flex-wrap gap-3">
+                  <button
+                    v-if="articleRequiresLogin"
+                    type="button"
+                    class="inline-flex min-h-11 items-center justify-center rounded-full bg-slate-950 px-5 text-sm font-medium text-white transition hover:bg-slate-800 dark:bg-sky-400 dark:text-slate-950 dark:hover:bg-sky-300"
+                    @click="goToLoginForAccess"
+                  >
+                    {{ isLoggedIn ? '刷新登录状态' : '登录后继续' }}
+                  </button>
+
+                  <button
+                    v-if="articleRequiresAccessCode || articleRequiresWechatCode"
+                    type="button"
+                    class="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-300 bg-white px-5 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:text-sky-700 dark:border-white/12 dark:bg-white/[0.04] dark:text-slate-200 dark:hover:border-sky-400/30 dark:hover:text-sky-200"
+                    @click="openAccessModal('ARTICLE')"
+                  >
+                    {{ articleRequiresAccessCode ? '输入访问码' : '输入公众号验证码' }}
+                  </button>
+                </div>
+              </div>
+
+              <div
+                v-if="articleRequiresWechatCode && post.contentAccessState?.wechatQrCodeUrl"
+                class="rounded-[24px] border border-slate-200/75 bg-white/88 p-5 dark:border-white/10 dark:bg-white/[0.03]"
+              >
+                <p class="text-sm font-medium text-slate-900 dark:text-slate-50">扫码获取公众号验证码</p>
+                <img
+                  :src="post.contentAccessState.wechatQrCodeUrl"
+                  alt="公众号二维码"
+                  class="mt-4 h-48 w-48 rounded-[18px] border border-slate-200/80 object-cover dark:border-white/10"
+                >
+              </div>
+            </div>
+          </section>
+
+          <section
+            v-if="articleAccessAllowed && hasTailHiddenBlock"
+            class="overflow-hidden rounded-[28px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] p-6 shadow-[0_22px_52px_-36px_rgba(15,23,42,0.18)] dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.82),rgba(2,6,23,0.88))]"
+          >
+            <div class="flex flex-col gap-4 border-b border-slate-200/70 pb-5 dark:border-white/10 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-sky-600 dark:text-sky-300">
+                  尾部隐藏内容
+                </p>
+                <h2 class="mt-3 text-[1.22rem] font-semibold tracking-[-0.03em] [font-family:var(--font-display)] text-slate-950 dark:text-slate-50">
+                  {{ post.tailHiddenTitle || '隐藏内容' }}
+                </h2>
+              </div>
+
+              <div class="flex flex-wrap gap-2">
+                <UBadge
+                  v-for="label in tailHiddenRuleLabels"
+                  :key="label"
+                  color="neutral"
+                  variant="soft"
+                >
+                  {{ label }}
+                </UBadge>
+              </div>
+            </div>
+
+            <div v-if="tailHiddenAccessAllowed" class="pt-6">
+              <ArticleContentRenderer
+                :html="post.tailHiddenContentHtml"
+                :content-theme="articleContentTheme"
+                :code-theme="articleCodeTheme"
+                :code-default-expanded="false"
+                container-class="min-h-0 border-0 bg-transparent p-0 shadow-none"
+                body-class="px-0"
+              />
+            </div>
+
+            <div v-else class="pt-6">
+              <div class="rounded-[20px] border border-dashed border-slate-300/80 bg-slate-50/80 p-5 dark:border-white/15 dark:bg-white/[0.03]">
+                <p class="text-sm font-medium text-slate-900 dark:text-slate-50">当前内容暂未解锁</p>
+                <p class="mt-2 text-sm leading-7 text-slate-500 dark:text-slate-400">
+                  {{ getRuleHint(tailHiddenPrimaryPendingRule) }}
+                </p>
+                <div class="mt-4 flex flex-wrap gap-3">
+                  <button
+                    v-if="tailHiddenRequiresLogin"
+                    type="button"
+                    class="inline-flex min-h-10 items-center justify-center rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800 dark:bg-sky-400 dark:text-slate-950 dark:hover:bg-sky-300"
+                    @click="goToLoginForAccess"
+                  >
+                    {{ isLoggedIn ? '刷新登录状态' : '登录后继续' }}
+                  </button>
+                  <button
+                    v-if="tailHiddenRequiresWechatCode"
+                    type="button"
+                    class="inline-flex min-h-10 items-center justify-center rounded-full border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:text-sky-700 dark:border-white/12 dark:bg-white/[0.04] dark:text-slate-200 dark:hover:border-sky-400/30 dark:hover:text-sky-200"
+                    @click="openAccessModal('TAIL_HIDDEN')"
+                  >
+                    输入公众号验证码
+                  </button>
+                </div>
+                <img
+                  v-if="post.contentAccessState?.wechatQrCodeUrl"
+                  :src="post.contentAccessState.wechatQrCodeUrl"
+                  alt="公众号二维码"
+                  class="mt-4 h-32 w-32 rounded-[16px] border border-slate-200/80 object-cover dark:border-white/10"
+                >
+              </div>
+            </div>
+          </section>
 
           <section
             v-if="hasRelatedPosts"
@@ -1244,6 +1643,99 @@ onBeforeUnmount(() => {
         </div>
       </section>
     </Transition>
+
+    <UModal
+      v-model:open="isAccessModalOpen"
+      :ui="{ content: 'sm:max-w-[34rem] overflow-hidden rounded-[30px] border border-slate-200/42 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(248,250,252,0.86))] p-0 text-slate-900 shadow-[0_24px_68px_-40px_rgba(15,23,42,0.16)] backdrop-blur-[28px] dark:border-white/6 dark:bg-[linear-gradient(180deg,rgba(10,18,34,0.84),rgba(8,14,28,0.76))] dark:text-white dark:shadow-[0_24px_68px_-40px_rgba(0,0,0,0.42)]' }"
+    >
+      <template #content>
+        <div class="p-6 sm:p-7">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-sky-600 dark:text-sky-300">
+                内容访问控制
+              </p>
+              <h3 class="mt-3 text-[1.24rem] font-semibold tracking-[-0.03em] [font-family:var(--font-display)] text-slate-950 dark:text-slate-50">
+                {{ accessModalTitle }}
+              </h3>
+              <p class="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
+                {{ getRuleHint(activeAccessPendingRuleTypes[0] || null) }}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/8 dark:hover:text-white"
+              aria-label="关闭弹窗"
+              @click="isAccessModalOpen = false"
+            >
+              <UIcon name="i-lucide-x" class="size-4" />
+            </button>
+          </div>
+
+          <div class="mt-6 space-y-5">
+            <div
+              v-if="accessModalRequiresArticleCode"
+              class="rounded-[22px] border border-slate-200/75 bg-white/88 p-5 dark:border-white/10 dark:bg-white/[0.03]"
+            >
+              <p class="text-sm font-medium text-slate-900 dark:text-slate-50">文章访问码</p>
+              <input
+                v-model="articleAccessCodeInput"
+                type="text"
+                maxlength="128"
+                placeholder="请输入文章访问验证码"
+                class="mt-4 h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-2 focus:ring-sky-100 dark:border-white/12 dark:bg-slate-950/70 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-sky-400/40 dark:focus:ring-sky-400/10"
+              >
+              <button
+                type="button"
+                class="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-slate-950 px-5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-sky-400 dark:text-slate-950 dark:hover:bg-sky-300"
+                :disabled="isAccessSubmitting"
+                @click="submitAccessVerification('ACCESS_CODE')"
+              >
+                {{ isAccessSubmitting ? '校验中...' : '确认' }}
+              </button>
+            </div>
+
+            <div
+              v-if="accessModalRequiresWechatCode"
+              class="rounded-[22px] border border-slate-200/75 bg-white/88 p-5 dark:border-white/10 dark:bg-white/[0.03]"
+            >
+              <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_12rem]">
+                <div>
+                  <p class="text-sm font-medium text-slate-900 dark:text-slate-50">公众号验证码</p>
+                  <input
+                    v-model="wechatAccessCodeInput"
+                    type="text"
+                    maxlength="128"
+                    placeholder="请输入公众号验证码"
+                    class="mt-4 h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-2 focus:ring-sky-100 dark:border-white/12 dark:bg-slate-950/70 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-sky-400/40 dark:focus:ring-sky-400/10"
+                  >
+                  <button
+                    type="button"
+                    class="mt-4 inline-flex min-h-11 items-center justify-center rounded-full border border-slate-300 bg-white px-5 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/12 dark:bg-white/[0.04] dark:text-slate-100 dark:hover:border-sky-400/30 dark:hover:text-sky-200"
+                    :disabled="isAccessSubmitting"
+                    @click="submitAccessVerification('WECHAT_ACCESS_CODE')"
+                  >
+                    {{ isAccessSubmitting ? '校验中...' : '确认' }}
+                  </button>
+                </div>
+
+                <div
+                  v-if="post?.contentAccessState?.wechatQrCodeUrl"
+                  class="rounded-[20px] border border-slate-200/75 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-white/[0.03]"
+                >
+                  <img
+                    :src="post.contentAccessState.wechatQrCodeUrl"
+                    alt="公众号二维码"
+                    class="h-40 w-40 rounded-[16px] object-cover"
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+    </UModal>
 
     <UModal
       v-model:open="isWechatShareModalOpen"

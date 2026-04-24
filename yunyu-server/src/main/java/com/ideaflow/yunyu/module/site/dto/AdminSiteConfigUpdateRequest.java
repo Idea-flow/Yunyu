@@ -41,6 +41,17 @@ public class AdminSiteConfigUpdateRequest {
     @Pattern(regexp = "^#([A-Fa-f0-9]{6})$", message = "辅助色需为 #RRGGBB 格式")
     private String secondaryColor;
 
+    private Boolean wechatAccessCodeEnabled;
+
+    @Size(max = 128, message = "公众号验证码长度不能超过128个字符")
+    private String wechatAccessCode;
+
+    @Size(max = 255, message = "公众号验证码提示文案长度不能超过255个字符")
+    private String wechatAccessCodeHint;
+
+    @Size(max = 255, message = "公众号二维码地址长度不能超过255个字符")
+    private String wechatQrCodeUrl;
+
     /**
      * 获取站点名称。
      *
@@ -201,6 +212,78 @@ public class AdminSiteConfigUpdateRequest {
      */
     public void setSecondaryColor(String secondaryColor) {
         this.secondaryColor = secondaryColor;
+    }
+
+    /**
+     * 获取是否启用公众号验证码。
+     *
+     * @return 是否启用公众号验证码
+     */
+    public Boolean getWechatAccessCodeEnabled() {
+        return wechatAccessCodeEnabled;
+    }
+
+    /**
+     * 设置是否启用公众号验证码。
+     *
+     * @param wechatAccessCodeEnabled 是否启用公众号验证码
+     */
+    public void setWechatAccessCodeEnabled(Boolean wechatAccessCodeEnabled) {
+        this.wechatAccessCodeEnabled = wechatAccessCodeEnabled;
+    }
+
+    /**
+     * 获取公众号验证码。
+     *
+     * @return 公众号验证码
+     */
+    public String getWechatAccessCode() {
+        return wechatAccessCode;
+    }
+
+    /**
+     * 设置公众号验证码。
+     *
+     * @param wechatAccessCode 公众号验证码
+     */
+    public void setWechatAccessCode(String wechatAccessCode) {
+        this.wechatAccessCode = wechatAccessCode;
+    }
+
+    /**
+     * 获取公众号验证码提示文案。
+     *
+     * @return 公众号验证码提示文案
+     */
+    public String getWechatAccessCodeHint() {
+        return wechatAccessCodeHint;
+    }
+
+    /**
+     * 设置公众号验证码提示文案。
+     *
+     * @param wechatAccessCodeHint 公众号验证码提示文案
+     */
+    public void setWechatAccessCodeHint(String wechatAccessCodeHint) {
+        this.wechatAccessCodeHint = wechatAccessCodeHint;
+    }
+
+    /**
+     * 获取公众号二维码地址。
+     *
+     * @return 公众号二维码地址
+     */
+    public String getWechatQrCodeUrl() {
+        return wechatQrCodeUrl;
+    }
+
+    /**
+     * 设置公众号二维码地址。
+     *
+     * @param wechatQrCodeUrl 公众号二维码地址
+     */
+    public void setWechatQrCodeUrl(String wechatQrCodeUrl) {
+        this.wechatQrCodeUrl = wechatQrCodeUrl;
     }
 
 }

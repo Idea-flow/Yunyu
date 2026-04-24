@@ -1,4 +1,5 @@
 import type { ArticleTocItem } from './post'
+import type { ContentAccessConfig, SiteContentAccessState } from './content-access'
 
 /**
  * 前台站点基础信息类型。
@@ -207,6 +208,10 @@ export interface SitePostDetail {
   contentMarkdown: string
   contentHtml: string
   contentTocJson: string
+  contentAccessConfig: ContentAccessConfig
+  tailHiddenTitle: string
+  tailHiddenContentHtml: string
+  contentAccessState: SiteContentAccessState
   allowComment: boolean
   relatedPosts: SitePostSummary[]
 }

@@ -21,6 +21,9 @@ public class PostContentEntity {
     private String contentHtml;
     private String contentPlainText;
     private String contentTocJson;
+    private String contentAccessConfigJson;
+    private String tailHiddenContentMarkdown;
+    private String tailHiddenContentHtml;
     private String videoUrl;
     private Integer readingTime;
     private LocalDateTime createdTime;

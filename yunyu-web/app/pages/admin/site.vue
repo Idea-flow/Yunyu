@@ -93,7 +93,11 @@ const siteFormState = reactive<AdminSiteConfigForm>({
   defaultTitle: '',
   defaultDescription: '',
   primaryColor: DEFAULT_PRIMARY_COLOR,
-  secondaryColor: DEFAULT_SECONDARY_COLOR
+  secondaryColor: DEFAULT_SECONDARY_COLOR,
+  wechatAccessCodeEnabled: false,
+  wechatAccessCode: '',
+  wechatAccessCodeHint: '',
+  wechatQrCodeUrl: ''
 })
 
 /**
@@ -341,6 +345,10 @@ function assignSiteFormState(data: AdminSiteConfigForm) {
   siteFormState.defaultDescription = data.defaultDescription || ''
   siteFormState.primaryColor = data.primaryColor || DEFAULT_PRIMARY_COLOR
   siteFormState.secondaryColor = data.secondaryColor || DEFAULT_SECONDARY_COLOR
+  siteFormState.wechatAccessCodeEnabled = data.wechatAccessCodeEnabled ?? false
+  siteFormState.wechatAccessCode = data.wechatAccessCode || ''
+  siteFormState.wechatAccessCodeHint = data.wechatAccessCodeHint || ''
+  siteFormState.wechatQrCodeUrl = data.wechatQrCodeUrl || ''
 }
 
 /**
@@ -441,7 +449,11 @@ function serializeSiteFormState(data: AdminSiteConfigForm) {
     defaultTitle: data.defaultTitle.trim(),
     defaultDescription: data.defaultDescription.trim(),
     primaryColor: data.primaryColor.trim(),
-    secondaryColor: data.secondaryColor.trim()
+    secondaryColor: data.secondaryColor.trim(),
+    wechatAccessCodeEnabled: data.wechatAccessCodeEnabled,
+    wechatAccessCode: data.wechatAccessCode.trim(),
+    wechatAccessCodeHint: data.wechatAccessCodeHint.trim(),
+    wechatQrCodeUrl: data.wechatQrCodeUrl.trim()
   })
 }
 
@@ -563,6 +575,12 @@ function validateSiteForm() {
   if (!/^#([A-Fa-f0-9]{6})$/.test(siteFormState.secondaryColor.trim())) {
     activeTab.value = 'theme'
     toast.add({ title: '辅助色需为 #RRGGBB 格式', color: 'warning' })
+    return false
+  }
+
+  if (siteFormState.wechatAccessCodeEnabled && !siteFormState.wechatAccessCode.trim()) {
+    activeTab.value = 'basic'
+    toast.add({ title: '启用公众号验证码时，请填写验证码', color: 'warning' })
     return false
   }
 
@@ -970,7 +988,11 @@ async function saveSiteConfig() {
     defaultTitle: siteFormState.defaultTitle.trim(),
     defaultDescription: siteFormState.defaultDescription.trim(),
     primaryColor: siteFormState.primaryColor.trim(),
-    secondaryColor: siteFormState.secondaryColor.trim()
+    secondaryColor: siteFormState.secondaryColor.trim(),
+    wechatAccessCodeEnabled: siteFormState.wechatAccessCodeEnabled,
+    wechatAccessCode: siteFormState.wechatAccessCode.trim(),
+    wechatAccessCodeHint: siteFormState.wechatAccessCodeHint.trim(),
+    wechatQrCodeUrl: siteFormState.wechatQrCodeUrl.trim()
   })
 
   assignSiteFormState(response)
@@ -1220,30 +1242,73 @@ onMounted(async () => {
       </section>
 
       <section class="rounded-[18px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.6))] p-4 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.76),rgba(15,23,42,0.66))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)] lg:p-5">
-        <div v-if="activeTab === 'basic'" class="grid gap-4 md:grid-cols-2">
-          <div class="space-y-2">
-            <p class="text-sm font-medium text-slate-700 dark:text-slate-300">站点名称</p>
-            <AdminInput v-model="siteFormState.siteName" placeholder="站点名称" />
+        <div v-if="activeTab === 'basic'" class="space-y-4">
+          <div class="grid gap-4 md:grid-cols-2">
+            <div class="space-y-2">
+              <p class="text-sm font-medium text-slate-700 dark:text-slate-300">站点名称</p>
+              <AdminInput v-model="siteFormState.siteName" placeholder="站点名称" />
+            </div>
+
+            <div class="space-y-2">
+              <p class="text-sm font-medium text-slate-700 dark:text-slate-300">页脚文案</p>
+              <AdminInput v-model="siteFormState.footerText" placeholder="页脚文案" />
+            </div>
+
+            <div class="space-y-2 md:col-span-2">
+              <p class="text-sm font-medium text-slate-700 dark:text-slate-300">站点副标题</p>
+              <AdminTextarea v-model="siteFormState.siteSubTitle" :rows="4" placeholder="站点副标题" />
+            </div>
+
+            <div class="space-y-2">
+              <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Logo 地址</p>
+              <AdminInput v-model="siteFormState.logoUrl" placeholder="Logo 地址" />
+            </div>
+
+            <div class="space-y-2">
+              <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Favicon 地址</p>
+              <AdminInput v-model="siteFormState.faviconUrl" placeholder="Favicon 地址" />
+            </div>
           </div>
 
-          <div class="space-y-2">
-            <p class="text-sm font-medium text-slate-700 dark:text-slate-300">页脚文案</p>
-            <AdminInput v-model="siteFormState.footerText" placeholder="页脚文案" />
-          </div>
+          <div class="rounded-[16px] border border-slate-200/80 bg-white/72 p-4 dark:border-white/10 dark:bg-white/4">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-50">公众号验证码</h2>
+                <p class="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                  用于后续文章访问控制和尾部隐藏内容中的“公众号验证码”规则。
+                </p>
+              </div>
 
-          <div class="space-y-2 md:col-span-2">
-            <p class="text-sm font-medium text-slate-700 dark:text-slate-300">站点副标题</p>
-            <AdminTextarea v-model="siteFormState.siteSubTitle" :rows="4" placeholder="站点副标题" />
-          </div>
+              <AdminSwitchField
+                v-model="siteFormState.wechatAccessCodeEnabled"
+                label="启用"
+                description="开启后，前台可展示公众号验证码相关引导。"
+                color="primary"
+                active-text="已启用"
+                inactive-text="未启用"
+              />
+            </div>
 
-          <div class="space-y-2">
-            <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Logo 地址</p>
-            <AdminInput v-model="siteFormState.logoUrl" placeholder="Logo 地址" />
-          </div>
+            <div class="mt-4 grid gap-4 md:grid-cols-2">
+              <div class="space-y-2">
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">公众号验证码</p>
+                <AdminInput v-model="siteFormState.wechatAccessCode" placeholder="请输入站点级公众号验证码" />
+              </div>
 
-          <div class="space-y-2">
-            <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Favicon 地址</p>
-            <AdminInput v-model="siteFormState.faviconUrl" placeholder="Favicon 地址" />
+              <div class="space-y-2">
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">公众号二维码地址</p>
+                <AdminInput v-model="siteFormState.wechatQrCodeUrl" placeholder="可选，前台弹窗可直接展示二维码" />
+              </div>
+
+              <div class="space-y-2 md:col-span-2">
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">验证码提示文案</p>
+                <AdminTextarea
+                  v-model="siteFormState.wechatAccessCodeHint"
+                  :rows="3"
+                  placeholder="例如：扫码关注公众号后，输入收到的访问验证码"
+                />
+              </div>
+            </div>
           </div>
         </div>
 

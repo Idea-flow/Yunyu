@@ -3,10 +3,15 @@ package com.ideaflow.yunyu.module.post.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ideaflow.yunyu.common.constant.ResultCode;
 import com.ideaflow.yunyu.common.exception.BizException;
 import com.ideaflow.yunyu.module.category.entity.CategoryEntity;
 import com.ideaflow.yunyu.module.category.mapper.CategoryMapper;
+import com.ideaflow.yunyu.module.contentaccess.model.ContentAccessArticleConfig;
+import com.ideaflow.yunyu.module.contentaccess.model.ContentAccessConfig;
+import com.ideaflow.yunyu.module.contentaccess.model.ContentAccessTailHiddenConfig;
 import com.ideaflow.yunyu.module.post.dto.AdminPostCreateRequest;
 import com.ideaflow.yunyu.module.post.dto.AdminPostQueryRequest;
 import com.ideaflow.yunyu.module.post.dto.AdminPostUpdateRequest;
@@ -47,6 +52,7 @@ public class AdminPostService {
     private final TopicMapper topicMapper;
     private final PostTagMapper postTagMapper;
     private final TopicPostMapper topicPostMapper;
+    private final ObjectMapper objectMapper;
 
     /**
      * 创建后台文章管理服务。
@@ -58,6 +64,7 @@ public class AdminPostService {
      * @param topicMapper 专题 Mapper
      * @param postTagMapper 文章标签关联 Mapper
      * @param topicPostMapper 专题文章关联 Mapper
+     * @param objectMapper Jackson 对象映射器
      */
     public AdminPostService(PostMapper postMapper,
                             PostContentMapper postContentMapper,
@@ -65,7 +72,8 @@ public class AdminPostService {
                             TagMapper tagMapper,
                             TopicMapper topicMapper,
                             PostTagMapper postTagMapper,
-                            TopicPostMapper topicPostMapper) {
+                            TopicPostMapper topicPostMapper,
+                            ObjectMapper objectMapper) {
         this.postMapper = postMapper;
         this.postContentMapper = postContentMapper;
         this.categoryMapper = categoryMapper;
@@ -73,6 +81,7 @@ public class AdminPostService {
         this.topicMapper = topicMapper;
         this.postTagMapper = postTagMapper;
         this.topicPostMapper = topicPostMapper;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -141,7 +150,14 @@ public class AdminPostService {
         }
         postMapper.insert(postEntity);
 
-        saveOrUpdatePostContent(postEntity.getId(), request.getContentMarkdown(), request.getContentHtml(), request.getContentTocJson(), request.getVideoUrl());
+        saveOrUpdatePostContent(postEntity.getId(),
+                request.getContentMarkdown(),
+                request.getContentHtml(),
+                request.getContentTocJson(),
+                request.getVideoUrl(),
+                request.getContentAccessConfig(),
+                request.getTailHiddenContentMarkdown(),
+                request.getTailHiddenContentHtml());
         savePostTags(postEntity.getId(), request.getTagIds());
         saveTopicPosts(postEntity.getId(), request.getTopicIds());
         return getPost(postEntity.getId());
@@ -182,7 +198,14 @@ public class AdminPostService {
         }
         postMapper.updateById(postEntity);
 
-        saveOrUpdatePostContent(postId, request.getContentMarkdown(), request.getContentHtml(), request.getContentTocJson(), request.getVideoUrl());
+        saveOrUpdatePostContent(postId,
+                request.getContentMarkdown(),
+                request.getContentHtml(),
+                request.getContentTocJson(),
+                request.getVideoUrl(),
+                request.getContentAccessConfig(),
+                request.getTailHiddenContentMarkdown(),
+                request.getTailHiddenContentHtml());
         savePostTags(postId, request.getTagIds());
         saveTopicPosts(postId, request.getTopicIds());
         return getPost(postId);
@@ -264,12 +287,25 @@ public class AdminPostService {
      * @param contentHtml HTML 正文
      * @param contentTocJson 目录 JSON
      * @param videoUrl 视频地址
+     * @param contentAccessConfig 内容访问控制配置
+     * @param tailHiddenContentMarkdown 尾部隐藏内容 Markdown
+     * @param tailHiddenContentHtml 尾部隐藏内容 HTML
      */
-    private void saveOrUpdatePostContent(Long postId, String contentMarkdown, String contentHtml, String contentTocJson, String videoUrl) {
+    private void saveOrUpdatePostContent(Long postId,
+                                         String contentMarkdown,
+                                         String contentHtml,
+                                         String contentTocJson,
+                                         String videoUrl,
+                                         ContentAccessConfig contentAccessConfig,
+                                         String tailHiddenContentMarkdown,
+                                         String tailHiddenContentHtml) {
         String markdown = contentMarkdown == null ? "" : contentMarkdown.trim();
         String html = contentHtml == null || contentHtml.isBlank() ? markdown : contentHtml.trim();
         String tocJson = contentTocJson == null || contentTocJson.isBlank() ? null : contentTocJson.trim();
         String normalizedVideoUrl = normalizeOptionalValue(videoUrl);
+        ContentAccessConfig normalizedContentAccessConfig = normalizeContentAccessConfig(contentAccessConfig);
+        String normalizedTailHiddenMarkdown = normalizeOptionalValue(tailHiddenContentMarkdown);
+        String normalizedTailHiddenHtml = normalizeOptionalValue(tailHiddenContentHtml);
         String plainText = markdown.replaceAll("`{1,3}[^`]*`{1,3}", " ")
                 .replaceAll("!\\[[^\\]]*\\]\\([^\\)]*\\)", " ")
                 .replaceAll("\\[[^\\]]*\\]\\([^\\)]*\\)", " ")
@@ -292,6 +328,9 @@ public class AdminPostService {
         postContentEntity.setContentMarkdown(markdown);
         postContentEntity.setContentHtml(html);
         postContentEntity.setContentTocJson(tocJson);
+        postContentEntity.setContentAccessConfigJson(writeContentAccessConfig(normalizedContentAccessConfig));
+        postContentEntity.setTailHiddenContentMarkdown(normalizedTailHiddenMarkdown);
+        postContentEntity.setTailHiddenContentHtml(normalizedTailHiddenHtml);
         postContentEntity.setVideoUrl(normalizedVideoUrl);
         postContentEntity.setContentPlainText(plainText);
         postContentEntity.setReadingTime(readingTime);
@@ -574,9 +613,100 @@ public class AdminPostService {
         response.setReadingMinutes(postContentEntity == null || postContentEntity.getReadingTime() == null ? 1 : postContentEntity.getReadingTime());
         response.setWordCount(postContentEntity == null || postContentEntity.getContentPlainText() == null ? 0 : postContentEntity.getContentPlainText().length());
         response.setContentMarkdown(postContentEntity == null ? "" : postContentEntity.getContentMarkdown());
+        response.setContentAccessConfig(readContentAccessConfig(postContentEntity == null ? null : postContentEntity.getContentAccessConfigJson()));
+        response.setTailHiddenContentMarkdown(postContentEntity == null ? null : postContentEntity.getTailHiddenContentMarkdown());
         response.setUpdatedAt(postEntity.getUpdatedTime());
         response.setPublishedAt(postEntity.getPublishedAt());
         return response;
+    }
+
+    /**
+     * 规范化内容访问控制配置。
+     * 作用：为文章级访问控制和尾部隐藏内容提供稳定默认结构，避免前端回显时频繁做空值判断。
+     *
+     * @param config 原始配置
+     * @return 规范化后的配置
+     */
+    private ContentAccessConfig normalizeContentAccessConfig(ContentAccessConfig config) {
+        ContentAccessConfig normalizedConfig = config == null ? new ContentAccessConfig() : config;
+        if (normalizedConfig.getVersion() == null || normalizedConfig.getVersion() < 1) {
+            normalizedConfig.setVersion(1);
+        }
+
+        ContentAccessArticleConfig articleAccess = normalizedConfig.getArticleAccess();
+        if (articleAccess == null) {
+            articleAccess = new ContentAccessArticleConfig();
+            normalizedConfig.setArticleAccess(articleAccess);
+        }
+        articleAccess.setEnabled(Boolean.TRUE.equals(articleAccess.getEnabled()));
+        articleAccess.setRuleTypes(normalizeRuleTypes(articleAccess.getRuleTypes()));
+        articleAccess.setArticleAccessCode(normalizeOptionalValue(articleAccess.getArticleAccessCode()));
+        articleAccess.setArticleAccessCodeHint(normalizeOptionalValue(articleAccess.getArticleAccessCodeHint()));
+
+        ContentAccessTailHiddenConfig tailHiddenAccess = normalizedConfig.getTailHiddenAccess();
+        if (tailHiddenAccess == null) {
+            tailHiddenAccess = new ContentAccessTailHiddenConfig();
+            normalizedConfig.setTailHiddenAccess(tailHiddenAccess);
+        }
+        tailHiddenAccess.setEnabled(Boolean.TRUE.equals(tailHiddenAccess.getEnabled()));
+        tailHiddenAccess.setTitle(normalizeOptionalValue(tailHiddenAccess.getTitle()));
+        tailHiddenAccess.setRuleTypes(normalizeRuleTypes(tailHiddenAccess.getRuleTypes()));
+        return normalizedConfig;
+    }
+
+    /**
+     * 读取内容访问控制配置。
+     * 作用：将正文表中的 JSON 配置转换为后台和前台可直接使用的结构化对象。
+     *
+     * @param contentAccessConfigJson 配置 JSON
+     * @return 内容访问控制配置
+     */
+    private ContentAccessConfig readContentAccessConfig(String contentAccessConfigJson) {
+        if (contentAccessConfigJson == null || contentAccessConfigJson.isBlank()) {
+            return normalizeContentAccessConfig(null);
+        }
+
+        try {
+            return normalizeContentAccessConfig(objectMapper.readValue(contentAccessConfigJson, ContentAccessConfig.class));
+        } catch (JsonProcessingException exception) {
+            throw new BizException(ResultCode.INTERNAL_SERVER_ERROR, "文章访问控制配置解析失败");
+        }
+    }
+
+    /**
+     * 写入内容访问控制配置。
+     * 作用：统一序列化文章访问控制配置，避免在不同保存入口出现 JSON 结构漂移。
+     *
+     * @param contentAccessConfig 内容访问控制配置
+     * @return 序列化后的 JSON 字符串
+     */
+    private String writeContentAccessConfig(ContentAccessConfig contentAccessConfig) {
+        try {
+            return objectMapper.writeValueAsString(normalizeContentAccessConfig(contentAccessConfig));
+        } catch (JsonProcessingException exception) {
+            throw new BizException(ResultCode.INTERNAL_SERVER_ERROR, "文章访问控制配置保存失败");
+        }
+    }
+
+    /**
+     * 规范化规则列表。
+     * 作用：去除空值、重复值和前后空白，保持规则配置结构稳定。
+     *
+     * @param ruleTypes 原始规则列表
+     * @return 规范化后的规则列表
+     */
+    private List<String> normalizeRuleTypes(List<String> ruleTypes) {
+        if (ruleTypes == null || ruleTypes.isEmpty()) {
+            return List.of();
+        }
+
+        Set<String> normalizedTypes = new LinkedHashSet<>();
+        for (String ruleType : ruleTypes) {
+            if (ruleType != null && !ruleType.isBlank()) {
+                normalizedTypes.add(ruleType.trim());
+            }
+        }
+        return new ArrayList<>(normalizedTypes);
     }
 
     /**

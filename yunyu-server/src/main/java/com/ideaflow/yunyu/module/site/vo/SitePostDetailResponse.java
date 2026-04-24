@@ -1,5 +1,6 @@
 package com.ideaflow.yunyu.module.site.vo;
 
+import com.ideaflow.yunyu.module.contentaccess.model.ContentAccessConfig;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.Data;
@@ -35,6 +36,10 @@ public class SitePostDetailResponse {
     private String contentMarkdown;
     private String contentHtml;
     private String contentTocJson;
+    private ContentAccessConfig contentAccessConfig;
+    private String tailHiddenTitle;
+    private String tailHiddenContentHtml;
+    private SiteContentAccessStateResponse contentAccessState;
     private Boolean allowComment;
     private List<SitePostSummaryResponse> relatedPosts;
 }

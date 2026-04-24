@@ -2,6 +2,9 @@
 import type { AdminPostForm } from '../../../types/post'
 import type { AdminTaxonomyItem } from '../../../types/taxonomy'
 import type { AdminAttachmentItem } from '../../../types/attachment'
+import { createDefaultContentAccessConfig } from '../../../types/content-access'
+import type { ContentAccessConfig } from '../../../types/content-access'
+import type { ContentAccessRuleType } from '../../../types/content-access'
 import AdminMarkdownWorkbench from './AdminMarkdownWorkbench.vue'
 
 /**
@@ -40,6 +43,12 @@ const statusOptions = [
   { label: '已发布', value: 'PUBLISHED' },
   { label: '已下线', value: 'OFFLINE' }
 ] as const
+const contentAccessRuleOptions: Array<{ label: string, value: ContentAccessRuleType, description: string }> = [
+  { label: '登录后可见', value: 'LOGIN', description: '适合基础用户权限门槛。' },
+  { label: '公众号验证码', value: 'WECHAT_ACCESS_CODE', description: '适合站点级公众号引导验证。' },
+  { label: '文章访问码', value: 'ACCESS_CODE', description: '适合文章独立配置访问码。' }
+]
+const tailHiddenRuleOptions = contentAccessRuleOptions.filter(option => option.value !== 'ACCESS_CODE')
 
 const formState = reactive<AdminPostForm>({
   title: '',
@@ -58,7 +67,10 @@ const formState = reactive<AdminPostForm>({
   seoDescription: '',
   contentMarkdown: '',
   contentHtml: '',
-  contentToc: []
+  contentToc: [],
+  contentAccessConfig: createDefaultContentAccessConfig(),
+  tailHiddenContentMarkdown: '',
+  tailHiddenContentHtml: ''
 })
 
 /**
@@ -96,6 +108,11 @@ const {
   readingMinutes: renderedReadingMinutes,
   isRendering: isRenderingMarkdown
 } = useMarkdownRenderer(toRef(formState, 'contentMarkdown'))
+const {
+  html: renderedTailHiddenHtml,
+  plainText: renderedTailHiddenPlainText,
+  readingMinutes: renderedTailHiddenReadingMinutes
+} = useMarkdownRenderer(toRef(formState, 'tailHiddenContentMarkdown'))
 
 const contentLength = computed(() => renderedPlainText.value.length)
 const estimatedReadingMinutes = computed(() => renderedReadingMinutes.value)
@@ -135,7 +152,76 @@ function validateForm() {
     return false
   }
 
+  if (formState.contentAccessConfig.articleAccess.enabled) {
+    if (!formState.contentAccessConfig.articleAccess.ruleTypes.length) {
+      toast.add({ title: '请至少选择一个文章访问规则', color: 'warning' })
+      return false
+    }
+
+    if (
+      formState.contentAccessConfig.articleAccess.ruleTypes.includes('ACCESS_CODE')
+      && !formState.contentAccessConfig.articleAccess.articleAccessCode.trim()
+    ) {
+      toast.add({ title: '已启用文章访问码，请填写文章访问码', color: 'warning' })
+      return false
+    }
+
+    if (
+      formState.contentAccessConfig.articleAccess.ruleTypes.includes('ACCESS_CODE')
+      && !formState.contentAccessConfig.articleAccess.articleAccessCodeHint.trim()
+    ) {
+      toast.add({ title: '已启用文章访问码，请填写访问码提示文案', color: 'warning' })
+      return false
+    }
+  }
+
+  if (formState.contentAccessConfig.tailHiddenAccess.enabled) {
+    if (!formState.contentAccessConfig.tailHiddenAccess.title.trim()) {
+      toast.add({ title: '请填写尾部隐藏内容标题', color: 'warning' })
+      return false
+    }
+
+    if (!formState.contentAccessConfig.tailHiddenAccess.ruleTypes.length) {
+      toast.add({ title: '请至少选择一个尾部隐藏内容规则', color: 'warning' })
+      return false
+    }
+
+    if (!formState.tailHiddenContentMarkdown.trim()) {
+      toast.add({ title: '请填写尾部隐藏内容正文', color: 'warning' })
+      return false
+    }
+  }
+
   return true
+}
+
+/**
+ * 规范化内容访问控制配置。
+ * 作用：将后端返回值或响应式表单对象转换为可安全提交的普通对象，
+ * 避免直接对 Vue Proxy 使用 `structuredClone` 触发浏览器克隆异常。
+ *
+ * @param config 原始内容访问配置
+ * @returns 可直接提交和回填的普通对象
+ */
+function normalizeContentAccessConfig(config?: Partial<ContentAccessConfig> | null): ContentAccessConfig {
+  const defaultConfig = createDefaultContentAccessConfig()
+  const articleAccess = config?.articleAccess
+  const tailHiddenAccess = config?.tailHiddenAccess
+
+  return {
+    version: config?.version ?? defaultConfig.version,
+    articleAccess: {
+      enabled: articleAccess?.enabled ?? defaultConfig.articleAccess.enabled,
+      ruleTypes: Array.isArray(articleAccess?.ruleTypes) ? [...articleAccess.ruleTypes] : [],
+      articleAccessCode: articleAccess?.articleAccessCode || '',
+      articleAccessCodeHint: articleAccess?.articleAccessCodeHint || ''
+    },
+    tailHiddenAccess: {
+      enabled: tailHiddenAccess?.enabled ?? defaultConfig.tailHiddenAccess.enabled,
+      title: tailHiddenAccess?.title || defaultConfig.tailHiddenAccess.title,
+      ruleTypes: Array.isArray(tailHiddenAccess?.ruleTypes) ? [...tailHiddenAccess.ruleTypes] : []
+    }
+  }
 }
 
 /**
@@ -187,6 +273,8 @@ async function loadPostDetail() {
     formState.seoTitle = detail.seoTitle || ''
     formState.seoDescription = detail.seoDescription || ''
     formState.contentMarkdown = detail.contentMarkdown || ''
+    formState.contentAccessConfig = normalizeContentAccessConfig(detail.contentAccessConfig)
+    formState.tailHiddenContentMarkdown = detail.tailHiddenContentMarkdown || ''
   } catch (error: any) {
     toast.add({
       title: '加载文章详情失败',
@@ -259,6 +347,7 @@ async function handleSubmit() {
   try {
     formState.contentHtml = renderedContentHtml.value
     formState.contentToc = renderedContentToc.value
+    formState.tailHiddenContentHtml = renderedTailHiddenHtml.value
 
     const payload: AdminPostForm = {
       title: formState.title.trim(),
@@ -278,7 +367,10 @@ async function handleSubmit() {
       contentMarkdown: formState.contentMarkdown,
       contentHtml: renderedContentHtml.value,
       contentToc: renderedContentToc.value,
-      contentTocJson: JSON.stringify(renderedContentToc.value)
+      contentTocJson: JSON.stringify(renderedContentToc.value),
+      contentAccessConfig: normalizeContentAccessConfig(formState.contentAccessConfig),
+      tailHiddenContentMarkdown: formState.tailHiddenContentMarkdown,
+      tailHiddenContentHtml: renderedTailHiddenHtml.value
     }
 
     if (isEditing.value && props.postId) {
@@ -457,6 +549,32 @@ function handleSelectCoverFromLibrary(item: AdminAttachmentItem) {
     description: item.fileName,
     color: 'success'
   })
+}
+
+/**
+ * 切换文章级访问规则。
+ * 作用：让后台可按需组合整篇文章访问规则，并保持数组去重。
+ *
+ * @param ruleType 规则类型
+ */
+function toggleArticleAccessRule(ruleType: ContentAccessRuleType) {
+  const currentRuleTypes = formState.contentAccessConfig.articleAccess.ruleTypes
+  formState.contentAccessConfig.articleAccess.ruleTypes = currentRuleTypes.includes(ruleType)
+    ? currentRuleTypes.filter(item => item !== ruleType)
+    : [...currentRuleTypes, ruleType]
+}
+
+/**
+ * 切换尾部隐藏内容规则。
+ * 作用：让后台可按需组合尾部隐藏内容的可见条件。
+ *
+ * @param ruleType 规则类型
+ */
+function toggleTailHiddenRule(ruleType: ContentAccessRuleType) {
+  const currentRuleTypes = formState.contentAccessConfig.tailHiddenAccess.ruleTypes
+  formState.contentAccessConfig.tailHiddenAccess.ruleTypes = currentRuleTypes.includes(ruleType)
+    ? currentRuleTypes.filter(item => item !== ruleType)
+    : [...currentRuleTypes, ruleType]
 }
 
 await Promise.all([
@@ -712,6 +830,112 @@ await Promise.all([
                   />
                 </div>
               </div>
+
+              <div :class="workspaceSurfaceClass">
+                <div class="mb-4">
+                  <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">内容访问控制</p>
+                  <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">支持为整篇文章和文章尾部隐藏内容分别配置访问规则。</p>
+                </div>
+
+                <div class="space-y-5">
+                  <div class="rounded-[12px] border border-slate-200/75 bg-slate-50/70 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                    <AdminSwitchField
+                      v-model="formState.contentAccessConfig.articleAccess.enabled"
+                      label="启用文章访问控制"
+                      description="开启后，当前文章可配置登录、公众号验证码、文章访问码等组合规则。"
+                      color="primary"
+                      active-text="已启用"
+                      inactive-text="未启用"
+                    />
+
+                    <div v-if="formState.contentAccessConfig.articleAccess.enabled" class="mt-4 space-y-4">
+                      <div>
+                        <p class="mb-2 text-sm font-medium text-slate-700 dark:text-slate-200">文章访问规则</p>
+                        <div class="space-y-2">
+                          <button
+                            v-for="option in tailHiddenRuleOptions"
+                            :key="`article-${option.value}`"
+                            type="button"
+                            class="flex w-full items-start gap-3 rounded-[12px] border px-3 py-3 text-left transition"
+                            :class="formState.contentAccessConfig.articleAccess.ruleTypes.includes(option.value)
+                              ? 'border-sky-300/80 bg-sky-50/85 text-sky-900 dark:border-sky-400/35 dark:bg-sky-400/10 dark:text-sky-100'
+                              : 'border-slate-200/80 bg-white/88 text-slate-700 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.02] dark:text-slate-200 dark:hover:border-white/15'"
+                            @click="toggleArticleAccessRule(option.value)"
+                          >
+                            <UIcon
+                              :name="formState.contentAccessConfig.articleAccess.ruleTypes.includes(option.value) ? 'i-lucide-check-circle-2' : 'i-lucide-circle'"
+                              class="mt-0.5 size-4 shrink-0"
+                            />
+                            <span>
+                              <span class="block text-sm font-medium">{{ option.label }}</span>
+                              <span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">{{ option.description }}</span>
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <UFormField name="articleAccessCode" label="文章访问码">
+                        <AdminInput
+                          v-model="formState.contentAccessConfig.articleAccess.articleAccessCode"
+                          placeholder="仅在勾选“文章访问码”后生效"
+                        />
+                      </UFormField>
+
+                      <UFormField name="articleAccessCodeHint" label="文章访问码提示文案">
+                        <AdminInput
+                          v-model="formState.contentAccessConfig.articleAccess.articleAccessCodeHint"
+                          placeholder="例如：扫描公众号后输入访问验证码"
+                        />
+                      </UFormField>
+                    </div>
+                  </div>
+
+                  <div class="rounded-[12px] border border-slate-200/75 bg-slate-50/70 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                    <AdminSwitchField
+                      v-model="formState.contentAccessConfig.tailHiddenAccess.enabled"
+                      label="启用尾部隐藏内容"
+                      description="开启后，可在文章末尾追加一个独立的隐藏内容模块。"
+                      color="primary"
+                      active-text="已启用"
+                      inactive-text="未启用"
+                    />
+
+                    <div v-if="formState.contentAccessConfig.tailHiddenAccess.enabled" class="mt-4 space-y-4">
+                      <UFormField name="tailHiddenTitle" label="隐藏内容标题">
+                        <AdminInput
+                          v-model="formState.contentAccessConfig.tailHiddenAccess.title"
+                          placeholder="例如：登录后可见资料 / 关注后领取"
+                        />
+                      </UFormField>
+
+                      <div>
+                        <p class="mb-2 text-sm font-medium text-slate-700 dark:text-slate-200">隐藏内容规则</p>
+                        <div class="space-y-2">
+                          <button
+                            v-for="option in contentAccessRuleOptions"
+                            :key="`tail-${option.value}`"
+                            type="button"
+                            class="flex w-full items-start gap-3 rounded-[12px] border px-3 py-3 text-left transition"
+                            :class="formState.contentAccessConfig.tailHiddenAccess.ruleTypes.includes(option.value)
+                              ? 'border-emerald-300/80 bg-emerald-50/85 text-emerald-900 dark:border-emerald-400/35 dark:bg-emerald-400/10 dark:text-emerald-100'
+                              : 'border-slate-200/80 bg-white/88 text-slate-700 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.02] dark:text-slate-200 dark:hover:border-white/15'"
+                            @click="toggleTailHiddenRule(option.value)"
+                          >
+                            <UIcon
+                              :name="formState.contentAccessConfig.tailHiddenAccess.ruleTypes.includes(option.value) ? 'i-lucide-check-circle-2' : 'i-lucide-circle'"
+                              class="mt-0.5 size-4 shrink-0"
+                            />
+                            <span>
+                              <span class="block text-sm font-medium">{{ option.label }}</span>
+                              <span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">{{ option.description }}</span>
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </form>
@@ -745,6 +969,68 @@ await Promise.all([
             :reading-minutes="estimatedReadingMinutes"
             :toc-count="renderedContentToc.length"
           />
+        </div>
+      </section>
+
+      <section :class="workspaceCardClass">
+        <div class="border-b border-white/60 px-5 py-4 dark:border-white/10">
+          <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p class="text-base font-semibold text-slate-900 dark:text-slate-50">尾部隐藏内容</p>
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">这一块不会插入正文中，而是挂在文章详情页尾部，按访问规则决定是否展示。</p>
+            </div>
+            <span class="text-xs font-medium uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+              Tail Hidden Block
+            </span>
+          </div>
+        </div>
+
+        <div class="grid gap-5 px-5 py-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div>
+            <AdminTextarea
+              v-model="formState.tailHiddenContentMarkdown"
+              :rows="16"
+              autoresize
+              placeholder="请输入尾部隐藏内容 Markdown"
+            />
+          </div>
+
+          <div :class="workspaceSurfaceClass">
+            <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">隐藏内容摘要</p>
+            <div class="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-300">
+              <div class="flex items-center justify-between">
+                <span>模块开关</span>
+                <span>{{ formState.contentAccessConfig.tailHiddenAccess.enabled ? '已启用' : '未启用' }}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span>预计阅读</span>
+                <span>{{ renderedTailHiddenReadingMinutes }} 分钟</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span>纯文本字数</span>
+                <span>{{ renderedTailHiddenPlainText.length }}</span>
+              </div>
+              <div>
+                <p class="mb-2 text-xs uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">当前规则</p>
+                <div class="flex flex-wrap gap-2">
+                  <UBadge
+                    v-for="ruleType in formState.contentAccessConfig.tailHiddenAccess.ruleTypes"
+                    :key="ruleType"
+                    color="success"
+                    variant="soft"
+                  >
+                    {{ ruleType }}
+                  </UBadge>
+                  <span
+                    v-if="!formState.contentAccessConfig.tailHiddenAccess.ruleTypes.length"
+                    class="text-sm text-slate-400 dark:text-slate-500"
+                  >
+                    未配置规则
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </div>

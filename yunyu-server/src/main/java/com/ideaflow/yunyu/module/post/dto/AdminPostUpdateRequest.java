@@ -1,5 +1,6 @@
 package com.ideaflow.yunyu.module.post.dto;
 
+import com.ideaflow.yunyu.module.contentaccess.model.ContentAccessConfig;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -56,4 +57,10 @@ public class AdminPostUpdateRequest {
     private String contentHtml;
 
     private String contentTocJson;
+
+    private ContentAccessConfig contentAccessConfig;
+
+    private String tailHiddenContentMarkdown;
+
+    private String tailHiddenContentHtml;
 }

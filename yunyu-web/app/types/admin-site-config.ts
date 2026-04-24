@@ -12,6 +12,10 @@ export interface AdminSiteConfigForm {
   defaultDescription: string
   primaryColor: string
   secondaryColor: string
+  wechatAccessCodeEnabled: boolean
+  wechatAccessCode: string
+  wechatAccessCodeHint: string
+  wechatQrCodeUrl: string
 }
 
 /**

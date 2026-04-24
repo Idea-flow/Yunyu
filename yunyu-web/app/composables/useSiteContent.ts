@@ -1,4 +1,8 @@
 import type {
+  SiteContentAccessVerifyRequest,
+  SiteContentAccessVerifyResponse
+} from '../types/content-access'
+import type {
   SiteBaseInfo,
   SiteCategoryDetail,
   SiteCategoryItem,
@@ -63,6 +67,20 @@ export function useSiteContent() {
    */
   async function getPostDetail(slug: string) {
     return await apiClient.request<SitePostDetail>(`/api/site/posts/${slug}`)
+  }
+
+  /**
+   * 校验文章内容访问规则。
+   *
+   * @param slug 文章 slug
+   * @param payload 校验请求
+   * @returns 最新内容访问状态
+   */
+  async function verifyPostAccess(slug: string, payload: SiteContentAccessVerifyRequest) {
+    return await apiClient.request<SiteContentAccessVerifyResponse>(`/api/site/posts/${slug}/access/verify`, {
+      method: 'POST',
+      body: payload
+    })
   }
 
   /**
@@ -176,6 +194,7 @@ export function useSiteContent() {
     getHome,
     listPosts,
     getPostDetail,
+    verifyPostAccess,
     increasePostViewCount,
     listPostComments,
     createPostComment,
