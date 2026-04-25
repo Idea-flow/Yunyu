@@ -11,7 +11,7 @@ CONFIG_FILE="${MYSQL_SYNC_CONFIG:-$DEFAULT_CONFIG_FILE}"
 RESET_SCRIPT="${SCRIPT_DIR}/reset-remote-db.sh"
 
 if [[ $# -lt 1 ]]; then
-  echo "用法：bash scripts/mysql/restore-remote-db.sh <备份文件路径>"
+  echo "用法：bash scripts/db/restore-remote-db.sh <备份文件路径>"
   exit 1
 fi
 

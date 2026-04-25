@@ -10,6 +10,7 @@ DEFAULT_CONFIG_FILE="${SCRIPT_DIR}/mysql-sync.env"
 CONFIG_FILE="${MYSQL_SYNC_CONFIG:-$DEFAULT_CONFIG_FILE}"
 RESET_SCRIPT="${SCRIPT_DIR}/reset-remote-db.sh"
 TMP_DUMP_FILE="$(mktemp "/tmp/yunyu-mysql-sync-XXXXXX.sql")"
+AUTO_CONFIRM_ALL="${MYSQL_AUTO_CONFIRM_ALL:-false}"
 
 cleanup() {
   rm -f "${TMP_DUMP_FILE}"
@@ -23,6 +24,43 @@ file_size_bytes() {
     echo "0"
   fi
 }
+
+# 功能：解析命令行参数。
+# 作用：支持通过 `--yes` 开启自动确认模式。
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -y|--yes)
+        AUTO_CONFIRM_ALL="true"
+        shift
+        ;;
+      *)
+        echo "未知参数：$1"
+        exit 1
+        ;;
+    esac
+  done
+}
+
+# 功能：统一处理确认逻辑。
+# 作用：在自动确认模式下跳过手工输入确认文本。
+confirm_or_exit() {
+  local expected_text="$1"
+  local prompt_text="$2"
+
+  if [[ "${AUTO_CONFIRM_ALL}" == "true" ]]; then
+    echo "已启用自动确认，跳过手工输入：${expected_text}"
+    return 0
+  fi
+
+  read -r -p "${prompt_text}" confirm_text
+  if [[ "${confirm_text}" != "${expected_text}" ]]; then
+    echo "确认文本不匹配，已取消执行。"
+    exit 1
+  fi
+}
+
+parse_args "$@"
 
 if [[ ! -f "${CONFIG_FILE}" ]]; then
   echo "未找到配置文件：${CONFIG_FILE}"
@@ -70,13 +108,7 @@ echo "  Local : ${LOCAL_DB_HOST}:${LOCAL_DB_PORT}/${LOCAL_DB_NAME}"
 echo "  Remote: ${REMOTE_DB_HOST}:${REMOTE_DB_PORT}/${REMOTE_DB_NAME}"
 echo
 echo "此操作会先清空远程数据库中的全部表，再导入本地库中的所有表和数据。"
-
-read -r -p "请输入 SYNC ${LOCAL_DB_NAME} TO ${REMOTE_DB_NAME} 确认继续: " CONFIRM_TEXT
-
-if [[ "${CONFIRM_TEXT}" != "SYNC ${LOCAL_DB_NAME} TO ${REMOTE_DB_NAME}" ]]; then
-  echo "确认文本不匹配，已取消执行。"
-  exit 1
-fi
+confirm_or_exit "SYNC ${LOCAL_DB_NAME} TO ${REMOTE_DB_NAME}" "请输入 SYNC ${LOCAL_DB_NAME} TO ${REMOTE_DB_NAME} 确认继续: "
 
 echo "开始导出本地数据库 ${LOCAL_DB_NAME} ..."
 run_mysqldump \
@@ -106,7 +138,7 @@ FINAL_DUMP_SIZE_BYTES="$(file_size_bytes "${TMP_DUMP_FILE}")"
 echo "本地数据库导出完成，临时 SQL 文件大小：${FINAL_DUMP_SIZE_BYTES} bytes"
 
 echo "本地数据库导出完成，开始清空远程数据库 ${REMOTE_DB_NAME} ..."
-MYSQL_SYNC_CONFIG="${CONFIG_FILE}" bash "${RESET_SCRIPT}"
+MYSQL_SYNC_CONFIG="${CONFIG_FILE}" MYSQL_AUTO_CONFIRM_ALL="${AUTO_CONFIRM_ALL}" bash "${RESET_SCRIPT}"
 
 echo "开始将本地数据导入远程数据库 ${REMOTE_DB_NAME} ..."
 echo "说明：导入过程中 mysql 客户端通常不会持续输出日志，脚本会每 5 秒打印一次导入心跳。"

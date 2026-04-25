@@ -16,7 +16,7 @@
 1. 复制配置文件：
 
 ```bash
-cp scripts/mysql/mysql-sync.env.example scripts/mysql/mysql-sync.env
+cp scripts/db/mysql-sync.env.example scripts/db/mysql-sync.env
 ```
 
 2. 填写本地和远程数据库连接信息。
@@ -46,7 +46,7 @@ MYSQL_CLIENT_IMAGE=mysql:8
 docker images | grep mysql
 ```
 
-然后把已有镜像名写到 `scripts/mysql/mysql-sync.env` 中。
+然后把已有镜像名写到 `scripts/db/mysql-sync.env` 中。
 
 ## 连接说明
 
@@ -70,25 +70,31 @@ LOCAL_DB_PORT=3306
 ### 1. 备份远程数据库
 
 ```bash
-bash scripts/mysql/backup-remote-db.sh
+bash scripts/db/backup-remote-db.sh
 ```
 
 默认会把备份文件生成到：
 
 ```bash
-scripts/mysql/backups/
+scripts/db/backups/
 ```
 
 如果你想自定义备份目录，可以在执行时指定：
 
 ```bash
-MYSQL_BACKUP_DIR=/自定义目录 bash scripts/mysql/backup-remote-db.sh
+MYSQL_BACKUP_DIR=/自定义目录 bash scripts/db/backup-remote-db.sh
 ```
 
 ### 2. 删除远程数据库全部表
 
 ```bash
-bash scripts/mysql/reset-remote-db.sh
+bash scripts/db/reset-remote-db.sh
+```
+
+如果你希望跳过手工确认，可使用：
+
+```bash
+bash scripts/db/reset-remote-db.sh --yes
 ```
 
 执行前会要求你输入确认文本，例如：
@@ -100,7 +106,7 @@ DELETE yunyu
 ### 3. 从备份文件恢复远程数据库
 
 ```bash
-bash scripts/mysql/restore-remote-db.sh scripts/mysql/backups/你的备份文件.sql
+bash scripts/db/restore-remote-db.sh scripts/db/backups/你的备份文件.sql
 ```
 
 执行前会要求你输入确认文本，例如：
@@ -112,7 +118,13 @@ RESTORE yunyu
 ### 4. 把本地数据库全量同步到远程
 
 ```bash
-bash scripts/mysql/sync-local-to-remote.sh
+bash scripts/db/sync-local-to-remote.sh
+```
+
+如果你希望跳过手工确认，可使用：
+
+```bash
+bash scripts/db/sync-local-to-remote.sh --yes
 ```
 
 执行前会要求你输入确认文本，例如：
@@ -130,7 +142,19 @@ SYNC yunyu TO yunyu
 ### 5. 使用总入口脚本执行完整同步流程
 
 ```bash
-bash scripts/mysql/run-sync-flow.sh
+bash scripts/db/run-sync-flow.sh
+```
+
+如果你希望整条链路自动确认（包含内部同步与清库确认），可使用：
+
+```bash
+bash scripts/db/run-sync-flow.sh --yes
+```
+
+或环境变量方式：
+
+```bash
+MYSQL_AUTO_CONFIRM_ALL=true bash scripts/db/run-sync-flow.sh
 ```
 
 执行过程会输出完整日志，包括：

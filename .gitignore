@@ -18,7 +18,8 @@ logs/
 .env
 .env.*
 !.env.example
-
+scripts/**/*.env
+./scripts/**/*.env
 # Node.js
 node_modules/
 .nuxt/

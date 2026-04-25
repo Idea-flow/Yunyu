@@ -7,9 +7,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-DEFAULT_CONFIG_FILE="${PROJECT_ROOT}/scripts/mysql/mysql-sync.env"
+DEFAULT_CONFIG_FILE="${PROJECT_ROOT}/scripts/db/mysql-sync.env"
 SCHEMA_DIFF_SCRIPT="${SCRIPT_DIR}/schema-diff.sh"
-DB_BACKUP_SCRIPT="${PROJECT_ROOT}/scripts/mysql/backup-remote-db.sh"
+DB_BACKUP_SCRIPT="${PROJECT_ROOT}/scripts/db/backup-remote-db.sh"
 OUTPUT_DIR="${SCRIPT_DIR}/output"
 TIMESTAMP="$(date +"%Y%m%d-%H%M%S")"
 DEFAULT_PLAN_FILE="${OUTPUT_DIR}/schema-diff-${TIMESTAMP}.sql"
@@ -25,7 +25,7 @@ SKIP_BACKUP="false"
 usage() {
   cat <<'EOF'
 用法：
-  bash scripts/deploy/schema-apply.sh [--config 配置文件路径] [--schema 目标schema文件路径] [--plan 差异SQL路径] [--yes] [--skip-backup]
+  bash scripts/release/schema-apply.sh [--config 配置文件路径] [--schema 目标schema文件路径] [--plan 差异SQL路径] [--yes] [--skip-backup]
 
 说明：
   1) 默认先执行数据库备份，再执行差异 SQL。
@@ -127,7 +127,7 @@ fi
 
 [[ -f "${PLAN_FILE}" ]] || fail "差异 SQL 文件不存在：${PLAN_FILE}"
 
-statement_count="$(rg -c '^(CREATE TABLE IF NOT EXISTS|ALTER TABLE)' "${PLAN_FILE}" || true)"
+statement_count="$(rg -c '^(CREATE TABLE IF NOT EXISTS|ALTER TABLE|INSERT INTO `site_config`)' "${PLAN_FILE}" || true)"
 statement_count="${statement_count:-0}"
 
 if [[ "${statement_count}" == "0" ]]; then

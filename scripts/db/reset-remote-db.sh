@@ -8,6 +8,44 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEFAULT_CONFIG_FILE="${SCRIPT_DIR}/mysql-sync.env"
 CONFIG_FILE="${MYSQL_SYNC_CONFIG:-$DEFAULT_CONFIG_FILE}"
+AUTO_CONFIRM_ALL="${MYSQL_AUTO_CONFIRM_ALL:-false}"
+
+# 功能：解析命令行参数。
+# 作用：支持通过 `--yes` 开启自动确认模式。
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -y|--yes)
+        AUTO_CONFIRM_ALL="true"
+        shift
+        ;;
+      *)
+        echo "未知参数：$1"
+        exit 1
+        ;;
+    esac
+  done
+}
+
+# 功能：统一处理确认逻辑。
+# 作用：在自动确认模式下跳过手工输入确认文本。
+confirm_or_exit() {
+  local expected_text="$1"
+  local prompt_text="$2"
+
+  if [[ "${AUTO_CONFIRM_ALL}" == "true" ]]; then
+    echo "已启用自动确认，跳过手工输入：${expected_text}"
+    return 0
+  fi
+
+  read -r -p "${prompt_text}" confirm_text
+  if [[ "${confirm_text}" != "${expected_text}" ]]; then
+    echo "确认文本不匹配，已取消执行。"
+    exit 1
+  fi
+}
+
+parse_args "$@"
 
 if [[ ! -f "${CONFIG_FILE}" ]]; then
   echo "未找到配置文件：${CONFIG_FILE}"
@@ -40,13 +78,7 @@ echo "  Database: ${REMOTE_DB_NAME}"
 echo "  User: ${REMOTE_DB_USER}"
 echo
 echo "此操作不可恢复。"
-
-read -r -p "请输入 DELETE ${REMOTE_DB_NAME} 确认继续: " CONFIRM_TEXT
-
-if [[ "${CONFIRM_TEXT}" != "DELETE ${REMOTE_DB_NAME}" ]]; then
-  echo "确认文本不匹配，已取消执行。"
-  exit 1
-fi
+confirm_or_exit "DELETE ${REMOTE_DB_NAME}" "请输入 DELETE ${REMOTE_DB_NAME} 确认继续: "
 
 TABLE_LIST="$(
   run_mysql \
