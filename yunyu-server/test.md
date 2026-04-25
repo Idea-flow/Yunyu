@@ -1,1 +1,0 @@
-/api/system/init/status
