@@ -2,12 +2,12 @@
 
 本目录用于存放线上升级辅助脚本，当前提供：
 
-1. `schema-diff.sh`：根据 `docs/技术/sql/001-init-schema.sql` 生成“只增不删”的差异 SQL。
+1. `schema-diff.sh`：根据 `docs/技术/sql/init.sql` 生成“只增不删”的差异 SQL。
 2. `schema-apply.sh`：执行“生成差异 -> 备份数据库 -> 应用差异”的安全升级流程。
 
 ## 一、前置约束
 
-1. `docs/技术/sql/001-init-schema.sql` 作为目标结构基线（最新 schema）。
+1. `docs/技术/sql/init.sql` 作为目标结构基线（最新 schema）。
 2. demo 数据单独放在 `docs/技术/sql/demo`，本脚本不会处理 demo 数据。
 3. 数据库连接信息默认来自 `scripts/mysql/mysql-sync.env`。
 

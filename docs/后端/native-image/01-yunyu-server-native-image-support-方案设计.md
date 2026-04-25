@@ -351,7 +351,7 @@ yunyu:
 - `application-dev.yml`
 - `application-prod.yml`
 - `application-native.yml`
-- `db/init/001-init-schema.sql`
+- `db/init/init.sql`
 - `db/init/002-seed-demo-data.sql`
 
 尤其是 `DatabaseBootstrapService` 通过 `ClassPathResource` 读取 SQL 脚本，这部分必须由 starter/core 的 RuntimeHints 显式注册资源。

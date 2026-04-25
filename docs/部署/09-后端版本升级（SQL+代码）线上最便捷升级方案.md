@@ -149,7 +149,7 @@ bash scripts/mysql/restore-remote-db.sh <备份文件路径>
 当前仓库已新增以下脚本：
 
 1. `scripts/deploy/schema-diff.sh`
-   作用：以 `docs/技术/sql/001-init-schema.sql` 为目标结构，自动生成“新增表/新增字段/新增索引”的差异 SQL。
+   作用：以 `docs/技术/sql/init.sql` 为目标结构，自动生成“新增表/新增字段/新增索引”的差异 SQL。
 2. `scripts/deploy/schema-apply.sh`
    作用：执行“生成差异 -> 备份远程库 -> 应用差异 SQL -> 记录执行历史”的自动流程。
 

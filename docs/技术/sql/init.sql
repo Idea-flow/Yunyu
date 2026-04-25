@@ -1,9 +1,8 @@
 -- 云屿 / Yunyu
 -- 功能：当前阶段 MySQL 8 数据库初始化脚本，用于创建核心业务表与基础站点配置。
--- 作用：作为第一阶段建库基线，可用于本地开发、测试环境初始化与后续迁移脚本拆分参考。
+-- 作用：作为第一阶段建库基线，可用于首次安装流程执行。
 
 SET NAMES utf8mb4;
-SET FOREIGN_KEY_CHECKS = 0;
 
 CREATE TABLE IF NOT EXISTS `user` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '用户ID',
@@ -24,6 +23,23 @@ CREATE TABLE IF NOT EXISTS `user` (
   KEY `idx_user_status_deleted_created_time` (`status`, `deleted`, `created_time`, `id`),
   KEY `idx_user_created_time` (`created_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户表';
+
+CREATE TABLE IF NOT EXISTS `user_auth` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '认证ID',
+  `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
+  `auth_type` VARCHAR(32) NOT NULL COMMENT '认证类型：LOCAL / GITHUB / GOOGLE / LINUX_DO',
+  `auth_identity` VARCHAR(191) NOT NULL COMMENT '认证唯一标识，本地可存邮箱，第三方存平台唯一用户ID',
+  `auth_name` VARCHAR(100) DEFAULT NULL COMMENT '第三方平台用户名或展示名',
+  `auth_email` VARCHAR(128) DEFAULT NULL COMMENT '第三方平台邮箱',
+  `email_verified` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '邮箱是否已验证：0否 1是',
+  `raw_user_info` JSON DEFAULT NULL COMMENT '第三方原始用户信息JSON',
+  `created_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_auth_type_identity` (`auth_type`, `auth_identity`),
+  UNIQUE KEY `uk_user_auth_user_id_type` (`user_id`, `auth_type`),
+  KEY `idx_user_auth_email` (`auth_email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户认证方式表';
 
 CREATE TABLE IF NOT EXISTS `category` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '分类ID',
@@ -115,6 +131,9 @@ CREATE TABLE IF NOT EXISTS `post_content` (
   `content_html` LONGTEXT NOT NULL COMMENT 'HTML正文',
   `content_plain_text` LONGTEXT DEFAULT NULL COMMENT '纯文本内容',
   `content_toc_json` JSON DEFAULT NULL COMMENT '目录JSON',
+  `content_access_config_json` JSON DEFAULT NULL COMMENT '统一内容访问控制配置',
+  `tail_hidden_content_markdown` MEDIUMTEXT DEFAULT NULL COMMENT '尾部隐藏内容 Markdown',
+  `tail_hidden_content_html` MEDIUMTEXT DEFAULT NULL COMMENT '尾部隐藏内容 HTML',
   `video_url` VARCHAR(500) DEFAULT NULL COMMENT '视频直链地址',
   `reading_time` INT NOT NULL DEFAULT 0 COMMENT '预计阅读时长，单位分钟',
   `created_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -131,6 +150,25 @@ CREATE TABLE IF NOT EXISTS `post_tag` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_post_tag_post_id_tag_id` (`post_id`, `tag_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='文章标签关联表';
+
+CREATE TABLE IF NOT EXISTS `content_access_grant` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '授权ID',
+  `scope_type` VARCHAR(32) NOT NULL COMMENT '授权范围类型：ARTICLE / TAIL_HIDDEN',
+  `scope_id` BIGINT UNSIGNED NOT NULL COMMENT '授权范围ID，通常是文章ID',
+  `rule_type` VARCHAR(64) NOT NULL COMMENT '规则类型：LOGIN / ACCESS_CODE / WECHAT_ACCESS_CODE',
+  `grant_target_type` VARCHAR(32) NOT NULL COMMENT '授权主体类型：USER / VISITOR',
+  `user_id` BIGINT UNSIGNED DEFAULT NULL COMMENT '用户ID',
+  `visitor_id_hash` VARCHAR(128) DEFAULT NULL COMMENT '访客标识哈希值',
+  `granted_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '授权时间',
+  `expire_at` DATETIME NOT NULL COMMENT '过期时间',
+  `created_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_scope_type_scope_id_rule_type` (`scope_type`, `scope_id`, `rule_type`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_visitor_id_hash` (`visitor_id_hash`),
+  KEY `idx_expire_at` (`expire_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='内容访问授权缓存表';
 
 CREATE TABLE IF NOT EXISTS `topic_post` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '专题文章关联ID',
@@ -162,6 +200,52 @@ CREATE TABLE IF NOT EXISTS `comment` (
   KEY `idx_comment_reply_comment_id` (`reply_comment_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='评论表';
 
+CREATE TABLE IF NOT EXISTS `friend_link` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '友链ID',
+  `site_name` VARCHAR(100) NOT NULL COMMENT '站点名称',
+  `site_url` VARCHAR(255) NOT NULL COMMENT '站点地址',
+  `logo_url` VARCHAR(255) DEFAULT NULL COMMENT '站点图标地址',
+  `description` VARCHAR(255) DEFAULT NULL COMMENT '站点简介',
+  `contact_name` VARCHAR(64) DEFAULT NULL COMMENT '联系人名称',
+  `contact_email` VARCHAR(128) DEFAULT NULL COMMENT '联系邮箱',
+  `contact_message` VARCHAR(500) DEFAULT NULL COMMENT '申请留言',
+  `theme_color` VARCHAR(7) DEFAULT NULL COMMENT '卡片主题色',
+  `sort_order` INT NOT NULL DEFAULT 0 COMMENT '排序值',
+  `status` VARCHAR(32) NOT NULL DEFAULT 'PENDING' COMMENT '状态：PENDING / APPROVED / REJECTED / OFFLINE',
+  `created_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否删除：0否 1是',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_friend_link_site_name_deleted` (`site_name`, `deleted`),
+  UNIQUE KEY `uk_friend_link_site_url_deleted` (`site_url`, `deleted`),
+  KEY `idx_friend_link_status_deleted_sort_order` (`status`, `deleted`, `sort_order`, `id`),
+  KEY `idx_friend_link_created_time` (`created_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='友链表';
+
+CREATE TABLE IF NOT EXISTS `attachment_file` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '附件ID',
+  `file_name` VARCHAR(255) NOT NULL COMMENT '原始文件名',
+  `file_ext` VARCHAR(32) DEFAULT NULL COMMENT '文件后缀',
+  `mime_type` VARCHAR(128) NOT NULL COMMENT '文件MIME类型',
+  `size_bytes` BIGINT UNSIGNED NOT NULL COMMENT '文件大小（字节）',
+  `sha256` CHAR(64) NOT NULL COMMENT '文件SHA-256（小写十六进制）',
+  `storage_provider` VARCHAR(32) NOT NULL DEFAULT 'S3' COMMENT '存储提供方',
+  `storage_config_key` VARCHAR(64) NOT NULL COMMENT '命中的S3配置键',
+  `bucket` VARCHAR(128) NOT NULL COMMENT '桶名',
+  `object_key` VARCHAR(255) NOT NULL COMMENT '对象键',
+  `access_url` VARCHAR(500) NOT NULL COMMENT '访问地址',
+  `etag` VARCHAR(128) DEFAULT NULL COMMENT '对象ETag',
+  `uploader_user_id` BIGINT UNSIGNED NOT NULL COMMENT '上传人用户ID',
+  `created_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否删除：0否 1是',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_attachment_sha256_deleted` (`sha256`, `deleted`),
+  UNIQUE KEY `uk_attachment_bucket_object_key_deleted` (`bucket`, `object_key`, `deleted`),
+  KEY `idx_attachment_uploader_created` (`uploader_user_id`, `created_time`, `id`),
+  KEY `idx_attachment_mime_created` (`mime_type`, `created_time`, `id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='附件文件表';
+
 CREATE TABLE IF NOT EXISTS `site_config` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '配置ID',
   `config_key` VARCHAR(64) NOT NULL COMMENT '配置键，如 site.base / site.seo / site.theme / site.feature',
@@ -179,41 +263,12 @@ VALUES
   ('site.base', '站点基础配置', JSON_OBJECT('siteName', '', 'siteSubTitle', '', 'logoUrl', '', 'faviconUrl', '', 'footerText', ''), '初始化占位配置'),
   ('site.seo', '站点SEO配置', JSON_OBJECT('defaultTitle', '', 'defaultDescription', ''), '初始化占位配置'),
   ('site.theme', '站点主题配置', JSON_OBJECT('primaryColor', '', 'secondaryColor', ''), '初始化占位配置'),
+  ('site.content-access', '站点内容访问配置', JSON_OBJECT('wechatAccessCodeEnabled', false, 'wechatAccessCode', '', 'wechatAccessCodeHint', '关注公众号后输入访问验证码', 'wechatQrCodeUrl', ''), '初始化站点内容访问配置'),
+  ('storage.s3.profiles', '站点 S3 存储配置', JSON_OBJECT('activeProfileKey', '', 'profiles', JSON_ARRAY()), '初始化 S3 多环境配置'),
+  ('homepage_config', '首页配置', JSON_OBJECT('heroEnabled', true, 'heroLayout', 'brand', 'heroBackgroundMode', 'gradient-grid', 'heroEyebrow', 'Yunyu / 云屿', 'heroTitle', '把热爱、写作与长期观察，整理成一个可以慢慢逛的内容站', 'heroSubtitle', '记录技术、审美、创作与阅读的个人博客与内容网站', 'heroPrimaryButtonText', '查看文章', 'heroPrimaryButtonLink', '/posts', 'heroSecondaryButtonText', '进入专题', 'heroSecondaryButtonLink', '/topics', 'heroVisualPostId', NULL, 'heroVisualClickable', true, 'heroKeywords', JSON_ARRAY('写作', '技术', '审美', '长期主义'), 'showHeroKeywords', true, 'showHeroStats', true, 'heroStats', JSON_ARRAY(), 'showFeaturedSection', true, 'featuredSectionTitle', '主打内容', 'showLatestSection', true, 'latestSectionTitle', '最新文章', 'showCategorySection', true, 'categorySectionTitle', '分类', 'showTopicSection', true, 'topicSectionTitle', '专题'), '首页无封面首屏配置'),
   ('site.feature', '站点功能开关', JSON_OBJECT('allowRegister', false, 'allowComment', true, 'enableSearch', false, 'enableSubscribe', false), '初始化占位配置')
 ON DUPLICATE KEY UPDATE
   `config_name` = VALUES(`config_name`),
   `config_json` = VALUES(`config_json`),
   `remark` = VALUES(`remark`),
   `updated_time` = CURRENT_TIMESTAMP;
-
-SET FOREIGN_KEY_CHECKS = 1;
-
-
-
--- 附件文件表增量脚本
--- 功能：新增附件管理表，支持 SHA-256 去重与 S3 对象定位。
--- 作用：为附件前端直传能力提供独立元数据存储结构。
-
-CREATE TABLE IF NOT EXISTS `attachment_file` (
-                                                 `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '附件ID',
-                                                 `file_name` VARCHAR(255) NOT NULL COMMENT '原始文件名',
-    `file_ext` VARCHAR(32) DEFAULT NULL COMMENT '文件后缀',
-    `mime_type` VARCHAR(128) NOT NULL COMMENT '文件MIME类型',
-    `size_bytes` BIGINT UNSIGNED NOT NULL COMMENT '文件大小（字节）',
-    `sha256` CHAR(64) NOT NULL COMMENT '文件SHA-256（小写十六进制）',
-    `storage_provider` VARCHAR(32) NOT NULL DEFAULT 'S3' COMMENT '存储提供方',
-    `storage_config_key` VARCHAR(64) NOT NULL COMMENT '命中的S3配置键',
-    `bucket` VARCHAR(128) NOT NULL COMMENT '桶名',
-    `object_key` VARCHAR(255) NOT NULL COMMENT '对象键',
-    `access_url` VARCHAR(500) NOT NULL COMMENT '访问地址',
-    `etag` VARCHAR(128) DEFAULT NULL COMMENT '对象ETag',
-    `uploader_user_id` BIGINT UNSIGNED NOT NULL COMMENT '上传人用户ID',
-    `created_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `updated_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `deleted` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否删除：0否 1是',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_attachment_sha256_deleted` (`sha256`, `deleted`),
-    UNIQUE KEY `uk_attachment_bucket_object_key_deleted` (`bucket`, `object_key`, `deleted`),
-    KEY `idx_attachment_uploader_created` (`uploader_user_id`, `created_time`, `id`),
-    KEY `idx_attachment_mime_created` (`mime_type`, `created_time`, `id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='附件文件表';

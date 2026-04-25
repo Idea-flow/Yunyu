@@ -332,7 +332,7 @@ yunyu:
 2. `yunyu-server` 可以解析 starter 依赖
 3. `yunyu-server` 可以执行 `native` profile 构建
 4. Native 二进制可以启动
-5. `db/init/001-init-schema.sql` 可以在 Native 运行时被读取
+5. `db/init/init.sql` 可以在 Native 运行时被读取
 6. 登录接口可正常工作
 7. 至少一个使用 `LambdaQueryWrapper` 的查询接口可正常工作
 8. 至少一个分页查询接口可正常工作

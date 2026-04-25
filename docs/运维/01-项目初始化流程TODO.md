@@ -52,7 +52,7 @@
 - [ ] 如果数据库不存在，则自动创建数据库
 - [ ] 检查核心表是否存在
 - [ ] 当前建议至少检查：`user`、`post`、`post_content`、`site_config`
-- [ ] 如果核心表不存在，则自动执行 [001-init-schema.sql](/Users/wangpenglong/projects/full-stack-project/Yunyu/docs/技术/sql/001-init-schema.sql)
+- [ ] 如果核心表不存在，则自动执行 [init.sql](/Users/wangpenglong/projects/full-stack-project/Yunyu/docs/技术/sql/init.sql)
 - [ ] 执行完成后再次校验表是否创建成功
 - [ ] 如果核心表已存在，则自动跳过建表逻辑
 

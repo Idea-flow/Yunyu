@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 
 # 功能：基于目标 schema SQL 与线上数据库结构生成“只增不删”的差异 SQL。
-# 作用：把 docs/技术/sql/001-init-schema.sql 作为目标结构基线，自动生成新增表、新增字段、新增索引语句。
+# 作用：把 docs/技术/sql/init.sql 作为目标结构基线，自动生成新增表、新增字段、新增索引语句。
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 DEFAULT_CONFIG_FILE="${PROJECT_ROOT}/scripts/mysql/mysql-sync.env"
-DEFAULT_SCHEMA_FILE="${PROJECT_ROOT}/docs/技术/sql/001-init-schema.sql"
+DEFAULT_SCHEMA_FILE="${PROJECT_ROOT}/docs/技术/sql/init.sql"
 OUTPUT_DIR="${SCRIPT_DIR}/output"
 TIMESTAMP="$(date +"%Y%m%d-%H%M%S")"
 DEFAULT_OUTPUT_FILE="${OUTPUT_DIR}/schema-diff-${TIMESTAMP}.sql"
