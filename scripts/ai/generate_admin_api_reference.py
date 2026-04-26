@@ -19,6 +19,20 @@ from typing import Any, Iterable
 
 HTTP_METHODS = ("get", "post", "put", "patch", "delete")
 MAX_SCHEMA_RENDER_DEPTH = 2
+HIGH_FREQUENCY_PATH_PREFIXES = (
+    "/api/admin/posts",
+    "/api/admin/categories",
+    "/api/admin/tags",
+    "/api/admin/topics",
+    "/api/admin/comments",
+    "/api/admin/attachments",
+    "/api/admin/friend-links",
+    "/api/admin/site-config",
+    "/api/admin/homepage-config",
+    "/api/admin/site/ai/providers",
+    "/api/admin/site/storage/s3",
+    "/api/admin/users",
+)
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent.parent
 DEFAULT_OUTPUT = REPO_ROOT / ".agents" / "skills" / "yunyu-admin-operator" / "references" / "admin-api-docs.md"
@@ -200,6 +214,22 @@ def render_parameters(parameters: Iterable[dict[str, Any]]) -> list[str]:
     return result
 
 
+def extract_query_schema_fields(parameters: Iterable[dict[str, Any]], components: dict[str, Any]) -> list[str]:
+    """展开 query DTO，输出真实查询参数字段。"""
+    lines: list[str] = []
+    for parameter in parameters:
+        if parameter.get("in") != "query":
+            continue
+        schema = parameter.get("schema") or {}
+        resolved_schema = resolve_schema(schema, components)
+        properties, required = merge_object_schema(resolved_schema, components)
+        if not properties:
+            continue
+        for name, field_schema in properties.items():
+            lines.append(render_property_line(name, field_schema, name in required))
+    return lines
+
+
 def extract_request_schema(operation: dict[str, Any], components: dict[str, Any]) -> tuple[str | None, list[str]]:
     """提取请求体 schema 摘要与顶层字段。"""
     request_body = operation.get("requestBody") or {}
@@ -210,6 +240,88 @@ def extract_request_schema(operation: dict[str, Any], components: dict[str, Any]
     schema = payload.get("schema") or {}
     schema_name = describe_schema_type(schema)
     return schema_name, render_schema_lines(schema, components)
+
+
+def should_expand_response_fields(path: str, method: str) -> bool:
+    """判断当前接口是否需要展开第一层响应字段。"""
+    if method == "DELETE":
+        return False
+    return path.startswith(HIGH_FREQUENCY_PATH_PREFIXES)
+
+
+def extract_response_fields(operation: dict[str, Any],
+                            components: dict[str, Any],
+                            path: str,
+                            method: str) -> list[str]:
+    """提取高频接口的第一层响应字段。"""
+    if not should_expand_response_fields(path, method):
+        return []
+
+    response = ((operation.get("responses") or {}).get("200") or {})
+    content = response.get("content") or {}
+    payload = content.get("application/json") or next(iter(content.values()), None)
+    if not payload:
+        return []
+
+    schema = resolve_schema((payload or {}).get("schema") or {}, components)
+    properties, _ = merge_object_schema(schema, components)
+    if not properties:
+        return []
+
+    data_schema = properties.get("data")
+    if not data_schema:
+        return []
+
+    data_resolved_schema = resolve_schema(data_schema, components)
+    data_properties, data_required = merge_object_schema(data_resolved_schema, components)
+    if not data_properties:
+        return []
+
+    return [
+        render_property_line(f"data.{name}", field_schema, name in data_required)
+        for name, field_schema in data_properties.items()
+    ]
+
+
+def extract_response_list_item_fields(operation: dict[str, Any],
+                                      components: dict[str, Any],
+                                      path: str,
+                                      method: str) -> list[str]:
+    """提取高频列表接口中 data.list[] 的首层字段提示。"""
+    if not should_expand_response_fields(path, method):
+        return []
+
+    response = ((operation.get("responses") or {}).get("200") or {})
+    content = response.get("content") or {}
+    payload = content.get("application/json") or next(iter(content.values()), None)
+    if not payload:
+        return []
+
+    schema = resolve_schema((payload or {}).get("schema") or {}, components)
+    response_properties, _ = merge_object_schema(schema, components)
+    data_schema = response_properties.get("data")
+    if not data_schema:
+        return []
+
+    data_resolved_schema = resolve_schema(data_schema, components)
+    data_properties, _ = merge_object_schema(data_resolved_schema, components)
+    list_schema = data_properties.get("list")
+    if not list_schema:
+        return []
+
+    list_resolved_schema = resolve_schema(list_schema, components)
+    if list_resolved_schema.get("type") != "array":
+        return []
+
+    item_schema = resolve_schema(list_resolved_schema.get("items") or {}, components)
+    item_properties, item_required = merge_object_schema(item_schema, components)
+    if not item_properties:
+        return []
+
+    return [
+        render_property_line(f"data.list[].{name}", field_schema, name in item_required)
+        for name, field_schema in item_properties.items()
+    ]
 
 
 def extract_response_summaries(operation: dict[str, Any]) -> list[str]:
@@ -256,6 +368,7 @@ def collect_admin_operations(document: dict[str, Any]) -> list[dict[str, Any]]:
             summary = (operation.get("summary") or operation.get("operationId") or path).strip()
             tag = ((operation.get("tags") or ["未分组"]) or ["未分组"])[0]
             request_schema_name, request_fields = extract_request_schema(operation, components)
+            query_fields = extract_query_schema_fields(operation.get("parameters") or [], components)
             operations.append(
                 {
                     "tag": tag,
@@ -265,9 +378,12 @@ def collect_admin_operations(document: dict[str, Any]) -> list[dict[str, Any]]:
                     "operation_id": operation.get("operationId") or "",
                     "risk_level": infer_risk_level(method, path, summary),
                     "parameters": render_parameters(operation.get("parameters") or []),
+                    "query_fields": query_fields,
                     "request_schema_name": request_schema_name,
                     "request_fields": request_fields,
                     "responses": extract_response_summaries(operation),
+                    "response_fields": extract_response_fields(operation, components, path, method.upper()),
+                    "response_list_item_fields": extract_response_list_item_fields(operation, components, path, method.upper()),
                 }
             )
     return operations
@@ -314,6 +430,9 @@ def build_markdown(base_url: str, operations: list[dict[str, Any]]) -> str:
             lines.append("")
             if operation["parameters"]:
                 lines.extend(operation["parameters"])
+                if operation["query_fields"]:
+                    lines.append("- Query DTO 展开：")
+                    lines.extend(operation["query_fields"])
             else:
                 lines.append("- 无路径参数或查询参数")
 
@@ -334,6 +453,12 @@ def build_markdown(base_url: str, operations: list[dict[str, Any]]) -> str:
             lines.append("")
             if operation["responses"]:
                 lines.extend(operation["responses"])
+                if operation["response_fields"]:
+                    lines.append("- 响应字段展开（高频接口第一层）：")
+                    lines.extend(operation["response_fields"])
+                if operation["response_list_item_fields"]:
+                    lines.append("- 列表项结构提示（`data.list[]` 第一层）：")
+                    lines.extend(operation["response_list_item_fields"])
             else:
                 lines.append("- 无响应描述")
 

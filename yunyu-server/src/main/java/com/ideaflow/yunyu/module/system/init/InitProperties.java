@@ -1,5 +1,6 @@
 package com.ideaflow.yunyu.module.system.init;
 
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.net.URI;
@@ -9,6 +10,7 @@ import java.net.URISyntaxException;
  * 初始化配置属性类。
  * 作用：承接 Spring Boot 原生数据源配置，并解析出启动自动初始化所需的数据库连接参数。
  */
+@Data
 @ConfigurationProperties(prefix = "spring.datasource")
 public class InitProperties {
 
@@ -28,42 +30,6 @@ public class InitProperties {
 
     private boolean hasText(String value) {
         return value != null && !value.trim().isEmpty();
-    }
-
-    /**
-     * 获取数据源 URL。
-     *
-     * @return 数据源 URL
-     */
-    public String getUrl() {
-        return url;
-    }
-
-    /**
-     * 设置数据源 URL。
-     *
-     * @param url 数据源 URL
-     */
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    /**
-     * 获取驱动类名。
-     *
-     * @return 驱动类名
-     */
-    public String getDriverClassName() {
-        return driverClassName;
-    }
-
-    /**
-     * 设置驱动类名。
-     *
-     * @param driverClassName 驱动类名
-     */
-    public void setDriverClassName(String driverClassName) {
-        this.driverClassName = driverClassName;
     }
 
     /**
@@ -96,42 +62,6 @@ public class InitProperties {
             return "";
         }
         return path.startsWith("/") ? path.substring(1) : path;
-    }
-
-    /**
-     * 获取数据库用户名。
-     *
-     * @return 数据库用户名
-     */
-    public String getUsername() {
-        return username;
-    }
-
-    /**
-     * 设置数据库用户名。
-     *
-     * @param username 数据库用户名
-     */
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    /**
-     * 获取数据库密码。
-     *
-     * @return 数据库密码
-     */
-    public String getPassword() {
-        return password;
-    }
-
-    /**
-     * 设置数据库密码。
-     *
-     * @param password 数据库密码
-     */
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     private URI parseUri() {

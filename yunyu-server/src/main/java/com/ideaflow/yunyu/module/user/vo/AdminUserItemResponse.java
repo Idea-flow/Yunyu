@@ -1,201 +1,34 @@
 package com.ideaflow.yunyu.module.user.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
+import lombok.Data;
 
 /**
  * 后台用户条目响应类。
  * 作用：向后台用户管理页面返回单个用户的展示信息，避免直接暴露实体类中的敏感字段。
  */
+@Data
 public class AdminUserItemResponse {
 
+    @Schema(description = "用户 ID。", example = "3")
     private Long id;
+    @Schema(description = "邮箱。", example = "editor@example.com")
     private String email;
+    @Schema(description = "用户名。", example = "内容编辑小王")
     private String userName;
+    @Schema(description = "头像地址。", example = "https://cdn.example.com/avatars/editor.png")
     private String avatarUrl;
+    @Schema(description = "角色。SUPER_ADMIN=站长，USER=普通用户。", example = "USER", allowableValues = {"SUPER_ADMIN", "USER"})
     private String role;
+    @Schema(description = "状态。ACTIVE=启用，DISABLED=禁用。", example = "ACTIVE", allowableValues = {"ACTIVE", "DISABLED"})
     private String status;
+    @Schema(description = "最后登录时间。", example = "2026-04-26T20:30:00")
     private LocalDateTime lastLoginAt;
+    @Schema(description = "最后登录 IP。", example = "127.0.0.1")
     private String lastLoginIp;
+    @Schema(description = "创建时间。", example = "2026-04-01T10:00:00")
     private LocalDateTime createdTime;
+    @Schema(description = "更新时间。", example = "2026-04-26T20:35:00")
     private LocalDateTime updatedTime;
-
-    /**
-     * 获取用户ID。
-     *
-     * @return 用户ID
-     */
-    public Long getId() {
-        return id;
-    }
-
-    /**
-     * 设置用户ID。
-     *
-     * @param id 用户ID
-     */
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    /**
-     * 获取邮箱。
-     *
-     * @return 邮箱
-     */
-    public String getEmail() {
-        return email;
-    }
-
-    /**
-     * 设置邮箱。
-     *
-     * @param email 邮箱
-     */
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    /**
-     * 获取用户名。
-     *
-     * @return 用户名
-     */
-    public String getUserName() {
-        return userName;
-    }
-
-    /**
-     * 设置用户名。
-     *
-     * @param userName 用户名
-     */
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
-
-    /**
-     * 获取头像地址。
-     *
-     * @return 头像地址
-     */
-    public String getAvatarUrl() {
-        return avatarUrl;
-    }
-
-    /**
-     * 设置头像地址。
-     *
-     * @param avatarUrl 头像地址
-     */
-    public void setAvatarUrl(String avatarUrl) {
-        this.avatarUrl = avatarUrl;
-    }
-
-    /**
-     * 获取角色。
-     *
-     * @return 角色
-     */
-    public String getRole() {
-        return role;
-    }
-
-    /**
-     * 设置角色。
-     *
-     * @param role 角色
-     */
-    public void setRole(String role) {
-        this.role = role;
-    }
-
-    /**
-     * 获取状态。
-     *
-     * @return 状态
-     */
-    public String getStatus() {
-        return status;
-    }
-
-    /**
-     * 设置状态。
-     *
-     * @param status 状态
-     */
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    /**
-     * 获取最后登录时间。
-     *
-     * @return 最后登录时间
-     */
-    public LocalDateTime getLastLoginAt() {
-        return lastLoginAt;
-    }
-
-    /**
-     * 设置最后登录时间。
-     *
-     * @param lastLoginAt 最后登录时间
-     */
-    public void setLastLoginAt(LocalDateTime lastLoginAt) {
-        this.lastLoginAt = lastLoginAt;
-    }
-
-    /**
-     * 获取最后登录IP。
-     *
-     * @return 最后登录IP
-     */
-    public String getLastLoginIp() {
-        return lastLoginIp;
-    }
-
-    /**
-     * 设置最后登录IP。
-     *
-     * @param lastLoginIp 最后登录IP
-     */
-    public void setLastLoginIp(String lastLoginIp) {
-        this.lastLoginIp = lastLoginIp;
-    }
-
-    /**
-     * 获取创建时间。
-     *
-     * @return 创建时间
-     */
-    public LocalDateTime getCreatedTime() {
-        return createdTime;
-    }
-
-    /**
-     * 设置创建时间。
-     *
-     * @param createdTime 创建时间
-     */
-    public void setCreatedTime(LocalDateTime createdTime) {
-        this.createdTime = createdTime;
-    }
-
-    /**
-     * 获取更新时间。
-     *
-     * @return 更新时间
-     */
-    public LocalDateTime getUpdatedTime() {
-        return updatedTime;
-    }
-
-    /**
-     * 设置更新时间。
-     *
-     * @param updatedTime 更新时间
-     */
-    public void setUpdatedTime(LocalDateTime updatedTime) {
-        this.updatedTime = updatedTime;
-    }
 }

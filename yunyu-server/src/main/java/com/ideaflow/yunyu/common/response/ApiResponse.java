@@ -1,6 +1,7 @@
 package com.ideaflow.yunyu.common.response;
 
 import com.ideaflow.yunyu.common.constant.ResultCode;
+import lombok.Data;
 
 /**
  * 统一接口返回对象。
@@ -8,6 +9,7 @@ import com.ideaflow.yunyu.common.constant.ResultCode;
  *
  * @param <T> 数据载荷类型
  */
+@Data
 public class ApiResponse<T> {
 
     private final int code;
@@ -74,32 +76,5 @@ public class ApiResponse<T> {
      */
     public static <T> ApiResponse<T> fail(int code, String message) {
         return new ApiResponse<>(code, message, null);
-    }
-
-    /**
-     * 获取业务状态码。
-     *
-     * @return 业务状态码
-     */
-    public int getCode() {
-        return code;
-    }
-
-    /**
-     * 获取响应消息。
-     *
-     * @return 响应消息
-     */
-    public String getMessage() {
-        return message;
-    }
-
-    /**
-     * 获取业务数据。
-     *
-     * @return 业务数据
-     */
-    public T getData() {
-        return data;
     }
 }

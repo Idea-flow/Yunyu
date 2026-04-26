@@ -2,8 +2,8 @@
 
 本文档由仓库外层脚本从 `/v3/api-docs` 自动生成，只保留 `/api/admin/**` 接口，用于让 agent 以更低 token 成本快速读取后台能力。
 
-- 来源：`http://127.0.0.1:20001/v3/api-docs`
-- 生成时间：`2026-04-26 23:39:34 +0800`
+- 来源：`http://127.0.0.1:20000/v3/api-docs`
+- 生成时间：`2026-04-27 00:06:10 +0800`
 - 接口总数：`52`
 
 ## 接口总览
@@ -80,6 +80,9 @@
 #### 响应
 
 - `200`；ApiResponseAdminSiteAiProviderConfigResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.activeProfileKey` (string; 可选; 示例: openai-main)：当前启用的 AI 配置键。
+- `data.profiles` (array<AdminSiteAiProviderProfileResponse>; 可选)：AI 提供商配置列表。
 ### PUT /api/admin/site/ai/providers
 
 - 摘要：保存后台 AI 提供商配置
@@ -111,6 +114,9 @@
 #### 响应
 
 - `200`；ApiResponseAdminSiteAiProviderConfigResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.activeProfileKey` (string; 可选; 示例: openai-main)：当前启用的 AI 配置键。
+- `data.profiles` (array<AdminSiteAiProviderProfileResponse>; 可选)：AI 提供商配置列表。
 ### POST /api/admin/site/ai/providers/test
 
 - 摘要：测试 AI 提供商连接
@@ -140,6 +146,9 @@
 #### 响应
 
 - `200`；ApiResponseAdminSiteAiProviderConnectionTestResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.success` (boolean; 可选; 示例: true)：连接测试是否成功。
+- `data.message` (string; 可选; 示例: 连接测试成功)：连接测试结果说明。
 
 ## 后台专题管理
 
@@ -152,6 +161,11 @@
 #### 参数
 
 - `request` (query; AdminTopicQueryRequest; 必填)
+- Query DTO 展开：
+- `keyword` (string; 可选)
+- `status` (string; 可选)
+- `pageNo` (integer; 可选)
+- `pageSize` (integer; 可选)
 
 #### 请求体
 
@@ -160,6 +174,23 @@
 #### 响应
 
 - `200`；ApiResponseAdminTopicListResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.list` (array<AdminTopicItemResponse>; 可选)
+- `data.total` (integer; 可选)
+- `data.pageNo` (integer; 可选)
+- `data.pageSize` (integer; 可选)
+- `data.totalPages` (integer; 可选)
+- 列表项结构提示（`data.list[]` 第一层）：
+- `data.list[].id` (integer; 可选)
+- `data.list[].name` (string; 可选)
+- `data.list[].slug` (string; 可选)
+- `data.list[].description` (string; 可选)
+- `data.list[].coverUrl` (string; 可选)
+- `data.list[].status` (string; 可选)
+- `data.list[].sortOrder` (integer; 可选)
+- `data.list[].relatedPostCount` (integer; 可选)
+- `data.list[].createdTime` (string; 可选)
+- `data.list[].updatedTime` (string; 可选)
 ### POST /api/admin/topics
 
 - 摘要：创建专题
@@ -183,6 +214,17 @@
 #### 响应
 
 - `200`；ApiResponseAdminTopicItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选)
+- `data.name` (string; 可选)
+- `data.slug` (string; 可选)
+- `data.description` (string; 可选)
+- `data.coverUrl` (string; 可选)
+- `data.status` (string; 可选)
+- `data.sortOrder` (integer; 可选)
+- `data.relatedPostCount` (integer; 可选)
+- `data.createdTime` (string; 可选)
+- `data.updatedTime` (string; 可选)
 ### GET /api/admin/topics/{topicId}
 
 - 摘要：查询单个专题详情
@@ -200,6 +242,17 @@
 #### 响应
 
 - `200`；ApiResponseAdminTopicItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选)
+- `data.name` (string; 可选)
+- `data.slug` (string; 可选)
+- `data.description` (string; 可选)
+- `data.coverUrl` (string; 可选)
+- `data.status` (string; 可选)
+- `data.sortOrder` (integer; 可选)
+- `data.relatedPostCount` (integer; 可选)
+- `data.createdTime` (string; 可选)
+- `data.updatedTime` (string; 可选)
 ### PUT /api/admin/topics/{topicId}
 
 - 摘要：更新专题
@@ -223,6 +276,17 @@
 #### 响应
 
 - `200`；ApiResponseAdminTopicItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选)
+- `data.name` (string; 可选)
+- `data.slug` (string; 可选)
+- `data.description` (string; 可选)
+- `data.coverUrl` (string; 可选)
+- `data.status` (string; 可选)
+- `data.sortOrder` (integer; 可选)
+- `data.relatedPostCount` (integer; 可选)
+- `data.createdTime` (string; 可选)
+- `data.updatedTime` (string; 可选)
 ### DELETE /api/admin/topics/{topicId}
 
 - 摘要：删除专题
@@ -252,6 +316,11 @@
 #### 参数
 
 - `request` (query; AdminCategoryQueryRequest; 必填)
+- Query DTO 展开：
+- `keyword` (string; 可选)
+- `status` (string; 可选)
+- `pageNo` (integer; 可选)
+- `pageSize` (integer; 可选)
 
 #### 请求体
 
@@ -260,6 +329,23 @@
 #### 响应
 
 - `200`；ApiResponseAdminCategoryListResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.list` (array<AdminCategoryItemResponse>; 可选)
+- `data.total` (integer; 可选)
+- `data.pageNo` (integer; 可选)
+- `data.pageSize` (integer; 可选)
+- `data.totalPages` (integer; 可选)
+- 列表项结构提示（`data.list[]` 第一层）：
+- `data.list[].id` (integer; 可选)
+- `data.list[].name` (string; 可选)
+- `data.list[].slug` (string; 可选)
+- `data.list[].description` (string; 可选)
+- `data.list[].coverUrl` (string; 可选)
+- `data.list[].status` (string; 可选)
+- `data.list[].sortOrder` (integer; 可选)
+- `data.list[].relatedPostCount` (integer; 可选)
+- `data.list[].createdTime` (string; 可选)
+- `data.list[].updatedTime` (string; 可选)
 ### POST /api/admin/categories
 
 - 摘要：创建分类
@@ -283,6 +369,17 @@
 #### 响应
 
 - `200`；ApiResponseAdminCategoryItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选)
+- `data.name` (string; 可选)
+- `data.slug` (string; 可选)
+- `data.description` (string; 可选)
+- `data.coverUrl` (string; 可选)
+- `data.status` (string; 可选)
+- `data.sortOrder` (integer; 可选)
+- `data.relatedPostCount` (integer; 可选)
+- `data.createdTime` (string; 可选)
+- `data.updatedTime` (string; 可选)
 ### GET /api/admin/categories/{categoryId}
 
 - 摘要：查询单个分类详情
@@ -300,6 +397,17 @@
 #### 响应
 
 - `200`；ApiResponseAdminCategoryItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选)
+- `data.name` (string; 可选)
+- `data.slug` (string; 可选)
+- `data.description` (string; 可选)
+- `data.coverUrl` (string; 可选)
+- `data.status` (string; 可选)
+- `data.sortOrder` (integer; 可选)
+- `data.relatedPostCount` (integer; 可选)
+- `data.createdTime` (string; 可选)
+- `data.updatedTime` (string; 可选)
 ### PUT /api/admin/categories/{categoryId}
 
 - 摘要：更新分类
@@ -323,6 +431,17 @@
 #### 响应
 
 - `200`；ApiResponseAdminCategoryItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选)
+- `data.name` (string; 可选)
+- `data.slug` (string; 可选)
+- `data.description` (string; 可选)
+- `data.coverUrl` (string; 可选)
+- `data.status` (string; 可选)
+- `data.sortOrder` (integer; 可选)
+- `data.relatedPostCount` (integer; 可选)
+- `data.createdTime` (string; 可选)
+- `data.updatedTime` (string; 可选)
 ### DELETE /api/admin/categories/{categoryId}
 
 - 摘要：删除分类
@@ -352,6 +471,11 @@
 #### 参数
 
 - `request` (query; AdminFriendLinkQueryRequest; 必填)
+- Query DTO 展开：
+- `keyword` (string; 可选; 示例: IdeaFlow)：关键词。可匹配站点名称、站点地址、联系人等文本字段。
+- `status` (string; 可选; 枚举: PENDING, APPROVED, REJECTED, OFFLINE; 示例: APPROVED)：友链状态。PENDING=待审核，APPROVED=已通过，REJECTED=已驳回，OFFLINE=已下线。
+- `pageNo` (integer; 可选; 示例: 1)：页码。最小为 1。
+- `pageSize` (integer; 可选; 示例: 10)：每页条数。范围 1-100。
 
 #### 请求体
 
@@ -360,6 +484,26 @@
 #### 响应
 
 - `200`；ApiResponseAdminFriendLinkListResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.list` (array<AdminFriendLinkItemResponse>; 可选)：友链列表数据。
+- `data.total` (integer; 可选; 示例: 24)：总记录数。
+- `data.pageNo` (integer; 可选; 示例: 1)：当前页码。
+- `data.pageSize` (integer; 可选; 示例: 10)：当前每页条数。
+- `data.totalPages` (integer; 可选; 示例: 3)：总页数。
+- 列表项结构提示（`data.list[]` 第一层）：
+- `data.list[].id` (integer; 可选; 示例: 9)：友链 ID。
+- `data.list[].siteName` (string; 可选; 示例: IdeaFlow)：站点名称。
+- `data.list[].siteUrl` (string; 可选; 示例: https://ideaflow.example.com)：站点地址。
+- `data.list[].logoUrl` (string; 可选; 示例: https://cdn.example.com/logos/ideaflow.png)：站点 Logo 地址。
+- `data.list[].description` (string; 可选; 示例: 专注工程实践与产品思考。)：站点简介。
+- `data.list[].contactName` (string; 可选; 示例: 王小明)：联系人名称。
+- `data.list[].contactEmail` (string; 可选; 示例: editor@example.com)：联系邮箱。
+- `data.list[].contactMessage` (string; 可选; 示例: 欢迎互链。)：申请留言或备注。
+- `data.list[].themeColor` (string; 可选; 示例: #2563EB)：站点主题色。
+- `data.list[].sortOrder` (integer; 可选; 示例: 10)：排序值。值越小越靠前。
+- `data.list[].status` (string; 可选; 枚举: PENDING, APPROVED, REJECTED, OFFLINE; 示例: APPROVED)：友链状态。PENDING=待审核，APPROVED=已通过，REJECTED=已驳回，OFFLINE=已下线。
+- `data.list[].createdTime` (string; 可选; 示例: 2026-04-26T20:30:00)：创建时间。
+- `data.list[].updatedTime` (string; 可选; 示例: 2026-04-26T20:35:00)：更新时间。
 ### POST /api/admin/friend-links
 
 - 摘要：创建友链
@@ -387,6 +531,20 @@
 #### 响应
 
 - `200`；ApiResponseAdminFriendLinkItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选; 示例: 9)：友链 ID。
+- `data.siteName` (string; 可选; 示例: IdeaFlow)：站点名称。
+- `data.siteUrl` (string; 可选; 示例: https://ideaflow.example.com)：站点地址。
+- `data.logoUrl` (string; 可选; 示例: https://cdn.example.com/logos/ideaflow.png)：站点 Logo 地址。
+- `data.description` (string; 可选; 示例: 专注工程实践与产品思考。)：站点简介。
+- `data.contactName` (string; 可选; 示例: 王小明)：联系人名称。
+- `data.contactEmail` (string; 可选; 示例: editor@example.com)：联系邮箱。
+- `data.contactMessage` (string; 可选; 示例: 欢迎互链。)：申请留言或备注。
+- `data.themeColor` (string; 可选; 示例: #2563EB)：站点主题色。
+- `data.sortOrder` (integer; 可选; 示例: 10)：排序值。值越小越靠前。
+- `data.status` (string; 可选; 枚举: PENDING, APPROVED, REJECTED, OFFLINE; 示例: APPROVED)：友链状态。PENDING=待审核，APPROVED=已通过，REJECTED=已驳回，OFFLINE=已下线。
+- `data.createdTime` (string; 可选; 示例: 2026-04-26T20:30:00)：创建时间。
+- `data.updatedTime` (string; 可选; 示例: 2026-04-26T20:35:00)：更新时间。
 ### GET /api/admin/friend-links/{friendLinkId}
 
 - 摘要：查询后台友链详情
@@ -404,6 +562,20 @@
 #### 响应
 
 - `200`；ApiResponseAdminFriendLinkItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选; 示例: 9)：友链 ID。
+- `data.siteName` (string; 可选; 示例: IdeaFlow)：站点名称。
+- `data.siteUrl` (string; 可选; 示例: https://ideaflow.example.com)：站点地址。
+- `data.logoUrl` (string; 可选; 示例: https://cdn.example.com/logos/ideaflow.png)：站点 Logo 地址。
+- `data.description` (string; 可选; 示例: 专注工程实践与产品思考。)：站点简介。
+- `data.contactName` (string; 可选; 示例: 王小明)：联系人名称。
+- `data.contactEmail` (string; 可选; 示例: editor@example.com)：联系邮箱。
+- `data.contactMessage` (string; 可选; 示例: 欢迎互链。)：申请留言或备注。
+- `data.themeColor` (string; 可选; 示例: #2563EB)：站点主题色。
+- `data.sortOrder` (integer; 可选; 示例: 10)：排序值。值越小越靠前。
+- `data.status` (string; 可选; 枚举: PENDING, APPROVED, REJECTED, OFFLINE; 示例: APPROVED)：友链状态。PENDING=待审核，APPROVED=已通过，REJECTED=已驳回，OFFLINE=已下线。
+- `data.createdTime` (string; 可选; 示例: 2026-04-26T20:30:00)：创建时间。
+- `data.updatedTime` (string; 可选; 示例: 2026-04-26T20:35:00)：更新时间。
 ### PUT /api/admin/friend-links/{friendLinkId}
 
 - 摘要：更新友链
@@ -431,6 +603,20 @@
 #### 响应
 
 - `200`；ApiResponseAdminFriendLinkItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选; 示例: 9)：友链 ID。
+- `data.siteName` (string; 可选; 示例: IdeaFlow)：站点名称。
+- `data.siteUrl` (string; 可选; 示例: https://ideaflow.example.com)：站点地址。
+- `data.logoUrl` (string; 可选; 示例: https://cdn.example.com/logos/ideaflow.png)：站点 Logo 地址。
+- `data.description` (string; 可选; 示例: 专注工程实践与产品思考。)：站点简介。
+- `data.contactName` (string; 可选; 示例: 王小明)：联系人名称。
+- `data.contactEmail` (string; 可选; 示例: editor@example.com)：联系邮箱。
+- `data.contactMessage` (string; 可选; 示例: 欢迎互链。)：申请留言或备注。
+- `data.themeColor` (string; 可选; 示例: #2563EB)：站点主题色。
+- `data.sortOrder` (integer; 可选; 示例: 10)：排序值。值越小越靠前。
+- `data.status` (string; 可选; 枚举: PENDING, APPROVED, REJECTED, OFFLINE; 示例: APPROVED)：友链状态。PENDING=待审核，APPROVED=已通过，REJECTED=已驳回，OFFLINE=已下线。
+- `data.createdTime` (string; 可选; 示例: 2026-04-26T20:30:00)：创建时间。
+- `data.updatedTime` (string; 可选; 示例: 2026-04-26T20:35:00)：更新时间。
 ### DELETE /api/admin/friend-links/{friendLinkId}
 
 - 摘要：删除友链
@@ -466,6 +652,20 @@
 #### 响应
 
 - `200`；ApiResponseAdminFriendLinkItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选; 示例: 9)：友链 ID。
+- `data.siteName` (string; 可选; 示例: IdeaFlow)：站点名称。
+- `data.siteUrl` (string; 可选; 示例: https://ideaflow.example.com)：站点地址。
+- `data.logoUrl` (string; 可选; 示例: https://cdn.example.com/logos/ideaflow.png)：站点 Logo 地址。
+- `data.description` (string; 可选; 示例: 专注工程实践与产品思考。)：站点简介。
+- `data.contactName` (string; 可选; 示例: 王小明)：联系人名称。
+- `data.contactEmail` (string; 可选; 示例: editor@example.com)：联系邮箱。
+- `data.contactMessage` (string; 可选; 示例: 欢迎互链。)：申请留言或备注。
+- `data.themeColor` (string; 可选; 示例: #2563EB)：站点主题色。
+- `data.sortOrder` (integer; 可选; 示例: 10)：排序值。值越小越靠前。
+- `data.status` (string; 可选; 枚举: PENDING, APPROVED, REJECTED, OFFLINE; 示例: APPROVED)：友链状态。PENDING=待审核，APPROVED=已通过，REJECTED=已驳回，OFFLINE=已下线。
+- `data.createdTime` (string; 可选; 示例: 2026-04-26T20:30:00)：创建时间。
+- `data.updatedTime` (string; 可选; 示例: 2026-04-26T20:35:00)：更新时间。
 
 ## 后台文章 AI 能力
 
@@ -504,6 +704,17 @@
 #### 参数
 
 - `request` (query; AdminPostQueryRequest; 必填)
+- Query DTO 展开：
+- `keyword` (string; 可选)
+- `status` (string; 可选)
+- `categoryId` (integer; 可选)
+- `tagId` (integer; 可选)
+- `topicId` (integer; 可选)
+- `isTop` (integer; 可选)
+- `isRecommend` (integer; 可选)
+- `allowComment` (integer; 可选)
+- `pageNo` (integer; 可选)
+- `pageSize` (integer; 可选)
 
 #### 请求体
 
@@ -512,6 +723,42 @@
 #### 响应
 
 - `200`；ApiResponseAdminPostListResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.list` (array<AdminPostItemResponse>; 可选)
+- `data.total` (integer; 可选)
+- `data.pageNo` (integer; 可选)
+- `data.pageSize` (integer; 可选)
+- `data.totalPages` (integer; 可选)
+- 列表项结构提示（`data.list[]` 第一层）：
+- `data.list[].id` (integer; 可选)
+- `data.list[].title` (string; 可选)
+- `data.list[].slug` (string; 可选)
+- `data.list[].summary` (string; 可选)
+- `data.list[].coverUrl` (string; 可选)
+- `data.list[].videoUrl` (string; 可选)
+- `data.list[].categoryId` (integer; 可选)
+- `data.list[].categoryName` (string; 可选)
+- `data.list[].tagIds` (array<integer>; 可选)
+- `data.list[].tagNames` (array<string>; 可选)
+- `data.list[].topicIds` (array<integer>; 可选)
+- `data.list[].topicNames` (array<string>; 可选)
+- `data.list[].topic` (string; 可选)
+- `data.list[].status` (string; 可选)
+- `data.list[].isTop` (boolean; 可选)
+- `data.list[].isRecommend` (boolean; 可选)
+- `data.list[].allowComment` (boolean; 可选)
+- `data.list[].seoTitle` (string; 可选)
+- `data.list[].seoDescription` (string; 可选)
+- `data.list[].coverReady` (boolean; 可选)
+- `data.list[].videoReady` (boolean; 可选)
+- `data.list[].summaryReady` (boolean; 可选)
+- `data.list[].readingMinutes` (integer; 可选)
+- `data.list[].wordCount` (integer; 可选)
+- `data.list[].contentMarkdown` (string; 可选)
+- `data.list[].contentAccessConfig` (ContentAccessConfig; 可选)
+- `data.list[].tailHiddenContentMarkdown` (string; 可选)
+- `data.list[].updatedAt` (string; 可选)
+- `data.list[].publishedAt` (string; 可选)
 ### POST /api/admin/posts
 
 - 摘要：创建文章
@@ -559,6 +806,36 @@
 #### 响应
 
 - `200`；ApiResponseAdminPostItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选)
+- `data.title` (string; 可选)
+- `data.slug` (string; 可选)
+- `data.summary` (string; 可选)
+- `data.coverUrl` (string; 可选)
+- `data.videoUrl` (string; 可选)
+- `data.categoryId` (integer; 可选)
+- `data.categoryName` (string; 可选)
+- `data.tagIds` (array<integer>; 可选)
+- `data.tagNames` (array<string>; 可选)
+- `data.topicIds` (array<integer>; 可选)
+- `data.topicNames` (array<string>; 可选)
+- `data.topic` (string; 可选)
+- `data.status` (string; 可选)
+- `data.isTop` (boolean; 可选)
+- `data.isRecommend` (boolean; 可选)
+- `data.allowComment` (boolean; 可选)
+- `data.seoTitle` (string; 可选)
+- `data.seoDescription` (string; 可选)
+- `data.coverReady` (boolean; 可选)
+- `data.videoReady` (boolean; 可选)
+- `data.summaryReady` (boolean; 可选)
+- `data.readingMinutes` (integer; 可选)
+- `data.wordCount` (integer; 可选)
+- `data.contentMarkdown` (string; 可选)
+- `data.contentAccessConfig` (ContentAccessConfig; 可选)
+- `data.tailHiddenContentMarkdown` (string; 可选)
+- `data.updatedAt` (string; 可选)
+- `data.publishedAt` (string; 可选)
 ### GET /api/admin/posts/{postId}
 
 - 摘要：查询后台文章详情
@@ -576,6 +853,36 @@
 #### 响应
 
 - `200`；ApiResponseAdminPostItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选)
+- `data.title` (string; 可选)
+- `data.slug` (string; 可选)
+- `data.summary` (string; 可选)
+- `data.coverUrl` (string; 可选)
+- `data.videoUrl` (string; 可选)
+- `data.categoryId` (integer; 可选)
+- `data.categoryName` (string; 可选)
+- `data.tagIds` (array<integer>; 可选)
+- `data.tagNames` (array<string>; 可选)
+- `data.topicIds` (array<integer>; 可选)
+- `data.topicNames` (array<string>; 可选)
+- `data.topic` (string; 可选)
+- `data.status` (string; 可选)
+- `data.isTop` (boolean; 可选)
+- `data.isRecommend` (boolean; 可选)
+- `data.allowComment` (boolean; 可选)
+- `data.seoTitle` (string; 可选)
+- `data.seoDescription` (string; 可选)
+- `data.coverReady` (boolean; 可选)
+- `data.videoReady` (boolean; 可选)
+- `data.summaryReady` (boolean; 可选)
+- `data.readingMinutes` (integer; 可选)
+- `data.wordCount` (integer; 可选)
+- `data.contentMarkdown` (string; 可选)
+- `data.contentAccessConfig` (ContentAccessConfig; 可选)
+- `data.tailHiddenContentMarkdown` (string; 可选)
+- `data.updatedAt` (string; 可选)
+- `data.publishedAt` (string; 可选)
 ### PUT /api/admin/posts/{postId}
 
 - 摘要：更新文章
@@ -623,6 +930,36 @@
 #### 响应
 
 - `200`；ApiResponseAdminPostItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选)
+- `data.title` (string; 可选)
+- `data.slug` (string; 可选)
+- `data.summary` (string; 可选)
+- `data.coverUrl` (string; 可选)
+- `data.videoUrl` (string; 可选)
+- `data.categoryId` (integer; 可选)
+- `data.categoryName` (string; 可选)
+- `data.tagIds` (array<integer>; 可选)
+- `data.tagNames` (array<string>; 可选)
+- `data.topicIds` (array<integer>; 可选)
+- `data.topicNames` (array<string>; 可选)
+- `data.topic` (string; 可选)
+- `data.status` (string; 可选)
+- `data.isTop` (boolean; 可选)
+- `data.isRecommend` (boolean; 可选)
+- `data.allowComment` (boolean; 可选)
+- `data.seoTitle` (string; 可选)
+- `data.seoDescription` (string; 可选)
+- `data.coverReady` (boolean; 可选)
+- `data.videoReady` (boolean; 可选)
+- `data.summaryReady` (boolean; 可选)
+- `data.readingMinutes` (integer; 可选)
+- `data.wordCount` (integer; 可选)
+- `data.contentMarkdown` (string; 可选)
+- `data.contentAccessConfig` (ContentAccessConfig; 可选)
+- `data.tailHiddenContentMarkdown` (string; 可选)
+- `data.updatedAt` (string; 可选)
+- `data.publishedAt` (string; 可选)
 ### DELETE /api/admin/posts/{postId}
 
 - 摘要：删除文章
@@ -652,6 +989,11 @@
 #### 参数
 
 - `request` (query; AdminTagQueryRequest; 必填)
+- Query DTO 展开：
+- `keyword` (string; 可选)
+- `status` (string; 可选)
+- `pageNo` (integer; 可选)
+- `pageSize` (integer; 可选)
 
 #### 请求体
 
@@ -660,6 +1002,23 @@
 #### 响应
 
 - `200`；ApiResponseAdminTagListResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.list` (array<AdminTagItemResponse>; 可选)
+- `data.total` (integer; 可选)
+- `data.pageNo` (integer; 可选)
+- `data.pageSize` (integer; 可选)
+- `data.totalPages` (integer; 可选)
+- 列表项结构提示（`data.list[]` 第一层）：
+- `data.list[].id` (integer; 可选)
+- `data.list[].name` (string; 可选)
+- `data.list[].slug` (string; 可选)
+- `data.list[].description` (string; 可选)
+- `data.list[].coverUrl` (string; 可选)
+- `data.list[].status` (string; 可选)
+- `data.list[].sortOrder` (integer; 可选)
+- `data.list[].relatedPostCount` (integer; 可选)
+- `data.list[].createdTime` (string; 可选)
+- `data.list[].updatedTime` (string; 可选)
 ### POST /api/admin/tags
 
 - 摘要：创建标签
@@ -681,6 +1040,17 @@
 #### 响应
 
 - `200`；ApiResponseAdminTagItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选)
+- `data.name` (string; 可选)
+- `data.slug` (string; 可选)
+- `data.description` (string; 可选)
+- `data.coverUrl` (string; 可选)
+- `data.status` (string; 可选)
+- `data.sortOrder` (integer; 可选)
+- `data.relatedPostCount` (integer; 可选)
+- `data.createdTime` (string; 可选)
+- `data.updatedTime` (string; 可选)
 ### GET /api/admin/tags/{tagId}
 
 - 摘要：查询单个标签详情
@@ -698,6 +1068,17 @@
 #### 响应
 
 - `200`；ApiResponseAdminTagItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选)
+- `data.name` (string; 可选)
+- `data.slug` (string; 可选)
+- `data.description` (string; 可选)
+- `data.coverUrl` (string; 可选)
+- `data.status` (string; 可选)
+- `data.sortOrder` (integer; 可选)
+- `data.relatedPostCount` (integer; 可选)
+- `data.createdTime` (string; 可选)
+- `data.updatedTime` (string; 可选)
 ### PUT /api/admin/tags/{tagId}
 
 - 摘要：更新标签
@@ -719,6 +1100,17 @@
 #### 响应
 
 - `200`；ApiResponseAdminTagItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选)
+- `data.name` (string; 可选)
+- `data.slug` (string; 可选)
+- `data.description` (string; 可选)
+- `data.coverUrl` (string; 可选)
+- `data.status` (string; 可选)
+- `data.sortOrder` (integer; 可选)
+- `data.relatedPostCount` (integer; 可选)
+- `data.createdTime` (string; 可选)
+- `data.updatedTime` (string; 可选)
 ### DELETE /api/admin/tags/{tagId}
 
 - 摘要：删除标签
@@ -748,6 +1140,12 @@
 #### 参数
 
 - `request` (query; AdminUserQueryRequest; 必填)
+- Query DTO 展开：
+- `keyword` (string; 可选)
+- `role` (string; 可选)
+- `status` (string; 可选)
+- `pageNo` (integer; 可选)
+- `pageSize` (integer; 可选)
 
 #### 请求体
 
@@ -756,6 +1154,23 @@
 #### 响应
 
 - `200`；ApiResponseAdminUserListResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.list` (array<AdminUserItemResponse>; 可选)
+- `data.total` (integer; 可选)
+- `data.pageNo` (integer; 可选)
+- `data.pageSize` (integer; 可选)
+- `data.totalPages` (integer; 可选)
+- 列表项结构提示（`data.list[]` 第一层）：
+- `data.list[].id` (integer; 可选)
+- `data.list[].email` (string; 可选)
+- `data.list[].userName` (string; 可选)
+- `data.list[].avatarUrl` (string; 可选)
+- `data.list[].role` (string; 可选)
+- `data.list[].status` (string; 可选)
+- `data.list[].lastLoginAt` (string; 可选)
+- `data.list[].lastLoginIp` (string; 可选)
+- `data.list[].createdTime` (string; 可选)
+- `data.list[].updatedTime` (string; 可选)
 ### POST /api/admin/users
 
 - 摘要：创建用户
@@ -779,6 +1194,17 @@
 #### 响应
 
 - `200`；ApiResponseAdminUserItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选)
+- `data.email` (string; 可选)
+- `data.userName` (string; 可选)
+- `data.avatarUrl` (string; 可选)
+- `data.role` (string; 可选)
+- `data.status` (string; 可选)
+- `data.lastLoginAt` (string; 可选)
+- `data.lastLoginIp` (string; 可选)
+- `data.createdTime` (string; 可选)
+- `data.updatedTime` (string; 可选)
 ### GET /api/admin/users/{userId}
 
 - 摘要：查询单个用户详情
@@ -796,6 +1222,17 @@
 #### 响应
 
 - `200`；ApiResponseAdminUserItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选)
+- `data.email` (string; 可选)
+- `data.userName` (string; 可选)
+- `data.avatarUrl` (string; 可选)
+- `data.role` (string; 可选)
+- `data.status` (string; 可选)
+- `data.lastLoginAt` (string; 可选)
+- `data.lastLoginIp` (string; 可选)
+- `data.createdTime` (string; 可选)
+- `data.updatedTime` (string; 可选)
 ### PUT /api/admin/users/{userId}
 
 - 摘要：更新用户
@@ -819,6 +1256,17 @@
 #### 响应
 
 - `200`；ApiResponseAdminUserItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选)
+- `data.email` (string; 可选)
+- `data.userName` (string; 可选)
+- `data.avatarUrl` (string; 可选)
+- `data.role` (string; 可选)
+- `data.status` (string; 可选)
+- `data.lastLoginAt` (string; 可选)
+- `data.lastLoginIp` (string; 可选)
+- `data.createdTime` (string; 可选)
+- `data.updatedTime` (string; 可选)
 ### DELETE /api/admin/users/{userId}
 
 - 摘要：删除用户
@@ -856,6 +1304,9 @@
 #### 响应
 
 - `200`；ApiResponseAdminSiteStorageS3ConfigResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.activeProfileKey` (string; 可选; 示例: r2-main)：当前启用的 S3 配置键。
+- `data.profiles` (array<AdminSiteStorageS3ProfileResponse>; 可选)：S3 配置列表。
 ### PUT /api/admin/site/storage/s3
 
 - 摘要：保存后台 S3 配置
@@ -888,6 +1339,9 @@
 #### 响应
 
 - `200`；ApiResponseAdminSiteStorageS3ConfigResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.activeProfileKey` (string; 可选; 示例: r2-main)：当前启用的 S3 配置键。
+- `data.profiles` (array<AdminSiteStorageS3ProfileResponse>; 可选)：S3 配置列表。
 ### POST /api/admin/site/storage/s3/test
 
 - 摘要：测试 S3 配置连接
@@ -918,6 +1372,9 @@
 #### 响应
 
 - `200`；ApiResponseAdminSiteStorageS3ConnectionTestResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.success` (boolean; 可选; 示例: true)：连接测试是否成功。
+- `data.message` (string; 可选; 示例: 连接成功，可访问目标 Bucket)：连接测试结果说明。
 
 ## 后台站点配置
 
@@ -938,6 +1395,20 @@
 #### 响应
 
 - `200`；ApiResponseAdminSiteConfigResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.siteName` (string; 可选; 示例: 云屿)：站点名称。
+- `data.siteSubTitle` (string; 可选; 示例: 记录技术与生活)：站点副标题。
+- `data.footerText` (string; 可选; 示例: 持续记录，持续分享。)：页脚文案。
+- `data.logoUrl` (string; 可选; 示例: https://cdn.example.com/assets/logo.png)：站点 Logo 地址。
+- `data.faviconUrl` (string; 可选; 示例: https://cdn.example.com/assets/favicon.ico)：站点 Favicon 地址。
+- `data.defaultTitle` (string; 可选; 示例: 云屿 | 技术与生活)：默认标题模板。
+- `data.defaultDescription` (string; 可选; 示例: 记录技术实践、阅读思考与生活感受。)：默认描述。
+- `data.primaryColor` (string; 可选; 示例: #2563EB)：站点主色。
+- `data.secondaryColor` (string; 可选; 示例: #0F172A)：站点辅助色。
+- `data.wechatAccessCodeEnabled` (boolean; 可选; 示例: false)：是否启用公众号验证码访问。
+- `data.wechatAccessCode` (string; 可选; 示例: yunyu-2026)：公众号访问验证码。
+- `data.wechatAccessCodeHint` (string; 可选; 示例: 关注公众号后回复验证码获取访问权限)：公众号验证码提示文案。
+- `data.wechatQrCodeUrl` (string; 可选; 示例: https://cdn.example.com/assets/wechat-qrcode.png)：公众号二维码图片地址。
 ### PUT /api/admin/site-config
 
 - 摘要：更新站点配置
@@ -968,6 +1439,20 @@
 #### 响应
 
 - `200`；ApiResponseAdminSiteConfigResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.siteName` (string; 可选; 示例: 云屿)：站点名称。
+- `data.siteSubTitle` (string; 可选; 示例: 记录技术与生活)：站点副标题。
+- `data.footerText` (string; 可选; 示例: 持续记录，持续分享。)：页脚文案。
+- `data.logoUrl` (string; 可选; 示例: https://cdn.example.com/assets/logo.png)：站点 Logo 地址。
+- `data.faviconUrl` (string; 可选; 示例: https://cdn.example.com/assets/favicon.ico)：站点 Favicon 地址。
+- `data.defaultTitle` (string; 可选; 示例: 云屿 | 技术与生活)：默认标题模板。
+- `data.defaultDescription` (string; 可选; 示例: 记录技术实践、阅读思考与生活感受。)：默认描述。
+- `data.primaryColor` (string; 可选; 示例: #2563EB)：站点主色。
+- `data.secondaryColor` (string; 可选; 示例: #0F172A)：站点辅助色。
+- `data.wechatAccessCodeEnabled` (boolean; 可选; 示例: false)：是否启用公众号验证码访问。
+- `data.wechatAccessCode` (string; 可选; 示例: yunyu-2026)：公众号访问验证码。
+- `data.wechatAccessCodeHint` (string; 可选; 示例: 关注公众号后回复验证码获取访问权限)：公众号验证码提示文案。
+- `data.wechatQrCodeUrl` (string; 可选; 示例: https://cdn.example.com/assets/wechat-qrcode.png)：公众号二维码图片地址。
 
 ## 后台评论管理
 
@@ -980,6 +1465,13 @@
 #### 参数
 
 - `request` (query; AdminCommentQueryRequest; 必填)
+- Query DTO 展开：
+- `keyword` (string; 可选; 示例: 写得很好)：关键词。可用于匹配评论内容、评论人名称等文本字段。
+- `status` (string; 可选; 枚举: PENDING, APPROVED, REJECTED; 示例: PENDING)：评论状态。PENDING=待审核，APPROVED=已通过，REJECTED=已驳回。
+- `postId` (integer; 可选; 示例: 18)：文章 ID。仅查看某篇文章下的评论时填写。
+- `userId` (integer; 可选; 示例: 3)：评论用户 ID。用于按评论作者筛选。
+- `pageNo` (integer; 可选; 示例: 1)：页码。默认 1。
+- `pageSize` (integer; 可选; 示例: 10)：每页条数。默认 10。
 
 #### 请求体
 
@@ -988,6 +1480,28 @@
 #### 响应
 
 - `200`；ApiResponseAdminCommentListResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.list` (array<AdminCommentItemResponse>; 可选)：评论列表数据。
+- `data.total` (integer; 可选; 示例: 58)：总记录数。
+- `data.pageNo` (integer; 可选; 示例: 1)：当前页码。
+- `data.pageSize` (integer; 可选; 示例: 10)：当前每页条数。
+- `data.totalPages` (integer; 可选; 示例: 6)：总页数。
+- 列表项结构提示（`data.list[]` 第一层）：
+- `data.list[].id` (integer; 可选; 示例: 101)：评论 ID。
+- `data.list[].postId` (integer; 可选; 示例: 18)：所属文章 ID。
+- `data.list[].postTitle` (string; 可选; 示例: Spring Boot 与 Nuxt 联调记录)：所属文章标题。
+- `data.list[].postSlug` (string; 可选; 示例: spring-boot-nuxt-integration-notes)：所属文章 slug。
+- `data.list[].userId` (integer; 可选; 示例: 3)：评论用户 ID。
+- `data.list[].userName` (string; 可选; 示例: 内容编辑小王)：评论用户名。
+- `data.list[].userEmail` (string; 可选; 示例: editor@example.com)：评论用户邮箱。
+- `data.list[].replyCommentId` (integer; 可选; 示例: 88)：直接回复目标评论 ID。根评论时为空。
+- `data.list[].rootId` (integer; 可选; 示例: 80)：评论根节点 ID。根评论时通常与当前评论 ID 一致或为空。
+- `data.list[].replyToUserName` (string; 可选; 示例: 站长)：被回复用户名称。
+- `data.list[].content` (string; 可选; 示例: 这篇文章写得很清楚。)：评论内容。
+- `data.list[].status` (string; 可选; 枚举: PENDING, APPROVED, REJECTED; 示例: PENDING)：评论状态。PENDING=待审核，APPROVED=已通过，REJECTED=已驳回。
+- `data.list[].ip` (string; 可选; 示例: 127.0.0.1)：评论来源 IP。
+- `data.list[].createdTime` (string; 可选; 示例: 2026-04-26T20:30:00)：创建时间。
+- `data.list[].updatedTime` (string; 可选; 示例: 2026-04-26T20:35:00)：更新时间。
 ### GET /api/admin/comments/thread-groups
 
 - 摘要：查询后台评论树形审核列表
@@ -997,6 +1511,13 @@
 #### 参数
 
 - `request` (query; AdminCommentQueryRequest; 必填)
+- Query DTO 展开：
+- `keyword` (string; 可选; 示例: 写得很好)：关键词。可用于匹配评论内容、评论人名称等文本字段。
+- `status` (string; 可选; 枚举: PENDING, APPROVED, REJECTED; 示例: PENDING)：评论状态。PENDING=待审核，APPROVED=已通过，REJECTED=已驳回。
+- `postId` (integer; 可选; 示例: 18)：文章 ID。仅查看某篇文章下的评论时填写。
+- `userId` (integer; 可选; 示例: 3)：评论用户 ID。用于按评论作者筛选。
+- `pageNo` (integer; 可选; 示例: 1)：页码。默认 1。
+- `pageSize` (integer; 可选; 示例: 10)：每页条数。默认 10。
 
 #### 请求体
 
@@ -1005,6 +1526,22 @@
 #### 响应
 
 - `200`；ApiResponseAdminCommentThreadGroupListResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.list` (array<AdminCommentThreadGroupResponse>; 可选)：按文章分组后的评论树列表。
+- `data.total` (integer; 可选; 示例: 8)：总记录数。
+- `data.pageNo` (integer; 可选; 示例: 1)：当前页码。
+- `data.pageSize` (integer; 可选; 示例: 10)：当前每页条数。
+- `data.totalPages` (integer; 可选; 示例: 1)：总页数。
+- 列表项结构提示（`data.list[]` 第一层）：
+- `data.list[].postId` (integer; 可选; 示例: 18)：文章 ID。
+- `data.list[].postTitle` (string; 可选; 示例: Spring Boot 与 Nuxt 联调记录)：文章标题。
+- `data.list[].postSlug` (string; 可选; 示例: spring-boot-nuxt-integration-notes)：文章 slug。
+- `data.list[].totalCommentCount` (integer; 可选; 示例: 24)：该文章下的评论总数。
+- `data.list[].pendingCommentCount` (integer; 可选; 示例: 5)：待审核评论数。
+- `data.list[].approvedCommentCount` (integer; 可选; 示例: 17)：已通过评论数。
+- `data.list[].rejectedCommentCount` (integer; 可选; 示例: 2)：已驳回评论数。
+- `data.list[].latestCommentTime` (string; 可选; 示例: 2026-04-26T20:35:00)：最新评论时间。
+- `data.list[].roots` (array<AdminCommentThreadRootItemResponse>; 可选)：该文章下的根评论列表。
 ### GET /api/admin/comments/{commentId}
 
 - 摘要：查询单条评论详情
@@ -1022,6 +1559,22 @@
 #### 响应
 
 - `200`；ApiResponseAdminCommentItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选; 示例: 101)：评论 ID。
+- `data.postId` (integer; 可选; 示例: 18)：所属文章 ID。
+- `data.postTitle` (string; 可选; 示例: Spring Boot 与 Nuxt 联调记录)：所属文章标题。
+- `data.postSlug` (string; 可选; 示例: spring-boot-nuxt-integration-notes)：所属文章 slug。
+- `data.userId` (integer; 可选; 示例: 3)：评论用户 ID。
+- `data.userName` (string; 可选; 示例: 内容编辑小王)：评论用户名。
+- `data.userEmail` (string; 可选; 示例: editor@example.com)：评论用户邮箱。
+- `data.replyCommentId` (integer; 可选; 示例: 88)：直接回复目标评论 ID。根评论时为空。
+- `data.rootId` (integer; 可选; 示例: 80)：评论根节点 ID。根评论时通常与当前评论 ID 一致或为空。
+- `data.replyToUserName` (string; 可选; 示例: 站长)：被回复用户名称。
+- `data.content` (string; 可选; 示例: 这篇文章写得很清楚。)：评论内容。
+- `data.status` (string; 可选; 枚举: PENDING, APPROVED, REJECTED; 示例: PENDING)：评论状态。PENDING=待审核，APPROVED=已通过，REJECTED=已驳回。
+- `data.ip` (string; 可选; 示例: 127.0.0.1)：评论来源 IP。
+- `data.createdTime` (string; 可选; 示例: 2026-04-26T20:30:00)：创建时间。
+- `data.updatedTime` (string; 可选; 示例: 2026-04-26T20:35:00)：更新时间。
 ### DELETE /api/admin/comments/{commentId}
 
 - 摘要：删除评论
@@ -1057,6 +1610,22 @@
 #### 响应
 
 - `200`；ApiResponseAdminCommentItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选; 示例: 101)：评论 ID。
+- `data.postId` (integer; 可选; 示例: 18)：所属文章 ID。
+- `data.postTitle` (string; 可选; 示例: Spring Boot 与 Nuxt 联调记录)：所属文章标题。
+- `data.postSlug` (string; 可选; 示例: spring-boot-nuxt-integration-notes)：所属文章 slug。
+- `data.userId` (integer; 可选; 示例: 3)：评论用户 ID。
+- `data.userName` (string; 可选; 示例: 内容编辑小王)：评论用户名。
+- `data.userEmail` (string; 可选; 示例: editor@example.com)：评论用户邮箱。
+- `data.replyCommentId` (integer; 可选; 示例: 88)：直接回复目标评论 ID。根评论时为空。
+- `data.rootId` (integer; 可选; 示例: 80)：评论根节点 ID。根评论时通常与当前评论 ID 一致或为空。
+- `data.replyToUserName` (string; 可选; 示例: 站长)：被回复用户名称。
+- `data.content` (string; 可选; 示例: 这篇文章写得很清楚。)：评论内容。
+- `data.status` (string; 可选; 枚举: PENDING, APPROVED, REJECTED; 示例: PENDING)：评论状态。PENDING=待审核，APPROVED=已通过，REJECTED=已驳回。
+- `data.ip` (string; 可选; 示例: 127.0.0.1)：评论来源 IP。
+- `data.createdTime` (string; 可选; 示例: 2026-04-26T20:30:00)：创建时间。
+- `data.updatedTime` (string; 可选; 示例: 2026-04-26T20:35:00)：更新时间。
 
 ## 后台附件管理
 
@@ -1069,6 +1638,11 @@
 #### 参数
 
 - `request` (query; AdminAttachmentQueryRequest; 必填)
+- Query DTO 展开：
+- `keyword` (string; 可选; 示例: spring-boot)：关键词。会按文件名等可搜索字段模糊匹配。
+- `mimeType` (string; 可选; 示例: image/png)：MIME 类型筛选。可按图片、视频等具体类型过滤。
+- `pageNo` (integer; 可选; 示例: 1)：页码。未传时后端会按默认分页处理。
+- `pageSize` (integer; 可选; 示例: 10)：每页条数。未传时后端会按默认分页处理。
 
 #### 请求体
 
@@ -1077,6 +1651,28 @@
 #### 响应
 
 - `200`；ApiResponseAdminAttachmentListResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.list` (array<AdminAttachmentItemResponse>; 可选)：附件列表数据。
+- `data.total` (integer; 可选; 示例: 128)：总记录数。
+- `data.pageNo` (integer; 可选; 示例: 1)：当前页码。
+- `data.pageSize` (integer; 可选; 示例: 10)：当前每页条数。
+- `data.totalPages` (integer; 可选; 示例: 13)：总页数。
+- 列表项结构提示（`data.list[]` 第一层）：
+- `data.list[].id` (integer; 可选; 示例: 12)：附件 ID。
+- `data.list[].fileName` (string; 可选; 示例: spring-boot-guide.png)：原始文件名。
+- `data.list[].fileExt` (string; 可选; 示例: png)：文件扩展名。
+- `data.list[].mimeType` (string; 可选; 示例: image/png)：文件 MIME 类型。
+- `data.list[].sizeBytes` (integer; 可选; 示例: 245760)：文件大小，单位字节。
+- `data.list[].sha256` (string; 可选; 示例: 4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a)：文件 SHA-256 摘要。
+- `data.list[].storageProvider` (string; 可选; 示例: S3)：存储提供商标识。
+- `data.list[].storageConfigKey` (string; 可选; 示例: r2-main)：命中的存储配置键。
+- `data.list[].bucket` (string; 可选; 示例: yunyu-assets)：对象所在 Bucket。
+- `data.list[].objectKey` (string; 可选; 示例: attachments/2026/04/spring-boot-guide.png)：对象在存储中的 object key。
+- `data.list[].accessUrl` (string; 可选; 示例: https://cdn.example.com/attachments/2026/04/spring-boot-guide.png)：对外访问地址。
+- `data.list[].etag` (string; 可选; 示例: d41d8cd98f00b204e9800998ecf8427e)：对象存储返回的 ETag。
+- `data.list[].uploaderUserId` (integer; 可选; 示例: 1)：上传者用户 ID。
+- `data.list[].createdTime` (string; 可选; 示例: 2026-04-26T20:30:00)：创建时间。
+- `data.list[].updatedTime` (string; 可选; 示例: 2026-04-26T20:35:00)：更新时间。
 ### POST /api/admin/attachments/check-exists
 
 - 摘要：检查附件是否已存在
@@ -1095,6 +1691,9 @@
 #### 响应
 
 - `200`；ApiResponseAdminAttachmentExistsCheckResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.exists` (boolean; 可选; 示例: true)：是否已存在相同 SHA-256 的附件。
+- `data.attachment` (AdminAttachmentItemResponse; 可选)：命中时返回的附件详情；未命中时为空。
 ### POST /api/admin/attachments/complete
 
 - 摘要：提交上传完成回执
@@ -1120,6 +1719,22 @@
 #### 响应
 
 - `200`；ApiResponseAdminAttachmentItemResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.id` (integer; 可选; 示例: 12)：附件 ID。
+- `data.fileName` (string; 可选; 示例: spring-boot-guide.png)：原始文件名。
+- `data.fileExt` (string; 可选; 示例: png)：文件扩展名。
+- `data.mimeType` (string; 可选; 示例: image/png)：文件 MIME 类型。
+- `data.sizeBytes` (integer; 可选; 示例: 245760)：文件大小，单位字节。
+- `data.sha256` (string; 可选; 示例: 4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a)：文件 SHA-256 摘要。
+- `data.storageProvider` (string; 可选; 示例: S3)：存储提供商标识。
+- `data.storageConfigKey` (string; 可选; 示例: r2-main)：命中的存储配置键。
+- `data.bucket` (string; 可选; 示例: yunyu-assets)：对象所在 Bucket。
+- `data.objectKey` (string; 可选; 示例: attachments/2026/04/spring-boot-guide.png)：对象在存储中的 object key。
+- `data.accessUrl` (string; 可选; 示例: https://cdn.example.com/attachments/2026/04/spring-boot-guide.png)：对外访问地址。
+- `data.etag` (string; 可选; 示例: d41d8cd98f00b204e9800998ecf8427e)：对象存储返回的 ETag。
+- `data.uploaderUserId` (integer; 可选; 示例: 1)：上传者用户 ID。
+- `data.createdTime` (string; 可选; 示例: 2026-04-26T20:30:00)：创建时间。
+- `data.updatedTime` (string; 可选; 示例: 2026-04-26T20:35:00)：更新时间。
 ### POST /api/admin/attachments/presign
 
 - 摘要：生成上传预签名
@@ -1140,6 +1755,15 @@
 #### 响应
 
 - `200`；ApiResponseAdminAttachmentPresignResponse；OK
+- 响应字段展开（高频接口第一层）：
+- `data.uploadUrl` (string; 可选; 示例: https://example-bucket.s3.amazonaws.com/attachments/2026/04/spring-boot-guide.png?X-Amz-Algorithm=...)：预签名上传地址。客户端应按返回的 HTTP 方法和请求头直传文件。
+- `data.httpMethod` (string; 可选; 示例: PUT)：上传所需的 HTTP 方法。
+- `data.headers` (object; 可选; 示例: {"Content-Type": "image/png"})：上传所需附加请求头。
+- `data.storageConfigKey` (string; 可选; 示例: r2-main)：命中的存储配置键。
+- `data.bucket` (string; 可选; 示例: yunyu-assets)：目标 Bucket 名称。
+- `data.objectKey` (string; 可选; 示例: attachments/2026/04/spring-boot-guide.png)：目标 object key。
+- `data.accessUrl` (string; 可选; 示例: https://cdn.example.com/attachments/2026/04/spring-boot-guide.png)：上传完成后可访问的资源地址。
+- `data.expireAt` (string; 可选; 示例: 2026-04-26T20:35:00)：预签名过期时间。
 ### DELETE /api/admin/attachments/{attachmentId}
 
 - 摘要：删除附件
