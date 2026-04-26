@@ -381,113 +381,117 @@ onMounted(() => {
             调试 `/v1/chat/completions` 与 `/v1/response` 的流式和非流式请求。
           </p>
         </div>
-
-        <div class="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap">
-          <AdminButton
-            icon="i-lucide-sparkles"
-            label="填充示例"
-            tone="neutral"
-            variant="outline"
-            size="sm"
-            @click="fillSampleRequest(protocol)"
-          />
-          <AdminButton
-            icon="i-lucide-rotate-ccw"
-            label="重置"
-            tone="neutral"
-            variant="outline"
-            size="sm"
-            @click="resetPlayground"
-          />
-          <AdminPrimaryButton
-            :loading="isRunning"
-            icon="i-lucide-send"
-            label="发送请求"
-            loading-label="请求中..."
-            @click="runRequest"
-          />
-          <AdminButton
-            v-if="streamEnabled && isRunning"
-            icon="i-lucide-square"
-            label="停止"
-            tone="neutral"
-            variant="outline"
-            size="sm"
-            @click="stopStreaming"
-          />
-        </div>
       </div>
     </section>
 
-    <section class="grid gap-4 rounded-[18px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.6))] p-4 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.76),rgba(15,23,42,0.66))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)] lg:p-5">
-      <div class="grid gap-4 md:grid-cols-3">
-        <div class="space-y-2">
-          <p class="text-sm font-medium text-slate-700 dark:text-slate-300">协议</p>
-          <AdminSelect
-            v-model="protocol"
-            :items="protocolOptions"
-            placeholder="请选择协议"
-          />
-        </div>
+    <section class="grid gap-4 lg:h-[calc(100dvh-220px)] lg:grid-cols-[380px_minmax(0,1fr)]">
+      <aside class="rounded-[18px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(255,255,255,0.64))] p-4 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.8),rgba(15,23,42,0.68))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)] lg:min-h-0 lg:overflow-y-auto lg:p-5">
+        <div class="space-y-4">
+          <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-50">模型与请求配置</h2>
 
-        <div class="space-y-2">
-          <p class="text-sm font-medium text-slate-700 dark:text-slate-300">返回模式</p>
-          <div class="rounded-[12px] border border-slate-200/80 bg-white/80 p-3 dark:border-white/10 dark:bg-white/[0.03]">
-            <AdminToggleButton
-              v-model="streamEnabled"
-              tone="info"
-              active-label="流式"
-              inactive-label="非流式"
+          <div class="space-y-2">
+            <p class="text-sm font-medium text-slate-700 dark:text-slate-300">协议</p>
+            <AdminSelect
+              v-model="protocol"
+              :items="protocolOptions"
+              placeholder="请选择协议"
+            />
+          </div>
+
+          <div class="space-y-2">
+            <p class="text-sm font-medium text-slate-700 dark:text-slate-300">返回模式</p>
+            <div class="rounded-[12px] border border-slate-200/80 bg-white/80 p-3 dark:border-white/10 dark:bg-white/[0.03]">
+              <AdminToggleButton
+                v-model="streamEnabled"
+                tone="info"
+                active-label="流式"
+                inactive-label="非流式"
+              />
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <p class="text-sm font-medium text-slate-700 dark:text-slate-300">请求端点</p>
+            <AdminInput :model-value="endpointPath" readonly />
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <AdminButton
+              icon="i-lucide-sparkles"
+              label="填充示例"
+              tone="neutral"
+              variant="outline"
+              size="sm"
+              @click="fillSampleRequest(protocol)"
+            />
+            <AdminButton
+              icon="i-lucide-rotate-ccw"
+              label="重置"
+              tone="neutral"
+              variant="outline"
+              size="sm"
+              @click="resetPlayground"
+            />
+            <AdminPrimaryButton
+              :loading="isRunning"
+              icon="i-lucide-send"
+              label="发送请求"
+              loading-label="请求中..."
+              @click="runRequest"
+            />
+            <AdminButton
+              v-if="streamEnabled && isRunning"
+              icon="i-lucide-square"
+              label="停止"
+              tone="neutral"
+              variant="outline"
+              size="sm"
+              @click="stopStreaming"
             />
           </div>
         </div>
 
         <div class="space-y-2">
-          <p class="text-sm font-medium text-slate-700 dark:text-slate-300">请求端点</p>
-          <AdminInput :model-value="endpointPath" readonly />
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-sm font-medium text-slate-700 dark:text-slate-300">请求 JSON</p>
+            <p class="text-xs text-slate-400 dark:text-slate-500">
+              自动覆盖 `stream={{ streamEnabled }}`
+            </p>
+          </div>
+          <AdminTextarea
+            v-model="requestJson"
+            :rows="18"
+            placeholder="请输入 OpenAI 协议请求 JSON"
+            class="font-mono text-xs leading-5"
+          />
         </div>
-      </div>
+      </aside>
 
-      <div class="mt-4 space-y-2">
-        <div class="flex items-center justify-between gap-2">
-          <p class="text-sm font-medium text-slate-700 dark:text-slate-300">请求 JSON</p>
-          <p class="text-xs text-slate-400 dark:text-slate-500">
-            实际发送时会自动覆盖 `stream = {{ streamEnabled }}`
+      <section class="space-y-4 rounded-[18px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(255,255,255,0.64))] p-4 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.8),rgba(15,23,42,0.68))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)] lg:flex lg:min-h-0 lg:flex-col lg:p-5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-50">输出区域</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            {{ lastRequestPath ? `最近请求：${lastRequestPath}` : '尚未发送请求' }}
           </p>
         </div>
-        <AdminTextarea
-          v-model="requestJson"
-          :rows="16"
-          placeholder="请输入 OpenAI 协议请求 JSON"
-          class="font-mono text-xs leading-5"
-        />
-      </div>
-    </section>
 
-    <section class="space-y-4 rounded-[18px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.6))] p-4 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.76),rgba(15,23,42,0.66))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)] lg:p-5">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-50">响应结果</h2>
-        <p class="text-xs text-slate-500 dark:text-slate-400">
-          {{ lastRequestPath ? `最近请求：${lastRequestPath}` : '尚未发送请求' }}
-        </p>
-      </div>
-
-      <div v-if="!streamEnabled" class="space-y-2">
-        <p class="text-sm font-medium text-slate-700 dark:text-slate-300">非流式 JSON</p>
-        <pre class="max-h-[560px] overflow-auto rounded-[14px] border border-slate-200/80 bg-slate-950/95 p-3 text-xs leading-5 text-slate-100 dark:border-white/10">{{ responseJson || '等待请求结果...' }}</pre>
-      </div>
-
-      <div v-else class="grid gap-4 xl:grid-cols-2">
-        <div class="space-y-2">
-          <p class="text-sm font-medium text-slate-700 dark:text-slate-300">流式拼接文本</p>
-          <pre class="max-h-[560px] overflow-auto whitespace-pre-wrap break-words rounded-[14px] border border-slate-200/80 bg-slate-950/95 p-3 text-xs leading-5 text-slate-100 dark:border-white/10">{{ streamMergedText || '等待流式增量...' }}</pre>
+        <div v-if="!streamEnabled" class="space-y-2 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+          <p class="text-sm font-medium text-slate-700 dark:text-slate-300">非流式 JSON</p>
+          <pre class="overflow-auto whitespace-pre-wrap break-words rounded-[14px] border border-slate-200/80 bg-slate-50/90 p-4 font-mono text-xs leading-5 text-slate-700 dark:border-white/10 dark:bg-slate-900/55 dark:text-slate-200 lg:min-h-0 lg:flex-1">{{ responseJson || '等待请求结果...' }}</pre>
         </div>
 
-        <div class="space-y-2">
-          <p class="text-sm font-medium text-slate-700 dark:text-slate-300">原始 SSE 事件</p>
-          <pre class="max-h-[560px] overflow-auto whitespace-pre-wrap break-words rounded-[14px] border border-slate-200/80 bg-slate-950/95 p-3 text-xs leading-5 text-slate-100 dark:border-white/10">{{ streamRawOutput || '等待流式事件...' }}</pre>
+        <div v-else class="grid gap-4 xl:grid-cols-2 lg:min-h-0 lg:flex-1">
+          <div class="space-y-2 lg:flex lg:min-h-0 lg:flex-col">
+            <p class="text-sm font-medium text-slate-700 dark:text-slate-300">流式拼接文本</p>
+            <pre class="overflow-auto whitespace-pre-wrap break-words rounded-[14px] border border-slate-200/80 bg-slate-50/90 p-4 font-mono text-xs leading-5 text-slate-700 dark:border-white/10 dark:bg-slate-900/55 dark:text-slate-200 lg:min-h-0 lg:flex-1">{{ streamMergedText || '等待流式增量...' }}</pre>
+          </div>
+
+          <div class="space-y-2 lg:flex lg:min-h-0 lg:flex-col">
+            <p class="text-sm font-medium text-slate-700 dark:text-slate-300">原始 SSE 事件</p>
+            <pre class="overflow-auto whitespace-pre-wrap break-words rounded-[14px] border border-slate-200/80 bg-slate-50/90 p-4 font-mono text-xs leading-5 text-slate-700 dark:border-white/10 dark:bg-slate-900/55 dark:text-slate-200 lg:min-h-0 lg:flex-1">{{ streamRawOutput || '等待流式事件...' }}</pre>
+          </div>
         </div>
-      </div>
+      </section>
     </section>
   </div>
 </template>

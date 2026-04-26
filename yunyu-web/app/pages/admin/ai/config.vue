@@ -639,7 +639,7 @@ onMounted(async () => {
           </div>
           <div class="space-y-2">
             <p class="text-sm font-medium text-slate-700 dark:text-slate-300">API Key</p>
-            <div class="flex items-center gap-2">
+            <div class="relative">
               <AdminInput
                 v-if="isAiApiKeyVisible(currentAiProfile.profileKey)"
                 v-model="currentAiProfile.apiKey"
@@ -651,14 +651,17 @@ onMounted(async () => {
                 placeholder="请输入 API Key"
                 readonly
               />
-              <AdminButton
-                :icon="isAiApiKeyVisible(currentAiProfile.profileKey) ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                :label="isAiApiKeyVisible(currentAiProfile.profileKey) ? '隐藏' : '查看'"
-                tone="neutral"
-                variant="outline"
-                size="xs"
+              <button
+                type="button"
+                class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200"
+                :aria-label="isAiApiKeyVisible(currentAiProfile.profileKey) ? '隐藏 API Key' : '查看 API Key'"
                 @click="toggleAiApiKeyVisibility(currentAiProfile.profileKey)"
-              />
+              >
+                <UIcon
+                  :name="isAiApiKeyVisible(currentAiProfile.profileKey) ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                  class="size-4"
+                />
+              </button>
             </div>
           </div>
           <div class="space-y-2">
