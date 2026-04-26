@@ -1,5 +1,6 @@
 package com.ideaflow.yunyu.module.ai.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.Data;
 
@@ -10,6 +11,8 @@ import lombok.Data;
 @Data
 public class AdminSiteAiProviderConfigResponse {
 
+    @Schema(description = "当前启用的 AI 配置键。", example = "openai-main")
     private String activeProfileKey;
+    @Schema(description = "AI 提供商配置列表。")
     private List<AdminSiteAiProviderProfileResponse> profiles;
 }

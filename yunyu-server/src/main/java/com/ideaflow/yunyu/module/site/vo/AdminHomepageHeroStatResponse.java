@@ -1,5 +1,6 @@
 package com.ideaflow.yunyu.module.site.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -9,6 +10,8 @@ import lombok.Data;
 @Data
 public class AdminHomepageHeroStatResponse {
 
+    @Schema(description = "统计项标签。", example = "文章")
     private String label;
+    @Schema(description = "统计项值。", example = "128+")
     private String value;
 }

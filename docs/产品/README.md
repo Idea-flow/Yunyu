@@ -20,3 +20,4 @@
 当前已补充专题文档：
 
 - [06-AI公共系统需求方案（一期）.md](/Users/wangpenglong/projects/full-stack-project/Yunyu/docs/产品/06-AI公共系统需求方案（一期）.md)
+- [07-OpenAPI驱动的AI后台Skill与MCP需求方案（二期）.md](/Users/wangpenglong/projects/full-stack-project/Yunyu/docs/产品/07-OpenAPI驱动的AI后台Skill与MCP需求方案（二期）.md)

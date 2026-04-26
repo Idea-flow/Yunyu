@@ -1,6 +1,9 @@
 package com.ideaflow.yunyu.module.ai.scene.post;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.ideaflow.yunyu.common.constant.ResultCode;
+import com.ideaflow.yunyu.common.exception.BizException;
+import com.ideaflow.yunyu.module.ai.dto.AdminPostAiMetaGenerateRequest;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
@@ -25,6 +28,7 @@ public class PostMetaGenerateService {
     private static final int SUMMARY_MAX_LENGTH = 500;
     private static final int SEO_TITLE_MAX_LENGTH = 255;
     private static final int SEO_DESCRIPTION_MAX_LENGTH = 500;
+    private static final int PROMPT_MARKDOWN_MAX_LENGTH = 6000;
 
     private final ChatCompletionsService chatCompletionsService;
     private final PostMapper postMapper;
@@ -48,10 +52,11 @@ public class PostMetaGenerateService {
     /**
      * 以非流式方式生成文章元信息。
      *
-     * @param requestBody OpenAI Chat 风格请求体
+     * @param request 元信息生成请求
      * @return OpenAI Chat 风格响应体
      */
-    public JsonNode generate(JsonNode requestBody) {
+    public JsonNode generate(AdminPostAiMetaGenerateRequest request) {
+        JsonNode requestBody = buildChatRequest(request, false);
         JsonNode responseBody = chatCompletionsService.create(requestBody);
         return normalizeGeneratedMetaResponse(requestBody, responseBody);
     }
@@ -59,11 +64,90 @@ public class PostMetaGenerateService {
     /**
      * 以流式方式生成文章元信息。
      *
-     * @param requestBody OpenAI Chat 风格请求体
+     * @param request 元信息生成请求
      * @param emitter SSE 输出器
      */
-    public void streamGenerate(JsonNode requestBody, SseEmitter emitter) {
+    public void streamGenerate(AdminPostAiMetaGenerateRequest request, SseEmitter emitter) {
+        JsonNode requestBody = buildChatRequest(request, true);
         chatCompletionsService.stream(requestBody, emitter);
+    }
+
+    /**
+     * 构建底层 Chat 请求体。
+     * 作用：把标题、正文和可选模型参数转换为固定的 Chat Completions 请求结构，统一提示词与截断策略。
+     *
+     * @param request 元信息生成请求
+     * @param stream 是否流式
+     * @return Chat 请求体
+     */
+    private JsonNode buildChatRequest(AdminPostAiMetaGenerateRequest request, boolean stream) {
+        AdminPostAiMetaGenerateRequest normalizedRequest = request == null
+                ? new AdminPostAiMetaGenerateRequest()
+                : request;
+
+        String normalizedTitle = trimToLength(normalizedRequest.getTitle(), 200);
+        String normalizedMarkdown = normalizeOptionalText(normalizedRequest.getContentMarkdown());
+        if (isBlank(normalizedTitle) && isBlank(normalizedMarkdown)) {
+            throw new BizException(ResultCode.BAD_REQUEST, "标题或正文至少填写一项");
+        }
+
+        ObjectNode rootNode = objectMapper.createObjectNode();
+        rootNode.put("stream", stream);
+
+        if (!isBlank(normalizedRequest.getModel())) {
+            rootNode.put("model", normalizedRequest.getModel().trim());
+        }
+        if (normalizedRequest.getTemperature() != null) {
+            if (normalizedRequest.getTemperature() < 0 || normalizedRequest.getTemperature() > 2) {
+                throw new BizException(ResultCode.BAD_REQUEST, "temperature 需在 0-2 之间");
+            }
+            rootNode.put("temperature", normalizedRequest.getTemperature());
+        }
+        if (normalizedRequest.getMaxTokens() != null) {
+            if (normalizedRequest.getMaxTokens() < 1 || normalizedRequest.getMaxTokens() > 128000) {
+                throw new BizException(ResultCode.BAD_REQUEST, "maxTokens 需在 1-128000 之间");
+            }
+            rootNode.put("max_tokens", normalizedRequest.getMaxTokens());
+        }
+
+        ArrayNode messagesNode = rootNode.putArray("messages");
+        ObjectNode systemMessageNode = messagesNode.addObject();
+        systemMessageNode.put("role", "system");
+        systemMessageNode.put("content", String.join("\n",
+                "你是博客文章元信息生成助手。",
+                "请仅输出 JSON，不要输出任何额外说明、Markdown 或代码块。",
+                "必须包含字段：slug、summary、seoTitle、seoDescription。",
+                "slug 仅允许小写字母、数字和连字符。"
+        ));
+
+        ObjectNode userMessageNode = messagesNode.addObject();
+        userMessageNode.put("role", "user");
+        userMessageNode.put("content", String.join("\n",
+                "请根据以下文章信息生成元信息 JSON：",
+                "标题：" + (isBlank(normalizedTitle) ? "(空)" : normalizedTitle),
+                "正文（Markdown）：",
+                buildPromptMarkdown(normalizedMarkdown)
+        ));
+        return rootNode;
+    }
+
+    /**
+     * 构建用于提示词的正文文本。
+     * 作用：限制传给模型的正文长度，避免正文过长导致无效消耗。
+     *
+     * @param markdown 原始 Markdown
+     * @return 截断后的 Markdown 文本
+     */
+    private String buildPromptMarkdown(String markdown) {
+        if (isBlank(markdown)) {
+            return "(空)";
+        }
+
+        if (markdown.length() <= PROMPT_MARKDOWN_MAX_LENGTH) {
+            return markdown;
+        }
+        return markdown.substring(0, PROMPT_MARKDOWN_MAX_LENGTH)
+                + "\n\n[内容已截断，以上为正文前 6000 字符]";
     }
 
     /**
@@ -394,6 +478,16 @@ public class PostMetaGenerateService {
             return trimmedValue;
         }
         return trimmedValue.substring(0, maxLength).trim();
+    }
+
+    /**
+     * 标准化可选文本。
+     *
+     * @param value 原始值
+     * @return 去首尾空白后的文本
+     */
+    private String normalizeOptionalText(String value) {
+        return value == null ? "" : value.trim();
     }
 
     /**

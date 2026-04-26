@@ -173,9 +173,16 @@ export interface OpenAiChatCompletionResponse {
 
 /**
  * 后台文章 AI 元信息生成请求类型。
- * 作用：约束文章元信息生成接口请求字段，保持与 OpenAI Chat 协议一致。
+ * 作用：约束文章元信息生成接口请求字段，直接传递标题、正文和少量可调参数。
  */
-export type AdminPostAiMetaGenerateRequest = OpenAiChatCompletionRequest
+export interface AdminPostAiMetaGenerateRequest {
+  title?: string
+  contentMarkdown?: string
+  stream?: boolean
+  model?: string
+  temperature?: number
+  maxTokens?: number
+}
 
 /**
  * 后台文章 AI 元信息类型。

@@ -134,9 +134,9 @@ export function useAdminPosts() {
 
   /**
    * 非流式生成文章元信息。
-   * 作用：调用后台文章 AI 元信息接口并返回 OpenAI Chat 风格响应体。
+   * 作用：调用后台文章 AI 元信息接口，并返回 OpenAI Chat 风格响应体。
    *
-   * @param payload OpenAI Chat 风格请求体
+   * @param payload 文章元信息生成请求体
    * @returns OpenAI Chat 风格响应体
    */
   async function generatePostMeta(payload: AdminPostAiMetaGenerateRequest) {
@@ -153,7 +153,7 @@ export function useAdminPosts() {
    * 流式生成文章元信息。
    * 作用：通过原生 Fetch 读取 SSE 数据流，解析 OpenAI Chat 分片并回调增量文本。
    *
-   * @param payload OpenAI Chat 风格请求体
+   * @param payload 文章元信息生成请求体
    * @param options 流式回调与中断选项
    * @returns 流式聚合结果
    */

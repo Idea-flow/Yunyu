@@ -223,41 +223,16 @@ function parseGeneratedMeta(rawContent: string): AdminPostAiGeneratedMeta | null
 
 /**
  * 构建文章元信息 AI 请求体。
- * 作用：按 OpenAI Chat 协议拼装 messages，明确约束模型仅输出目标 JSON 字段。
+ * 作用：将标题与正文提交给后台，由后端统一构造提示词并生成目标元信息。
  *
- * @param stream 是否流式
- * @returns OpenAI Chat 风格请求体
+ * @returns 元信息生成请求体
  */
-function buildAiMetaGenerateRequest(stream: boolean): AdminPostAiMetaGenerateRequest {
-  const normalizedTitle = formState.title.trim()
-  const normalizedMarkdown = formState.contentMarkdown.trim()
-  const limitedMarkdown = normalizedMarkdown.length > 6000
-    ? `${normalizedMarkdown.slice(0, 6000)}\n\n[内容已截断，以上为正文前 6000 字符]`
-    : normalizedMarkdown
-
+function buildAiMetaGenerateRequest(): AdminPostAiMetaGenerateRequest {
   return {
-    stream,
+    title: formState.title.trim(),
+    contentMarkdown: formState.contentMarkdown.trim(),
     temperature: 0.2,
-    messages: [
-      {
-        role: 'system',
-        content: [
-          '你是博客文章元信息生成助手。',
-          '请仅输出 JSON，不要输出任何额外说明、Markdown 或代码块。',
-          '必须包含字段：slug、summary、seoTitle、seoDescription。',
-          'slug 仅允许小写字母、数字和连字符。'
-        ].join('\n')
-      },
-      {
-        role: 'user',
-        content: [
-          '请根据以下文章信息生成元信息 JSON：',
-          `标题：${normalizedTitle || '(空)'}`,
-          '正文（Markdown）：',
-          limitedMarkdown || '(空)'
-        ].join('\n')
-      }
-    ]
+    maxTokens: 800
   }
 }
 
@@ -302,7 +277,7 @@ async function generateMetaByAi() {
   try {
     if (useStreamGenerateMeta.value) {
       const response = await adminPosts.streamGeneratePostMeta(
-        buildAiMetaGenerateRequest(true),
+        buildAiMetaGenerateRequest(),
         {
           onChunk: (_chunk, deltaText) => {
             if (deltaText) {
@@ -316,7 +291,7 @@ async function generateMetaByAi() {
         aiMetaRawContent.value = response.fullText
       }
     } else {
-      const response = await adminPosts.generatePostMeta(buildAiMetaGenerateRequest(false))
+      const response = await adminPosts.generatePostMeta(buildAiMetaGenerateRequest())
       aiMetaRawContent.value = extractChatMessageContent(response)
     }
 

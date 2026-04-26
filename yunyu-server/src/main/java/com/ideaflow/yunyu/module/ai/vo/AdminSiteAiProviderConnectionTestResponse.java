@@ -1,5 +1,6 @@
 package com.ideaflow.yunyu.module.ai.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,6 +14,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AdminSiteAiProviderConnectionTestResponse {
 
+    @Schema(description = "连接测试是否成功。", example = "true")
     private Boolean success;
+    @Schema(description = "连接测试结果说明。", example = "连接测试成功")
     private String message;
 }

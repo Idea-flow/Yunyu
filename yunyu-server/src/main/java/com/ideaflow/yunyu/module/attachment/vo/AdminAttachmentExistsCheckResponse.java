@@ -1,5 +1,6 @@
 package com.ideaflow.yunyu.module.attachment.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -9,7 +10,8 @@ import lombok.Data;
 @Data
 public class AdminAttachmentExistsCheckResponse {
 
+    @Schema(description = "是否已存在相同 SHA-256 的附件。", example = "true")
     private Boolean exists;
+    @Schema(description = "命中时返回的附件详情；未命中时为空。")
     private AdminAttachmentItemResponse attachment;
 }
-

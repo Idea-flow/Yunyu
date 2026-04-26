@@ -1,5 +1,6 @@
 package com.ideaflow.yunyu.module.ai.controller;
 
+import com.ideaflow.yunyu.module.ai.dto.AdminPostAiMetaGenerateRequest;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ObjectNode;
@@ -42,24 +43,23 @@ public class AdminPostAiController {
 
     /**
      * 生成文章元信息。
-     * 该接口底层固定走 Chat Completions 协议服务，并通过 stream 控制流式行为。
+     * 该接口底层固定走 Chat Completions 协议服务，并由后端根据标题与正文统一构造提示词。
      *
-     * @param requestBody OpenAI Chat 风格请求体
+     * @param request 元信息生成请求
      * @return OpenAI Chat 风格响应或流式响应
      */
     @Operation(summary = "生成文章 Slug/摘要/SEO 元信息")
     @PostMapping("/meta/generate")
-    public ResponseEntity<?> generateMeta(@RequestBody(required = false) JsonNode requestBody) {
+    public ResponseEntity<?> generateMeta(@RequestBody(required = false) AdminPostAiMetaGenerateRequest request) {
         try {
-            JsonNode payload = requestBody == null ? objectMapper.createObjectNode() : requestBody;
-            if (isStream(payload)) {
+            if (isStream(request)) {
                 SseEmitter emitter = new SseEmitter(0L);
-                postMetaGenerateService.streamGenerate(payload, emitter);
+                postMetaGenerateService.streamGenerate(request, emitter);
                 return ResponseEntity.ok()
                         .contentType(MediaType.TEXT_EVENT_STREAM)
                         .body(emitter);
             }
-            return ResponseEntity.ok(postMetaGenerateService.generate(payload));
+            return ResponseEntity.ok(postMetaGenerateService.generate(request));
         } catch (Exception exception) {
             return buildOpenAiErrorResponse(exception);
         }
@@ -68,11 +68,11 @@ public class AdminPostAiController {
     /**
      * 判断请求是否要求流式响应。
      *
-     * @param requestBody 请求体
+     * @param request 请求对象
      * @return 是否流式
      */
-    private boolean isStream(JsonNode requestBody) {
-        return requestBody != null && requestBody.path("stream").asBoolean(false);
+    private boolean isStream(AdminPostAiMetaGenerateRequest request) {
+        return request != null && Boolean.TRUE.equals(request.getStream());
     }
 
     /**

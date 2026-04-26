@@ -1,5 +1,6 @@
 package com.ideaflow.yunyu.module.comment.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
@@ -11,6 +12,7 @@ import lombok.Data;
 @Data
 public class AdminCommentStatusUpdateRequest {
 
+    @Schema(description = "评论审核状态。PENDING=待审核，APPROVED=已通过，REJECTED=已驳回。", example = "APPROVED", allowableValues = {"PENDING", "APPROVED", "REJECTED"})
     @NotBlank(message = "评论状态不能为空")
     @Pattern(regexp = "PENDING|APPROVED|REJECTED", message = "评论状态不合法")
     private String status;

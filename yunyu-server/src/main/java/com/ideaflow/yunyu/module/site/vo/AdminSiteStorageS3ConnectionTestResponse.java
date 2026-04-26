@@ -1,5 +1,6 @@
 package com.ideaflow.yunyu.module.site.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -11,6 +12,8 @@ import lombok.Data;
 @AllArgsConstructor
 public class AdminSiteStorageS3ConnectionTestResponse {
 
+    @Schema(description = "连接测试是否成功。", example = "true")
     private Boolean success;
+    @Schema(description = "连接测试结果说明。", example = "连接成功，可访问目标 Bucket")
     private String message;
 }

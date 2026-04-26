@@ -1,5 +1,6 @@
 package com.ideaflow.yunyu.module.site.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.Data;
 
@@ -10,6 +11,8 @@ import lombok.Data;
 @Data
 public class AdminSiteStorageS3ConfigResponse {
 
+    @Schema(description = "当前启用的 S3 配置键。", example = "r2-main")
     private String activeProfileKey;
+    @Schema(description = "S3 配置列表。")
     private List<AdminSiteStorageS3ProfileResponse> profiles;
 }

@@ -19,3 +19,5 @@
 当前已补充专题文档：
 
 - [06-AI公共系统技术方案（一期）.md](/Users/wangpenglong/projects/full-stack-project/Yunyu/docs/技术/06-AI公共系统技术方案（一期）.md)
+- [07-OpenAPI驱动的AI后台Skill与MCP技术方案（二期）.md](/Users/wangpenglong/projects/full-stack-project/Yunyu/docs/技术/07-OpenAPI驱动的AI后台Skill与MCP技术方案（二期）.md)
+- [08-Skill-Only后台AI操作实现方案（一期）.md](/Users/wangpenglong/projects/full-stack-project/Yunyu/docs/技术/08-Skill-Only后台AI操作实现方案（一期）.md)
