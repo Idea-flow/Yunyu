@@ -1,4 +1,4 @@
-package com.ideaflow.yunyu.module.system.init.util;
+package com.ideaflow.yunyu.module.system.bootstrap.util;
 
 import java.util.ArrayList;
 import java.util.List;

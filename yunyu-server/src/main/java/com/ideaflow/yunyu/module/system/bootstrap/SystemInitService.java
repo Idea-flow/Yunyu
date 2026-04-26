@@ -1,6 +1,6 @@
-package com.ideaflow.yunyu.module.system.init;
+package com.ideaflow.yunyu.module.system.bootstrap;
 
-import com.ideaflow.yunyu.module.system.init.SystemInitStatus;
+import com.ideaflow.yunyu.module.system.bootstrap.SystemInitStatus;
 import org.springframework.stereotype.Service;
 
 /**

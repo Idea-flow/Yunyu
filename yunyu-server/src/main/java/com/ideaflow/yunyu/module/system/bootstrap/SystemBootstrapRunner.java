@@ -1,4 +1,4 @@
-package com.ideaflow.yunyu.module.system.init;
+package com.ideaflow.yunyu.module.system.bootstrap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

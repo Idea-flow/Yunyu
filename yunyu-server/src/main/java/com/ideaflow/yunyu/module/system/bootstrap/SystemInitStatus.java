@@ -1,4 +1,4 @@
-package com.ideaflow.yunyu.module.system.init;
+package com.ideaflow.yunyu.module.system.bootstrap;
 
 /**
  * 系统初始化状态枚举。

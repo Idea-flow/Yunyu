@@ -1,4 +1,4 @@
-package com.ideaflow.yunyu.module.system.init;
+package com.ideaflow.yunyu.module.system.bootstrap;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

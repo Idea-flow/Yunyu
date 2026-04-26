@@ -1,8 +1,8 @@
-package com.ideaflow.yunyu.module.system.init;
+package com.ideaflow.yunyu.module.system.bootstrap;
 
 import com.ideaflow.yunyu.common.constant.ResultCode;
 import com.ideaflow.yunyu.common.exception.BizException;
-import com.ideaflow.yunyu.module.system.init.util.SqlScriptUtils;
+import com.ideaflow.yunyu.module.system.bootstrap.util.SqlScriptUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
