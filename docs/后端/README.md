@@ -27,3 +27,4 @@
 当前已补充专题文档：
 
 - [05-附件管理-S3前端直传实现方案.md](/Users/wangpenglong/projects/full-stack-project/Yunyu/docs/后端/05-附件管理-S3前端直传实现方案.md)
+- [06-后端模块目录重构方案.md](/Users/wangpenglong/projects/full-stack-project/Yunyu/docs/后端/06-后端模块目录重构方案.md)

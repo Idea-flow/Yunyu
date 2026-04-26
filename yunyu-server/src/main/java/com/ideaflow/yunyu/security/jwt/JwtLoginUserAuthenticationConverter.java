@@ -2,7 +2,7 @@ package com.ideaflow.yunyu.security.jwt;
 
 import com.ideaflow.yunyu.common.constant.ResultCode;
 import com.ideaflow.yunyu.common.exception.BizException;
-import com.ideaflow.yunyu.module.auth.service.AuthService;
+import com.ideaflow.yunyu.module.auth.site.service.AuthService;
 import com.ideaflow.yunyu.security.LoginUser;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.BadCredentialsException;
