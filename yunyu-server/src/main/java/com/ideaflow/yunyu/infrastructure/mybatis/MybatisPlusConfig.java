@@ -1,6 +1,7 @@
 package com.ideaflow.yunyu.infrastructure.mybatis;
 
 import com.baomidou.mybatisplus.annotation.DbType;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import org.mybatis.spring.annotation.MapperScan;
@@ -10,9 +11,10 @@ import org.springframework.context.annotation.Configuration;
 /**
  * MyBatis-Plus 配置类。
  * 作用：开启 Mapper 扫描，并统一注册 MyBatis-Plus 拦截器，为正式业务模块提供分页等基础持久化能力。
+ * 说明：通过 markerInterface 约束仅扫描继承 BaseMapper 的接口，避免 `module` 包下非 mapper 接口被误识别。
  */
 @Configuration
-@MapperScan("com.ideaflow.yunyu.module")
+@MapperScan(basePackages = "com.ideaflow.yunyu.module", markerInterface = BaseMapper.class)
 public class MybatisPlusConfig {
 
     /**

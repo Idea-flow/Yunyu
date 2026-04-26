@@ -11,6 +11,15 @@ interface AdminNavigationItem {
 }
 
 /**
+ * 后台导航分组类型。
+ * 作用：把侧边栏入口按业务域分组展示，降低菜单层级增长后用户的检索成本。
+ */
+interface AdminNavigationGroup {
+  label: string
+  items: AdminNavigationItem[]
+}
+
+/**
  * 后台布局组件。
  * 负责承载 Yunyu 后台区域的导航、主题切换、身份展示与统一框架，
  * 作为所有后台页面共享的布局基础。
@@ -23,62 +32,92 @@ const sidebarCollapsed = useState('admin-sidebar-collapsed', () => false)
 const pendingCommentTotal = ref<number | null>(null)
 const isPendingCommentTotalLoading = ref(false)
 
-const navigationItems: AdminNavigationItem[] = [
+const navigationGroups: AdminNavigationGroup[] = [
   {
-    label: '后台首页',
-    icon: 'i-lucide-layout-dashboard',
-    to: '/admin'
+    label: '内容',
+    items: [
+      {
+        label: '后台首页',
+        icon: 'i-lucide-layout-dashboard',
+        to: '/admin'
+      },
+      {
+        label: '文章管理',
+        icon: 'i-lucide-files',
+        to: '/admin/posts'
+      },
+      {
+        label: '附件管理',
+        icon: 'i-lucide-paperclip',
+        to: '/admin/attachments'
+      },
+      {
+        label: '分类管理',
+        icon: 'i-lucide-folders',
+        to: '/admin/categories'
+      },
+      {
+        label: '标签管理',
+        icon: 'i-lucide-tags',
+        to: '/admin/tags'
+      },
+      {
+        label: '专题管理',
+        icon: 'i-lucide-book-open-text',
+        to: '/admin/topics'
+      }
+    ]
   },
   {
-    label: '文章管理',
-    icon: 'i-lucide-files',
-    to: '/admin/posts'
+    label: '互动',
+    items: [
+      {
+        label: '评论管理',
+        icon: 'i-lucide-messages-square',
+        to: '/admin/comments',
+        badgeType: 'pending-comments'
+      },
+      {
+        label: '友链管理',
+        icon: 'i-lucide-handshake',
+        to: '/admin/friend-links'
+      },
+      {
+        label: '用户管理',
+        icon: 'i-lucide-users',
+        to: '/admin/users'
+      }
+    ]
   },
   {
-    label: '附件管理',
-    icon: 'i-lucide-paperclip',
-    to: '/admin/attachments'
+    label: 'AI',
+    items: [
+      {
+        label: 'AI 配置',
+        icon: 'i-lucide-bot',
+        to: '/admin/ai/config'
+      },
+      {
+        label: 'AI 操作场',
+        icon: 'i-lucide-sparkles',
+        to: '/admin/ai/playground'
+      }
+    ]
   },
   {
-    label: '分类管理',
-    icon: 'i-lucide-folders',
-    to: '/admin/categories'
-  },
-  {
-    label: '标签管理',
-    icon: 'i-lucide-tags',
-    to: '/admin/tags'
-  },
-  {
-    label: '专题管理',
-    icon: 'i-lucide-book-open-text',
-    to: '/admin/topics'
-  },
-  {
-    label: '评论管理',
-    icon: 'i-lucide-messages-square',
-    to: '/admin/comments',
-    badgeType: 'pending-comments'
-  },
-  {
-    label: '友链管理',
-    icon: 'i-lucide-handshake',
-    to: '/admin/friend-links'
-  },
-  {
-    label: '用户管理',
-    icon: 'i-lucide-users',
-    to: '/admin/users'
-  },
-  {
-    label: '系统监控',
-    icon: 'i-lucide-activity',
-    to: '/admin/system'
-  },
-  {
-    label: '站点设置',
-    icon: 'i-lucide-settings-2',
-    to: '/admin/site'
+    label: '系统',
+    items: [
+      {
+        label: '系统监控',
+        icon: 'i-lucide-activity',
+        to: '/admin/system'
+      },
+      {
+        label: '站点设置',
+        icon: 'i-lucide-settings-2',
+        to: '/admin/site'
+      }
+    ]
   }
 ]
 
@@ -226,35 +265,48 @@ async function handleLogout() {
             sidebarCollapsed ? 'px-3' : 'px-4'
           ]"
         >
-          <NuxtLink
-            v-for="item in navigationItems"
-            :key="item.to"
-            :to="item.to"
-            :title="item.label"
-            :aria-label="item.label"
-            :class="[
-              'relative flex min-h-11 items-center rounded-[12px] border py-2.5 text-slate-700 transition duration-200 dark:text-slate-200',
-              sidebarCollapsed ? 'justify-center px-0' : 'gap-2.5 px-3',
-              isActiveItem(item)
-                ? 'border-[var(--admin-primary-border)] bg-[linear-gradient(135deg,var(--admin-primary-soft-surface),var(--admin-secondary-soft-surface))] text-slate-900 before:absolute before:start-2 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-[var(--site-primary-color)] dark:border-[color:color-mix(in_srgb,var(--site-primary-color)_28%,transparent)] dark:bg-[linear-gradient(135deg,color-mix(in_srgb,var(--site-primary-color)_10%,transparent),color-mix(in_srgb,var(--site-secondary-color)_8%,transparent))] dark:text-slate-50'
-                : 'border-transparent hover:border-white/70 hover:bg-white/68 hover:text-slate-900 dark:hover:border-white/10 dark:hover:bg-white/5 dark:hover:text-slate-50'
-            ]"
+          <div
+            v-for="group in navigationGroups"
+            :key="group.label"
+            class="space-y-2"
           >
-            <div class="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-slate-100/90 text-slate-900 dark:bg-white/5 dark:text-slate-50">
-              <UIcon :name="item.icon" class="size-4" />
-            </div>
-
-            <div v-if="!sidebarCollapsed" class="min-w-0 flex-1">
-              <p class="text-[13px] font-semibold leading-5 text-slate-900 dark:text-slate-50">{{ item.label }}</p>
-            </div>
-
-            <span
-              v-if="!sidebarCollapsed && resolveNavigationBadge(item)"
-              class="ms-auto inline-flex min-w-[1.5rem] items-center justify-center rounded-full bg-[var(--admin-primary-soft-strong)] px-2 py-0.5 text-[11px] font-semibold leading-none text-[var(--admin-primary-text)] dark:bg-[color:color-mix(in_srgb,var(--site-primary-color)_14%,transparent)] dark:text-[var(--site-primary-color)]"
+            <p
+              v-if="!sidebarCollapsed"
+              class="px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500"
             >
-              {{ resolveNavigationBadge(item) }}
-            </span>
-          </NuxtLink>
+              {{ group.label }}
+            </p>
+
+            <NuxtLink
+              v-for="item in group.items"
+              :key="item.to"
+              :to="item.to"
+              :title="item.label"
+              :aria-label="item.label"
+              :class="[
+                'relative flex min-h-11 items-center rounded-[12px] border py-2.5 text-slate-700 transition duration-200 dark:text-slate-200',
+                sidebarCollapsed ? 'justify-center px-0' : 'gap-2.5 px-3',
+                isActiveItem(item)
+                  ? 'border-[var(--admin-primary-border)] bg-[linear-gradient(135deg,var(--admin-primary-soft-surface),var(--admin-secondary-soft-surface))] text-slate-900 before:absolute before:start-2 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-[var(--site-primary-color)] dark:border-[color:color-mix(in_srgb,var(--site-primary-color)_28%,transparent)] dark:bg-[linear-gradient(135deg,color-mix(in_srgb,var(--site-primary-color)_10%,transparent),color-mix(in_srgb,var(--site-secondary-color)_8%,transparent))] dark:text-slate-50'
+                  : 'border-transparent hover:border-white/70 hover:bg-white/68 hover:text-slate-900 dark:hover:border-white/10 dark:hover:bg-white/5 dark:hover:text-slate-50'
+              ]"
+            >
+              <div class="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-slate-100/90 text-slate-900 dark:bg-white/5 dark:text-slate-50">
+                <UIcon :name="item.icon" class="size-4" />
+              </div>
+
+              <div v-if="!sidebarCollapsed" class="min-w-0 flex-1">
+                <p class="text-[13px] font-semibold leading-5 text-slate-900 dark:text-slate-50">{{ item.label }}</p>
+              </div>
+
+              <span
+                v-if="!sidebarCollapsed && resolveNavigationBadge(item)"
+                class="ms-auto inline-flex min-w-[1.5rem] items-center justify-center rounded-full bg-[var(--admin-primary-soft-strong)] px-2 py-0.5 text-[11px] font-semibold leading-none text-[var(--admin-primary-text)] dark:bg-[color:color-mix(in_srgb,var(--site-primary-color)_14%,transparent)] dark:text-[var(--site-primary-color)]"
+              >
+                {{ resolveNavigationBadge(item) }}
+              </span>
+            </NuxtLink>
+          </div>
         </nav>
 
         <div :class="['border-t border-white/65 py-4 dark:border-white/10', sidebarCollapsed ? 'px-3' : 'px-4']">

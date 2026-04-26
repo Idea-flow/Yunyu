@@ -1168,7 +1168,9 @@ async function handleSubmit() {
   } catch (error: any) {
     const title = isHomepageTab.value
       ? '保存首页展示失败'
-      : (isS3Tab.value ? '保存 S3 配置失败' : '保存站点配置失败')
+      : (isS3Tab.value
+          ? '保存 S3 配置失败'
+          : '保存站点配置失败')
     toast.add({
       title,
       description: error?.message || '保存未成功，请稍后重试。',
@@ -1809,7 +1811,7 @@ onMounted(async () => {
           </aside>
         </div>
 
-        <div v-else class="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
+        <div v-else-if="activeTab === 's3'" class="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
           <aside class="space-y-3 rounded-[16px] border border-slate-200/80 bg-white/75 p-3 dark:border-white/10 dark:bg-white/4">
             <div class="flex items-center justify-between gap-2">
               <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">S3 配置列表</p>

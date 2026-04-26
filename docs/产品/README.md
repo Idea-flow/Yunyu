@@ -16,3 +16,7 @@
 - `03-信息架构.md`
 - `04-内容平台能力规划.md`
 - `05-商品与虚拟产品规划.md`
+
+当前已补充专题文档：
+
+- [06-AI公共系统需求方案（一期）.md](/Users/wangpenglong/projects/full-stack-project/Yunyu/docs/产品/06-AI公共系统需求方案（一期）.md)

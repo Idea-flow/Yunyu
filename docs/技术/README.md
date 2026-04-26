@@ -15,3 +15,7 @@
 - `03-数据库设计.md`
 - `04-内容访问控制技术实现方案.md`
 - `05-后端模块设计.md`
+
+当前已补充专题文档：
+
+- [06-AI公共系统技术方案（一期）.md](/Users/wangpenglong/projects/full-stack-project/Yunyu/docs/技术/06-AI公共系统技术方案（一期）.md)

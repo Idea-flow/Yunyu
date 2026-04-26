@@ -1,4 +1,7 @@
 import type {
+  AdminAiProviderConfigForm,
+  AdminAiProviderConnectionTestResponse,
+  AdminAiProviderProfileForm,
   AdminS3ConfigForm,
   AdminS3ConnectionTestResponse,
   AdminS3ProfileForm,
@@ -69,11 +72,49 @@ export function useAdminSiteConfig() {
     })
   }
 
+  /**
+   * 查询后台 AI 提供商配置。
+   *
+   * @returns AI 提供商配置
+   */
+  async function getAiProviderConfig() {
+    return await apiClient.request<AdminAiProviderConfigForm>('/api/admin/site/ai/providers')
+  }
+
+  /**
+   * 更新后台 AI 提供商配置。
+   *
+   * @param payload AI 提供商配置
+   * @returns 更新后的 AI 提供商配置
+   */
+  async function updateAiProviderConfig(payload: AdminAiProviderConfigForm) {
+    return await apiClient.request<AdminAiProviderConfigForm>('/api/admin/site/ai/providers', {
+      method: 'PUT',
+      body: payload
+    })
+  }
+
+  /**
+   * 测试 AI 提供商连接。
+   *
+   * @param payload AI 提供商配置项
+   * @returns 测试结果
+   */
+  async function testAiProviderConnection(payload: AdminAiProviderProfileForm) {
+    return await apiClient.request<AdminAiProviderConnectionTestResponse>('/api/admin/site/ai/providers/test', {
+      method: 'POST',
+      body: payload
+    })
+  }
+
   return {
     getSiteConfig,
     updateSiteConfig,
     getS3Config,
     updateS3Config,
-    testS3Connection
+    testS3Connection,
+    getAiProviderConfig,
+    updateAiProviderConfig,
+    testAiProviderConnection
   }
 }

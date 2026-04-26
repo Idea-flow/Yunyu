@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { AdminPostForm } from '../../../types/post'
+import type {
+  AdminPostAiGeneratedMeta,
+  AdminPostAiMetaGenerateRequest,
+  AdminPostForm,
+  OpenAiChatCompletionResponse
+} from '../../../types/post'
 import type { AdminTaxonomyItem } from '../../../types/taxonomy'
 import type { AdminAttachmentItem } from '../../../types/attachment'
 import { createDefaultContentAccessConfig } from '../../../types/content-access'
@@ -28,6 +33,9 @@ const isSubmitting = ref(false)
 const isLoadingDetail = ref(false)
 const isLoadingTaxonomy = ref(false)
 const isUploadingVideo = ref(false)
+const isGeneratingMetaByAi = ref(false)
+const useStreamGenerateMeta = ref(true)
+const aiMetaRawContent = ref('')
 const videoFileInputRef = ref<HTMLInputElement | null>(null)
 const isCoverUploadModalOpen = ref(false)
 const isCoverSelectModalOpen = ref(false)
@@ -136,6 +144,205 @@ const workspaceCardClass = 'overflow-hidden rounded-[16px] border border-white/5
 const workspaceSurfaceClass = 'rounded-[12px] border border-white/60 bg-white/62 p-4 shadow-[0_12px_24px_-24px_rgba(15,23,42,0.14)] backdrop-blur-md dark:border-white/10 dark:bg-white/[0.04]'
 
 /**
+ * 提取 Chat 响应中的 message.content 文本。
+ * 作用：兼容 content 为字符串或数组结构，统一返回纯文本用于后续 JSON 解析。
+ *
+ * @param response OpenAI Chat 响应
+ * @returns 提取后的文本内容
+ */
+function extractChatMessageContent(response: OpenAiChatCompletionResponse) {
+  const firstChoice = Array.isArray(response?.choices) ? response.choices[0] : null
+  const content = firstChoice?.message?.content
+  if (typeof content === 'string') {
+    return content
+  }
+
+  if (Array.isArray(content)) {
+    return content
+      .map(item => {
+        if (typeof item === 'string') {
+          return item
+        }
+        return typeof item?.text === 'string' ? item.text : ''
+      })
+      .join('')
+  }
+
+  return ''
+}
+
+/**
+ * 从原始文本提取 JSON 片段。
+ * 作用：兼容模型输出带有 ```json 包裹或前后说明文字的场景。
+ *
+ * @param rawContent 原始文本
+ * @returns JSON 文本片段
+ */
+function extractJsonLikeText(rawContent: string) {
+  const cleanedContent = rawContent
+    .replace(/```json/gi, '')
+    .replace(/```/g, '')
+    .trim()
+
+  const firstBraceIndex = cleanedContent.indexOf('{')
+  const lastBraceIndex = cleanedContent.lastIndexOf('}')
+  if (firstBraceIndex >= 0 && lastBraceIndex > firstBraceIndex) {
+    return cleanedContent.slice(firstBraceIndex, lastBraceIndex + 1)
+  }
+  return cleanedContent
+}
+
+/**
+ * 解析 AI 返回的元信息 JSON。
+ * 作用：将文本内容解析为 slug/摘要/SEO 结构，解析失败时返回 null。
+ *
+ * @param rawContent 原始文本
+ * @returns 解析后的元信息对象
+ */
+function parseGeneratedMeta(rawContent: string): AdminPostAiGeneratedMeta | null {
+  if (!rawContent.trim()) {
+    return null
+  }
+
+  try {
+    const jsonLikeText = extractJsonLikeText(rawContent)
+    const parsed = JSON.parse(jsonLikeText) as Partial<AdminPostAiGeneratedMeta>
+    return {
+      slug: typeof parsed.slug === 'string' ? parsed.slug.trim() : '',
+      summary: typeof parsed.summary === 'string' ? parsed.summary.trim() : '',
+      seoTitle: typeof parsed.seoTitle === 'string' ? parsed.seoTitle.trim() : '',
+      seoDescription: typeof parsed.seoDescription === 'string' ? parsed.seoDescription.trim() : '',
+      slugCandidates: Array.isArray(parsed.slugCandidates)
+        ? parsed.slugCandidates.map(item => String(item || '').trim()).filter(Boolean)
+        : []
+    }
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 构建文章元信息 AI 请求体。
+ * 作用：按 OpenAI Chat 协议拼装 messages，明确约束模型仅输出目标 JSON 字段。
+ *
+ * @param stream 是否流式
+ * @returns OpenAI Chat 风格请求体
+ */
+function buildAiMetaGenerateRequest(stream: boolean): AdminPostAiMetaGenerateRequest {
+  const normalizedTitle = formState.title.trim()
+  const normalizedMarkdown = formState.contentMarkdown.trim()
+  const limitedMarkdown = normalizedMarkdown.length > 6000
+    ? `${normalizedMarkdown.slice(0, 6000)}\n\n[内容已截断，以上为正文前 6000 字符]`
+    : normalizedMarkdown
+
+  return {
+    stream,
+    temperature: 0.2,
+    messages: [
+      {
+        role: 'system',
+        content: [
+          '你是博客文章元信息生成助手。',
+          '请仅输出 JSON，不要输出任何额外说明、Markdown 或代码块。',
+          '必须包含字段：slug、summary、seoTitle、seoDescription。',
+          'slug 仅允许小写字母、数字和连字符。'
+        ].join('\n')
+      },
+      {
+        role: 'user',
+        content: [
+          '请根据以下文章信息生成元信息 JSON：',
+          `标题：${normalizedTitle || '(空)'}`,
+          '正文（Markdown）：',
+          limitedMarkdown || '(空)'
+        ].join('\n')
+      }
+    ]
+  }
+}
+
+/**
+ * 回填 AI 生成元信息到表单。
+ * 作用：将生成结果写入 slug、摘要、SEO 标题和 SEO 描述字段。
+ *
+ * @param generatedMeta AI 生成元信息
+ */
+function applyGeneratedMetaToForm(generatedMeta: AdminPostAiGeneratedMeta) {
+  if (generatedMeta.slug) {
+    formState.slug = generatedMeta.slug
+  }
+  if (generatedMeta.summary) {
+    formState.summary = generatedMeta.summary
+  }
+  if (generatedMeta.seoTitle) {
+    formState.seoTitle = generatedMeta.seoTitle
+  }
+  if (generatedMeta.seoDescription) {
+    formState.seoDescription = generatedMeta.seoDescription
+  }
+}
+
+/**
+ * 使用 AI 生成文章元信息。
+ * 作用：根据当前标题和正文调用后台 AI 接口生成 slug、摘要和 SEO 字段，并自动回填表单。
+ */
+async function generateMetaByAi() {
+  if (!formState.title.trim() && !formState.contentMarkdown.trim()) {
+    toast.add({
+      title: '请先填写标题或正文',
+      description: 'AI 生成元信息前至少需要提供文章标题或正文内容。',
+      color: 'warning'
+    })
+    return
+  }
+
+  isGeneratingMetaByAi.value = true
+  aiMetaRawContent.value = ''
+
+  try {
+    if (useStreamGenerateMeta.value) {
+      const response = await adminPosts.streamGeneratePostMeta(
+        buildAiMetaGenerateRequest(true),
+        {
+          onChunk: (_chunk, deltaText) => {
+            if (deltaText) {
+              aiMetaRawContent.value += deltaText
+            }
+          }
+        }
+      )
+
+      if (!aiMetaRawContent.value.trim()) {
+        aiMetaRawContent.value = response.fullText
+      }
+    } else {
+      const response = await adminPosts.generatePostMeta(buildAiMetaGenerateRequest(false))
+      aiMetaRawContent.value = extractChatMessageContent(response)
+    }
+
+    const generatedMeta = parseGeneratedMeta(aiMetaRawContent.value)
+    if (!generatedMeta) {
+      throw new Error('AI 返回内容无法解析为目标 JSON，请稍后重试')
+    }
+
+    applyGeneratedMetaToForm(generatedMeta)
+    toast.add({
+      title: 'AI 元信息生成成功',
+      description: '已回填 Slug、摘要和 SEO 字段。',
+      color: 'success'
+    })
+  } catch (error: any) {
+    toast.add({
+      title: 'AI 元信息生成失败',
+      description: error?.message || '请稍后重试。',
+      color: 'error'
+    })
+  } finally {
+    isGeneratingMetaByAi.value = false
+  }
+}
+
+/**
  * 校验文章表单。
  * 在提交前给出最基础的字段反馈，避免无效请求进入后端。
  */
@@ -190,17 +397,17 @@ function validateForm() {
 
   if (formState.contentAccessConfig.tailHiddenAccess.enabled) {
     if (!formState.contentAccessConfig.tailHiddenAccess.title.trim()) {
-      toast.add({ title: '请填写尾部隐藏内容标题', color: 'warning' })
+      toast.add({ title: '请填写扩展隐藏内容标题', color: 'warning' })
       return false
     }
 
     if (!formState.contentAccessConfig.tailHiddenAccess.ruleTypes.length) {
-      toast.add({ title: '请至少选择一个尾部隐藏内容规则', color: 'warning' })
+      toast.add({ title: '请至少选择一个扩展隐藏内容规则', color: 'warning' })
       return false
     }
 
     if (!formState.tailHiddenContentMarkdown.trim()) {
-      toast.add({ title: '请填写尾部隐藏内容正文', color: 'warning' })
+      toast.add({ title: '请填写扩展隐藏内容正文', color: 'warning' })
       return false
     }
   }
@@ -578,8 +785,8 @@ function toggleArticleAccessRule(ruleType: ContentAccessRuleType) {
 }
 
 /**
- * 切换尾部隐藏内容规则。
- * 作用：让后台可按需组合尾部隐藏内容的可见条件。
+ * 切换扩展隐藏内容规则。
+ * 作用：让后台可按需组合扩展隐藏内容的可见条件。
  *
  * @param ruleType 规则类型
  */
@@ -786,6 +993,39 @@ await Promise.all([
                 <p class="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-50">SEO</p>
 
                 <div class="space-y-5">
+                  <div class="rounded-[10px] border border-slate-200/80 bg-white/86 p-3 dark:border-white/10 dark:bg-white/[0.03]">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <p class="text-sm font-medium text-slate-800 dark:text-slate-100">AI 元信息生成</p>
+                      <div class="flex flex-wrap items-center gap-2">
+                        <AdminToggleButton
+                          v-model="useStreamGenerateMeta"
+                          tone="info"
+                          size="sm"
+                          active-label="流式"
+                          inactive-label="非流式"
+                        />
+                        <AdminPrimaryButton
+                          icon="i-lucide-sparkles"
+                          label="生成"
+                          loading-label="生成中..."
+                          size="xs"
+                          :loading="isGeneratingMetaByAi"
+                          @click.prevent="generateMetaByAi"
+                        />
+                      </div>
+                    </div>
+
+                    <p class="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                      将根据当前标题和正文自动生成 Slug、摘要、SEO 标题与 SEO 描述。
+                    </p>
+                    <p v-if="isGeneratingMetaByAi && useStreamGenerateMeta" class="mt-1 text-xs text-sky-600 dark:text-sky-300">
+                      正在流式生成中...
+                    </p>
+                    <p v-else-if="aiMetaRawContent.trim()" class="mt-1 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">
+                      最近一次 AI 原始输出：{{ aiMetaRawContent }}
+                    </p>
+                  </div>
+
                   <UFormField name="seoTitle" label="SEO 标题">
                     <AdminInput
                       v-model="formState.seoTitle"
@@ -844,141 +1084,144 @@ await Promise.all([
                 </div>
               </div>
 
-              <div :class="workspaceSurfaceClass">
-                <div class="mb-4">
-                  <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">内容访问控制</p>
-                  <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">支持为整篇文章和文章尾部隐藏内容分别配置访问规则。</p>
-                </div>
+            </div>
+          </div>
 
-                <div class="space-y-5">
-                  <div class="rounded-[12px] border border-slate-200/75 bg-slate-50/70 p-4 dark:border-white/10 dark:bg-white/[0.03]">
-                    <AdminSwitchField
-                      v-model="formState.contentAccessConfig.articleAccess.enabled"
-                      label="启用文章访问控制"
-                      description="开启后，当前文章可配置登录、公众号验证码、文章访问码等组合规则。"
-                      color="primary"
-                      active-text="已启用"
-                      inactive-text="未启用"
-                    />
+          <div :class="workspaceSurfaceClass">
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">内容访问控制</p>
+              </div>
+            </div>
 
-                    <div v-if="formState.contentAccessConfig.articleAccess.enabled" class="mt-4 space-y-4">
-                      <div>
-                        <p class="mb-2 text-sm font-medium text-slate-700 dark:text-slate-200">文章访问规则</p>
-                        <div class="space-y-2">
-                          <button
-                            v-for="option in contentAccessRuleOptions"
-                            :key="`article-${option.value}`"
-                            type="button"
-                            class="flex w-full items-start gap-3 rounded-[12px] border px-3 py-3 text-left transition"
-                            :class="formState.contentAccessConfig.articleAccess.ruleTypes.includes(option.value)
-                              ? 'border-sky-300/80 bg-sky-50/85 text-sky-900 dark:border-sky-400/35 dark:bg-sky-400/10 dark:text-sky-100'
-                              : 'border-slate-200/80 bg-white/88 text-slate-700 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.02] dark:text-slate-200 dark:hover:border-white/15'"
-                            @click="toggleArticleAccessRule(option.value)"
-                          >
-                            <UIcon
-                              :name="formState.contentAccessConfig.articleAccess.ruleTypes.includes(option.value) ? 'i-lucide-check-circle-2' : 'i-lucide-circle'"
-                              class="mt-0.5 size-4 shrink-0"
-                            />
-                            <span>
-                              <span class="block text-sm font-medium">{{ option.label }}</span>
-                              <span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">{{ option.description }}</span>
-                            </span>
-                          </button>
-                        </div>
-                      </div>
+            <div class="mt-4 grid gap-4 xl:grid-cols-2">
+              <div class="p-1">
+                <AdminSwitchField
+                  v-model="formState.contentAccessConfig.articleAccess.enabled"
+                  label="启用文章访问控制"
+                  color="primary"
+                  active-text="已启用"
+                  inactive-text="未启用"
+                />
 
-                    </div>
+                <div v-if="formState.contentAccessConfig.articleAccess.enabled" class="mt-3">
+                  <p class="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">文章访问规则</p>
+                  <div class="flex flex-wrap gap-2">
+                    <button
+                      v-for="option in contentAccessRuleOptions"
+                      :key="`article-${option.value}`"
+                      type="button"
+                      :title="option.description"
+                      :aria-label="`${option.label}：${option.description}`"
+                      class="inline-flex items-center gap-1.5 rounded-[9px] border px-2.5 py-1.5 text-xs font-medium transition"
+                      :class="formState.contentAccessConfig.articleAccess.ruleTypes.includes(option.value)
+                        ? 'border-sky-300/80 bg-sky-50/85 text-sky-900 dark:border-sky-400/35 dark:bg-sky-400/12 dark:text-sky-100'
+                        : 'border-slate-200/80 bg-white/88 text-slate-600 hover:border-slate-300 dark:border-white/12 dark:bg-white/[0.02] dark:text-slate-300 dark:hover:border-white/20'"
+                      @click="toggleArticleAccessRule(option.value)"
+                    >
+                      <UIcon
+                        :name="formState.contentAccessConfig.articleAccess.ruleTypes.includes(option.value) ? 'i-lucide-check-circle-2' : 'i-lucide-circle'"
+                        class="size-3.5"
+                      />
+                      <span>{{ option.label }}</span>
+                    </button>
+                    <span
+                      class="inline-flex items-center text-slate-400 dark:text-slate-500"
+                      title="将鼠标悬浮在规则标签上可查看规则说明"
+                      aria-label="将鼠标悬浮在规则标签上可查看规则说明"
+                    >
+                      <UIcon name="i-lucide-circle-help" class="size-4" />
+                    </span>
                   </div>
+                </div>
+              </div>
 
-                  <div class="rounded-[12px] border border-slate-200/75 bg-slate-50/70 p-4 dark:border-white/10 dark:bg-white/[0.03]">
-                    <AdminSwitchField
-                      v-model="formState.contentAccessConfig.tailHiddenAccess.enabled"
-                      label="启用尾部隐藏内容"
-                      description="开启后，可在文章末尾追加一个独立的隐藏内容模块。"
-                      color="primary"
-                      active-text="已启用"
-                      inactive-text="未启用"
+              <div class="p-1">
+                <AdminSwitchField
+                  v-model="formState.contentAccessConfig.tailHiddenAccess.enabled"
+                  label="启用扩展隐藏内容"
+                  color="primary"
+                  active-text="已启用"
+                  inactive-text="未启用"
+                />
+
+                <div v-if="formState.contentAccessConfig.tailHiddenAccess.enabled" class="mt-3 space-y-3">
+                  <UFormField name="tailHiddenTitle" label="扩展隐藏内容标题">
+                    <AdminInput
+                      v-model="formState.contentAccessConfig.tailHiddenAccess.title"
+                      placeholder="例如：登录后可见资料 / 关注后领取"
                     />
+                  </UFormField>
 
-                    <div v-if="formState.contentAccessConfig.tailHiddenAccess.enabled" class="mt-4 space-y-4">
-                      <UFormField name="tailHiddenTitle" label="隐藏内容标题">
-                        <AdminInput
-                          v-model="formState.contentAccessConfig.tailHiddenAccess.title"
-                          placeholder="例如：登录后可见资料 / 关注后领取"
-                        />
-                      </UFormField>
-
-                      <div>
-                        <p class="mb-2 text-sm font-medium text-slate-700 dark:text-slate-200">隐藏内容规则</p>
-                        <div class="space-y-2">
-                          <button
-                            v-for="option in contentAccessRuleOptions"
-                            :key="`tail-${option.value}`"
-                            type="button"
-                            class="flex w-full items-start gap-3 rounded-[12px] border px-3 py-3 text-left transition"
-                            :class="formState.contentAccessConfig.tailHiddenAccess.ruleTypes.includes(option.value)
-                              ? 'border-emerald-300/80 bg-emerald-50/85 text-emerald-900 dark:border-emerald-400/35 dark:bg-emerald-400/10 dark:text-emerald-100'
-                              : 'border-slate-200/80 bg-white/88 text-slate-700 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.02] dark:text-slate-200 dark:hover:border-white/15'"
-                            @click="toggleTailHiddenRule(option.value)"
-                          >
-                            <UIcon
-                              :name="formState.contentAccessConfig.tailHiddenAccess.ruleTypes.includes(option.value) ? 'i-lucide-check-circle-2' : 'i-lucide-circle'"
-                              class="mt-0.5 size-4 shrink-0"
-                            />
-                            <span>
-                              <span class="block text-sm font-medium">{{ option.label }}</span>
-                              <span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">{{ option.description }}</span>
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-
-                      <div
-                        v-if="sharedArticleAccessCodeEnabled"
-                        class="rounded-[12px] border border-sky-200/80 bg-sky-50/72 p-4 dark:border-sky-400/20 dark:bg-sky-400/8"
+                  <div>
+                    <p class="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">扩展隐藏内容规则</p>
+                    <div class="flex flex-wrap gap-2">
+                      <button
+                        v-for="option in contentAccessRuleOptions"
+                        :key="`tail-${option.value}`"
+                        type="button"
+                        :title="option.description"
+                        :aria-label="`${option.label}：${option.description}`"
+                        class="inline-flex items-center gap-1.5 rounded-[9px] border px-2.5 py-1.5 text-xs font-medium transition"
+                        :class="formState.contentAccessConfig.tailHiddenAccess.ruleTypes.includes(option.value)
+                          ? 'border-emerald-300/80 bg-emerald-50/85 text-emerald-900 dark:border-emerald-400/35 dark:bg-emerald-400/12 dark:text-emerald-100'
+                          : 'border-slate-200/80 bg-white/88 text-slate-600 hover:border-slate-300 dark:border-white/12 dark:bg-white/[0.02] dark:text-slate-300 dark:hover:border-white/20'"
+                        @click="toggleTailHiddenRule(option.value)"
                       >
-                        <p class="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-50">文章访问码配置</p>
-                        <p class="mb-3 text-xs text-slate-500 dark:text-slate-400">文章访问控制与隐藏内容访问控制共用这一套访问码配置。</p>
-                        <div class="space-y-4">
-                          <UFormField name="articleAccessCode" label="文章访问码">
-                            <AdminInput
-                              v-model="formState.contentAccessConfig.articleAccess.articleAccessCode"
-                              placeholder="请输入文章访问码"
-                            />
-                          </UFormField>
-
-                          <UFormField name="articleAccessCodeHint" label="文章访问码提示文案">
-                            <AdminInput
-                              v-model="formState.contentAccessConfig.articleAccess.articleAccessCodeHint"
-                              placeholder="例如：请输入文章访问码"
-                            />
-                          </UFormField>
-                        </div>
-                      </div>
-
-                      <div class="rounded-[12px] border border-emerald-200/80 bg-emerald-50/70 p-4 dark:border-emerald-400/20 dark:bg-emerald-400/8">
-                        <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-                          <div>
-                            <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">尾部隐藏内容</p>
-                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">这一块会显示在文章详情页末尾，按当前规则决定是否对访客可见。</p>
-                          </div>
-                          <span class="text-xs font-medium uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
-                            Tail Hidden Block
-                          </span>
-                        </div>
-
-                        <div class="mt-4">
-                          <AdminTextarea
-                            v-model="formState.tailHiddenContentMarkdown"
-                            :rows="16"
-                            autoresize
-                            placeholder="请输入尾部隐藏内容 Markdown"
-                          />
-                        </div>
-                      </div>
+                        <UIcon
+                          :name="formState.contentAccessConfig.tailHiddenAccess.ruleTypes.includes(option.value) ? 'i-lucide-check-circle-2' : 'i-lucide-circle'"
+                          class="size-3.5"
+                        />
+                        <span>{{ option.label }}</span>
+                      </button>
+                      <span
+                        class="inline-flex items-center text-slate-400 dark:text-slate-500"
+                        title="将鼠标悬浮在规则标签上可查看规则说明"
+                        aria-label="将鼠标悬浮在规则标签上可查看规则说明"
+                      >
+                        <UIcon name="i-lucide-circle-help" class="size-4" />
+                      </span>
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div
+              v-if="sharedArticleAccessCodeEnabled"
+              class="mt-4 rounded-[10px] border border-sky-200/80 bg-sky-50/72 p-3 dark:border-sky-400/20 dark:bg-sky-400/8"
+            >
+              <p class="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-50">文章访问码配置</p>
+              <p class="mb-3 text-xs text-slate-500 dark:text-slate-400">文章访问控制与隐藏内容访问控制共用这一套访问码配置。</p>
+              <div class="grid gap-3 md:grid-cols-2">
+                <UFormField name="articleAccessCode" label="文章访问码">
+                  <AdminInput
+                    v-model="formState.contentAccessConfig.articleAccess.articleAccessCode"
+                    placeholder="请输入文章访问码"
+                  />
+                </UFormField>
+
+                <UFormField name="articleAccessCodeHint" label="文章访问码提示文案">
+                  <AdminInput
+                    v-model="formState.contentAccessConfig.articleAccess.articleAccessCodeHint"
+                    placeholder="例如：请输入文章访问码"
+                  />
+                </UFormField>
+              </div>
+            </div>
+
+            <div
+              v-if="formState.contentAccessConfig.tailHiddenAccess.enabled"
+              class="mt-4 p-1"
+            >
+              <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">扩展隐藏内容</p>
+              <div class="mt-3">
+                <AdminTextarea
+                  v-model="formState.tailHiddenContentMarkdown"
+                  :rows="12"
+                  textarea-class="h-64 max-h-64 overflow-y-auto resize-none"
+                  placeholder="请输入扩展隐藏内容 Markdown"
+                />
               </div>
             </div>
           </div>

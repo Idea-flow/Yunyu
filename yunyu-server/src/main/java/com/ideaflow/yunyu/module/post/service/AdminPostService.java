@@ -3,8 +3,7 @@ package com.ideaflow.yunyu.module.post.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.ideaflow.yunyu.common.constant.ResultCode;
 import com.ideaflow.yunyu.common.exception.BizException;
 import com.ideaflow.yunyu.module.category.entity.CategoryEntity;
@@ -683,7 +682,7 @@ public class AdminPostService {
 
         try {
             return normalizeContentAccessConfig(objectMapper.readValue(contentAccessConfigJson, ContentAccessConfig.class));
-        } catch (JsonProcessingException exception) {
+        } catch (Exception exception) {
             throw new BizException(ResultCode.INTERNAL_SERVER_ERROR, "文章访问控制配置解析失败");
         }
     }
@@ -698,7 +697,7 @@ public class AdminPostService {
     private String writeContentAccessConfig(ContentAccessConfig contentAccessConfig) {
         try {
             return objectMapper.writeValueAsString(normalizeContentAccessConfig(contentAccessConfig));
-        } catch (JsonProcessingException exception) {
+        } catch (Exception exception) {
             throw new BizException(ResultCode.INTERNAL_SERVER_ERROR, "文章访问控制配置保存失败");
         }
     }

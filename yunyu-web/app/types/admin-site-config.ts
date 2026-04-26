@@ -57,6 +57,43 @@ export interface AdminS3ConnectionTestResponse {
 }
 
 /**
+ * 后台 AI 配置项表单类型。
+ * 作用：统一描述后台站点设置页中单个 AI 提供商配置项字段。
+ */
+export interface AdminAiProviderProfileForm {
+  profileKey: string
+  name: string
+  enabled: boolean
+  upstreamBaseUrl: string
+  apiKey: string
+  model: string
+  upstreamProtocol: 'COMPLETIONS' | 'RESPONSES'
+  connectTimeoutMs: number
+  readTimeoutMs: number
+  writeTimeoutMs: number
+  maxTokens: number
+  temperature: number
+}
+
+/**
+ * 后台 AI 配置表单类型。
+ * 作用：统一描述后台 AI 多配置集合和当前启用配置键。
+ */
+export interface AdminAiProviderConfigForm {
+  activeProfileKey: string
+  profiles: AdminAiProviderProfileForm[]
+}
+
+/**
+ * 后台 AI 连接测试响应类型。
+ * 作用：描述后台测试 AI 配置连接后的结果状态和提示信息。
+ */
+export interface AdminAiProviderConnectionTestResponse {
+  success: boolean
+  message: string
+}
+
+/**
  * 后台首页首屏统计项表单类型。
  * 作用：统一描述后台首页设置页中首屏统计项的可编辑结构。
  */

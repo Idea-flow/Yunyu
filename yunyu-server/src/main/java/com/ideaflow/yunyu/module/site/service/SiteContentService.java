@@ -3,7 +3,7 @@ package com.ideaflow.yunyu.module.site.service;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.ideaflow.yunyu.module.contentaccess.model.ContentAccessArticleConfig;
 import com.ideaflow.yunyu.module.contentaccess.model.ContentAccessConfig;
 import com.ideaflow.yunyu.module.contentaccess.model.ContentAccessTailHiddenConfig;
