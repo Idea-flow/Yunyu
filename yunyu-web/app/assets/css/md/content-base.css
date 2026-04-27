@@ -508,6 +508,7 @@
   border: 1px solid var(--yy-md-image-border);
   border-radius: 1.4rem;
   margin: 1.9rem auto;
+  transition: filter 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
 .yy-md iframe,
@@ -649,6 +650,12 @@
 
 .dark .yy-md blockquote {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 20px 42px -34px rgba(2, 6, 23, 0.72);
+}
+
+.dark .yy-md img {
+  border-color: rgba(71, 85, 105, 0.72);
+  box-shadow: 0 20px 42px -34px rgba(2, 6, 23, 0.62);
+  filter: brightness(0.86) saturate(0.94) contrast(1.04);
 }
 
 .dark .yy-md blockquote::before {

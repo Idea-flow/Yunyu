@@ -448,10 +448,60 @@
 
 .dark .yy-md-diagram-canvas {
   color: #e2e8f0;
+  background:
+    radial-gradient(circle at top, rgba(56, 189, 248, 0.08), transparent 38%),
+    linear-gradient(180deg, rgba(8, 15, 29, 0.92) 0%, rgba(2, 6, 23, 0.96) 100%);
 }
 
 .dark .yy-md-diagram-canvas svg {
   background: transparent;
+}
+
+.dark .yy-md-diagram-canvas svg,
+.dark .yy-md-diagram-canvas svg text,
+.dark .yy-md-diagram-canvas svg tspan,
+.dark .yy-md-diagram-canvas svg foreignObject,
+.dark .yy-md-diagram-canvas svg foreignObject > div,
+.dark .yy-md-diagram-canvas svg foreignObject div,
+.dark .yy-md-diagram-canvas svg foreignObject span,
+.dark .yy-md-diagram-canvas svg foreignObject p {
+  fill: #0f172a !important;
+  color: #0f172a !important;
+}
+
+.dark .yy-md-diagram-canvas svg .note,
+.dark .yy-md-diagram-canvas svg .noteText,
+.dark .yy-md-diagram-canvas svg .label,
+.dark .yy-md-diagram-canvas svg .nodeLabel,
+.dark .yy-md-diagram-canvas svg .cluster-label,
+.dark .yy-md-diagram-canvas svg .actor,
+.dark .yy-md-diagram-canvas svg .messageText,
+.dark .yy-md-diagram-canvas svg .loopText {
+  fill: #0f172a !important;
+  color: #0f172a !important;
+}
+
+.dark .yy-md-diagram-canvas svg .edgeLabel,
+.dark .yy-md-diagram-canvas svg .edgeLabel *,
+.dark .yy-md-diagram-canvas svg foreignObject.edgeLabel,
+.dark .yy-md-diagram-canvas svg foreignObject.edgeLabel > div,
+.dark .yy-md-diagram-canvas svg foreignObject.edgeLabel div,
+.dark .yy-md-diagram-canvas svg foreignObject.edgeLabel span,
+.dark .yy-md-diagram-canvas svg foreignObject.edgeLabel p {
+  fill: #e5eef9 !important;
+  color: #e5eef9 !important;
+  background: transparent !important;
+}
+
+.dark .yy-md-diagram-canvas svg .edgeLabel rect,
+.dark .yy-md-diagram-canvas svg .labelBox {
+  fill: transparent !important;
+  stroke: transparent !important;
+}
+
+.dark .yy-md-diagram-canvas svg .cluster rect {
+  fill: rgba(255, 255, 255, 0.08) !important;
+  stroke: rgba(100, 116, 139, 0.82) !important;
 }
 
 .dark .yy-md-diagram-fallback {
