@@ -163,7 +163,6 @@ request_api() {
 
   local temp_body curl_status http_status
   temp_body="$(mktemp)"
-  trap 'rm -f "$temp_body"' RETURN
 
   local curl_args=(
     -sS
@@ -201,6 +200,7 @@ request_api() {
     if [[ -s "$temp_body" ]]; then
       cat "$temp_body" >&2
     fi
+    rm -f "$temp_body"
     fail "请求执行失败，curl 退出码：$curl_status"
   fi
 
@@ -218,8 +218,11 @@ request_api() {
   fi
 
   if [[ "$http_status" -lt 200 || "$http_status" -ge 300 ]]; then
+    rm -f "$temp_body"
     exit 1
   fi
+
+  rm -f "$temp_body"
 }
 
 main() {

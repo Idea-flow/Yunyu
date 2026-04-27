@@ -20,41 +20,45 @@
 建议按以下顺序操作：
 
 1. 先确认用户是否已经提供文章标题和正文。
-2. 如果用户没有指定分类、标签、专题，先查询可用列表：
+2. 如果用户没有指定分类或标签，先查询可用列表：
    - `GET /api/admin/categories`
    - `GET /api/admin/tags`
-   - `GET /api/admin/topics`
-3. 分类是可选的，标签和专题也是可选的，不要默认乱填。
-4. `slug`、`summary`、`seoTitle`、`seoDescription`：
+3. 根据文章标题和正文语义，从已有分类、标签里挑选最合适的项：
+   - 若确实存在明显匹配项，应自动选中对应分类 / 标签
+   - 若没有明显匹配项，可以留空，不要为了凑字段乱选
+4. 专题默认视为“不设置”：
+   - 只有用户明确说本次也要挂专题时，才查询 `GET /api/admin/topics`
+   - 用户未指定时，不调用专题相关接口
+5. `slug`、`summary`、`seoTitle`、`seoDescription`：
    - 如果用户已提供，优先使用用户提供值。
    - 如果用户未提供，优先由当前 AI agent 根据标题和正文直接生成。
    - 默认不要为了补这些字段再额外调用 `POST /api/admin/posts/ai/meta/generate`。
    - 只有当用户明确要求使用后台 AI 元信息生成能力，或需要和后台内置生成结果保持一致时，才考虑调用该接口。
    - 调用该接口时优先传 `title` 与 `contentMarkdown`；后端会统一组装提示词并返回 OpenAI Chat 风格结果。
-5. 文章状态默认建议：
+6. 文章状态默认建议：
    - 若用户没有明确要求立即发布，默认传 `DRAFT`
    - 若用户明确说“直接发布”，传 `PUBLISHED`
    - 若用户明确说“保存但先下线”，传 `OFFLINE`
-6. 布尔默认建议：
+7. 布尔默认建议：
    - `isTop=false`
    - `isRecommend=false`
    - `allowComment=true`
-7. 内容权限默认不启用。
+8. 内容权限默认不启用。
    - 应主动提示用户：“当前默认不启用内容权限，要不要开启文章访问控制或隐藏内容权限？”
-8. 若用户不启用内容权限：
+9. 若用户不启用内容权限：
    - 仍建议提交默认的禁用结构，保持与当前后台编辑器一致。
-9. 若用户启用整篇文章访问控制：
+10. 若用户启用整篇文章访问控制：
    - 至少选择一个规则：`LOGIN` / `WECHAT_ACCESS_CODE` / `ACCESS_CODE`
    - 若包含 `ACCESS_CODE`，必须同时填写：
      - `articleAccessCode`
      - `articleAccessCodeHint`
-10. 若用户启用尾部隐藏内容：
+11. 若用户启用尾部隐藏内容：
     - 必须填写：
       - `tailHiddenAccess.enabled=true`
       - `tailHiddenAccess.title`
       - `tailHiddenAccess.ruleTypes`
       - `tailHiddenContentMarkdown`
-11. 创建文章最终调用：
+12. 创建文章最终调用：
     - `POST /api/admin/posts`
 
 ## 二、编辑文章
@@ -91,7 +95,9 @@
 
 这些字段不要猜。
 
-应先查询真实可用项，再填对应 ID。
+应先查询真实可用项，再根据文章主题选择最合适的 ID。
+
+专题默认留空；只有用户明确要求时才处理 `topicIds`。
 
 ### 3.3 `slug`
 
@@ -125,6 +131,8 @@
 如果用户说“按默认来”：
 
 1. 状态用 `DRAFT`
-2. 不启用内容权限
-3. 允许评论
-4. 不置顶、不推荐
+2. 优先自动匹配已有分类 / 标签；没有明显匹配时可留空
+3. 不设置专题
+4. 不启用内容权限
+5. 允许评论
+6. 不置顶、不推荐

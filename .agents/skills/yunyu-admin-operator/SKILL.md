@@ -35,6 +35,9 @@ description: Use when operating the Yunyu admin backend through the generated ad
    `bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh set --base-url <URL> --token <TOKEN>`
 8. 如果是文章新增、编辑或文章元信息生成，再继续读取 `references/post-management.md`。
    文章相关的 `slug`、`summary`、`seoTitle`、`seoDescription` 默认优先由当前 AI agent 直接生成，不默认调用后台元信息生成接口。
+   若用户未指定分类或标签，默认先查询已有分类 / 标签并按文章语义自动匹配最合适的项；没有明显匹配时可留空，不乱选。
+   专题默认不设置，只有用户明确要求挂专题时，才查询和处理专题相关接口。
+   文章状态在用户未明确指定时默认使用 `DRAFT`；只有用户明确要求直接发布时，才使用 `PUBLISHED`。
 9. 如果是分类、标签、专题管理，再继续读取 `references/taxonomy-management.md`。
 10. 如果是站点配置、首页配置、S3 配置或 AI 提供商配置，再继续读取 `references/site-settings-management.md`。
 11. 对任何写操作，先用 `/api/auth/me` 校验当前 token 对应用户是否为 `SUPER_ADMIN`。
