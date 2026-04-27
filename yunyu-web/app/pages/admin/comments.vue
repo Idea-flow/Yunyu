@@ -493,30 +493,6 @@ function resolveReplyCardClass(reply: AdminCommentThreadReplyItem) {
   return 'border-slate-200/75 bg-white/72 dark:border-white/10 dark:bg-white/[0.025]'
 }
 
-/**
- * 解析回复目标用户名。
- * 作用：让后台在没有完整回复链结构时，也能稳定展示“当前评论回复给谁”。
- *
- * @param root 主评论
- * @param reply 回复项
- * @returns 被回复用户名
- */
-function resolveReplyTargetName(root: AdminCommentThreadRootItem, reply: AdminCommentThreadReplyItem) {
-  return reply.replyToUserName?.trim() || root.userName
-}
-
-/**
- * 判断当前回复是否直接回复主评论。
- * 作用：在后台审核页中区分“回复主评论”和“回复某条子回复”两种关系。
- *
- * @param root 主评论
- * @param reply 回复项
- * @returns 是否直接回复主评论
- */
-function isReplyToRoot(root: AdminCommentThreadRootItem, reply: AdminCommentThreadReplyItem) {
-  return resolveReplyTargetName(root, reply) === root.userName
-}
-
 watch(
   () => route.fullPath,
   async () => {
@@ -741,18 +717,6 @@ await loadCommentGroups()
                     >
                       {{ resolveVisibilityLabel(root.visibleOnSite) }}
                     </span>
-                    <span
-                      v-if="root.matchedByFilter"
-                      class="rounded-full border border-[var(--admin-primary-border)] bg-white px-2 py-0.5 text-[11px] font-semibold text-[var(--admin-primary-text)] dark:border-[color:color-mix(in_srgb,var(--site-primary-color)_28%,transparent)] dark:bg-white/[0.06] dark:text-[var(--site-primary-color)]"
-                    >
-                      命中评论
-                    </span>
-                    <span
-                      v-if="isContextRoot(root)"
-                      class="rounded-full border border-amber-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:border-amber-400/20 dark:bg-white/[0.04] dark:text-amber-200"
-                    >
-                      上下文评论
-                    </span>
                   </div>
 
                   <p class="mt-2 text-xs text-slate-400 dark:text-slate-500">
@@ -809,18 +773,6 @@ await loadCommentGroups()
                           {{ resolveStatusLabel(reply.status) }}
                         </UBadge>
                         <span
-                          v-if="reply.matchedByFilter"
-                          class="rounded-full border border-sky-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-sky-700 dark:border-sky-400/20 dark:bg-white/[0.04] dark:text-sky-200"
-                        >
-                          命中回复
-                        </span>
-                        <span
-                          v-if="isContextReply(reply)"
-                          class="rounded-full border border-amber-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:border-amber-400/20 dark:bg-white/[0.04] dark:text-amber-200"
-                        >
-                          上下文回复
-                        </span>
-                        <span
                           class="rounded-full border px-2 py-0.5 text-[11px] font-medium"
                           :class="reply.visibleOnSite
                             ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-200'
@@ -842,33 +794,6 @@ await loadCommentGroups()
 
                       <div class="mt-4 text-sm leading-7 text-slate-700 dark:text-slate-300">
                         <CommentRichContent :content="reply.content" emoji-size="sm" />
-                      </div>
-
-                      <div class="mt-4 rounded-[16px] border border-slate-200/80 bg-white/80 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:border-white/10 dark:bg-white/[0.04]">
-                        <div class="flex flex-wrap items-center gap-2 text-sm">
-                          <span class="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white dark:bg-slate-100 dark:text-slate-900">
-                            回复关系
-                          </span>
-                          <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-100">
-                            {{ reply.userName }}
-                          </span>
-                          <UIcon name="i-lucide-arrow-right" class="h-4 w-4 text-slate-400 dark:text-slate-500" />
-                          <span class="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 font-semibold text-sky-700 dark:border-sky-400/20 dark:bg-sky-400/10 dark:text-sky-200">
-                            @{{ resolveReplyTargetName(root, reply) }}
-                          </span>
-                          <span class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-200">
-                            所属主评论：{{ root.userName }}
-                          </span>
-                          <span
-                            class="rounded-full border px-3 py-1 text-xs font-medium"
-                            :class="isReplyToRoot(root, reply)
-                              ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-200'
-                              : 'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-400/20 dark:bg-violet-400/10 dark:text-violet-200'"
-                          >
-                            {{ isReplyToRoot(root, reply) ? '直接回复主评论' : '回复某条子回复' }}
-                          </span>
-                        </div>
-
                       </div>
                     </div>
 
