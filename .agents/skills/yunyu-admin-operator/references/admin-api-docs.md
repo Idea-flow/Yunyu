@@ -2,6 +2,13 @@
 
 本文档由仓库外层脚本从 `/v3/api-docs` 自动生成，只保留 `/api/admin/**` 接口，用于让 agent 以更低 token 成本快速读取后台能力。
 
+使用前提醒：
+
+1. 调用任一后台接口前，先读取本地连接信息：
+   `bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh show`
+2. 如果没有可用连接信息，先向用户索要当前环境的 `baseUrl` 和 `token`。
+3. 若请求失败，优先参考 `references/troubleshooting.md` 判断是 token、域名、权限还是接口问题。
+
 - 来源：`http://127.0.0.1:20000/v3/api-docs`
 - 生成时间：`2026-04-27 00:06:10 +0800`
 - 接口总数：`52`

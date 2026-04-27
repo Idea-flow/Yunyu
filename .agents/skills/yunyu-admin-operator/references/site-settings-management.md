@@ -2,6 +2,19 @@
 
 本文档用于指导 agent 操作站点配置、首页配置，以及相关敏感设置。
 
+## 零、统一前置步骤
+
+在查询或写入站点设置类后台接口前，先处理连接信息：
+
+1. 先读取：
+   `bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh show`
+2. 如果本地没有可用连接信息，先让用户提供：
+   - 后台域名或基础地址
+   - 当前环境的后台 token
+3. 收到后保存：
+   `bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh set --base-url <URL> --token <TOKEN>`
+4. 如请求失败，优先判断是否需要更换 `baseUrl` 或 `token`，不要直接假设是配置字段本身有误。
+
 ## 一、站点配置
 
 接口：

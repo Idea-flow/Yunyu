@@ -42,3 +42,6 @@ yunyu-server/.gitattributes
 tmp/
 temp/
 *.tmp
+
+# Skill local state
+.agents/skills/**/.local/

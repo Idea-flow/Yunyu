@@ -2,6 +2,19 @@
 
 本文档用于指导 agent 通过后台接口完成文章新增、编辑与相关 AI 辅助操作。
 
+## 零、统一前置步骤
+
+在查询或写入文章相关后台接口前，先处理连接信息：
+
+1. 先读取：
+   `bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh show`
+2. 如果本地没有可用连接信息，先让用户提供：
+   - 后台域名或基础地址
+   - 当前环境的后台 token
+3. 收到后保存：
+   `bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh set --base-url <URL> --token <TOKEN>`
+4. 如请求失败，优先判断是否需要更换 `baseUrl` 或 `token`，不要直接假设是业务字段错误。
+
 ## 一、创建文章
 
 建议按以下顺序操作：
@@ -14,8 +27,9 @@
 3. 分类是可选的，标签和专题也是可选的，不要默认乱填。
 4. `slug`、`summary`、`seoTitle`、`seoDescription`：
    - 如果用户已提供，优先使用用户提供值。
-   - 如果用户未提供，优先根据标题和正文生成。
-   - 如需更稳定生成，可调用 `POST /api/admin/posts/ai/meta/generate`。
+   - 如果用户未提供，优先由当前 AI agent 根据标题和正文直接生成。
+   - 默认不要为了补这些字段再额外调用 `POST /api/admin/posts/ai/meta/generate`。
+   - 只有当用户明确要求使用后台 AI 元信息生成能力，或需要和后台内置生成结果保持一致时，才考虑调用该接口。
    - 调用该接口时优先传 `title` 与 `contentMarkdown`；后端会统一组装提示词并返回 OpenAI Chat 风格结果。
 5. 文章状态默认建议：
    - 若用户没有明确要求立即发布，默认传 `DRAFT`
