@@ -48,11 +48,17 @@ definePageMeta({
   middleware: 'admin'
 })
 
+const ACCESS_TOKEN_STORAGE_KEY = 'yunyu_access_token'
+
 const toast = useToast()
 const auth = useAuth()
 const adminPosts = useAdminPosts()
 const adminComments = useAdminComments()
 const adminTaxonomy = useAdminTaxonomy()
+const runtimeConfig = useRuntimeConfig()
+const showAccessToken = ref(false)
+const persistedAccessToken = ref('')
+const apiBase = computed(() => runtimeConfig.public.apiBase || '')
 
 const quickActions = [
   {
@@ -85,6 +91,74 @@ const quickActions = [
 function formatCount(value: number) {
   return new Intl.NumberFormat('zh-CN').format(Math.max(0, value || 0))
 }
+
+/**
+ * 读取本地访问令牌。
+ * 作用：仅在后台首页展示当前浏览器保存的访问令牌，便于站长确认连接信息。
+ */
+function loadPersistedAccessToken() {
+  if (!import.meta.client) {
+    return
+  }
+
+  persistedAccessToken.value = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) || ''
+}
+
+/**
+ * 切换访问令牌展示状态。
+ * 作用：默认隐藏敏感令牌，仅在站长主动点击后显示真实值。
+ */
+function toggleAccessTokenVisibility() {
+  showAccessToken.value = !showAccessToken.value
+}
+
+/**
+ * 复制 AI skill 认证信息。
+ * 作用：把访问令牌和后台接口地址组合成可直接提供给 AI 的文本，减少重复复制操作。
+ */
+async function copyAiSkillCredentials() {
+  if (!import.meta.client || !persistedAccessToken.value || !apiBase.value) {
+    toast.add({
+      title: '复制认证信息失败',
+      description: '当前访问令牌或后台接口地址不完整。',
+      color: 'error'
+    })
+    return
+  }
+
+  const credentialText = `yunyu_access_token:${persistedAccessToken.value}
+后台接口地址:${apiBase.value}`
+
+  try {
+    await navigator.clipboard.writeText(credentialText)
+    toast.add({
+      title: 'AI skill 认证信息已复制',
+      color: 'success'
+    })
+  } catch (error: any) {
+    toast.add({
+      title: '复制认证信息失败',
+      description: error?.message || '浏览器暂时无法访问剪贴板。',
+      color: 'error'
+    })
+  }
+}
+
+/**
+ * 计算访问令牌展示文本。
+ * 作用：在默认情况下把令牌完全掩码，避免后台首页直接暴露敏感凭证。
+ */
+const displayAccessToken = computed(() => {
+  if (!persistedAccessToken.value) {
+    return '未检测到'
+  }
+
+  if (showAccessToken.value) {
+    return persistedAccessToken.value
+  }
+
+  return '*'.repeat(persistedAccessToken.value.length)
+})
 
 /**
  * 读取后台首页聚合数据。
@@ -139,6 +213,10 @@ watch(dashboardError, value => {
   })
 }, { immediate: true })
 
+onMounted(() => {
+  loadPersistedAccessToken()
+})
+
 /**
  * 手动刷新后台首页数据。
  * 作用：供工作台首页顶部刷新按钮复用，便于在不离开当前页面的情况下重新拉取真实统计。
@@ -146,6 +224,7 @@ watch(dashboardError, value => {
 async function handleRefreshDashboard() {
   try {
     await refreshDashboard()
+    loadPersistedAccessToken()
     toast.add({
       title: '后台首页已刷新',
       color: 'success'
@@ -296,19 +375,50 @@ const pendingItems = computed<AdminDashboardPendingItem[]>(() => {
           </div>
         </section>
 
-        <section class="rounded-[18px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.6))] p-5 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.76),rgba(15,23,42,0.66))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)]">
-          <h2 class="text-base font-semibold text-slate-900 dark:text-slate-50">当前账号</h2>
-          <div class="mt-4 space-y-3">
-            <div class="rounded-[14px] border border-white/60 bg-white/56 p-4 backdrop-blur-md dark:border-white/10 dark:bg-white/5">
-              <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">
-                {{ auth.currentUser?.userName || '未知用户' }}
-              </p>
-              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                {{ auth.currentUser?.email || '--' }}
-              </p>
+        <section class="space-y-4">
+          <section class="rounded-[18px] border border-white/55 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.6))] p-5 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.76),rgba(15,23,42,0.66))] dark:shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)]">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="text-base font-semibold text-slate-900 dark:text-slate-50">AI skill 认证信息</h2>
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 rounded-[10px] border border-white/60 bg-white/70 px-3 py-2 text-xs font-medium text-slate-700 transition hover:border-white/80 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:border-white/20 dark:hover:bg-white/10"
+                aria-label="复制 AI skill 认证信息"
+                @click="copyAiSkillCredentials"
+              >
+                <UIcon name="i-lucide-copy" class="size-4" />
+                <span>复制</span>
+              </button>
             </div>
-            <ThemeModeSwitch />
-          </div>
+
+            <div class="mt-4 space-y-3">
+              <div class="rounded-[14px] border border-white/60 bg-white/56 p-4 backdrop-blur-md dark:border-white/10 dark:bg-white/5">
+                <p class="text-xs font-medium uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">后端接口域名</p>
+                <p class="mt-2 break-all font-mono text-sm text-slate-900 dark:text-slate-50">
+                  {{ apiBase || '未配置' }}
+                </p>
+              </div>
+
+              <div class="rounded-[14px] border border-white/60 bg-white/56 p-4 backdrop-blur-md dark:border-white/10 dark:bg-white/5">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0 flex-1">
+                    <p class="text-xs font-medium uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">yunyu_access_token</p>
+                    <p class="mt-2 break-all font-mono text-sm text-slate-900 dark:text-slate-50">
+                      {{ displayAccessToken }}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="inline-flex size-9 items-center justify-center rounded-[10px] border border-white/60 bg-white/70 text-slate-600 transition hover:border-white/80 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-white/20 dark:hover:bg-white/10"
+                    :aria-label="showAccessToken ? '隐藏访问令牌' : '显示访问令牌'"
+                    @click="toggleAccessTokenVisibility"
+                  >
+                    <UIcon :name="showAccessToken ? 'i-lucide-eye-off' : 'i-lucide-eye'" class="size-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
         </section>
       </div>
 

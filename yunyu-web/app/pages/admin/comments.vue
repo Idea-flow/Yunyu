@@ -517,25 +517,13 @@ function isReplyToRoot(root: AdminCommentThreadRootItem, reply: AdminCommentThre
   return resolveReplyTargetName(root, reply) === root.userName
 }
 
-/**
- * 解析回复关系说明。
- * 作用：补充一句更容易读懂的中文说明，降低审核时理解回复链的成本。
- *
- * @param root 主评论
- * @param reply 回复项
- * @returns 回复关系文案
- */
-function resolveReplyRelationDescription(root: AdminCommentThreadRootItem, reply: AdminCommentThreadReplyItem) {
-  if (isReplyToRoot(root, reply)) {
-    return '这条回复直接挂在当前主评论下。'
-  }
-
-  return `这条回复是在当前主评论下，回复 @${resolveReplyTargetName(root, reply)}。`
-}
-
 watch(
   () => route.fullPath,
   async () => {
+    if (route.path !== '/admin/comments') {
+      return
+    }
+
     hydrateFiltersFromRoute()
     await loadCommentGroups()
   }
@@ -551,9 +539,6 @@ await loadCommentGroups()
       <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 class="text-base font-semibold text-slate-900 dark:text-slate-50">评论管理</h1>
-          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            按文章分组查看评论主楼与回复流，集中处理审核、驳回和删除。
-          </p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
@@ -674,9 +659,6 @@ await loadCommentGroups()
           <UIcon name="i-lucide-message-square-off" class="size-5" />
         </div>
         <p class="mt-4 text-base font-semibold text-slate-900 dark:text-slate-50">{{ emptyTitle }}</p>
-        <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          可以尝试调整关键词、文章 ID 或状态筛选条件后重新查询。
-        </p>
       </div>
 
       <div v-else class="space-y-4">
@@ -887,9 +869,6 @@ await loadCommentGroups()
                           </span>
                         </div>
 
-                        <p class="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
-                          {{ resolveReplyRelationDescription(root, reply) }}
-                        </p>
                       </div>
                     </div>
 
@@ -923,9 +902,7 @@ await loadCommentGroups()
           <div
             v-else
             class="px-5 py-4 text-sm text-slate-500 dark:text-slate-400"
-          >
-            当前文章评论已折叠，可点击右上角“展开”继续查看。
-          </div>
+          />
         </section>
       </div>
 

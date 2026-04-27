@@ -34,7 +34,6 @@ const isLoadingDetail = ref(false)
 const isLoadingTaxonomy = ref(false)
 const isUploadingVideo = ref(false)
 const isGeneratingMetaByAi = ref(false)
-const useStreamGenerateMeta = ref(true)
 const aiMetaRawContent = ref('')
 const videoFileInputRef = ref<HTMLInputElement | null>(null)
 const isCoverUploadModalOpen = ref(false)
@@ -262,10 +261,19 @@ function applyGeneratedMetaToForm(generatedMeta: AdminPostAiGeneratedMeta) {
  * 作用：根据当前标题和正文调用后台 AI 接口生成 slug、摘要和 SEO 字段，并自动回填表单。
  */
 async function generateMetaByAi() {
-  if (!formState.title.trim() && !formState.contentMarkdown.trim()) {
+  if (!formState.title.trim()) {
     toast.add({
-      title: '请先填写标题或正文',
-      description: 'AI 生成元信息前至少需要提供文章标题或正文内容。',
+      title: '请先填写文章标题',
+      description: 'AI 生成元信息前需要先提供文章标题。',
+      color: 'warning'
+    })
+    return
+  }
+
+  if (!formState.contentMarkdown.trim()) {
+    toast.add({
+      title: '请先填写文章正文',
+      description: 'AI 生成元信息前需要先提供文章正文内容。',
       color: 'warning'
     })
     return
@@ -275,25 +283,8 @@ async function generateMetaByAi() {
   aiMetaRawContent.value = ''
 
   try {
-    if (useStreamGenerateMeta.value) {
-      const response = await adminPosts.streamGeneratePostMeta(
-        buildAiMetaGenerateRequest(),
-        {
-          onChunk: (_chunk, deltaText) => {
-            if (deltaText) {
-              aiMetaRawContent.value += deltaText
-            }
-          }
-        }
-      )
-
-      if (!aiMetaRawContent.value.trim()) {
-        aiMetaRawContent.value = response.fullText
-      }
-    } else {
-      const response = await adminPosts.generatePostMeta(buildAiMetaGenerateRequest())
-      aiMetaRawContent.value = extractChatMessageContent(response)
-    }
+    const response = await adminPosts.generatePostMeta(buildAiMetaGenerateRequest())
+    aiMetaRawContent.value = extractChatMessageContent(response)
 
     const generatedMeta = parseGeneratedMeta(aiMetaRawContent.value)
     if (!generatedMeta) {
@@ -832,6 +823,30 @@ await Promise.all([
         </div>
 
         <form v-else class="space-y-5 px-5 py-5" @submit.prevent="handleSubmit">
+          <div class="rounded-[12px] border border-slate-200/80 bg-white/86 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">AI 元信息生成</p>
+                <p class="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                  将根据当前标题和正文自动生成 Slug、摘要、SEO 标题与 SEO 描述。
+                </p>
+              </div>
+
+              <AdminPrimaryButton
+                icon="i-lucide-sparkles"
+                :label="isGeneratingMetaByAi ? '生成中...' : 'AI 元信息生成'"
+                loading-label="生成中..."
+                size="sm"
+                :loading="isGeneratingMetaByAi"
+                @click.prevent="generateMetaByAi"
+              />
+            </div>
+
+            <p v-if="isGeneratingMetaByAi" class="mt-3 text-xs text-sky-600 dark:text-sky-300">
+              正在生成元信息，请稍候...
+            </p>
+          </div>
+
           <div class="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
             <div :class="workspaceSurfaceClass">
               <p class="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-50">主信息</p>
@@ -968,39 +983,6 @@ await Promise.all([
                 <p class="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-50">SEO</p>
 
                 <div class="space-y-5">
-                  <div class="rounded-[10px] border border-slate-200/80 bg-white/86 p-3 dark:border-white/10 dark:bg-white/[0.03]">
-                    <div class="flex flex-wrap items-center justify-between gap-2">
-                      <p class="text-sm font-medium text-slate-800 dark:text-slate-100">AI 元信息生成</p>
-                      <div class="flex flex-wrap items-center gap-2">
-                        <AdminToggleButton
-                          v-model="useStreamGenerateMeta"
-                          tone="info"
-                          size="sm"
-                          active-label="流式"
-                          inactive-label="非流式"
-                        />
-                        <AdminPrimaryButton
-                          icon="i-lucide-sparkles"
-                          label="生成"
-                          loading-label="生成中..."
-                          size="xs"
-                          :loading="isGeneratingMetaByAi"
-                          @click.prevent="generateMetaByAi"
-                        />
-                      </div>
-                    </div>
-
-                    <p class="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                      将根据当前标题和正文自动生成 Slug、摘要、SEO 标题与 SEO 描述。
-                    </p>
-                    <p v-if="isGeneratingMetaByAi && useStreamGenerateMeta" class="mt-1 text-xs text-sky-600 dark:text-sky-300">
-                      正在流式生成中...
-                    </p>
-                    <p v-else-if="aiMetaRawContent.trim()" class="mt-1 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">
-                      最近一次 AI 原始输出：{{ aiMetaRawContent }}
-                    </p>
-                  </div>
-
                   <UFormField name="seoTitle" label="SEO 标题">
                     <AdminInput
                       v-model="formState.seoTitle"

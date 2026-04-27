@@ -518,6 +518,10 @@ function resolvePostMetaFullSummary(post: AdminPostItem) {
 watch(
   () => route.fullPath,
   async () => {
+    if (route.path !== '/admin/posts') {
+      return
+    }
+
     hydrateFiltersFromRoute()
     await loadPosts()
   }

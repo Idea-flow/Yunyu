@@ -306,19 +306,19 @@ await loadAttachments()
       <div class="flex items-center gap-2">
         <AdminActionIconButton
           icon="i-lucide-copy"
-          tooltip="复制链接"
+          label="复制链接"
           @click="copyAccessUrl(item)"
         />
         <AdminActionIconButton
           v-if="isSelectMode"
           icon="i-lucide-check"
-          tooltip="选择该附件"
+          label="选择该附件"
           @click="handleSelect(item)"
         />
         <AdminActionIconButton
           v-else
           icon="i-lucide-trash-2"
-          tooltip="删除"
+          label="删除"
           @click="handleDelete(item)"
         />
       </div>
