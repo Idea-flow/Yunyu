@@ -11,12 +11,18 @@ interface ThemeModeSwitchProps {
    * 作用：允许在导航栏中使用纯图标样式，在后台继续复用默认按钮样式。
    */
   variant?: 'default' | 'icon'
+  /**
+   * 图标按钮色调。
+   * 作用：让前台导航在浅玻璃与深色覆盖场景下都能复用同一个主题切换组件。
+   */
+  tone?: 'default' | 'inverse'
 }
 
 const colorMode = useColorMode()
 const isMounted = ref(false)
 const props = withDefaults(defineProps<ThemeModeSwitchProps>(), {
-  variant: 'default'
+  variant: 'default',
+  tone: 'default'
 })
 
 const themeOptions = [
@@ -73,6 +79,10 @@ const nextTheme = computed(() => {
  */
 const buttonClassName = computed(() => {
   if (props.variant === 'icon') {
+    if (props.tone === 'inverse') {
+      return 'inline-flex size-10 items-center justify-center text-white/84 transition duration-200 hover:text-white focus:outline-none focus:ring-0 dark:text-white/82 dark:hover:text-white'
+    }
+
     return 'inline-flex size-10 items-center justify-center text-slate-600 transition duration-200 hover:text-slate-900 focus:outline-none focus:ring-0 dark:text-slate-300 dark:hover:text-slate-50'
   }
 

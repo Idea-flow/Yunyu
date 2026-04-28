@@ -17,9 +17,12 @@ const categories = computed(() => data.value || [])
 
 /**
  * 计算分类列表页首屏主视觉数据。
- * 作用：优先复用当前分类数据中的首个封面作为大图背景，让分类页与专题页保持统一的封面首屏节奏。
+ * 作用：优先查找首个带封面的分类作为 Hero 背景；若前几个分类没有封面，则继续向后回退，保持与文章列表页一致的封面取值逻辑。
  */
-const heroCategory = computed(() => categories.value[0] || null)
+const heroCategory = computed(() => {
+  const firstCoverCategory = categories.value.find(item => typeof item.coverUrl === 'string' && item.coverUrl.trim())
+  return firstCoverCategory || categories.value[0] || null
+})
 
 /**
  * 计算分类页首屏统计信息。

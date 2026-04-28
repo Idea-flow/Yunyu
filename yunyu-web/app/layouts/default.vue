@@ -12,8 +12,14 @@ const siteContent = useSiteContent()
 const { data: siteConfigData } = await useAsyncData('site-base-info', async () => {
   return await siteContent.getSiteConfig()
 })
+
+type OverlaySurfaceVariant = 'light' | 'content'
+type FrontNavTone = 'light-overlay' | 'overlay-inverse' | 'solid'
+type ThemeModeTone = 'default' | 'inverse'
+
 const NAV_SCROLL_ENTER_THRESHOLD = 56
 const NAV_SCROLL_EXIT_THRESHOLD = 20
+const OVERLAY_NAV_SOLID_THRESHOLD = 0.64
 const navigationItems = [
   { label: '首页', to: '/' },
   { label: '文章', to: '/posts' },
@@ -22,6 +28,50 @@ const navigationItems = [
   { label: '专题', to: '/topics' },
   { label: '友链', to: '/friends' }
 ]
+
+const NAV_APPEARANCE_CLASS_MAP = {
+  'light-overlay': {
+    brandTitle: 'text-slate-900 transition-colors duration-300 ease-out dark:text-slate-50 motion-reduce:transition-none',
+    brandSubtitle: 'text-slate-500 transition-colors duration-300 ease-out dark:text-slate-300 motion-reduce:transition-none',
+    link: 'rounded-full px-4 py-2 text-sm font-medium text-slate-700 transition-[background-color,color,transform,box-shadow] duration-200 ease-out hover:bg-white/58 hover:text-slate-950 motion-reduce:transition-none dark:text-slate-200 dark:hover:bg-white/10 dark:hover:text-white',
+    activeLink: 'border border-white/78 bg-white/80 text-slate-950 shadow-[0_14px_30px_-24px_rgba(56,189,248,0.26)] dark:border-white/12 dark:bg-white/10 dark:text-sky-100',
+    authAction: 'inline-flex h-10 items-center justify-center rounded-full border border-white/70 bg-white/60 px-4 text-sm font-medium text-slate-700 transition-[background-color,border-color,color,box-shadow] duration-200 ease-out hover:bg-white/78 hover:text-slate-950 motion-reduce:transition-none dark:border-white/12 dark:bg-white/[0.08] dark:text-slate-100 dark:hover:bg-white/[0.12]',
+    userDropdownTrigger: 'inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-white/60 text-slate-800 transition-[background-color,border-color,color,box-shadow] duration-200 ease-out hover:bg-white/78 motion-reduce:transition-none dark:border-white/12 dark:bg-white/[0.08] dark:text-slate-100 dark:hover:bg-white/[0.12]',
+    divider: 'bg-slate-300/72 dark:bg-white/12',
+    themeModeTone: 'default' as const
+  },
+  'overlay-inverse': {
+    brandTitle: 'text-white transition-colors duration-300 ease-out motion-reduce:transition-none',
+    brandSubtitle: 'text-white/72 transition-colors duration-300 ease-out motion-reduce:transition-none',
+    link: 'rounded-full px-4 py-2 text-sm font-medium text-white/88 transition-[background-color,color,transform] duration-200 ease-out hover:bg-white/10 hover:text-white motion-reduce:transition-none',
+    activeLink: 'bg-white/12 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]',
+    authAction: 'inline-flex h-10 items-center justify-center rounded-full border border-white/16 bg-white/10 px-4 text-sm font-medium text-white transition-[background-color,border-color,color,box-shadow] duration-200 ease-out hover:bg-white/16 motion-reduce:transition-none',
+    userDropdownTrigger: 'inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/14 bg-white/10 text-white transition-[background-color,border-color,color,box-shadow] duration-200 ease-out hover:bg-white/16 motion-reduce:transition-none',
+    divider: 'bg-white/14',
+    themeModeTone: 'inverse' as const
+  },
+  solid: {
+    brandTitle: 'text-slate-900 transition-colors duration-300 ease-out dark:text-slate-50 motion-reduce:transition-none',
+    brandSubtitle: 'text-slate-500 transition-colors duration-300 ease-out dark:text-slate-400 motion-reduce:transition-none',
+    link: 'rounded-full px-4 py-2 text-sm font-medium text-slate-700 transition-[background-color,color,transform,box-shadow] duration-200 ease-out hover:bg-white/62 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/8 dark:hover:text-sky-200 motion-reduce:transition-none',
+    activeLink: 'border border-white/76 bg-white/80 text-slate-950 shadow-[0_12px_26px_-24px_rgba(15,23,42,0.16)] dark:border-white/10 dark:bg-white/12 dark:text-sky-100',
+    authAction: 'inline-flex h-10 items-center justify-center rounded-full border border-slate-200/78 bg-white/72 px-4 text-sm font-medium text-slate-700 transition-[background-color,border-color,color,box-shadow] duration-200 ease-out hover:border-slate-300/88 hover:text-slate-950 dark:border-white/10 dark:bg-white/6 dark:text-slate-100 dark:hover:bg-white/10 motion-reduce:transition-none',
+    userDropdownTrigger: 'inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200/78 bg-white/72 text-slate-800 transition-[background-color,border-color,color,box-shadow] duration-200 ease-out hover:border-slate-300/88 hover:bg-white/82 dark:border-white/10 dark:bg-white/6 dark:text-slate-100 dark:hover:bg-white/10 motion-reduce:transition-none',
+    divider: 'bg-slate-300/70 dark:bg-white/10',
+    themeModeTone: 'default' as const
+  }
+} as const
+
+const OVERLAY_SURFACE_CLASS_MAP = {
+  light: {
+    initial: 'absolute inset-0 rounded-[inherit] bg-[linear-gradient(180deg,rgba(255,255,255,0.72),rgba(248,250,252,0.56))] shadow-[0_18px_42px_-30px_rgba(15,23,42,0.14)] backdrop-blur-[18px] transition-opacity duration-300 ease-out dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.4),rgba(2,6,23,0.24))] dark:shadow-[0_18px_40px_-30px_rgba(2,6,23,0.52)] motion-reduce:transition-none',
+    solid: 'absolute inset-0 rounded-[inherit] bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(244,246,250,0.86))] shadow-[0_22px_52px_-34px_rgba(15,23,42,0.18)] backdrop-blur-[24px] transition-opacity duration-300 ease-out dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.82),rgba(2,6,23,0.72))] motion-reduce:transition-none'
+  },
+  content: {
+    initial: 'absolute inset-0 rounded-[inherit] bg-slate-950/12 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.18)] transition-opacity duration-300 ease-out dark:bg-slate-950/16 motion-reduce:transition-none',
+    solid: 'absolute inset-0 rounded-[inherit] bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(244,246,250,0.88))] shadow-[0_24px_52px_-34px_rgba(15,23,42,0.22)] backdrop-blur-[24px] transition-opacity duration-300 ease-out dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.82),rgba(2,6,23,0.72))] motion-reduce:transition-none'
+  }
+} as const
 
 const isScrolled = ref(false)
 const navTransitionProgress = ref(0)
@@ -45,29 +95,104 @@ const brandGradientStyle = computed(() => {
 })
 
 /**
- * 判断当前页面是否需要启用文章首屏覆盖式导航。
- * 作用：统一收口文章列表页、文章详情页等封面首屏场景，后续若有其他页面复用同类交互，只需要维护这一个判断。
+ * 判断给定路径是否为首页。
+ * 作用：将首页的导航视觉从通用封面页中拆开，允许单独维护更轻的浅玻璃态。
  */
-const isOverlayPage = computed(() => {
-  return route.path === '/posts'
-    || route.path.startsWith('/posts/') || route.path === '/'
-  || route.path === '/topics' || route.path.startsWith('/topics/')
-      || route.path.startsWith('/categories/')
-      || route.path.startsWith('/categories')
+function isHomeRoute(path: string) {
+  return path === '/'
+}
+
+/**
+ * 判断给定路径是否为内容封面型页面。
+ * 作用：统一收口文章、分类、专题等需要深色覆盖式导航的页面，避免模板内散落路径判断。
+ */
+function isContentOverlayRoute(path: string) {
+  return path === '/posts'
+    || path.startsWith('/posts/')
+    || path === '/topics'
+    || path.startsWith('/topics/')
+    || path === '/categories'
+    || path.startsWith('/categories/')
+    || path === '/tags'
+    || path === '/friends'
+}
+
+/**
+ * 限制导航过渡进度到 0~1。
+ * 作用：让不同滚动来源都复用同一套进度范围，避免模板层处理边界条件。
+ */
+function clampTransitionProgress(value: number) {
+  return Math.min(Math.max(value, 0), 1)
+}
+
+/**
+ * 根据普通滚动距离计算导航过渡进度。
+ * 作用：首页没有封面标记时，导航仍可在轻玻璃与实底玻璃之间平滑过渡，而不是直接跳变。
+ */
+function getScrollTransitionProgress(scrollTop: number) {
+  const transitionRange = Math.max(NAV_SCROLL_ENTER_THRESHOLD - NAV_SCROLL_EXIT_THRESHOLD, 1)
+  return clampTransitionProgress((scrollTop - NAV_SCROLL_EXIT_THRESHOLD) / transitionRange)
+}
+
+/**
+ * 根据封面底部位置计算导航过渡进度。
+ * 作用：让文章、分类等带首屏封面的页面继续跟随封面离场节奏切换导航层次。
+ */
+function getHeroTransitionProgress(heroBottom: number, headerHeight: number) {
+  const transitionStart = Math.max(headerHeight + 116, 164)
+  const transitionEnd = Math.max(headerHeight + 12, 76)
+  return clampTransitionProgress((transitionStart - heroBottom) / Math.max(transitionStart - transitionEnd, 1))
+}
+
+/**
+ * 判断当前页面是否需要启用首屏覆盖式导航。
+ * 作用：首页使用浅玻璃覆盖态，内容封面页继续使用深色覆盖态，普通页面保持常规 sticky 导航。
+ */
+const isHomePage = computed(() => isHomeRoute(route.path))
+const isContentOverlayPage = computed(() => isContentOverlayRoute(route.path))
+const usesLightOverlayNav = computed(() => {
+  return isHomePage.value || route.path === '/tags' || route.path === '/friends'
 })
+const isOverlayPage = computed(() => isHomePage.value || isContentOverlayPage.value)
 
 /**
  * 判断导航栏当前是否应进入实底玻璃态。
- * 作用：覆盖式页面统一按滚动进度在深色覆盖态与实底玻璃态之间切换，
- * 让首页与文章页保持一致的导航进入节奏。
+ * 作用：覆盖式页面统一按滚动进度切换，普通页面始终保持常规实底导航。
  */
 const isSolidNav = computed(() => {
   if (isOverlayPage.value) {
-    return navTransitionProgress.value >= 0.64
+    return navTransitionProgress.value >= OVERLAY_NAV_SOLID_THRESHOLD
   }
 
-  return !isOverlayPage.value || isScrolled.value
+  return true
 })
+
+/**
+ * 计算导航当前视觉语义。
+ * 作用：把首页浅玻璃、封面页深覆盖和常规实底三种状态收口为单一入口，方便集中维护配色。
+ */
+const navTone = computed<FrontNavTone>(() => {
+  if (!isSolidNav.value) {
+    return usesLightOverlayNav.value ? 'light-overlay' : 'overlay-inverse'
+  }
+
+  return 'solid'
+})
+
+/**
+ * 读取当前导航视觉配置。
+ * 作用：集中提供品牌文案、链接、按钮和图标所需的样式，避免每个计算属性重复写条件分支。
+ */
+const navAppearance = computed(() => NAV_APPEARANCE_CLASS_MAP[navTone.value])
+
+/**
+ * 读取当前覆盖式导航的背景层配置。
+ * 作用：首页和内容封面页分别维护自己的初始浮层与实底层，模板只负责渲染。
+ */
+const overlaySurfaceVariant = computed<OverlaySurfaceVariant>(() => {
+  return usesLightOverlayNav.value ? 'light' : 'content'
+})
+const overlaySurfaceClasses = computed(() => OVERLAY_SURFACE_CLASS_MAP[overlaySurfaceVariant.value])
 
 /**
  * 计算头部容器定位样式。
@@ -81,53 +206,43 @@ const headerClassName = computed(() => {
 
 /**
  * 计算导航面板样式。
- * 作用：统一控制覆盖态与滚动态下导航条的背景、边框和阴影层级。
+ * 作用：覆盖页保留透明承载层，常规页面直接使用稳定的实底玻璃面板。
  */
 const navPanelClassName = computed(() => {
   if (isOverlayPage.value) {
     return 'bg-transparent shadow-none backdrop-blur-[12px] sm:backdrop-blur-[14px]'
   }
 
-  if (!isSolidNav.value) {
-    if (isOverlayPage.value) {
-      return 'bg-slate-950/12 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.18)] backdrop-blur-[10px] dark:bg-slate-950/16'
-    }
-
-    return 'bg-slate-950/10 shadow-none backdrop-blur-[14px] dark:bg-slate-950/14'
-  }
-
   return 'bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(244,246,250,0.88))] shadow-[0_24px_52px_-34px_rgba(15,23,42,0.22)] backdrop-blur-[24px] dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.82),rgba(2,6,23,0.72))]'
 })
 
 /**
- * 计算覆盖式导航进入实底后的玻璃层样式。
- * 作用：首页采用更轻盈、更通透的玻璃层，其他覆盖页保持更稳重的实底过渡。
+ * 计算覆盖式导航的初始浮层样式。
+ * 作用：首页进入时使用浅雾玻璃，内容封面页继续使用深色覆盖层。
  */
-const overlaySolidLayerClassName = computed(() => {
-  if (route.path === '/') {
-    return 'absolute inset-0 rounded-[inherit] bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(248,250,252,0.68))] shadow-[0_20px_44px_-34px_rgba(15,23,42,0.16)] backdrop-blur-[20px] transition-opacity duration-300 ease-out dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.58),rgba(2,6,23,0.46))] motion-reduce:transition-none'
-  }
-
-  return 'absolute inset-0 rounded-[inherit] bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(244,246,250,0.88))] shadow-[0_24px_52px_-34px_rgba(15,23,42,0.22)] transition-opacity duration-300 ease-out dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.82),rgba(2,6,23,0.72))] motion-reduce:transition-none'
-})
+const overlayInitialLayerClassName = computed(() => overlaySurfaceClasses.value.initial)
 
 /**
- * 计算详情页导航浮层的暗态层透明度。
- * 作用：让封面仍在可视区时，导航优先保持轻薄覆盖态，
- * 随着封面接近离场再逐步淡出，避免边框和背景突然跳变。
+ * 计算覆盖式导航的实底玻璃层样式。
+ * 作用：统一首页与内容封面页滚动后的稳定面板表现，同时保留各自的层次差异。
  */
-const postDetailOverlayLayerStyle = computed(() => {
+const overlaySolidLayerClassName = computed(() => overlaySurfaceClasses.value.solid)
+
+/**
+ * 计算覆盖式导航初始浮层透明度。
+ * 作用：随着首屏离场逐步淡出初始浮层，避免导航背景突变。
+ */
+const overlayInitialLayerStyle = computed(() => {
   return {
     opacity: `${1 - navTransitionProgress.value}`
   }
 })
 
 /**
- * 计算详情页导航浮层的实底层透明度。
- * 作用：让导航在封面即将离开时提前出现一层更轻的实底玻璃，
- * 当封面完全离场后自然落到稳定状态。
+ * 计算覆盖式导航实底层透明度。
+ * 作用：让导航在滚动过程中逐步获得更稳定的实体感。
  */
-const postDetailSolidLayerStyle = computed(() => {
+const overlaySolidLayerStyle = computed(() => {
   return {
     opacity: `${navTransitionProgress.value}`
   }
@@ -135,42 +250,34 @@ const postDetailSolidLayerStyle = computed(() => {
 
 /**
  * 计算品牌标题文字样式。
- * 作用：覆盖页在首屏顶部默认使用浅色文案，滚动后切回常规导航配色。
+ * 作用：统一跟随导航视觉语义切换品牌主文案配色。
  */
-const brandTitleClassName = computed(() => {
-  return !isSolidNav.value
-    ? 'text-white transition-colors duration-300 ease-out motion-reduce:transition-none'
-    : 'text-slate-900 transition-colors duration-300 ease-out dark:text-slate-50 motion-reduce:transition-none'
-})
+const brandTitleClassName = computed(() => navAppearance.value.brandTitle)
 
 /**
  * 计算品牌副标题文字样式。
- * 作用：让覆盖态与普通态都保持合适的对比度。
+ * 作用：让副标题在首页浅玻璃、封面深覆盖和实底玻璃之间保持稳定对比度。
  */
-const brandSubtitleClassName = computed(() => {
-  return !isSolidNav.value
-    ? 'text-white/72 transition-colors duration-300 ease-out motion-reduce:transition-none'
-    : 'text-slate-500 transition-colors duration-300 ease-out dark:text-slate-400 motion-reduce:transition-none'
-})
+const brandSubtitleClassName = computed(() => navAppearance.value.brandSubtitle)
 
 /**
  * 计算导航链接基础样式。
- * 作用：统一覆盖态与普通态下导航文字的可读性与交互反馈。
+ * 作用：统一首页与其他页面的导航文本可读性与 hover 反馈。
  */
-const navLinkClassName = computed(() => {
-  return !isSolidNav.value
-    ? 'rounded-full px-4 py-2 text-sm font-medium text-white/88 transition-[background-color,color,transform] duration-200 ease-out hover:bg-white/10 hover:text-white motion-reduce:transition-none'
-    : 'rounded-full px-4 py-2 text-sm font-medium text-slate-700 transition-[background-color,color,transform,box-shadow] duration-200 ease-out hover:bg-white/62 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/8 dark:hover:text-sky-200 motion-reduce:transition-none'
-})
+const navLinkClassName = computed(() => navAppearance.value.link)
 
 /**
  * 计算导航链接激活样式。
- * 作用：让当前页面入口在覆盖态和普通态下都保持明确的激活反馈。
+ * 作用：让当前页面入口在不同导航语义下都保持明确但不过重的激活反馈。
  */
-const navLinkActiveClassName = computed(() => {
-  return !isSolidNav.value
-    ? 'bg-white/12 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
-    : 'border border-white/76 bg-white/80 text-slate-950 shadow-[0_12px_26px_-24px_rgba(15,23,42,0.16)] dark:border-white/10 dark:bg-white/12 dark:text-sky-100'
+const navLinkActiveClassName = computed(() => navAppearance.value.activeLink)
+
+/**
+ * 计算导航分隔线样式。
+ * 作用：将分隔线颜色跟随导航语义统一维护，避免模板内再写三元判断。
+ */
+const navDividerClassName = computed(() => {
+  return `hidden h-8 w-px transition-colors duration-300 ease-out motion-reduce:transition-none md:block ${navAppearance.value.divider}`
 })
 
 /**
@@ -188,8 +295,7 @@ const headerInnerClassName = computed(() => {
 
 /**
  * 计算导航面板尺寸节奏。
- * 作用：文章详情页在首屏阶段使用更轻更薄的导航条，
- * 让导航像浮在封面上的一层细玻璃，而不是独立的大块容器。
+ * 作用：覆盖式首屏统一使用更轻更薄的导航条，普通页面继续保持略厚的稳定面板。
  */
 const navPanelLayoutClassName = computed(() => {
   if (isOverlayPage.value) {
@@ -201,23 +307,21 @@ const navPanelLayoutClassName = computed(() => {
 
 /**
  * 计算前台认证按钮样式。
- * 作用：统一登录按钮与退出按钮在覆盖态和普通态下的视觉反馈。
+ * 作用：统一登录按钮与退出按钮在不同导航语义下的视觉反馈。
  */
-const authActionClassName = computed(() => {
-  return !isSolidNav.value
-    ? 'inline-flex h-10 items-center justify-center rounded-full border border-white/16 bg-white/10 px-4 text-sm font-medium text-white transition-[background-color,border-color,color,box-shadow] duration-200 ease-out hover:bg-white/16 motion-reduce:transition-none'
-    : 'inline-flex h-10 items-center justify-center rounded-full border border-slate-200/78 bg-white/72 px-4 text-sm font-medium text-slate-700 transition-[background-color,border-color,color,box-shadow] duration-200 ease-out hover:border-slate-300/88 hover:text-slate-950 dark:border-white/10 dark:bg-white/6 dark:text-slate-100 dark:hover:bg-white/10 motion-reduce:transition-none'
-})
+const authActionClassName = computed(() => navAppearance.value.authAction)
 
 /**
  * 计算用户下拉触发器样式。
- * 作用：让当前用户入口既能作为身份展示，也能作为下拉菜单的统一触发器。
+ * 作用：让当前用户入口既能作为身份展示，也能在不同导航语义下保持统一触感。
  */
-const userDropdownTriggerClassName = computed(() => {
-  return !isSolidNav.value
-    ? 'inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/14 bg-white/10 text-white transition-[background-color,border-color,color,box-shadow] duration-200 ease-out hover:bg-white/16 motion-reduce:transition-none'
-    : 'inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200/78 bg-white/72 text-slate-800 transition-[background-color,border-color,color,box-shadow] duration-200 ease-out hover:border-slate-300/88 hover:bg-white/82 dark:border-white/10 dark:bg-white/6 dark:text-slate-100 dark:hover:bg-white/10 motion-reduce:transition-none'
-})
+const userDropdownTriggerClassName = computed(() => navAppearance.value.userDropdownTrigger)
+
+/**
+ * 计算主题切换按钮语义。
+ * 作用：首页浅玻璃与常规导航使用默认深色图标，深色覆盖态切换为反相图标。
+ */
+const themeModeTone = computed<ThemeModeTone>(() => navAppearance.value.themeModeTone)
 
 /**
  * 计算用户菜单项。
@@ -256,13 +360,12 @@ const userMenuItems = computed(() => {
 })
 
 /**
- * 读取文章封面区域底部位置。
- * 作用：让文章列表页、文章详情页的导航切换时机统一跟随封面区域，
- * 避免在封面还未完全离开导航区域时就提前切换成实底样式。
+ * 读取覆盖式首屏区域底部位置。
+ * 作用：内容封面页在存在 Hero 标记时，让导航切换时机跟随首屏离场进度。
  *
- * @returns 封面区域相对视口的底部位置；如果当前不存在封面区域则返回 `null`
+ * @returns 首屏区域相对视口的底部位置；如果当前不存在首屏标记则返回 `null`
  */
-function getPostHeroBottom() {
+function getOverlayHeroBottom() {
   if (!import.meta.client) {
     return null
   }
@@ -278,7 +381,7 @@ function getPostHeroBottom() {
 
 /**
  * 同步页面滚动状态。
- * 作用：根据封面区域或滚动距离切换导航栏是否进入实底玻璃态。
+ * 作用：根据首屏区域或滚动距离切换导航栏的覆盖态与实底玻璃态。
  */
 function syncScrollState() {
   if (!import.meta.client) {
@@ -286,14 +389,12 @@ function syncScrollState() {
   }
 
   if (isOverlayPage.value) {
-    const heroBottom = getPostHeroBottom()
+    const heroBottom = getOverlayHeroBottom()
     const headerElement = document.querySelector('header')
     const headerHeight = headerElement instanceof HTMLElement ? headerElement.getBoundingClientRect().height : 0
 
     if (heroBottom !== null) {
-      const transitionStart = Math.max(headerHeight + 116, 164)
-      const transitionEnd = Math.max(headerHeight + 12, 76)
-      const progress = Math.min(Math.max((transitionStart - heroBottom) / Math.max(transitionStart - transitionEnd, 1), 0), 1)
+      const progress = getHeroTransitionProgress(heroBottom, headerHeight)
 
       navTransitionProgress.value = progress
       isScrolled.value = progress >= 0.995
@@ -302,15 +403,10 @@ function syncScrollState() {
   }
 
   const currentScrollTop = window.scrollY || window.pageYOffset || 0
+  const progress = getScrollTransitionProgress(currentScrollTop)
 
-  if (isScrolled.value) {
-    isScrolled.value = currentScrollTop > NAV_SCROLL_EXIT_THRESHOLD
-    navTransitionProgress.value = isScrolled.value ? 1 : 0
-    return
-  }
-
-  isScrolled.value = currentScrollTop > NAV_SCROLL_ENTER_THRESHOLD
-  navTransitionProgress.value = isScrolled.value ? 1 : 0
+  navTransitionProgress.value = progress
+  isScrolled.value = progress >= 0.995
 }
 
 onMounted(() => {
@@ -386,12 +482,12 @@ async function handleUserMenuSelect(item: { key: string }) {
             class="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]"
           >
             <div
-              class="absolute inset-0 rounded-[inherit] bg-slate-950/12 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.18)] transition-opacity duration-300 ease-out dark:bg-slate-950/16 motion-reduce:transition-none"
-              :style="postDetailOverlayLayerStyle"
+              :class="overlayInitialLayerClassName"
+              :style="overlayInitialLayerStyle"
             />
             <div
               :class="overlaySolidLayerClassName"
-              :style="postDetailSolidLayerStyle"
+              :style="overlaySolidLayerStyle"
             />
           </div>
 
@@ -412,10 +508,7 @@ async function handleUserMenuSelect(item: { key: string }) {
               </div>
             </NuxtLink>
 
-            <div
-              class="hidden h-8 w-px transition-colors duration-300 ease-out motion-reduce:transition-none md:block"
-              :class="!isSolidNav ? 'bg-white/14' : 'bg-slate-300/70 dark:bg-white/10'"
-            />
+            <div :class="navDividerClassName" />
 
             <nav class="hidden items-center gap-1 md:flex">
               <NuxtLink
@@ -431,7 +524,7 @@ async function handleUserMenuSelect(item: { key: string }) {
           </div>
 
           <div class="relative z-10 flex shrink-0 items-center gap-2">
-            <ThemeModeSwitch variant="icon" />
+            <ThemeModeSwitch variant="icon" :tone="themeModeTone" />
 
             <YunyuDropdownMenu
               v-if="isLoggedIn"

@@ -15,9 +15,13 @@ const { data } = await useAsyncData('site-topics', async () => {
 
 /**
  * 计算专题列表页首屏主视觉数据。
- * 作用：优先复用当前专题数据中的首个封面作为大图背景，让专题页也进入统一的 Hero 视觉模式。
+ * 作用：优先查找首个带封面的专题作为 Hero 背景；若前几个专题没有封面，则继续向后回退，保持与文章列表页和分类页一致的封面取值逻辑。
  */
-const heroTopic = computed(() => data.value?.[0] || null)
+const heroTopic = computed(() => {
+  const list = data.value || []
+  const firstCoverTopic = list.find(item => typeof item.coverUrl === 'string' && item.coverUrl.trim())
+  return firstCoverTopic || list[0] || null
+})
 const featuredTopic = computed(() => data.value?.[0] || null)
 const secondaryTopics = computed(() => (data.value || []).slice(1))
 

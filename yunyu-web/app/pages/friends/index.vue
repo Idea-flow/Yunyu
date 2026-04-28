@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import FriendLinkStoryScene from '~/components/friend-link/FriendLinkStoryScene.vue'
+import YunyuHero from '~/components/common/YunyuHero.vue'
 import YunyuSectionTitle from '~/components/common/YunyuSectionTitle.vue'
 import type { SiteBaseInfo } from '../../types/site'
 
@@ -23,6 +24,34 @@ const siteConfig = computed<SiteBaseInfo | null>(() => siteConfigData.value || n
 const brandName = computed(() => siteConfig.value?.siteName || '云屿')
 const brandSubtitle = computed(() => siteConfig.value?.siteSubTitle || '把值得长期互访的站点收进同一片风景')
 
+/**
+ * 计算友链页首屏统计项。
+ * 作用：将页头展示信息统一收口，避免模板中再散落数字和说明拼接。
+ */
+const heroStats = computed(() => {
+  return [
+    { label: '收录站点', value: friendLinks.value.length },
+    { label: '连接方式', value: '长期互访' },
+    { label: '页面节奏', value: '慢慢逛' }
+  ]
+})
+
+/**
+ * 计算友链页首屏描述文案。
+ * 作用：让首屏语气同时覆盖站点关系与浏览预期，不必在模板层再做条件描述。
+ */
+const heroDescription = computed(() => {
+  if (friendLinks.value.length > 0) {
+    return `这里收录了 ${friendLinks.value.length} 个正在稳定更新的小站，适合顺着兴趣一站一站地慢慢逛过去。`
+  }
+
+  return '这里会收录值得长期互访的小站，也欢迎你把自己的站点加入这片地图。'
+})
+
+const friendsPageBackgroundClass = 'bg-[linear-gradient(180deg,#f8fafc_0%,#eef5ff_28%,#ffffff_76%)] dark:bg-[linear-gradient(180deg,#020617_0%,#0b1220_44%,#020617_100%)]'
+const friendsHeroBackgroundClass = 'bg-[linear-gradient(180deg,#f8fafc_0%,#eef6ff_36%,#f8fafc_100%)] dark:bg-[linear-gradient(180deg,#020617_0%,#0b1220_42%,#020617_100%)]'
+const friendsHeroOverlayClass = 'bg-[linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.06)_18%,rgba(255,255,255,0)_36%),radial-gradient(circle_at_16%_18%,rgba(56,189,248,0.14),transparent_24%),radial-gradient(circle_at_82%_18%,rgba(249,115,22,0.12),transparent_24%),linear-gradient(90deg,rgba(148,163,184,0.1)_1px,transparent_1px),linear-gradient(180deg,rgba(148,163,184,0.1)_1px,transparent_1px)] bg-[size:auto,auto,auto,32px_32px,32px_32px] [mask-image:linear-gradient(180deg,rgba(255,255,255,1),rgba(255,255,255,0.96)_58%,rgba(255,255,255,0.56)_100%)] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0.015)_20%,rgba(255,255,255,0)_42%),radial-gradient(circle_at_16%_18%,rgba(56,189,248,0.12),transparent_24%),radial-gradient(circle_at_82%_18%,rgba(249,115,22,0.08),transparent_24%),linear-gradient(90deg,rgba(71,85,105,0.18)_1px,transparent_1px),linear-gradient(180deg,rgba(71,85,105,0.18)_1px,transparent_1px)] dark:bg-[size:auto,auto,auto,32px_32px,32px_32px]'
+
 useSeoMeta({
   title: () => `友链 - ${brandName.value}`,
   description: () => `${brandSubtitle.value}。浏览 ${brandName.value} 精选的友链站点，并申请加入友链地图。`
@@ -38,7 +67,7 @@ useSeoMeta({
 function buildCardStyle(themeColor: string) {
   return {
     '--friend-link-accent': themeColor || '#7CC6B8',
-    '--friend-link-accent-soft': `${themeColor || '#7CC6B8'}22`
+    '--friend-link-accent-soft': `${themeColor || '#7CC6B8'}18`
   }
 }
 
@@ -55,48 +84,74 @@ function resolveSiteInitial(siteName: string) {
 </script>
 
 <template>
-  <main class="min-h-screen overflow-hidden bg-[linear-gradient(180deg,#f8fafc_0%,#f8fafc_100%)] pb-24 dark:bg-[linear-gradient(180deg,#020617_0%,#020617_100%)]">
-    <section class="relative isolate overflow-hidden pt-28 sm:pt-32">
-      <div class="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(250,250,249,0.98),rgba(248,250,252,0.98)),linear-gradient(90deg,rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(180deg,rgba(148,163,184,0.08)_1px,transparent_1px)] bg-[size:auto,32px_32px,32px_32px] dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.99),rgba(2,6,23,0.99)),linear-gradient(90deg,rgba(71,85,105,0.18)_1px,transparent_1px),linear-gradient(180deg,rgba(71,85,105,0.18)_1px,transparent_1px)] dark:bg-[size:auto,32px_32px,32px_32px]" />
-      <div class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_16%_18%,rgba(56,189,248,0.14),transparent_24%),radial-gradient(circle_at_84%_20%,rgba(249,115,22,0.1),transparent_24%)] dark:bg-[radial-gradient(circle_at_16%_18%,rgba(56,189,248,0.12),transparent_24%),radial-gradient(circle_at_84%_20%,rgba(249,115,22,0.08),transparent_24%)]" />
+  <main class="min-h-screen overflow-hidden pb-24" :class="friendsPageBackgroundClass">
+    <YunyuHero
+      :show-starry="false"
+      :background-class="friendsHeroBackgroundClass"
+      :overlay-class="friendsHeroOverlayClass"
+      min-height-class="h-[min(78svh,46rem)] sm:h-[min(84svh,50rem)] lg:h-[min(88svh,52rem)]"
+      content-width-class="max-w-[1360px]"
+      center-width-class="max-w-[1360px]"
+      content-padding-class="px-5 pb-8 sm:px-8 sm:pb-10 lg:px-10 lg:pb-12"
+    >
+      <template #center>
+        <div class="hidden lg:block">
+          <div class="mx-auto grid max-w-[1360px] items-center gap-10 lg:grid-cols-[minmax(0,0.98fr)_420px]">
+            <div />
+            <div class="relative mx-auto w-full max-w-[420px] justify-self-end">
+              <div class="absolute inset-x-8 top-10 h-[72%] rounded-full bg-[radial-gradient(circle,rgba(125,198,184,0.16),transparent_72%)] blur-3xl dark:bg-[radial-gradient(circle,rgba(56,189,248,0.12),transparent_72%)]" />
+              <div class="relative overflow-hidden rounded-[32px] border border-white/58 bg-white/40 px-4 py-5 shadow-[0_26px_64px_-46px_rgba(15,23,42,0.14)] backdrop-blur-sm dark:border-white/10 dark:bg-white/[0.03]">
+                <FriendLinkStoryScene compact />
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
 
-      <div class="mx-auto grid max-w-[1240px] items-center gap-10 px-5 sm:px-8 lg:grid-cols-[minmax(0,0.98fr)_420px] lg:px-10">
-        <div class="max-w-[680px]">
-          <p class="text-[0.69rem] font-semibold uppercase tracking-[0.36em] text-slate-500 dark:text-slate-400">
-            {{ brandName }} / 友链
+      <div class="grid gap-10 lg:grid-cols-[minmax(0,0.98fr)_420px] lg:items-end">
+        <div class="max-w-[720px]">
+          <p class="text-[0.72rem] font-semibold uppercase tracking-[0.34em] text-sky-600 dark:text-sky-300">
+            {{ brandName }} / Friends
           </p>
-          <h1 class="mt-5 text-[clamp(2.5rem,1.9rem+2.2vw,4.4rem)] font-semibold leading-[0.98] tracking-[-0.065em] text-slate-950 [font-family:var(--font-display)] [text-wrap:balance] dark:text-white">
+          <h1 class="mt-4 text-[clamp(2.35rem,1.82rem+2vw,4.4rem)] font-semibold leading-[0.98] tracking-[-0.06em] [font-family:var(--font-display)] [text-wrap:balance] text-slate-950 dark:text-slate-50">
             友链列表
           </h1>
-          <p class="mt-5 max-w-[34rem] text-[0.95rem] leading-8 text-slate-600 dark:text-slate-300">
-            一些正在稳定更新的小站。
+          <p class="mt-5 max-w-[38rem] text-[0.96rem] leading-8 text-slate-600 dark:text-slate-300">
+            {{ heroDescription }}
           </p>
 
-          <div class="mt-8 flex flex-wrap items-center gap-5">
-            <p class="text-sm text-slate-500 dark:text-slate-400">
-              当前已收录 {{ friendLinks.length }} 个站点
-            </p>
-            <UButton
+          <div class="mt-7 flex flex-wrap gap-3">
+            <NuxtLink
               to="/friends/apply"
-              label="申请交换友链"
-              color="neutral"
-              variant="soft"
-              class="rounded-full px-6"
-            />
+              class="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-2.5 text-sm font-medium text-white transition duration-200 hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
+            >
+              <span>申请交换友链</span>
+              <UIcon name="i-lucide-arrow-right" class="size-4" />
+            </NuxtLink>
+            <a
+              href="#friends-list"
+              class="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/72 px-5 py-2.5 text-sm font-medium text-slate-700 transition duration-200 hover:border-slate-300 hover:bg-white hover:text-slate-950 dark:border-white/12 dark:bg-white/[0.05] dark:text-slate-200 dark:hover:bg-white/[0.08] dark:hover:text-white"
+            >
+              <span>浏览友链</span>
+            </a>
           </div>
         </div>
 
-        <div class="relative mx-auto hidden w-full max-w-[420px] lg:justify-self-end lg:block">
-          <div class="absolute inset-x-8 top-10 h-[72%] rounded-full bg-[radial-gradient(circle,rgba(125,198,184,0.16),transparent_72%)] blur-3xl" />
-          <div class="relative overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,rgba(255,255,255,0.64),rgba(248,250,252,0.34))] px-4 py-5 shadow-[0_24px_56px_-44px_rgba(15,23,42,0.12)] backdrop-blur-md dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.015))]">
-            <FriendLinkStoryScene compact />
+        <div class="flex flex-wrap gap-x-6 gap-y-3 lg:justify-end lg:text-right">
+          <div
+            v-for="stat in heroStats"
+            :key="stat.label"
+            class="flex items-baseline gap-2"
+          >
+            <p class="text-[0.72rem] font-medium tracking-[0.14em] text-slate-500 dark:text-slate-400">{{ stat.label }}</p>
+            <p class="text-base font-semibold text-slate-950 sm:text-lg dark:text-slate-50">{{ stat.value }}</p>
           </div>
         </div>
       </div>
-    </section>
+    </YunyuHero>
 
-    <section class="mx-auto max-w-[1240px] px-5 py-14 sm:px-8 lg:px-10 lg:py-16">
-      <section class="border-t border-slate-200/80 pt-14 dark:border-white/10">
+    <section id="friends-list" class="mx-auto max-w-[1360px] px-5 py-12 sm:px-8 lg:px-10 lg:py-14">
+      <section class="border-t border-slate-200/80 pt-10 dark:border-white/10">
         <div class="flex flex-wrap items-center justify-between gap-4">
           <YunyuSectionTitle
             eyebrow="Friends"
@@ -121,12 +176,12 @@ function resolveSiteInitial(siteName: string) {
             :href="item.siteUrl"
             target="_blank"
             rel="noopener noreferrer"
-            class="group grid min-h-[220px] grid-rows-[auto_1fr_auto] gap-5 rounded-[28px] bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(248,250,252,0.74))] p-6 shadow-[0_24px_50px_-40px_rgba(15,23,42,0.18)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_30px_56px_-38px_rgba(15,23,42,0.22)] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))]"
+            class="group grid min-h-[220px] grid-rows-[auto_1fr_auto] gap-5 rounded-[28px] border border-slate-200/72 bg-white/46 p-6 shadow-[0_24px_50px_-44px_rgba(15,23,42,0.12)] backdrop-blur-[6px] transition duration-300 hover:-translate-y-0.5 hover:border-slate-300/80 hover:bg-white/58 hover:shadow-[0_28px_56px_-40px_rgba(15,23,42,0.14)] dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/[0.05]"
             :style="buildCardStyle(item.themeColor)"
           >
             <div class="flex items-start justify-between gap-4">
               <div
-                class="flex h-[68px] w-[68px] shrink-0 items-center justify-center overflow-hidden rounded-[22px] text-xl font-semibold text-[var(--friend-link-accent)] shadow-[0_16px_36px_-28px_rgba(15,23,42,0.16)]"
+                class="flex h-[68px] w-[68px] shrink-0 items-center justify-center overflow-hidden rounded-[22px] border border-white/70 text-xl font-semibold text-[var(--friend-link-accent)] shadow-[0_16px_36px_-28px_rgba(15,23,42,0.12)] dark:border-white/10"
                 :style="{ backgroundImage: 'linear-gradient(135deg,var(--friend-link-accent-soft),rgba(255,255,255,0.92))' }"
               >
                 <img
@@ -140,7 +195,7 @@ function resolveSiteInitial(siteName: string) {
 
               <span
                 class="inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]"
-                :style="{ color: item.themeColor, backgroundColor: `${item.themeColor}14` }"
+                :style="{ color: item.themeColor, backgroundColor: `${item.themeColor}12` }"
               >
                 访问
               </span>
@@ -175,7 +230,7 @@ function resolveSiteInitial(siteName: string) {
 
         <div
           v-else
-          class="mt-10 rounded-[30px] border border-dashed border-slate-300/80 bg-white/50 px-8 py-12 text-center dark:border-white/10 dark:bg-white/[0.03]"
+          class="mt-10 rounded-[30px] border border-dashed border-slate-300/80 bg-white/42 px-8 py-12 text-center dark:border-white/10 dark:bg-white/[0.03]"
         >
           <p class="text-base font-medium text-slate-900 dark:text-slate-50">这里还没有展示中的友链</p>
           <p class="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
