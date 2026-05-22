@@ -2,6 +2,58 @@
 
 本文档用于指导 agent 通过后台接口完成文章新增、编辑与相关 AI 辅助操作。
 
+## 前置：Markdown 渲染接口
+
+新增或编辑文章正文时，必须先调用前端提供的 Markdown 渲染接口，拿到与后台编辑器一致的 HTML 和目录 JSON，再提交给后端。
+
+**渲染接口地址：**
+```
+POST {frontendBaseUrl}/api/render-markdown
+Content-Type: application/json
+```
+
+**请求体：**
+```json
+{ "markdown": "# 标题\n\n正文内容" }
+```
+
+**响应体：**
+```json
+{
+  "html": "<h1 id=\"...\">标题</h1>\n<p>正文内容</p>\n",
+  "toc": [{ "id": "...", "text": "标题", "level": 1 }],
+  "tocJson": "[{\"id\":\"...\",\"text\":\"标题\",\"level\":1}]",
+  "plainText": "标题 正文内容",
+  "readingMinutes": 1
+}
+```
+
+**说明：**
+- `html` → 对应后端接口的 `contentHtml` 字段
+- `tocJson` → 对应后端接口的 `contentTocJson` 字段
+- `frontendBaseUrl` 从本地连接文件中读取；如果不存在，可向用户索要
+- 前端渲染接口与后台编辑器使用完全相同的 `markdown-it` + Shiki 管线，保证渲染结果一致**
+
+**完整流程：**
+
+```text
+1. 取文章本地 Markdown 内容
+        │
+        ▼
+2. POST {frontendBaseUrl}/api/render-markdown
+   body: { markdown: "..." }
+        │
+        ▼
+3. 拿到 html + tocJson
+        │
+        ▼
+4. POST /api/admin/posts（创建）或 PUT /api/admin/posts/{id}（编辑）
+   body: { contentMarkdown, contentHtml, contentTocJson, ...其他字段 }
+
+⚠️ 创建文章时，html + tocJson 必须和基础字段一起在 POST 中提交，
+   不要先创建再 PUT 补全。一次完成，不要分两步。
+```
+
 ## 零、统一前置步骤
 
 在查询或写入文章相关后台接口前，先处理连接信息：
@@ -20,46 +72,53 @@
 建议按以下顺序操作：
 
 1. 先确认用户是否已经提供文章标题和正文。
-2. 如果用户没有指定分类或标签，先查询可用列表：
+2. 如果在创建前需要生成正文的 HTML 和目录，先调用渲染接口：
+   - `POST {frontendBaseUrl}/api/render-markdown`
+   - 传入正文 Markdown，拿到 `html`、`tocJson` 等字段
+   - 后续提交时一并传给后端
+3. 如果用户没有指定分类或标签，先查询可用列表：
    - `GET /api/admin/categories`
    - `GET /api/admin/tags`
-3. 根据文章标题和正文语义，从已有分类、标签里挑选最合适的项：
+4. 根据文章标题和正文语义，从已有分类、标签里挑选最合适的项：
    - 若确实存在明显匹配项，应自动选中对应分类 / 标签
    - 若没有明显匹配项，可以留空，不要为了凑字段乱选
-4. 专题默认视为“不设置”：
+5. 专题默认视为"不设置"：
    - 只有用户明确说本次也要挂专题时，才查询 `GET /api/admin/topics`
    - 用户未指定时，不调用专题相关接口
-5. `slug`、`summary`、`seoTitle`、`seoDescription`：
+6. `slug`、`summary`、`seoTitle`、`seoDescription`：
    - 如果用户已提供，优先使用用户提供值。
    - 如果用户未提供，优先由当前 AI agent 根据标题和正文直接生成。
    - 默认不要为了补这些字段再额外调用 `POST /api/admin/posts/ai/meta/generate`。
    - 只有当用户明确要求使用后台 AI 元信息生成能力，或需要和后台内置生成结果保持一致时，才考虑调用该接口。
    - 调用该接口时优先传 `title` 与 `contentMarkdown`；后端会统一组装提示词并返回 OpenAI Chat 风格结果。
-6. 文章状态默认建议：
+7. 文章状态默认建议：
    - 若用户没有明确要求立即发布，默认传 `DRAFT`
-   - 若用户明确说“直接发布”，传 `PUBLISHED`
-   - 若用户明确说“保存但先下线”，传 `OFFLINE`
-7. 布尔默认建议：
+   - 若用户明确说"直接发布"，传 `PUBLISHED`
+   - 若用户明确说"保存但先下线"，传 `OFFLINE`
+8. 布尔默认建议：
    - `isTop=false`
    - `isRecommend=false`
    - `allowComment=true`
-8. 内容权限默认不启用。
-   - 应主动提示用户：“当前默认不启用内容权限，要不要开启文章访问控制或隐藏内容权限？”
-9. 若用户不启用内容权限：
+9. 内容权限默认不启用。
+   - 应主动提示用户："当前默认不启用内容权限，要不要开启文章访问控制或隐藏内容权限？"
+10. 若用户不启用内容权限：
    - 仍建议提交默认的禁用结构，保持与当前后台编辑器一致。
-10. 若用户启用整篇文章访问控制：
+11. 若用户启用整篇文章访问控制：
    - 至少选择一个规则：`LOGIN` / `WECHAT_ACCESS_CODE` / `ACCESS_CODE`
    - 若包含 `ACCESS_CODE`，必须同时填写：
      - `articleAccessCode`
      - `articleAccessCodeHint`
-11. 若用户启用尾部隐藏内容：
-    - 必须填写：
-      - `tailHiddenAccess.enabled=true`
-      - `tailHiddenAccess.title`
-      - `tailHiddenAccess.ruleTypes`
-      - `tailHiddenContentMarkdown`
-12. 创建文章最终调用：
+12. 若用户启用尾部隐藏内容：
+   - 必须填写：
+     - `tailHiddenAccess.enabled=true`
+     - `tailHiddenAccess.title`
+     - `tailHiddenAccess.ruleTypes`
+     - `tailHiddenContentMarkdown`
+13. 创建文章最终调用：
     - `POST /api/admin/posts`
+    - 请求体中应包含从渲染接口获取的 `contentHtml` 和 `contentTocJson`
+    - **⚠️ 关键约束：渲染结果（contentHtml、contentTocJson）必须一次性带入 POST 请求，禁止先创建再 PUT 补全。**
+      创建时只传基础字段后续再 PUT 补充渲染结果属于冗余请求，既浪费 token 也无必要；POST 创建本就支持所有字段同时提交。
 
 ## 二、编辑文章
 
@@ -70,12 +129,18 @@
 1. 先定位目标文章。
 2. 用 `GET /api/admin/posts/{postId}` 读取当前完整详情。
 3. 在原详情基础上合并本次修改。
-4. 因为更新接口要求很多字段保留完整语义，不能只传一个零散字段然后丢掉其他字段。
-5. 若用户只说“改摘要”或“改标题”：
+4. 如果本次修改涉及正文内容，先调用渲染接口获取新的 HTML 和目录：
+   - `POST {frontendBaseUrl}/api/render-markdown`
+   - 传入新的正文 Markdown，拿到 `html` 和 `tocJson`
+   - 在最终提交时替换 `contentHtml` 和 `contentTocJson`
+5. 如果本次修改不涉及正文（只改状态、封面、标签等），**不需要调用渲染接口**。
+   - `contentMarkdown` 设置为 `null` 即可，后端不会清空已有正文（详见后端增量更新逻辑）
+6. 因为更新接口要求很多字段保留完整语义，不能只传一个零散字段然后丢掉其他字段。
+7. 若用户只说"改摘要"或"改标题"：
    - 也应该先获取原文详情
    - 再仅修改目标字段
    - 其余字段保持原值
-6. 更新文章最终调用：
+8. 更新文章最终调用：
    - `PUT /api/admin/posts/{postId}`
 
 ## 三、文章创建与编辑时的重点字段

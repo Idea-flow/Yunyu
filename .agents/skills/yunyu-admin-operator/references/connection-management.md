@@ -4,13 +4,18 @@
 
 ## 一、连接信息组成
 
-调用后台接口前，至少需要以下两个字段：
+调用后台接口前，至少需要以下字段：
 
 1. `baseUrl`
-   目标后台域名或基础地址，例如：
+   目标后端域名或基础地址，例如：
    - `http://127.0.0.1:20000`
-   - `https://admin.example.com`
-2. `token`
+   - `https://yunyu-server-native.ideaflow.top`
+2. `frontendBaseUrl`（可选，文章操作时需要）
+   目标前端域名或基础地址，用于调用前端提供的 Markdown 渲染接口，例如：
+   - `http://127.0.0.1:19999`
+   - `https://yunyu.ideaflow.top`
+   仅在新增或编辑文章时需要；纯数据操作（分类/标签/配置管理等）不需要此字段。
+3. `token`
    后台登录后的 Bearer token，不需要手动加 `Bearer ` 前缀时，由调用方按实际请求格式处理。
 
 ## 二、本地保存位置
@@ -26,6 +31,7 @@
 ```json
 {
   "baseUrl": "http://127.0.0.1:20000",
+  "frontendBaseUrl": "http://127.0.0.1:19999",
   "token": "<SECRET>",
   "updatedAt": "2026-04-27T00:00:00+08:00"
 }
@@ -34,6 +40,7 @@
 说明：
 
 - `baseUrl` 和 `token` 是必填。
+- `frontendBaseUrl` 是选填，仅在需要 Markdown 渲染（创建/编辑文章）时使用。
 - `updatedAt` 用于记录最后一次更新连接信息的时间，便于排查失效问题。
 - 该文件只用于本地 skill 运行，不应提交到仓库。
 
@@ -47,7 +54,7 @@
 2. 如果存在有效 `baseUrl` 和 `token`，优先直接使用。
 3. 如果文件不存在、字段缺失或用户明确要求切换环境，再向用户索要新的 `baseUrl` 和 `token`。
 4. 收到新的连接信息后，覆盖写回本地连接文件，供后续复用：
-   `bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh set --base-url <URL> --token <TOKEN>`
+   `bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh set --base-url <URL> --token <TOKEN> [--frontend-base-url <URL>]`
 
 ## 四、脚本用法
 
@@ -57,7 +64,8 @@
 bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh show
 bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh get baseUrl
 bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh get token
-bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh set --base-url <URL> --token <TOKEN>
+bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh get frontendBaseUrl
+bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh set --base-url <URL> --token <TOKEN> [--frontend-base-url <URL>]
 bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh clear
 ```
 

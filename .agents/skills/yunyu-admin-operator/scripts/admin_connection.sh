@@ -16,12 +16,13 @@ usage() {
   bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh show
   bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh get baseUrl
   bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh get token
-  bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh set --base-url <URL> --token <TOKEN>
+  bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh get frontendBaseUrl
+  bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh set --base-url <URL> --token <TOKEN> [--frontend-base-url <URL>]
   bash .agents/skills/yunyu-admin-operator/scripts/admin_connection.sh clear
 
 说明：
   show            展示当前连接信息，token 会做脱敏处理。
-  get <field>     读取指定字段，支持 baseUrl / token / updatedAt。
+  get <field>     读取指定字段，支持 baseUrl / token / frontendBaseUrl / updatedAt。
   set             保存或覆盖连接信息。
   clear           删除本地连接信息文件。
 USAGE
@@ -86,13 +87,17 @@ mask_token() {
 # 展示当前连接信息。
 show_connection() {
   require_connection_file
-  local base_url token updated_at masked_token
+  local base_url frontend_base_url token updated_at masked_token
   base_url="$(read_field baseUrl)"
+  frontend_base_url="$(read_field frontendBaseUrl 2>/dev/null || true)"
   token="$(read_field token)"
   updated_at="$(read_field updatedAt 2>/dev/null || true)"
   masked_token="$(mask_token "$token")"
 
   echo "baseUrl: $base_url"
+  if [[ -n "$frontend_base_url" ]]; then
+    echo "frontendBaseUrl: $frontend_base_url"
+  fi
   echo "token: $masked_token"
   if [[ -n "$updated_at" ]]; then
     echo "updatedAt: $updated_at"
@@ -102,12 +107,17 @@ show_connection() {
 # 保存连接信息。
 set_connection() {
   local base_url=""
+  local frontend_base_url=""
   local token=""
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --base-url)
         base_url="${2:-}"
+        shift 2
+        ;;
+      --frontend-base-url)
+        frontend_base_url="${2:-}"
         shift 2
         ;;
       --token)
@@ -132,7 +142,7 @@ set_connection() {
   fi
 
   ensure_local_dir
-  python3 - "$CONNECTION_FILE" "$base_url" "$token" <<'PY'
+  python3 - "$CONNECTION_FILE" "$base_url" "$frontend_base_url" "$token" <<'PY'
 import json
 import sys
 from datetime import datetime, timezone, timedelta
@@ -140,7 +150,8 @@ from pathlib import Path
 
 file_path = Path(sys.argv[1])
 base_url = sys.argv[2]
-token = sys.argv[3]
+frontend_base_url = sys.argv[3] or None
+token = sys.argv[4]
 shanghai = timezone(timedelta(hours=8))
 updated_at = datetime.now(shanghai).isoformat(timespec="seconds")
 
@@ -149,6 +160,8 @@ payload = {
     "token": token,
     "updatedAt": updated_at,
 }
+if frontend_base_url:
+    payload["frontendBaseUrl"] = frontend_base_url
 file_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
 

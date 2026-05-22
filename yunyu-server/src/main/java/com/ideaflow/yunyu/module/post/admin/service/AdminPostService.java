@@ -304,7 +304,13 @@ public class AdminPostService {
                                          ContentAccessConfig contentAccessConfig,
                                          String tailHiddenContentMarkdown,
                                          String tailHiddenContentHtml) {
-        String markdown = contentMarkdown == null ? "" : contentMarkdown.trim();
+        // 如果 contentMarkdown 为 null，说明调用方只更新主表字段（如状态/封面），
+        // 不打算修改正文，跳过整个正文更新，避免 null 被当作 "" 覆盖数据库已有内容。
+        if (contentMarkdown == null) {
+            return;
+        }
+
+        String markdown = contentMarkdown.trim();
         String html = contentHtml == null || contentHtml.isBlank() ? markdown : contentHtml.trim();
         String tocJson = contentTocJson == null || contentTocJson.isBlank() ? null : contentTocJson.trim();
         String normalizedVideoUrl = normalizeOptionalValue(videoUrl);

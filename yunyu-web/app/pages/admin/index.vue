@@ -58,6 +58,7 @@ const adminTaxonomy = useAdminTaxonomy()
 const runtimeConfig = useRuntimeConfig()
 const showAccessToken = ref(false)
 const persistedAccessToken = ref('')
+const frontendBaseUrl = ref('')
 const apiBase = computed(() => runtimeConfig.public.apiBase || '')
 
 const quickActions = [
@@ -126,8 +127,10 @@ async function copyAiSkillCredentials() {
     return
   }
 
+  const frontendUrl = frontendBaseUrl.value || '未配置'
   const credentialText = `yunyu_access_token:${persistedAccessToken.value}
-后台接口地址:${apiBase.value}`
+后台接口地址:${apiBase.value}
+前端接口地址:${frontendUrl}`
 
   try {
     await navigator.clipboard.writeText(credentialText)
@@ -215,6 +218,9 @@ watch(dashboardError, value => {
 
 onMounted(() => {
   loadPersistedAccessToken()
+  if (import.meta.client) {
+    frontendBaseUrl.value = window.location.origin
+  }
 })
 
 /**
@@ -395,6 +401,13 @@ const pendingItems = computed<AdminDashboardPendingItem[]>(() => {
                 <p class="text-xs font-medium uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">后端接口域名</p>
                 <p class="mt-2 break-all font-mono text-sm text-slate-900 dark:text-slate-50">
                   {{ apiBase || '未配置' }}
+                </p>
+              </div>
+
+              <div class="rounded-[14px] border border-white/60 bg-white/56 p-4 backdrop-blur-md dark:border-white/10 dark:bg-white/5">
+                <p class="text-xs font-medium uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">前端接口域名</p>
+                <p class="mt-2 break-all font-mono text-sm text-slate-900 dark:text-slate-50">
+                  {{ frontendBaseUrl || '未检测到' }}
                 </p>
               </div>
 
