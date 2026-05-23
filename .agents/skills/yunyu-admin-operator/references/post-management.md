@@ -8,7 +8,7 @@
 
 **渲染接口地址：**
 ```
-POST {frontendBaseUrl}/api/render-markdown
+POST {frontendBaseUrl}/api/web/render-markdown
 Content-Type: application/json
 ```
 
@@ -40,7 +40,7 @@ Content-Type: application/json
 1. 取文章本地 Markdown 内容
         │
         ▼
-2. POST {frontendBaseUrl}/api/render-markdown
+2. POST {frontendBaseUrl}/api/web/render-markdown
    body: { markdown: "..." }
         │
         ▼
@@ -73,7 +73,7 @@ Content-Type: application/json
 
 1. 先确认用户是否已经提供文章标题和正文。
 2. 如果在创建前需要生成正文的 HTML 和目录，先调用渲染接口：
-   - `POST {frontendBaseUrl}/api/render-markdown`
+   - `POST {frontendBaseUrl}/api/web/render-markdown`
    - 传入正文 Markdown，拿到 `html`、`tocJson` 等字段
    - 后续提交时一并传给后端
 3. 如果用户没有指定分类或标签，先查询可用列表：
@@ -130,7 +130,7 @@ Content-Type: application/json
 2. 用 `GET /api/admin/posts/{postId}` 读取当前完整详情。
 3. 在原详情基础上合并本次修改。
 4. 如果本次修改涉及正文内容，先调用渲染接口获取新的 HTML 和目录：
-   - `POST {frontendBaseUrl}/api/render-markdown`
+   - `POST {frontendBaseUrl}/api/web/render-markdown`
    - 传入新的正文 Markdown，拿到 `html` 和 `tocJson`
    - 在最终提交时替换 `contentHtml` 和 `contentTocJson`
 5. 如果本次修改不涉及正文（只改状态、封面、标签等），**不需要调用渲染接口**。
