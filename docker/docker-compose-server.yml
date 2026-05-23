@@ -9,9 +9,7 @@ services:
     container_name: yunyu-mysql
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-yunyu}
-      MYSQL_USER: ${MYSQL_USER:-yunyu}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-yunyu123456}
+      # 不预建业务库，由 Spring Boot 启动时自动创建库和表
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123456}
       TZ: ${TZ:-Asia/Shanghai}
     command:
@@ -37,9 +35,10 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod,native}
+      # 使用 root 连接，确保 Spring Boot 有权限自动建库建表
       SPRING_DATASOURCE_URL: jdbc:mysql://yunyu-mysql:3306/${MYSQL_DATABASE:-yunyu}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-yunyu}
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-yunyu123456}
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123456}
       YUNYU_JWT_SECRET: ${YUNYU_JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
       TZ: ${TZ:-Asia/Shanghai}
     # 对外暴露 20000 端口，供 1Panel 反代
