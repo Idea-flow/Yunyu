@@ -6,8 +6,11 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# 启用 pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# 启用 pnpm（锁定 v9，与 lockfileVersion 9.0 匹配）
+RUN corepack enable && corepack prepare pnpm@9 --activate
+
+# 配置 pnpm store 路径，与 cache mount 保持一致。
+RUN pnpm config set store-dir /root/.pnpm-store
 
 # 先复制依赖描述文件，利用 Docker 层缓存加速重复构建。
 COPY yunyu-web/package.json yunyu-web/pnpm-lock.yaml ./
