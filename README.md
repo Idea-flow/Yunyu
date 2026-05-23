@@ -222,6 +222,8 @@ curl http://服务器IP/actuator/health
 > **80 端口被占用？** 在 `.env` 中设置 `NGINX_HTTP_PORT=8080`（换成任意空闲端口），无需改 compose 文件，之后访问 `http://服务器IP:8080`。
 > 数据库 3306 端口不受影响，MySQL 容器不对外暴露端口，只在内部网络通信，不会与宿主机冲突。
 
+**默认管理员账号**：后端首次启动时自动创建，账号 `yunyu`，密码 `yunyu`，登录后请立即修改密码。
+
 详细说明：[docs/部署/11-纯Docker模式部署说明（nginx统一入口）.md](./docs/部署/11-纯Docker模式部署说明（nginx统一入口）.md)
 
 

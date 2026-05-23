@@ -12,6 +12,12 @@ export default defineNuxtConfig({
     fonts: false
   },
   icon: {
+    // 构建时将 lucide 图标集打包进客户端 bundle，避免运行时请求 Iconify CDN
+    // Docker 容器内网无法访问 api.iconify.design，不打包会导致图标全部丢失
+    clientBundle: {
+      scan: true,
+      includeCustomCollections: true
+    },
     customCollections: [
       {
         prefix: 'social',
