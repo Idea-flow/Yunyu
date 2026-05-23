@@ -70,10 +70,10 @@ mkdir -p yunyu_mysql_data
 #### 步骤 3：创建 `.env` 配置文件
 
 ```bash
-cp docker/.env.example .env
+cp docker/.env.example docker/.env
 ```
 
-修改 `.env`，至少替换以下三项：
+修改 `docker/.env`，至少替换以下三项：
 
 ```bash
 MYSQL_PASSWORD=你的数据库密码

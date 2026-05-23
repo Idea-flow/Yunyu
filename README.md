@@ -197,10 +197,10 @@ cd Yunyu
 # 1. 创建数据库挂载目录
 mkdir -p yunyu_mysql_data
 
-# 2. 创建环境变量文件
-cp docker/.env.example .env
+# 2. 创建环境变量文件（放在 docker/ 目录下，与 compose 文件同级）
+cp docker/.env.example docker/.env
 
-# 3. （可选）修改 .env 中的关键配置
+# 3. （可选）修改 docker/.env 中的关键配置
 #    不修改也能直接启动，内置了一套默认值，适合快速体验
 #    正式环境建议替换以下三项：
 #    MYSQL_PASSWORD=强密码
@@ -224,6 +224,16 @@ curl http://服务器IP/actuator/health
 
 详细说明：[docs/部署/11-纯Docker模式部署说明（nginx统一入口）.md](./docs/部署/11-纯Docker模式部署说明（nginx统一入口）.md)
 
+
+
+部署成功图片实例:
+
+![image-20260523151617575](https://oss.6667000.xyz/2026/05/1df07e4a4e2513137fd41e29e7ecebf3.webp)
+
+
+
+
+
 ---
 
 **模式 B — Cloudflare Pages + 1Panel**
@@ -234,10 +244,10 @@ curl http://服务器IP/actuator/health
 # 1. 创建数据库挂载目录
 mkdir -p yunyu_mysql_data
 
-# 2. 创建环境变量文件
-cp docker/.env.example .env
+# 2. 创建环境变量文件（放在 docker/ 目录下，与 compose 文件同级）
+cp docker/.env.example docker/.env
 
-# 3. （可选）修改 .env 中的关键配置
+# 3. （可选）修改 docker/.env 中的关键配置
 #    不修改也能直接启动，内置了一套默认值，适合快速体验
 #    正式环境建议替换以下三项：
 #    MYSQL_PASSWORD=强密码
