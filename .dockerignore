@@ -8,8 +8,10 @@
 # Maven / Native 本地产物体积较大，构建时应始终重新生成。
 **/target
 
-# 前端源码与当前 Native 服务镜像构建无关，排除后可减少上传上下文。
-yunyu-web
+# 前端 node_modules 无需进入构建上下文，pnpm install 在容器内重新执行。
+yunyu-web/node_modules
+yunyu-web/.nuxt
+yunyu-web/.output
 
 # 文档、数据库目录和本地部署文件不参与镜像构建。
 docs

@@ -1,3 +1,7 @@
+# 全局启动文件：前端（Nuxt SSR）+ Native 后端 + MySQL
+# 执行方式：cd Yunyu && docker compose -f docker/docker-compose.yml up -d
+# 前端部署在服务器时使用此文件；若前端部署在 Cloudflare Pages 等平台，请改用 docker-compose-server.yml
+
 services:
   yunyu-mysql:
     image: mysql:8.4
@@ -15,7 +19,7 @@ services:
     ports:
       - "${MYSQL_PORT:-3306}:3306"
     volumes:
-      - ./yunyu_mysql_data:/var/lib/mysql
+      - ../yunyu_mysql_data:/var/lib/mysql
     networks:
       - yunyu-network
     healthcheck:
@@ -25,15 +29,15 @@ services:
       retries: 10
       start_period: 30s
 
-  yunyu-server:
-    image: ${YUNYU_SERVER_IMAGE:-ghcr.io/idea-flow/yunyu-server:latest}
-    container_name: yunyu-server
+  yunyu-server-native:
+    image: ${YUNYU_SERVER_NATIVE_IMAGE:-ghcr.io/idea-flow/yunyu-server-native:latest}
+    container_name: yunyu-server-native
     restart: unless-stopped
     depends_on:
       yunyu-mysql:
         condition: service_healthy
     environment:
-      SPRING_PROFILES_ACTIVE: prod
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod,native}
       SPRING_DATASOURCE_URL: jdbc:mysql://yunyu-mysql:3306/${MYSQL_DATABASE:-yunyu}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-yunyu}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-yunyu123456}
@@ -41,6 +45,21 @@ services:
       TZ: ${TZ:-Asia/Shanghai}
     ports:
       - "${SERVER_PORT:-20000}:20000"
+    networks:
+      - yunyu-network
+
+  yunyu-web:
+    image: ${YUNYU_WEB_IMAGE:-ghcr.io/idea-flow/yunyu-web:latest}
+    container_name: yunyu-web
+    restart: unless-stopped
+    depends_on:
+      - yunyu-server-native
+    environment:
+      # 容器内前端访问后端使用容器名，对外暴露的域名通过反向代理配置
+      NUXT_PUBLIC_API_BASE: ${YUNYU_PUBLIC_API_BASE:-http://yunyu-server-native:20000}
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "${WEB_PORT:-3000}:3000"
     networks:
       - yunyu-network
 
