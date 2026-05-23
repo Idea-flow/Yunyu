@@ -4,6 +4,10 @@
 
 >  [LINUX DO 社区](https://linux.do/) 
 
+## 演示地址
+
+[https://yunyu.ideaflow.top](https://yunyu.ideaflow.top)
+
 ## 项目地址
 
 - GitHub：[https://github.com/YunyuVv/Yunyu](https://github.com/YunyuVv/Yunyu)
@@ -24,7 +28,11 @@
 后端提供 **GraalVM Native Image** 支持，编译为原生可执行文件后：
 
 - 启动时间从数秒缩短到毫秒级
-- 运行内存相比 JVM 模式大幅降低，**2 核 2G 服务器即可流畅部署运行** 常驻内存80mb-100mb
+
+- 运行内存相比 JVM 模式大幅降低，**2 核 2G 服务器即可流畅部署运行** 常驻内存80mb-110mb
+
+  ![内存占用图](https://oss.6667000.xyz/2026/05/5372911edda0144597b4efeaea2c996f.webp)
+
 - 无需安装 JDK 运行环境，镜像体积更小
 
 ## 项目功能
