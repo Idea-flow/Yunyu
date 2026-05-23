@@ -3,7 +3,7 @@ name: Build Yunyu Server Native Image
 on:
   push:
     branches:
-      - main-native-image
+      - main
     paths:
       - "yunyu-server/**"
       - "yunyu-native-image-support/**"

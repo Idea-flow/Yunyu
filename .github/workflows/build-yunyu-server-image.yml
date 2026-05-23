@@ -3,7 +3,7 @@ name: Build Yunyu Server Image
 on:
   push:
     branches:
-      - main
+      - main-jvm
     paths:
       - "yunyu-server/**"
       - ".github/workflows/build-yunyu-server-image.yml"
