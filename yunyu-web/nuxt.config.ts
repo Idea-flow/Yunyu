@@ -22,7 +22,7 @@ export default defineNuxtConfig({
   css: ['katex/dist/katex.min.css', '~/assets/css/main.css'],
   runtimeConfig: {
     // 仅服务端可见：SSR 阶段调用后端使用容器内部地址，避免走 nginx 或公网
-    apiBaseInternal: process.env.YUNYU_API_BASE_INTERNAL || '',
+    yunyuApiBaseInternal: process.env.NUXT_YUNYU_API_BASE_INTERNAL || '',
     public: {
       // 浏览器端使用：留空时请求走相对路径，由 nginx 同域转发到后端
       apiBase: process.env.YUNYU_PUBLIC_API_BASE || ''

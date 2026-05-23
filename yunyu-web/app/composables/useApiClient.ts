@@ -28,8 +28,8 @@ export function useApiClient() {
    * SSR 阶段优先使用容器内网地址（apiBaseInternal），浏览器端使用 public.apiBase（留空则走 nginx 同域转发）。
    */
   function resolveApiBase() {
-    if (import.meta.server && config.apiBaseInternal) {
-      return config.apiBaseInternal
+    if (import.meta.server && config.yunyuApiBaseInternal) {
+      return config.yunyuApiBaseInternal
     }
     return config.public.apiBase
   }

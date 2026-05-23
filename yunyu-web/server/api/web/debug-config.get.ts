@@ -5,7 +5,7 @@
 export default defineEventHandler((event) => {
   const config = useRuntimeConfig(event)
 
-  const apiBaseInternal = config.apiBaseInternal || ''
+  const apiBaseInternal = config.yunyuApiBaseInternal || ''
   const apiBasePublic = config.public.apiBase || ''
   const resolvedApiBase = apiBaseInternal || apiBasePublic
 
