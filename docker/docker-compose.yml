@@ -1,6 +1,7 @@
-# 全局启动文件：前端（Nuxt SSR）+ Native 后端 + MySQL
+# 全局启动文件：纯 Docker 管理模式
+# 架构：nginx（80 对外）→ yunyu-web（3000）/ yunyu-server-native（20000）→ yunyu-mysql（3306）
+# web 和 server 容器不对外暴露端口，所有流量经 nginx 统一入口分发
 # 执行方式：cd Yunyu && docker compose -f docker/docker-compose.yml up -d
-# 前端部署在服务器时使用此文件；若前端部署在 Cloudflare Pages 等平台，请改用 docker-compose-server.yml
 
 services:
   yunyu-mysql:
@@ -16,8 +17,6 @@ services:
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_0900_ai_ci
-    ports:
-      - "${MYSQL_PORT:-3306}:3306"
     volumes:
       - ../yunyu_mysql_data:/var/lib/mysql
     networks:
@@ -43,8 +42,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-yunyu123456}
       YUNYU_JWT_SECRET: ${YUNYU_JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
       TZ: ${TZ:-Asia/Shanghai}
-    ports:
-      - "${SERVER_PORT:-20000}:20000"
+    # 不对外暴露端口，只在内部网络中被 nginx 访问
     networks:
       - yunyu-network
 
@@ -55,11 +53,24 @@ services:
     depends_on:
       - yunyu-server-native
     environment:
-      # 容器内前端访问后端使用容器名，对外暴露的域名通过反向代理配置
-      NUXT_PUBLIC_API_BASE: ${YUNYU_PUBLIC_API_BASE:-http://yunyu-server-native:20000}
+      # SSR 服务端调用后端使用容器名（内部网络），浏览器端 API 请求经 nginx 同域转发，无需单独配置
+      NUXT_PUBLIC_API_BASE: ${YUNYU_PUBLIC_API_BASE:-}
       TZ: ${TZ:-Asia/Shanghai}
+    # 不对外暴露端口，只在内部网络中被 nginx 访问
+    networks:
+      - yunyu-network
+
+  yunyu-nginx:
+    image: nginx:alpine
+    container_name: yunyu-nginx
+    restart: unless-stopped
+    depends_on:
+      - yunyu-web
+      - yunyu-server-native
     ports:
-      - "${WEB_PORT:-3000}:3000"
+      - "${NGINX_HTTP_PORT:-80}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
       - yunyu-network
 

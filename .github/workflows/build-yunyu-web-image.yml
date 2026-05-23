@@ -1,15 +1,14 @@
-name: Build Yunyu Server Native Image
+name: Build Yunyu Web Image
 
 on:
   push:
     branches:
       - main
     paths:
-      - "yunyu-server/**"
-      - "yunyu-native-image-support/**"
-      - "docker/backend/**"
+      - "yunyu-web/**"
+      - "docker/frontend/**"
       - ".dockerignore"
-      - ".github/workflows/build-yunyu-server-native-image.yml"
+      - ".github/workflows/build-yunyu-web-image.yml"
   workflow_dispatch:
 
 env:
@@ -18,7 +17,7 @@ env:
 
 jobs:
   build-amd64:
-    name: Build amd64 Native Image
+    name: Build amd64 Web Image
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -31,7 +30,7 @@ jobs:
       - name: Prepare image name
         id: image
         run: |
-          echo "name=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/yunyu-server-native" >> "$GITHUB_OUTPUT"
+          echo "name=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/yunyu-web" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -51,29 +50,28 @@ jobs:
           tags: |
             type=sha
 
-      - name: Build and push amd64 native image
+      - name: Build and push amd64 web image
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./docker/backend/Dockerfile.native
+          file: ./docker/frontend/Dockerfile
           push: true
           platforms: linux/amd64
           tags: |
             ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest-amd64
             ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:sha-${{ github.sha }}-amd64
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=native-amd64
-          cache-to: type=gha,mode=max,scope=native-amd64
+          cache-from: type=gha,scope=web-amd64
+          cache-to: type=gha,mode=max,scope=web-amd64
 
       - name: Output amd64 image summary
         run: |
-          echo "## Yunyu Server Native amd64 镜像构建结果" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Yunyu Web amd64 镜像构建结果" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "- 构建分支：\`${{ github.ref_name }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- 镜像仓库：\`${{ env.REGISTRY }}/${{ steps.image.outputs.name }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- 构建平台：\`linux/amd64\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Dockerfile：\`docker/backend/Dockerfile.native\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- 部署编排：\`docker/docker-compose.yml\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Dockerfile：\`docker/frontend/Dockerfile\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "### 实际生成的架构镜像标签" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
@@ -84,11 +82,10 @@ jobs:
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "\`\`\`bash" >> "$GITHUB_STEP_SUMMARY"
           echo "docker pull ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest-amd64" >> "$GITHUB_STEP_SUMMARY"
-          echo "docker pull ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:sha-${{ github.sha }}-amd64" >> "$GITHUB_STEP_SUMMARY"
           echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
 
   build-arm64:
-    name: Build arm64 Native Image
+    name: Build arm64 Web Image
     runs-on: ubuntu-24.04-arm
     permissions:
       contents: read
@@ -101,7 +98,7 @@ jobs:
       - name: Prepare image name
         id: image
         run: |
-          echo "name=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/yunyu-server-native" >> "$GITHUB_OUTPUT"
+          echo "name=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/yunyu-web" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -121,29 +118,28 @@ jobs:
           tags: |
             type=sha
 
-      - name: Build and push arm64 native image
+      - name: Build and push arm64 web image
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./docker/backend/Dockerfile.native
+          file: ./docker/frontend/Dockerfile
           push: true
           platforms: linux/arm64
           tags: |
             ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest-arm64
             ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:sha-${{ github.sha }}-arm64
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=native-arm64
-          cache-to: type=gha,mode=max,scope=native-arm64
+          cache-from: type=gha,scope=web-arm64
+          cache-to: type=gha,mode=max,scope=web-arm64
 
       - name: Output arm64 image summary
         run: |
-          echo "## Yunyu Server Native arm64 镜像构建结果" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Yunyu Web arm64 镜像构建结果" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "- 构建分支：\`${{ github.ref_name }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- 镜像仓库：\`${{ env.REGISTRY }}/${{ steps.image.outputs.name }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- 构建平台：\`linux/arm64\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Dockerfile：\`docker/backend/Dockerfile.native\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- 部署编排：\`docker/docker-compose.yml\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Dockerfile：\`docker/frontend/Dockerfile\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "### 实际生成的架构镜像标签" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
@@ -154,7 +150,6 @@ jobs:
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "\`\`\`bash" >> "$GITHUB_STEP_SUMMARY"
           echo "docker pull ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest-arm64" >> "$GITHUB_STEP_SUMMARY"
-          echo "docker pull ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:sha-${{ github.sha }}-arm64" >> "$GITHUB_STEP_SUMMARY"
           echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
 
   merge-manifest:
@@ -171,7 +166,7 @@ jobs:
       - name: Prepare image name
         id: image
         run: |
-          echo "name=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/yunyu-server-native" >> "$GITHUB_OUTPUT"
+          echo "name=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/yunyu-web" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -198,7 +193,7 @@ jobs:
 
       - name: Output manifest summary
         run: |
-          echo "## Yunyu Server Native 多架构 Manifest 合并结果" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Yunyu Web 多架构 Manifest 合并结果" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "- 构建分支：\`${{ github.ref_name }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- 最终标签：\`${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest\`" >> "$GITHUB_STEP_SUMMARY"

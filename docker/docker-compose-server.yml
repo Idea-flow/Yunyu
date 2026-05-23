@@ -1,5 +1,6 @@
-# 仅后端启动文件：Native 后端 + MySQL
-# 适用场景：前端部署在 Cloudflare Pages、Vercel 等平台，只需在服务器启动后端
+# 仅后端启动文件：Cloudflare Pages + 1Panel 模式
+# 适用场景：前端部署在 Cloudflare Pages，服务器只需运行后端 + 数据库
+#           宿主机 1Panel 将后端域名（如 api.yourdomain.com）反代到 127.0.0.1:20000
 # 执行方式：cd Yunyu && docker compose -f docker/docker-compose-server.yml up -d
 
 services:
@@ -16,8 +17,6 @@ services:
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_0900_ai_ci
-    ports:
-      - "${MYSQL_PORT:-3306}:3306"
     volumes:
       - ../yunyu_mysql_data:/var/lib/mysql
     networks:
@@ -43,6 +42,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-yunyu123456}
       YUNYU_JWT_SECRET: ${YUNYU_JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
       TZ: ${TZ:-Asia/Shanghai}
+    # 对外暴露 20000 端口，供 1Panel 反代
     ports:
       - "${SERVER_PORT:-20000}:20000"
     networks:
