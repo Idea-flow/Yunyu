@@ -24,6 +24,17 @@ export function useApiClient() {
   })
 
   /**
+   * 选取实际后端地址。
+   * SSR 阶段优先使用容器内网地址（apiBaseInternal），浏览器端使用 public.apiBase（留空则走 nginx 同域转发）。
+   */
+  function resolveApiBase() {
+    if (import.meta.server && config.apiBaseInternal) {
+      return config.apiBaseInternal
+    }
+    return config.public.apiBase
+  }
+
+  /**
    * 从浏览器缓存恢复访问令牌。
    * 作用：在前台页面刷新后优先恢复本地保存的登录凭证，避免仅依赖 Cookie 导致前台登录态丢失。
    */
@@ -96,7 +107,7 @@ export function useApiClient() {
   ) {
     const { withAuth = true, ...fetchOptions } = options
     const headers = buildHeaders(fetchOptions.headers, withAuth)
-    const requestUrl = `${config.public.apiBase}${path}`
+    const requestUrl = `${resolveApiBase()}${path}`
 
     try {
       const response = await $fetch<ApiResponse<T>>(requestUrl, {
@@ -117,7 +128,7 @@ export function useApiClient() {
         error?.data?.message ||
         responseMessage ||
         (responseStatusCode === 404
-          ? `请求的接口不存在：${path}。当前前端连接的后端地址为 ${config.public.apiBase}，请确认是否连到了最新后端服务。`
+          ? `请求的接口不存在：${path}。当前前端连接的后端地址为 ${resolveApiBase()}，请确认是否连到了最新后端服务。`
           : null) ||
         error?.statusMessage ||
         error?.message ||
@@ -143,7 +154,7 @@ export function useApiClient() {
     const headers = buildHeaders(fetchOptions.headers, withAuth)
 
     try {
-      return await $fetch<T>(`${config.public.apiBase}${path}`, {
+      return await $fetch<T>(`${resolveApiBase()}${path}`, {
         ...fetchOptions,
         headers
       })

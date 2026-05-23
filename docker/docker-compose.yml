@@ -53,6 +53,7 @@ services:
       - yunyu-server-native
     environment:
       # SSR 服务端调用后端使用容器名（内部网络），浏览器端 API 请求经 nginx 同域转发，无需单独配置
+      YUNYU_API_BASE_INTERNAL: ${YUNYU_API_BASE_INTERNAL:-http://yunyu-server-native:20000}
       NUXT_PUBLIC_API_BASE: ${YUNYU_PUBLIC_API_BASE:-}
       TZ: ${TZ:-Asia/Shanghai}
     # 不对外暴露端口，只在内部网络中被 nginx 访问
