@@ -1,4 +1,4 @@
-import { renderMarkdown } from '../../app/utils/markdown-renderer'
+import { renderMarkdown } from '../../../app/utils/markdown-renderer'
 
 /**
  * Markdown 渲染接口。
@@ -10,7 +10,7 @@ import { renderMarkdown } from '../../app/utils/markdown-renderer'
  * 响应体: { html: string, toc: ArticleTocItem[], tocJson: string, plainText: string, readingMinutes: number }
  *
  * 使用示例:
- *   POST /api/render-markdown
+ *   POST /api/web/render-markdown
  *   { "markdown": "# 标题\n\n正文" }
  *
  *   → 响应:
