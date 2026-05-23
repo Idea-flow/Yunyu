@@ -51,6 +51,27 @@ docker compose version
 
 ### 步骤 1：克隆仓库
 
+> 只需要 `docker/` 目录，可用 sparse-checkout 只下载该目录（注意：Git 2.25.x 有已知 bug，需拆步执行）：
+
+```bash
+# 克隆仓库元数据（不下载任何文件内容，速度极快）
+git clone --filter=blob:none --no-checkout https://github.com/Idea-flow/Yunyu.git
+
+# 进入仓库目录
+cd Yunyu
+
+# 启用 sparse-checkout，--cone 模式按目录粒度过滤（性能更好）
+git sparse-checkout init --cone
+
+# 声明只需要 docker 这一个目录
+git sparse-checkout set docker
+
+# 实际检出文件（此时只会下载 docker/ 目录的内容）
+git checkout main
+```
+
+也可以完整克隆（包含所有源码）：
+
 ```bash
 git clone https://github.com/Idea-flow/Yunyu.git
 cd Yunyu
@@ -170,3 +191,8 @@ docker compose -f docker/docker-compose.yml down
 3. 不要误删 `yunyu_mysql_data` 目录
 4. nginx 配置文件位于 `docker/nginx/nginx.conf`，修改后需重启 nginx 容器
 5. 若需要开放后端端口给外部直接访问，在 `.env` 中设置 `SERVER_PORT=20000` 并在 `docker-compose.yml` 的 `yunyu-server-native` 下手动添加 `ports`（不建议生产环境这样做）
+6. **若服务器 80 端口已被占用**，启动时 nginx 容器会报端口冲突错误。在 `.env` 中修改 `NGINX_HTTP_PORT` 换用其他端口即可，例如：
+   ```bash
+   NGINX_HTTP_PORT=8080
+   ```
+   之后访问地址变为 `http://服务器IP:8080`。数据库 3306 端口**不受影响**，MySQL 容器不对外暴露端口，只在内部网络中通信。

@@ -28,10 +28,14 @@
 ├── yunyu-server/                 # Spring Boot 后端服务
 ├── yunyu-native-image-support/   # Native Image 兼容与支持模块
 ├── docs/                         # 产品、架构、前后端、部署、运维文档
-├── docker/                       # Docker / Native Image 相关构建文件
-├── scripts/                      # 数据库、发布、升级脚本
-├── docker-compose.yml            # 后端 + MySQL 部署编排
-└── .env.deploy.example           # 部署环境变量示例
+├── docker/                       # Docker 相关构建与部署文件
+│   ├── docker-compose.yml        # 纯 Docker 模式（nginx + 前后端 + 数据库）
+│   ├── docker-compose-server.yml # 仅后端模式（Cloudflare Pages + 1Panel）
+│   ├── backend/                  # 后端 Dockerfile（JVM / Native）
+│   ├── frontend/                 # 前端 Dockerfile
+│   ├── nginx/                    # nginx 配置
+│   └── .env.example              # 部署环境变量示例
+└── scripts/                      # 数据库、发布、升级脚本
 ```
 
 ## 当前已落地能力
@@ -149,51 +153,108 @@ pnpm generate
 
 ### Docker 部署
 
-根目录 `docker-compose.yml` 当前主要用于启动：
+> **只需下载 `/docker` 目录**，无需克隆整个仓库（源码不参与部署）。
 
-- `MySQL 8`
-- `yunyu-server` 后端镜像
+#### 方式一：sparse-checkout（推荐，仅下载 docker 目录）
 
-启动前先复制环境变量文件：
-
-```bash
-cp .env.deploy.example .env
-```
-
-建议至少修改以下配置：
+> 注意：`--filter` 与 `--sparse` 同时使用在 Git 2.25.x 有已知 bug，建议拆成以下两步执行。
 
 ```bash
-MYSQL_PASSWORD=请替换成强密码
-MYSQL_ROOT_PASSWORD=请替换成强密码
-YUNYU_JWT_SECRET=请替换成正式密钥
-YUNYU_SERVER_IMAGE=ghcr.io/<github-owner>/yunyu-server:latest
+# 克隆仓库元数据（不下载任何文件内容，速度极快）
+git clone --filter=blob:none --no-checkout https://github.com/Idea-flow/Yunyu.git
+
+# 进入仓库目录
+cd Yunyu
+
+# 启用 sparse-checkout，--cone 模式按目录粒度过滤（性能更好）
+git sparse-checkout init --cone
+
+# 声明只需要 docker 这一个目录
+git sparse-checkout set docker
+
+# 实际检出文件（此时只会下载 docker/ 目录的内容）
+git checkout main
 ```
 
-启动服务：
+执行后本地只有 `docker/` 目录，体积极小。
+
+#### 方式二：完整克隆
 
 ```bash
-docker compose pull
-docker compose up -d
+git clone https://github.com/Idea-flow/Yunyu.git
+cd Yunyu
 ```
 
-查看状态：
+---
+
+项目提供两种部署模式，按实际情况选择其一：
+
+**模式 A — 纯 Docker（nginx 统一入口）**
+
+适合：服务器只装了 Docker，前后端全部容器化，nginx 作为唯一对外入口（80 端口）。
 
 ```bash
-docker compose ps
-docker compose logs -f yunyu-server
+# 1. 创建数据库挂载目录
+mkdir -p yunyu_mysql_data
+
+# 2. 创建环境变量文件
+cp docker/.env.example .env
+
+# 3. （可选）修改 .env 中的关键配置
+#    不修改也能直接启动，内置了一套默认值，适合快速体验
+#    正式环境建议替换以下三项：
+#    MYSQL_PASSWORD=强密码
+#    MYSQL_ROOT_PASSWORD=强密码
+#    YUNYU_JWT_SECRET=openssl rand -hex 32 生成的64位字符串
+#    NGINX_HTTP_PORT=80（80端口被占用时改为其他端口）
+
+# 4. 启动所有服务
+docker compose -f docker/docker-compose.yml pull
+docker compose -f docker/docker-compose.yml up -d
+
+# 5. 验证
+docker compose -f docker/docker-compose.yml ps
+curl http://服务器IP/actuator/health
 ```
 
-说明：
+访问：`http://服务器IP`
 
-- 当前 `docker-compose.yml` 只负责后端和数据库，不包含前端站点
-- 由于 `MySQL` 容器会预创建业务库，首次部署时建议手动导入一次基线 SQL
-- 更完整的部署步骤见：[docs/部署/02-部署执行步骤.md](./docs/部署/02-部署执行步骤.md)
+> **80 端口被占用？** 在 `.env` 中设置 `NGINX_HTTP_PORT=8080`（换成任意空闲端口），无需改 compose 文件，之后访问 `http://服务器IP:8080`。
+> 数据库 3306 端口不受影响，MySQL 容器不对外暴露端口，只在内部网络通信，不会与宿主机冲突。
 
-可参考：
+详细说明：[docs/部署/11-纯Docker模式部署说明（nginx统一入口）.md](./docs/部署/11-纯Docker模式部署说明（nginx统一入口）.md)
+
+---
+
+**模式 B — Cloudflare Pages + 1Panel**
+
+适合：前端部署到 Cloudflare Pages（免费 CDN），后端 + 数据库部署在服务器，1Panel 提供反向代理和 HTTPS。
 
 ```bash
-docker exec -i yunyu-mysql mysql -uroot -p<你的-root-密码> yunyu < docs/技术/sql/init.sql
+# 1. 创建数据库挂载目录
+mkdir -p yunyu_mysql_data
+
+# 2. 创建环境变量文件
+cp docker/.env.example .env
+
+# 3. （可选）修改 .env 中的关键配置
+#    不修改也能直接启动，内置了一套默认值，适合快速体验
+#    正式环境建议替换以下三项：
+#    MYSQL_PASSWORD=强密码
+#    MYSQL_ROOT_PASSWORD=强密码
+#    YUNYU_JWT_SECRET=openssl rand -hex 32 生成的64位字符串
+
+# 4. 启动后端服务（仅后端 + 数据库）
+docker compose -f docker/docker-compose-server.yml pull
+docker compose -f docker/docker-compose-server.yml up -d
+
+# 5. 验证后端
+curl http://127.0.0.1:20000/actuator/health
 ```
+
+前端在 Cloudflare Pages 控制台连接 GitHub 仓库，设置环境变量 `YUNYU_PUBLIC_API_BASE=https://api.yourdomain.com` 后触发部署。
+
+详细说明：[docs/部署/12-Cloudflare Pages + 1Panel 模式部署说明.md](./docs/部署/12-Cloudflare%20Pages%20+%201Panel%20模式部署说明.md)
 
 ## 数据库与初始化说明
 
@@ -234,7 +295,7 @@ docker exec -i yunyu-mysql mysql -uroot -p<你的-root-密码> yunyu < docs/技�
 
 相关工作流位于：
 
-- [build-yunyu-server-image.yml](./.github/workflows/build-yunyu-server-image.yml)
+- [build-yunyu-web-image.yml](./.github/workflows/build-yunyu-web-image.yml)
 - [build-yunyu-server-image-jar.yml](./.github/workflows/build-yunyu-server-image-jar.yml)
 - [build-yunyu-server-native-image.yml](./.github/workflows/build-yunyu-server-native-image.yml)
 

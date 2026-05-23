@@ -35,6 +35,27 @@
 
 #### 步骤 1：克隆仓库
 
+> 只需要 `docker/` 目录，可用 sparse-checkout 只下载该目录（注意：Git 2.25.x 有已知 bug，需拆步执行）：
+
+```bash
+# 克隆仓库元数据（不下载任何文件内容，速度极快）
+git clone --filter=blob:none --no-checkout https://github.com/Idea-flow/Yunyu.git
+
+# 进入仓库目录
+cd Yunyu
+
+# 启用 sparse-checkout，--cone 模式按目录粒度过滤（性能更好）
+git sparse-checkout init --cone
+
+# 声明只需要 docker 这一个目录
+git sparse-checkout set docker
+
+# 实际检出文件（此时只会下载 docker/ 目录的内容）
+git checkout main
+```
+
+也可以完整克隆（包含所有源码）：
+
 ```bash
 git clone https://github.com/Idea-flow/Yunyu.git
 cd Yunyu
