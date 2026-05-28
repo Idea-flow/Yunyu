@@ -83,7 +83,7 @@ const currentUserDisplayName = computed(() => {
 const currentUserInitial = computed(() => currentUserDisplayName.value.slice(0, 1).toUpperCase())
 const siteConfig = computed(() => siteConfigData.value)
 const brandName = computed(() => siteConfig.value?.siteName?.trim() || '云屿')
-const brandSubtitle = computed(() => siteConfig.value?.siteSubTitle?.trim() || 'Yunyu')
+const brandSubtitle = computed(() => 'Yunyu')
 const footerText = computed(() => siteConfig.value?.footerText?.trim() || '云屿 Yunyu · 把二次元内容整理成更适合阅读的节奏。')
 const logoUrl = computed(() => siteConfig.value?.logoUrl?.trim() || '/icon-512-maskable.png')
 const primaryColor = computed(() => siteConfig.value?.primaryColor?.trim() || '#38BDF8')
@@ -492,19 +492,15 @@ async function handleUserMenuSelect(item: { key: string }) {
           </div>
 
           <div class="relative z-10 flex min-w-0 items-center gap-3 sm:gap-4">
-            <NuxtLink to="/" class="flex shrink-0 items-center gap-3">
+            <NuxtLink to="/" class="flex shrink-0 items-center">
               <div
                 class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl shadow-[0_12px_28px_-18px_rgba(15,23,42,0.18)]"
               >
                 <img
                   :src="logoUrl"
-                  :alt="`${brandName} 图标`"
+                  alt="Yunyu"
                   class="h-full w-full object-cover"
                 >
-              </div>
-              <div class="min-w-0">
-                <p class="text-[clamp(1.25rem,1.05rem+0.75vw,1.7rem)] font-semibold leading-[0.96] tracking-[-0.05em] [font-family:var(--font-display)]" :class="brandTitleClassName">{{ brandName }}</p>
-                <p class="mt-1 line-clamp-1 max-w-[18rem] text-[0.66rem] tracking-[0.08em]" :class="brandSubtitleClassName">{{ brandSubtitle }}</p>
               </div>
             </NuxtLink>
 
