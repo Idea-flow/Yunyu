@@ -542,18 +542,6 @@ function switchTab(key: SiteConfigTabKey) {
  * 作用：在保存站点配置前进行必要字段和颜色格式校验。
  */
 function validateSiteForm() {
-  if (!siteFormState.siteName.trim()) {
-    activeTab.value = 'basic'
-    toast.add({ title: '请输入站点名称', color: 'warning' })
-    return false
-  }
-
-  if (!siteFormState.siteSubTitle.trim()) {
-    activeTab.value = 'basic'
-    toast.add({ title: '请输入站点副标题', color: 'warning' })
-    return false
-  }
-
   if (!siteFormState.defaultTitle.trim()) {
     activeTab.value = 'seo'
     toast.add({ title: '请输入默认标题', color: 'warning' })
@@ -1247,18 +1235,8 @@ onMounted(async () => {
         <div v-if="activeTab === 'basic'" class="space-y-4">
           <div class="grid gap-4 md:grid-cols-2">
             <div class="space-y-2">
-              <p class="text-sm font-medium text-slate-700 dark:text-slate-300">站点名称</p>
-              <AdminInput v-model="siteFormState.siteName" placeholder="站点名称" />
-            </div>
-
-            <div class="space-y-2">
               <p class="text-sm font-medium text-slate-700 dark:text-slate-300">页脚文案</p>
               <AdminInput v-model="siteFormState.footerText" placeholder="页脚文案" />
-            </div>
-
-            <div class="space-y-2 md:col-span-2">
-              <p class="text-sm font-medium text-slate-700 dark:text-slate-300">站点副标题</p>
-              <AdminTextarea v-model="siteFormState.siteSubTitle" :rows="4" placeholder="站点副标题" />
             </div>
 
             <div class="space-y-2">

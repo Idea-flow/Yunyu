@@ -653,33 +653,37 @@ function getTopicLink(slug: string) {
             :to="getPostLink(editorialLeadPost.slug)"
             class="group block border-b border-slate-200/80 pb-8 transition dark:border-white/10 lg:border-b-0 lg:pb-0"
           >
-            <YunyuImage
-              :src="editorialLeadPost.coverUrl"
-              :alt="editorialLeadPost.title"
-              wrapper-class="aspect-video"
-              image-class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
-              rounded-class="rounded-[30px]"
-            />
+            <div class="relative overflow-hidden rounded-[30px]">
+              <YunyuImage
+                :src="editorialLeadPost.coverUrl"
+                :alt="editorialLeadPost.title"
+                wrapper-class="aspect-video"
+                image-class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+                rounded-class="rounded-[30px]"
+              />
 
-            <div class="min-w-0 mt-6">
-              <div class="flex flex-wrap items-center gap-2">
-                <UBadge color="neutral" variant="soft">{{ editorialLeadPost.categoryName }}</UBadge>
-                <UBadge
-                  v-for="topic in editorialLeadPost.topicItems.slice(0, 1)"
-                  :key="`${editorialLeadPost.slug}-${topic.slug}`"
-                  color="primary"
-                  variant="soft"
-                >
-                  {{ topic.name }}
-                </UBadge>
-              </div>
+              <div class="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 rounded-b-[30px] bg-gradient-to-t from-black/62 via-black/28 to-transparent" />
 
-              <h2 class="mt-5 max-w-[14ch] text-[clamp(2rem,1.5rem+1.2vw,2.9rem)] font-semibold leading-[1.02] tracking-[-0.05em] text-slate-950 [font-family:var(--font-display)] [text-wrap:balance] transition group-hover:text-slate-700 dark:text-slate-50 dark:group-hover:text-white">
-                {{ editorialLeadPost.title }}
-              </h2>
+              <div class="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+                <div class="flex flex-wrap items-center gap-2">
+                  <UBadge color="neutral" variant="soft">{{ editorialLeadPost.categoryName }}</UBadge>
+                  <UBadge
+                    v-for="topic in editorialLeadPost.topicItems.slice(0, 1)"
+                    :key="`${editorialLeadPost.slug}-${topic.slug}`"
+                    color="primary"
+                    variant="soft"
+                  >
+                    {{ topic.name }}
+                  </UBadge>
+                </div>
 
-              <div class="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[0.7rem] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                <span>{{ formatChineseDate(editorialLeadPost.publishedAt) }}</span>
+                <h2 class="mt-3 line-clamp-2 text-[clamp(1.15rem,0.9rem+0.8vw,1.6rem)] font-semibold leading-[1.22] tracking-[-0.03em] text-white [font-family:var(--font-display)]">
+                  {{ editorialLeadPost.title }}
+                </h2>
+
+                <div class="mt-2.5 text-[0.68rem] uppercase tracking-[0.18em] text-white/62">
+                  <span>{{ formatChineseDate(editorialLeadPost.publishedAt) }}</span>
+                </div>
               </div>
             </div>
           </NuxtLink>
@@ -805,22 +809,32 @@ function getTopicLink(slug: string) {
             v-for="post in selectedPosts"
             :key="post.slug"
             :to="getPostLink(post.slug)"
-            class="group block border-t border-slate-200/80 pt-5 transition dark:border-white/10"
+            class="group block transition"
           >
-            <div class="flex flex-wrap gap-x-4 gap-y-2 text-[0.68rem] uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+            <div class="overflow-hidden rounded-[22px]">
+              <YunyuImage
+                :src="post.coverUrl"
+                :alt="post.title"
+                wrapper-class="aspect-video"
+                image-class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+                rounded-class="rounded-[22px]"
+              />
+            </div>
+
+            <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[0.68rem] uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
               <span>{{ post.categoryName }}</span>
               <span>{{ formatChineseDate(post.publishedAt) }}</span>
             </div>
 
-            <h3 class="mt-4 text-[1.22rem] font-semibold leading-7 tracking-[-0.035em] text-slate-950 [font-family:var(--font-display)] [text-wrap:balance] transition group-hover:text-slate-700 dark:text-slate-50 dark:group-hover:text-white">
+            <h3 class="mt-3 text-[1.12rem] font-semibold leading-7 tracking-[-0.035em] text-slate-950 [font-family:var(--font-display)] [text-wrap:balance] transition group-hover:text-slate-700 dark:text-slate-50 dark:group-hover:text-white">
               {{ post.title }}
             </h3>
 
-            <p class="mt-3 line-clamp-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+            <p class="mt-2 line-clamp-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
               {{ post.summary }}
             </p>
 
-            <div class="mt-4 flex items-center gap-4 text-[0.72rem] text-slate-500 dark:text-slate-400">
+            <div class="mt-3 flex items-center gap-4 text-[0.72rem] text-slate-500 dark:text-slate-400">
               <span>{{ post.readingMinutes }} 分钟阅读</span>
               <span>{{ post.viewCount }} 浏览</span>
             </div>

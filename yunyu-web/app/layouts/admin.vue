@@ -261,7 +261,7 @@ async function handleLogout() {
 
         <nav
           :class="[
-            'flex flex-1 flex-col gap-2 overflow-y-auto py-4 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/80',
+            'flex flex-1 flex-col gap-2 overflow-y-auto py-4 [scrollbar-width:none] hover:[scrollbar-width:thin] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-slate-200 dark:hover:[&::-webkit-scrollbar-thumb]:bg-slate-700/70',
             sidebarCollapsed ? 'px-3' : 'px-4'
           ]"
         >
@@ -352,19 +352,7 @@ async function handleLogout() {
     </aside>
 
     <div class="flex min-w-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-3 lg:px-5 lg:pb-5 lg:pl-3 lg:pt-4">
-      <div class="admin-shell overflow-hidden rounded-[18px]">
-        <div class="bg-[linear-gradient(135deg,var(--admin-primary-soft-surface),var(--admin-secondary-soft-surface)_92%)] px-5 py-3 dark:bg-[linear-gradient(135deg,color-mix(in_srgb,var(--site-primary-color)_12%,transparent),color-mix(in_srgb,var(--site-secondary-color)_10%,transparent)_92%)]">
-          <div class="flex items-center justify-between gap-4">
-            <div class="min-w-0">
-              <p class="truncate text-sm font-semibold text-slate-900 dark:text-slate-50">云屿内容管理系统</p>
-              <p class="truncate text-xs text-slate-600 dark:text-slate-300">{{ systemSlogan }}</p>
-            </div>
-            <UBadge color="primary" variant="soft" class="rounded-[8px] px-3 py-1">Yunyu Admin</UBadge>
-          </div>
-        </div>
-      </div>
-
-      <div class="min-h-0 flex-1 overflow-y-auto px-0 pt-4 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600/80">
+      <div class="min-h-0 flex-1 overflow-y-auto px-0 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-track]:border-none [&::-webkit-scrollbar-track]:shadow-none [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-200 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700/70">
         <slot />
       </div>
     </div>

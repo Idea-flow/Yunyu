@@ -84,7 +84,7 @@ const currentUserInitial = computed(() => currentUserDisplayName.value.slice(0, 
 const siteConfig = computed(() => siteConfigData.value)
 const brandName = computed(() => siteConfig.value?.siteName?.trim() || '云屿')
 const brandSubtitle = computed(() => 'Yunyu')
-const footerText = computed(() => siteConfig.value?.footerText?.trim() || '云屿 Yunyu · 把二次元内容整理成更适合阅读的节奏。')
+const footerText = computed(() => siteConfig.value?.footerText?.trim() || '')
 const logoUrl = computed(() => siteConfig.value?.logoUrl?.trim() || '/icon-512-maskable.png')
 const primaryColor = computed(() => siteConfig.value?.primaryColor?.trim() || '#38BDF8')
 const secondaryColor = computed(() => siteConfig.value?.secondaryColor?.trim() || '#FB923C')
@@ -560,7 +560,7 @@ async function handleUserMenuSelect(item: { key: string }) {
 
     <footer class="border-t border-white/60 bg-white/72 dark:border-white/10 dark:bg-slate-950/70">
       <div class="mx-auto flex max-w-[1360px] flex-col gap-3 px-5 py-8 text-sm text-slate-500 sm:px-8 lg:px-10 dark:text-slate-400 md:flex-row md:items-center md:justify-between">
-        <p>{{ footerText }}</p>
+        <p v-if="footerText">{{ footerText }}</p>
         <div class="flex items-center gap-4">
           <NuxtLink to="/posts" class="hover:text-slate-900 dark:hover:text-slate-50">文章</NuxtLink>
           <NuxtLink to="/categories" class="hover:text-slate-900 dark:hover:text-slate-50">分类</NuxtLink>
